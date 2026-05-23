@@ -1,5 +1,3 @@
-console.log('PHRASES ROUTES LOADED');
-
 const express = require('express');
 const phraseController = require('../controllers/phraseController');
 const authMiddleware = require('../middleware/authMiddleware');
@@ -8,12 +6,7 @@ const router = express.Router();
 
 router.use(authMiddleware);
 
-//router.post('/', phraseController.createPhrase);
-router.post('/', (req, res, next) => {
-  console.log('POST /api/phrases HIT');
-  next();
-}, phraseController.createPhrase);
-
+router.post('/', phraseController.createPhrase);
 router.get('/', phraseController.getPhrases);
 router.get('/user/:userId', phraseController.getPhrasesByUserId);
 router.get('/:id', phraseController.getPhraseById);

@@ -7,8 +7,11 @@ const ALLOWED_ACTIONS = ['add', 'remove', 'restart'];
 const validatePictograms = (pictograms) => {
   if (!Array.isArray(pictograms)) return false;
   return pictograms.every((pictogram) => {
+    // id puede llegar como string (UUID custom) o como número (ARASAAC);
+    // el modelo Phrase lo almacena como String, así que sólo exigimos presencia.
     return pictogram
-      && typeof pictogram.id === 'number'
+      && pictogram.id != null
+      && String(pictogram.id).trim() !== ''
       && typeof pictogram.source === 'string'
       && ALLOWED_SOURCES.includes(pictogram.source);
   });
@@ -23,8 +26,11 @@ const validateInteractions = (interactions) => {
     if (!ALLOWED_ACTIONS.includes(interaction.action)) {
       return false;
     }
-    if (interaction.pictogramId !== undefined && typeof interaction.pictogramId !== 'number') {
-      return false;
+    // pictogramId es String en el modelo; también aceptamos número por si llega de ARASAAC
+    if (interaction.pictogramId !== undefined && interaction.pictogramId !== null) {
+      if (typeof interaction.pictogramId !== 'string' && typeof interaction.pictogramId !== 'number') {
+        return false;
+      }
     }
     if (interaction.timestamp !== undefined && isNaN(new Date(interaction.timestamp).getTime())) {
       return false;

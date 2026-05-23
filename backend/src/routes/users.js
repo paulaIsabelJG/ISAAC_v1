@@ -3,24 +3,26 @@ const router = express.Router();
 const userController = require('../controllers/userController');
 const authMiddleware = require('../middleware/authMiddleware');
 
-// Public routes (for admin/external services)
-router.get('/centro/:centro', userController.getUsersByCenter);
-router.get('/:parentId/children', userController.getChildrenByParentId);
-
-// All protected routes
+// Todas las rutas requieren autenticación
 router.use(authMiddleware);
 
-// Current-user pictogram routes remain unchanged
+// Rutas de pictogramas del usuario autenticado (deben ir antes de /:userId)
 router.post('/pictograms', userController.addCustomPictogram);
 router.get('/pictograms', userController.getCustomPictograms);
 router.delete('/pictograms/:id', userController.deleteCustomPictogram);
 
-// Target-user pictogram routes
+// Listados de usuarios
+router.get('/centro/:centro', userController.getUsersByCenter);
+
+// Hijos de un padre
+router.get('/:parentId/children', userController.getChildrenByParentId);
+
+// Rutas de pictogramas de otro usuario (antes de /:userId genérico)
 router.get('/:userId/pictograms', userController.getCustomPictogramsByUserId);
 router.post('/:userId/pictograms', userController.addCustomPictogramToUserById);
 router.delete('/:userId/pictograms/:pictogramId', userController.deleteCustomPictogramByUserId);
 
-// Target-user CRUD routes (after pictogram routes to avoid conflicts)
+// CRUD de usuario por ID (al final para evitar conflictos con rutas con sufijo)
 router.put('/:userId', userController.updateUserById);
 router.patch('/:userId', userController.patchUserById);
 router.delete('/:userId', userController.deleteUserById);

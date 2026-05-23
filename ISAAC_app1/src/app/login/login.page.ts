@@ -55,7 +55,7 @@ export class LoginPage implements OnInit {
       },
       error: async (err) => {
         this.isLoading = false;
-        this.errorMessage = err?.error?.message || 'Login failed. Please check your credentials.';
+        this.errorMessage = err?.error?.error || err?.error?.message || 'Error al iniciar sesión. Revisa tus credenciales.';
         const toast = await this.toastCtrl.create({
           message: this.errorMessage,
           duration: 2500,

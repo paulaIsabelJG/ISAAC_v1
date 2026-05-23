@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const User = require('../models/User');
 const Phrase = require('../models/Phrase');
-console.log('AUTH CONTROLLER LOADED');
+
 // Register endpoint
 exports.register = async (req, res) => {
   try {
