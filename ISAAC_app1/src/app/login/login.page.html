@@ -1,0 +1,38 @@
+<ion-content class="login-content">
+  <div class="login-wrapper">
+    <ion-card class="login-card">
+      <div class="login-headline">
+        <h1>Iniciar sesión</h1>
+        <p>Accede con tu cuenta para continuar</p>
+      </div>
+
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+        <ion-item class="login-item">
+          <ion-label position="floating">Email</ion-label>
+          <ion-input formControlName="email" type="email" autocomplete="email"></ion-input>
+        </ion-item>
+        <div class="error-message" *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
+          <span *ngIf="loginForm.get('email')?.errors?.['required']">El email es obligatorio</span>
+          <span *ngIf="loginForm.get('email')?.errors?.['email']">Formato de email inválido</span>
+        </div>
+
+        <ion-item class="login-item">
+          <ion-label position="floating">Contraseña</ion-label>
+          <ion-input formControlName="password" type="password" autocomplete="current-password"></ion-input>
+        </ion-item>
+        <div class="error-message" *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+          <span>La contraseña es obligatoria</span>
+        </div>
+
+        <div class="login-error" *ngIf="errorMessage">
+          {{ errorMessage }}
+        </div>
+
+        <ion-button expand="block" type="submit" class="login-button" [disabled]="!loginForm.valid || isLoading">
+          <ion-spinner *ngIf="isLoading" name="crescent" slot="start"></ion-spinner>
+          {{ isLoading ? 'Ingresando...' : 'Iniciar sesión' }}
+        </ion-button>
+      </form>
+    </ion-card>
+  </div>
+</ion-content>

@@ -1,0 +1,7 @@
+{
+  "name": "ISAAC_app1",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}

@@ -1,0 +1,166 @@
+.register-content {
+  --background: #ffffff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.register-container {
+  width: 100%;
+  max-width: 400px;
+}
+
+.register-card {
+  background: #ffffff;
+  border-radius: 20px;
+  border: 3px solid #ff69b4;
+  padding: 30px;
+  box-shadow: 0 4px 20px rgba(255, 105, 180, 0.1);
+}
+
+.register-title {
+  text-align: center;
+  color: #333;
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 30px;
+  margin-top: 0;
+}
+
+.profile-image-section {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.profile-avatar {
+  width: 80px;
+  height: 80px;
+  border: 3px solid #ff69b4;
+}
+
+.form-item {
+  --border-radius: 12px;
+  --border-color: #ffb6c1;
+  --background: #fff5f7;
+  --color: #333;
+  margin-bottom: 15px;
+
+  ion-label {
+    color: #666;
+    font-weight: 500;
+  }
+
+  ion-input, ion-select {
+    --color: #333;
+  }
+}
+
+.error-message {
+  color: #ff4444;
+  font-size: 14px;
+  margin-bottom: 10px;
+  margin-left: 15px;
+}
+
+.custom-pictograms-section {
+  margin-top: 30px;
+  margin-bottom: 30px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+
+  h3 {
+    margin: 0;
+    color: #333;
+    font-size: 18px;
+    font-weight: 600;
+  }
+}
+
+.pictograms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 15px;
+}
+
+.pictogram-card {
+  background: #fff5f7;
+  border-radius: 12px;
+  border: 2px solid #ffb6c1;
+  padding: 10px;
+  text-align: center;
+  position: relative;
+}
+
+.pictogram-image {
+  position: relative;
+  margin-bottom: 8px;
+
+  img {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    object-fit: cover;
+  }
+
+  .remove-btn {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    --color: #ff4444;
+    width: 24px;
+    height: 24px;
+
+    ion-icon {
+      font-size: 20px;
+    }
+  }
+}
+
+.pictogram-label {
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.register-btn {
+  --background: #ff69b4;
+  --background-hover: #ff1493;
+  --background-activated: #ff1493;
+  --border-radius: 25px;
+  --color: #ffffff;
+  font-weight: 600;
+  font-size: 16px;
+  height: 50px;
+  margin-top: 20px;
+
+  &:disabled {
+    --background: #ffb6c1;
+    --color: #ffffff;
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 480px) {
+  .register-card {
+    padding: 20px;
+  }
+
+  .register-title {
+    font-size: 24px;
+  }
+
+  .pictograms-grid {
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+  }
+}

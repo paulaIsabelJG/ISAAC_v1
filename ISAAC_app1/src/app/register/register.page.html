@@ -1,0 +1,102 @@
+<ion-content class="register-content">
+  <div class="register-container">
+    <div class="register-card">
+      <h1 class="register-title">Registro</h1>
+
+      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+        <!-- Profile Image Preview -->
+        <div class="profile-image-section" *ngIf="registerForm.get('image')?.value">
+          <ion-avatar class="profile-avatar">
+            <img [src]="registerForm.get('image')?.value" alt="Profile Image" />
+          </ion-avatar>
+        </div>
+
+        <!-- Name -->
+        <ion-item class="form-item">
+          <ion-label position="floating">Nombre</ion-label>
+          <ion-input formControlName="name" type="text"></ion-input>
+        </ion-item>
+        <div class="error-message" *ngIf="registerForm.get('name')?.invalid && registerForm.get('name')?.touched">
+          <span *ngIf="registerForm.get('name')?.errors?.['required']">El nombre es requerido</span>
+        </div>
+
+        <!-- Email -->
+        <ion-item class="form-item">
+          <ion-label position="floating">Email</ion-label>
+          <ion-input formControlName="email" type="email"></ion-input>
+        </ion-item>
+        <div class="error-message" *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched">
+          <span *ngIf="registerForm.get('email')?.errors?.['required']">El email es requerido</span>
+          <span *ngIf="registerForm.get('email')?.errors?.['email']">Email inválido</span>
+        </div>
+
+        <!-- Password -->
+        <ion-item class="form-item">
+          <ion-label position="floating">Contraseña</ion-label>
+          <ion-input formControlName="password" type="password"></ion-input>
+        </ion-item>
+        <div class="error-message" *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched">
+          <span *ngIf="registerForm.get('password')?.errors?.['required']">La contraseña es requerida</span>
+          <span *ngIf="registerForm.get('password')?.errors?.['minlength']">Mínimo 6 caracteres</span>
+        </div>
+
+        <!-- Type -->
+        <ion-item class="form-item">
+          <ion-label>Tipo de usuario</ion-label>
+          <ion-select formControlName="type" placeholder="Selecciona tipo">
+            <ion-select-option value="teacher">Profesor</ion-select-option>
+            <ion-select-option value="parent">Padre/Madre</ion-select-option>
+            <ion-select-option value="user">Usuario</ion-select-option>
+          </ion-select>
+        </ion-item>
+
+        <!-- Gender -->
+        <ion-item class="form-item">
+          <ion-label>Género</ion-label>
+          <ion-select formControlName="gender" placeholder="Selecciona género">
+            <ion-select-option value="male">Masculino</ion-select-option>
+            <ion-select-option value="female">Femenino</ion-select-option>
+            <ion-select-option value="other">Otro</ion-select-option>
+            <ion-select-option value="prefer_not_to_say">Prefiero no decirlo</ion-select-option>
+          </ion-select>
+        </ion-item>
+
+        <!-- Image URL -->
+        <ion-item class="form-item">
+          <ion-label position="floating">URL de imagen de perfil</ion-label>
+          <ion-input formControlName="image" type="url"></ion-input>
+        </ion-item>
+
+        <!-- Custom Pictograms Section -->
+        <div class="custom-pictograms-section">
+          <div class="section-header">
+            <h3>Iconos propios</h3>
+            <ion-button fill="clear" color="primary" (click)="addCustomPictogram()">
+              <ion-icon slot="icon-only" name="add-circle"></ion-icon>
+            </ion-button>
+          </div>
+
+          <div class="pictograms-grid">
+            <div class="pictogram-card" *ngFor="let pictogram of customPictograms.controls; let i = index">
+              <div class="pictogram-image">
+                <img [src]="pictogram.get('imageUrl')?.value" [alt]="pictogram.get('label')?.value" />
+                <ion-button fill="clear" color="danger" class="remove-btn" (click)="removeCustomPictogram(i)">
+                  <ion-icon name="close-circle"></ion-icon>
+                </ion-button>
+              </div>
+              <div class="pictogram-label">
+                {{ pictogram.get('label')?.value }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <ion-button expand="block" type="submit" class="register-btn" [disabled]="!registerForm.valid || isLoading">
+          <ion-spinner *ngIf="isLoading" slot="start" name="crescent"></ion-spinner>
+          {{ isLoading ? 'Registrando...' : 'Registrarse' }}
+        </ion-button>
+      </form>
+    </div>
+  </div>
+</ion-content>

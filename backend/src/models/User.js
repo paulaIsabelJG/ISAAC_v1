@@ -1,0 +1,142 @@
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+const { randomUUID } = require('crypto');
+
+const userSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true
+  },
+  password: {
+    type: String,
+    required: true
+  },
+  type: {
+    type: String,
+    enum: ['teacher', 'parent', 'user'],
+    default: 'user',
+    required: true
+  },
+  gender: {
+    type: String,
+    enum: ['male', 'female', 'other', 'prefer_not_to_say'],
+    default: 'prefer_not_to_say'
+  },
+  image: {
+    type: String,
+    default: null
+  },
+  centro: {
+    type: String,
+    default: null
+  },
+  hijos: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  parentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null
+  },
+  customPictograms: [{
+    id: {
+      type: String,
+      required: true
+    },
+    label: {
+      type: String,
+      required: true
+    },
+    imageUrl: {
+      type: String,
+      required: true
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+// Indexes for performance
+userSchema.index({ centro: 1 }); // For querying teachers by center
+userSchema.index({ parentId: 1 }); // For querying children by parent
+userSchema.index({ type: 1 }); // For querying by user type
+
+// Pre-save hook to hash password if modified
+userSchema.pre('save', async function () {
+  if (!this.isModified('password')) {
+    return;
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+});
+
+// Pre-save hook for validation
+userSchema.pre('save', async function () {
+  // Initialize arrays if not present
+  if (!Array.isArray(this.hijos)) {
+    this.hijos = [];
+  }
+
+  // Validate centro requirements
+  if ((this.type === 'teacher' || this.type === 'user') && !this.centro) {
+    throw new Error(`Centro is required for ${this.type}s`);
+  }
+
+  // Prevent inconsistent states
+  if (this.type === 'teacher' && (this.hijos.length > 0 || this.parentId)) {
+    throw new Error('Teachers cannot have hijos or parentId');
+  }
+
+  if (this.type === 'parent' && this.parentId) {
+    throw new Error('Parents cannot have parentId');
+  }
+
+  if (this.type === 'user' && this.hijos.length > 0) {
+    throw new Error('Users cannot have hijos');
+  }
+
+  // Consistency checks for relationships
+  if (this.hijos.length > 0) {
+    // Ensure all hijos are users
+    const hijosUsers = await mongoose.model('User').find({ _id: { $in: this.hijos } });
+    for (const hijo of hijosUsers) {
+      if (hijo.type !== 'user') {
+        throw new Error('Hijos must be users');
+      }
+    }
+  }
+
+  if (this.parentId) {
+    // Ensure parent is a parent type
+    const parent = await mongoose.model('User').findById(this.parentId);
+    if (!parent || parent.type !== 'parent') {
+      throw new Error('ParentId must reference a parent user');
+    }
+  }
+});
+
+// Method to compare password
+userSchema.methods.comparePassword = async function (plainPassword) {
+  return bcrypt.compare(plainPassword, this.password);
+};
+
+// Method to generate unique pictogram ID
+userSchema.methods.generatePictogramId = function () {
+  return randomUUID();
+};
+
+module.exports = mongoose.model('User', userSchema);

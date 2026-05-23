@@ -1,0 +1,93 @@
+# ============================================================
+# ISAAC — ISAAC_app1/.gitignore
+# Angular 20 / Ionic 8 / Capacitor 8
+# ============================================================
+
+# ── Secretos ────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── Archivos temporales ──────────────────────────────────────
+*~
+*.sw[mnpcod]
+.tmp
+*.tmp
+*.tmp.*
+/connect.lock
+/typings
+UserInterfaceState.xcuserstate
+$RECYCLE.BIN/
+
+# ── Logs ────────────────────────────────────────────────────
+*.log
+log.txt
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+/libpeerconnection.log
+testem.log
+
+# ── Tests y cobertura ────────────────────────────────────────
+/coverage
+.nyc_output/
+
+# ── Ionic / Capacitor ────────────────────────────────────────
+/.ionic
+/www
+/platforms
+/plugins
+
+
+# ── Compilados / builds ──────────────────────────────────────
+/dist
+/tmp
+/out-tsc
+/bazel-out
+
+# ── Node ─────────────────────────────────────────────────────
+/node_modules
+
+# ── Angular ─────────────────────────────────────────────────
+/.angular
+/.angular/cache
+/.sourcemaps
+/.versions
+/.nx
+/.nx/cache
+
+# ── SASS cache ───────────────────────────────────────────────
+.sass-cache/
+
+# ── IDEs y editores ──────────────────────────────────────────
+.idea/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/
+
+# ── Sistema de archivos ──────────────────────────────────────
+.DS_Store
+.AppleDouble
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ── Capacitor nativo (Xcode / Android) ──────────────────────
+*.xcworkspace
+xcuserdata/
+DerivedData/
+*.ipa
+*.dSYM.zip
