@@ -1,0 +1,887 @@
+// ── Variables ────────────────────────────────────────────────────────────────
+$pink:         #ff69b4;
+$pink-dark:    #e91e8c;
+$pink-light:   #fff0f7;
+$violet:       #7c4dff;
+$violet-light: #f0ebff;
+$blue:         #4a9eff;
+$blue-light:   #e8f4ff;
+$mint:         #20c997;
+$border:       #ffb6c1;
+$bg:           #fdf5f9;
+$text-dark:    #222222;
+$text-muted:   #6b5462;
+$card-bg:      #ffffff;
+$panel-bg:     #faf5f8;
+
+// ── Header ───────────────────────────────────────────────────────────────────
+.bbe-toolbar {
+  --background:   #{$bg};
+  --border-color: #{$border};
+}
+.bbe-title {
+  font-size:      14px;
+  font-weight:    800;
+  color:          $violet;
+  letter-spacing: 1.5px;
+  text-align:     center;
+  white-space:    nowrap;
+  overflow:       hidden;
+  text-overflow:  ellipsis;
+}
+.bbe-hdr-btn {
+  --color: #{$text-muted};
+  --padding-start: 8px;
+  --padding-end:   8px;
+
+  svg { width: 20px; height: 20px; stroke: $text-muted; }
+
+  &--preview svg { stroke: $violet; }
+}
+.bbe-preview-back {
+  --color: #{$violet};
+  font-size:   14px;
+  font-weight: 700;
+  svg { width: 20px; height: 20px; stroke: $violet; }
+}
+
+// ── Content ──────────────────────────────────────────────────────────────────
+.bbe-content { --background: #{$bg}; }
+
+// ── Estado cargando / error ───────────────────────────────────────────────────
+.bbe-state {
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  gap:             12px;
+  padding:         60px 20px;
+  color:           $text-muted;
+  font-size:       14px;
+
+  &--error { color: #c0392b; svg { stroke: #c0392b; } }
+  svg { width: 36px; height: 36px; stroke: $text-muted; }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  VISTA PREVIA
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Barra AAC ────────────────────────────────────────────────────────────────
+.aac-bar {
+  display:      flex;
+  align-items:  center;
+  gap:          6px;
+  background:   #2d2d3a;
+  padding:      8px 12px;
+  min-height:   70px;
+  overflow-x:   auto;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+.aac-btn {
+  flex:            0 0 auto;
+  width:           44px;
+  height:          44px;
+  border-radius:   10px;
+  border:          none;
+  cursor:          pointer;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  transition:      opacity 0.15s;
+
+  svg { width: 22px; height: 22px; }
+
+  &:hover  { opacity: 0.82; }
+  &:active { opacity: 0.68; }
+
+  &--home    { background: #444; svg { stroke: #aaa; } }
+  &--speaker { background: $violet; svg { stroke: #fff; } }
+  &--del     { background: #664; svg { stroke: #ffd; } }
+  &--trash   { background: #644; svg { stroke: #fdd; } }
+}
+
+.aac-phrase {
+  flex:          1;
+  display:       flex;
+  align-items:   center;
+  gap:           6px;
+  min-width:     0;
+  overflow-x:    auto;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+.aac-phrase-item {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            2px;
+  flex:           0 0 auto;
+  background:     rgba(255,255,255,0.1);
+  border-radius:  8px;
+  padding:        4px 6px;
+}
+.aac-phrase-img   { width: 36px; height: 36px; object-fit: contain; border-radius: 4px; }
+.aac-phrase-label { font-size: 10px; color: #fff; font-weight: 600; white-space: nowrap; }
+.aac-phrase-hint  { font-size: 12px; color: rgba(255,255,255,0.4); white-space: nowrap; }
+
+// ── Board preview ─────────────────────────────────────────────────────────────
+.bbe-preview-board {
+  padding: 16px;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  LAYOUT EDITOR
+// ─────────────────────────────────────────────────────────────────────────────
+.bbe-layout {
+  display:  flex;
+  height:   100%;
+  overflow: hidden;
+}
+
+// ── Columna izquierda ─────────────────────────────────────────────────────────
+.bbe-col-left {
+  width:      240px;
+  flex:       0 0 240px;
+  border-right: 1.5px solid $border;
+  background: $panel-bg;
+  overflow-y: auto;
+  padding:    12px 12px 40px;
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: $border transparent;
+}
+
+.bbe-panel {
+  background:    $card-bg;
+  border:        1.5px solid $border;
+  border-radius: 14px;
+  padding:       12px;
+  margin-bottom: 12px;
+
+  &--boards { padding-bottom: 8px; }
+}
+
+.bbe-panel-header {
+  display:        flex;
+  align-items:    center;
+  gap:            6px;
+  font-size:      10px;
+  font-weight:    800;
+  color:          $text-muted;
+  letter-spacing: 1.5px;
+  margin-bottom:  10px;
+  text-transform: uppercase;
+
+  svg { width: 14px; height: 14px; stroke: $text-muted; flex: 0 0 auto; }
+}
+
+.bbe-lbl {
+  display:        block;
+  font-size:      10px;
+  font-weight:    700;
+  color:          $text-muted;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin:         8px 0 4px;
+
+  &:first-child { margin-top: 0; }
+}
+
+.bbe-inp {
+  width:         100%;
+  height:        34px;
+  padding:       0 10px;
+  border:        1.5px solid $border;
+  border-radius: 8px;
+  background:    #faf6f8;
+  font-size:     13px;
+  font-family:   inherit;
+  color:         $text-dark;
+  outline:       none;
+  box-sizing:    border-box;
+  transition:    border-color 0.15s;
+
+  &:focus    { border-color: $violet; background: #fff; }
+  &--num     { width: 60px; text-align: center; }
+}
+
+.bbe-select {
+  --background:    #faf6f8;
+  --border-radius: 8px;
+  --padding-start: 10px;
+  border:          1.5px solid $border;
+  border-radius:   8px;
+  font-size:       13px;
+  width:           100%;
+  height:          34px;
+}
+
+.bbe-cfg-row {
+  display:     flex;
+  gap:         10px;
+  align-items: flex-start;
+}
+.bbe-cfg-field {
+  display:        flex;
+  flex-direction: column;
+  gap:            4px;
+}
+
+.bbe-toggle-row {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  margin:          8px 0;
+  cursor:          pointer;
+  user-select:     none;
+}
+.bbe-toggle-lbl { font-size: 12px; font-weight: 600; color: $text-dark; }
+
+.bbe-toggle {
+  width:         36px;
+  height:        20px;
+  border-radius: 10px;
+  background:    #ddd;
+  position:      relative;
+  transition:    background 0.2s;
+  flex:          0 0 auto;
+
+  &--on {
+    background: $violet;
+    .bbe-toggle-thumb { left: calc(100% - 18px); }
+  }
+}
+.bbe-toggle-thumb {
+  position:      absolute;
+  top:           2px;
+  left:          2px;
+  width:         16px;
+  height:        16px;
+  border-radius: 50%;
+  background:    #fff;
+  box-shadow:    0 1px 3px rgba(0,0,0,0.2);
+  transition:    left 0.2s;
+}
+
+.bbe-save-cfg {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  gap:             6px;
+  width:           100%;
+  height:          34px;
+  margin-top:      10px;
+  border:          none;
+  border-radius:   8px;
+  background:      $violet;
+  color:           #fff;
+  font-size:       12px;
+  font-weight:     700;
+  font-family:     inherit;
+  cursor:          pointer;
+  transition:      opacity 0.15s;
+
+  &:hover:not(:disabled) { opacity: 0.88; }
+  &:disabled             { opacity: 0.5; cursor: not-allowed; }
+}
+
+.bbe-board-item {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  padding:         8px 0;
+  border-bottom:   1px solid #f4e8ee;
+  cursor:          pointer;
+  transition:      color 0.15s;
+
+  &:last-child { border-bottom: none; }
+  &:hover      { .bbe-board-item-name { color: $violet; } }
+}
+.bbe-board-item-name { font-size: 12px; font-weight: 600; color: $text-dark; }
+.bbe-board-item-meta { font-size: 10px; color: $text-muted; }
+
+.bbe-empty-msg { font-size: 12px; color: $text-muted; display: block; padding: 6px 0; }
+
+// ── Columna central ───────────────────────────────────────────────────────────
+.bbe-col-center {
+  flex:       1;
+  overflow-y: auto;
+  padding:    16px;
+  box-sizing: border-box;
+  display:    flex;
+  flex-direction: column;
+  gap:        12px;
+}
+
+.bbe-obf-bar {
+  display: flex;
+  gap:     10px;
+}
+
+.bbe-obf-btn {
+  display:         flex;
+  align-items:     center;
+  gap:             6px;
+  padding:         7px 14px;
+  border:          1.5px solid $border;
+  border-radius:   10px;
+  background:      $card-bg;
+  font-size:       12px;
+  font-weight:     600;
+  color:           $text-muted;
+  font-family:     inherit;
+  cursor:          pointer;
+  transition:      border-color 0.15s, color 0.15s;
+
+  svg { width: 15px; height: 15px; stroke: $text-muted; }
+  &:hover { border-color: $violet; color: $violet; svg { stroke: $violet; } }
+}
+
+// ── Área que contiene columna IA + grid ──────────────────────────────────────
+.bbe-grid-area {
+  display:     flex;
+  gap:         10px;
+  align-items: flex-start;
+  flex:        1;
+  overflow:    auto;
+  padding:     4px;
+}
+
+.bbe-grid-wrap {
+  flex:     1;
+  overflow: visible;   // el scroll lo gestiona bbe-grid-area
+}
+
+// ── Columna Predictor IA ──────────────────────────────────────────────────────
+.bbe-ia-col {
+  flex:          0 0 auto;
+  display:       grid;            // grid para soportar múltiples columnas IA
+  gap:           6px;
+  border:        2px solid $mint;
+  border-radius: 16px;
+  padding:       8px 6px;
+  background:    color-mix(in srgb, #{$mint} 8%, white);
+  // grid-template-columns se pone dinámicamente desde el template
+}
+
+// ── Panel de configuración de tamaño IA ──────────────────────────────────────
+.bbe-ia-size-panel {
+  background:    color-mix(in srgb, #{$mint} 8%, white);
+  border:        1.5px solid $mint;
+  border-radius: 10px;
+  padding:       8px 10px 4px;
+  margin:        4px 0 8px;
+}
+
+// ── Picker de imagen de portada (panel config) ────────────────────────────────
+.bbe-lbl-opt {
+  font-weight:    400;
+  text-transform: none;
+  font-size:      9px;
+  color:          #bbb;
+  margin-left:    3px;
+}
+
+.bbe-cfg-img-picker {
+  width:           100%;
+  height:          72px;
+  border:          2px dashed $border;
+  border-radius:   10px;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  gap:             6px;
+  cursor:          pointer;
+  overflow:        hidden;
+  position:        relative;
+  background:      #faf6f8;
+  transition:      border-color 0.15s;
+  margin-bottom:   4px;
+
+  svg  { width: 22px; height: 22px; stroke: #ccc; }
+  span { font-size: 10px; color: $text-muted; font-weight: 600; }
+
+  &:hover { border-color: $violet; }
+}
+
+.bbe-cfg-img-preview {
+  width:      100%;
+  height:     100%;
+  object-fit: cover;
+}
+
+.bbe-cfg-img-overlay {
+  position:        absolute;
+  inset:           0;
+  background:      rgba(0,0,0,0.45);
+  color:           #fff;
+  font-size:       11px;
+  font-weight:     700;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  opacity:         0;
+  transition:      opacity 0.15s;
+
+  .bbe-cfg-img-picker:hover & { opacity: 1; }
+}
+
+.bbe-cfg-img-remove {
+  display:       block;
+  width:         100%;
+  height:        26px;
+  background:    transparent;
+  border:        1px solid #f8c4cf;
+  border-radius: 7px;
+  color:         #c0392b;
+  font-size:     10px;
+  font-weight:   700;
+  font-family:   inherit;
+  cursor:        pointer;
+  margin-bottom: 6px;
+  transition:    background 0.15s;
+
+  &:hover { background: #fff0f0; }
+}
+
+.bbe-ia-cell {
+  width:           100px;
+  min-height:      110px;
+  background:      $pink-light;
+  border:          2px solid $pink-dark;
+  border-radius:   12px;
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  gap:             6px;
+  padding:         8px 6px;
+  box-sizing:      border-box;
+  cursor:          default;
+  user-select:     none;
+}
+
+.bbe-ia-badge {
+  width:           52px;
+  height:          52px;
+  border-radius:   10px;
+  background:      linear-gradient(135deg, $pink 0%, $pink-dark 100%);
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  font-size:       20px;
+  font-weight:     900;
+  color:           #fff;
+  letter-spacing:  1px;
+  flex:            0 0 auto;
+}
+
+.bbe-ia-label {
+  font-size:      9px;
+  font-weight:    800;
+  color:          $pink-dark;
+  text-align:     center;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  line-height:    1.2;
+}
+
+// ── Grid (compartido editor + preview) ───────────────────────────────────────
+.bbe-grid {
+  display:     grid;
+  gap:         6px;
+  padding:     4px;
+  width:       fit-content;
+  min-width:   100%;
+}
+
+.bbe-cell {
+  width:           100px;
+  min-height:      110px;
+  max-height:      130px;
+  border:          1.5px solid $border;
+  border-radius:   12px;
+  background:      $card-bg;
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  gap:             4px;
+  padding:         6px 4px;
+  box-sizing:      border-box;
+  cursor:          pointer;
+  transition:      border-color 0.15s, transform 0.12s, box-shadow 0.12s;
+  position:        relative;
+  overflow:        hidden;
+
+  &:hover { border-color: $violet; transform: scale(1.03); }
+
+  &--selected {
+    border-color: $violet;
+    box-shadow:   0 0 0 2.5px $violet;
+  }
+
+  &--filled { border-color: darken($border, 5%); }
+
+  &--preview { cursor: pointer; }
+  &--disabled { opacity: 0.45; }
+}
+
+.bbe-cell-img {
+  width:      68px;
+  height:     68px;
+  object-fit: contain;
+  flex:       0 0 auto;
+}
+
+.bbe-cell-img-placeholder {
+  width:           68px;
+  height:          68px;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  flex:            0 0 auto;
+  svg { width: 36px; height: 36px; stroke: #ccc; }
+}
+
+.bbe-cell-label {
+  font-size:      10px;
+  font-weight:    700;
+  text-align:     center;
+  color:          $text-dark;
+  line-height:    1.2;
+  max-width:      90px;
+  overflow:       hidden;
+  text-transform: uppercase;
+  text-overflow: ellipsis;
+  white-space:   nowrap;
+}
+
+.bbe-cell-plus {
+  font-size:   28px;
+  color:       #ddd;
+  line-height: 1;
+}
+
+.bbe-cell-disabled-badge {
+  position:      absolute;
+  top:           4px;
+  right:         4px;
+  background:    rgba(0,0,0,0.35);
+  color:         #fff;
+  font-size:     8px;
+  font-weight:   800;
+  border-radius: 4px;
+  padding:       1px 4px;
+}
+
+.bbe-cell-empty-preview {
+  width:  100%;
+  height: 100%;
+}
+
+// ── Columna derecha ───────────────────────────────────────────────────────────
+.bbe-col-right {
+  width:      280px;
+  flex:       0 0 280px;
+  border-left: 1.5px solid $border;
+  background:  $panel-bg;
+  overflow-y:  auto;
+  padding:     12px 12px 40px;
+  box-sizing:  border-box;
+  scrollbar-width: thin;
+  scrollbar-color: $border transparent;
+}
+
+.bbe-right-hint {
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  gap:             12px;
+  padding:         40px 16px;
+  text-align:      center;
+
+  svg { width: 36px; height: 36px; stroke: $border; }
+  p   { font-size: 13px; color: $text-muted; margin: 0; line-height: 1.5; }
+}
+
+// ── Vista previa del pictograma ───────────────────────────────────────────────
+.bbe-pict-preview {
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  gap:             6px;
+  padding:         14px 10px 10px;
+  border-radius:   14px;
+  border:          1.5px solid $border;
+  margin-bottom:   12px;
+  min-height:      110px;
+}
+.bbe-pict-preview-img   { width: 72px; height: 72px; object-fit: contain; border-radius: 8px; }
+.bbe-pict-preview-empty {
+  width:           72px;
+  height:          72px;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  svg { width: 36px; height: 36px; stroke: rgba(0,0,0,0.2); }
+}
+.bbe-pict-preview-label { font-size: 12px; font-weight: 700; color: $text-dark; text-align: center; }
+
+// ── Título de sección ─────────────────────────────────────────────────────────
+.bbe-section-title {
+  font-size:      10px;
+  font-weight:    800;
+  color:          $text-muted;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin:         4px 0 8px;
+}
+
+// ── Tabs ─────────────────────────────────────────────────────────────────────
+.bbe-tabs {
+  display:       flex;
+  gap:           4px;
+  margin-bottom: 10px;
+}
+
+.bbe-tab {
+  flex:          1;
+  height:        30px;
+  border:        1.5px solid $border;
+  border-radius: 8px;
+  background:    $card-bg;
+  font-size:     10px;
+  font-weight:   700;
+  color:         $text-muted;
+  font-family:   inherit;
+  cursor:        pointer;
+  transition:    background 0.15s, color 0.15s, border-color 0.15s;
+
+  &--active {
+    background:   $violet-light;
+    border-color: $violet;
+    color:        $violet;
+  }
+}
+
+// ── ARASAAC search ─────────────────────────────────────────────────────────
+.bbe-search-wrap {
+  position:     relative;
+  margin-bottom: 8px;
+}
+
+.bbe-search-inp {
+  width:         100%;
+  height:        34px;
+  padding:       0 10px;
+  border:        1.5px solid $border;
+  border-radius: 8px;
+  background:    $card-bg;
+  font-size:     12px;
+  font-family:   inherit;
+  color:         $text-dark;
+  outline:       none;
+  box-sizing:    border-box;
+  &:focus { border-color: $violet; }
+}
+
+.bbe-search-spin {
+  position:  absolute;
+  right:     8px;
+  top:       50%;
+  transform: translateY(-50%);
+  width:     18px;
+  height:    18px;
+}
+
+.bbe-arasaac-grid {
+  display:               grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap:                   6px;
+  max-height:            220px;
+  overflow-y:            auto;
+  scrollbar-width:       thin;
+  scrollbar-color:       $border transparent;
+  margin-bottom:         8px;
+}
+
+.bbe-arasaac-item {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            3px;
+  padding:        6px 4px;
+  border:         1.5px solid transparent;
+  border-radius:  8px;
+  background:     $card-bg;
+  cursor:         pointer;
+  transition:     border-color 0.12s;
+
+  &:hover { border-color: $violet; }
+}
+
+.bbe-arasaac-img   { width: 44px; height: 44px; object-fit: contain; }
+.bbe-arasaac-label { font-size: 9px; font-weight: 600; color: $text-dark; text-align: center; line-height: 1.2; }
+
+// ── Formulario nuevo ──────────────────────────────────────────────────────────
+.bbe-new-form { margin-bottom: 8px; }
+
+.bbe-new-img-row {
+  display:     flex;
+  align-items: center;
+  gap:         10px;
+  margin-bottom: 8px;
+}
+
+.bbe-new-img-wrap {
+  width:           72px;
+  height:          72px;
+  border:          2px dashed $border;
+  border-radius:   12px;
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  gap:             4px;
+  cursor:          pointer;
+  flex:            0 0 auto;
+  overflow:        hidden;
+  transition:      border-color 0.15s;
+
+  svg  { width: 28px; height: 28px; stroke: #ccc; }
+  span { font-size: 10px; color: $text-muted; }
+
+  &:hover { border-color: $violet; }
+}
+
+.bbe-new-img     { width: 100%; height: 100%; object-fit: cover; }
+.bbe-new-img-hint { font-size: 11px; color: $text-muted; line-height: 1.4; }
+
+// ── Campos comunes ────────────────────────────────────────────────────────────
+.bbe-common-fields { margin-top: 4px; }
+
+// ── Tipos de palabra ──────────────────────────────────────────────────────────
+.bbe-word-types {
+  display:   flex;
+  flex-wrap: wrap;
+  gap:       4px;
+  margin-bottom: 8px;
+}
+
+.bbe-wt-btn {
+  padding:       4px 8px;
+  border:        1.5px solid $border;
+  border-radius: 6px;
+  font-size:     10px;
+  font-weight:   600;
+  color:         $text-dark;
+  font-family:   inherit;
+  cursor:        pointer;
+  transition:    border-color 0.12s, opacity 0.12s;
+
+  &--active { border-color: $text-dark; font-weight: 800; }
+}
+
+// ── Fitzgerald toggle row ─────────────────────────────────────────────────────
+.bbe-fitz-row {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  margin:          8px 0 4px;
+  cursor:          pointer;
+  user-select:     none;
+}
+
+// ── Select pequeño ────────────────────────────────────────────────────────────
+.bbe-select-sm {
+  --background:    #faf6f8;
+  --border-radius: 8px;
+  --padding-start: 10px;
+  border:          1.5px solid $border;
+  border-radius:   8px;
+  font-size:       12px;
+  width:           100%;
+  height:          32px;
+}
+
+// ── Botones celda ─────────────────────────────────────────────────────────────
+.bbe-cell-btns {
+  display:        flex;
+  flex-direction: column;
+  gap:            8px;
+  margin-top:     14px;
+}
+
+.bbe-btn-add {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  gap:             6px;
+  width:           100%;
+  height:          40px;
+  border:          none;
+  border-radius:   10px;
+  background:      $violet;
+  color:           #fff;
+  font-size:       13px;
+  font-weight:     700;
+  font-family:     inherit;
+  cursor:          pointer;
+  transition:      opacity 0.15s;
+
+  &:hover:not(:disabled) { opacity: 0.88; }
+  &:disabled             { opacity: 0.5; cursor: not-allowed; }
+}
+
+.bbe-btn-del {
+  width:         100%;
+  height:        36px;
+  border:        1.5px solid #f8c4cf;
+  border-radius: 10px;
+  background:    transparent;
+  color:         #c0392b;
+  font-size:     12px;
+  font-weight:   700;
+  font-family:   inherit;
+  cursor:        pointer;
+  transition:    background 0.15s;
+
+  &:hover { background: #fff0f0; }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  RESPONSIVE — pantallas pequeñas
+// ─────────────────────────────────────────────────────────────────────────────
+@media (max-width: 900px) {
+  .bbe-col-left  { width: 200px; flex: 0 0 200px; }
+  .bbe-col-right { width: 240px; flex: 0 0 240px; }
+  .bbe-cell      { width: 80px; min-height: 90px; }
+  .bbe-cell-img  { width: 50px; height: 50px; }
+}
+
+@media (max-width: 680px) {
+  .bbe-col-left { display: none; }
+
+  .bbe-layout {
+    flex-direction: column;
+    overflow:       auto;
+  }
+
+  .bbe-col-center { overflow: visible; }
+
+  .bbe-col-right {
+    width:       100%;
+    flex:        0 0 auto;
+    border-left: none;
+    border-top:  1.5px solid $border;
+  }
+
+  .bbe-cell { width: 72px; min-height: 80px; }
+  .bbe-cell-img { width: 44px; height: 44px; }
+}

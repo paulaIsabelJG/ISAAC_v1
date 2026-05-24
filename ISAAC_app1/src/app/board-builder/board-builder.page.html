@@ -5,30 +5,116 @@
                        (click)="$event.stopImmediatePropagation(); goBack()">
       </ion-back-button>
     </ion-buttons>
-    <ion-title class="bb-title">Tablero Builder</ion-title>
+    <ion-title class="bb-title">BOARD BUILDER</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="builder-content">
-  <div class="builder-container">
+<ion-content class="bb-content">
+  <div class="bb-container">
 
-    <div class="builder-card">
-      <div class="builder-icon">
+    <!-- ── Acciones principales ──────────────────────────────────────────── -->
+    <p class="bb-section-label">¿QUÉ QUIERES HACER?</p>
+    <div class="bb-actions">
+
+      <button type="button" class="bb-action-btn bb-action-btn--violet" (click)="goToCreate()">
+        <div class="bb-action-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+            <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+            <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+            <line x1="17.5" y1="14" x2="17.5" y2="21"/>
+            <line x1="14" y1="17.5" x2="21" y2="17.5"/>
+          </svg>
+        </div>
+        <span class="bb-action-label">Crear tablero</span>
+      </button>
+
+      <button type="button" class="bb-action-btn bb-action-btn--blue" (click)="importOBL()">
+        <div class="bb-action-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+        </div>
+        <span class="bb-action-label">Importar OBF / OBL</span>
+      </button>
+
+    </div>
+
+    <!-- ── Lista de tableros ─────────────────────────────────────────────── -->
+    <div class="bb-section-header">
+      <p class="bb-section-label" style="margin:0">MIS TABLEROS</p>
+      @if (!isLoading) {
+        <span class="bb-count">{{ boards.length }}</span>
+      }
+    </div>
+
+    @if (isLoading) {
+      <div class="bb-state">
+        <ion-spinner name="crescent" color="secondary"></ion-spinner>
+      </div>
+    } @else if (loadError) {
+      <div class="bb-state bb-state--error">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span>{{ loadError }}</span>
+      </div>
+    } @else if (boards.length === 0) {
+      <div class="bb-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
           <rect x="3" y="3" width="7" height="7" rx="1.5"/>
           <rect x="14" y="3" width="7" height="7" rx="1.5"/>
           <rect x="3" y="14" width="7" height="7" rx="1.5"/>
           <rect x="14" y="14" width="7" height="7" rx="1.5"/>
         </svg>
+        <p>Aún no has creado ningún tablero.</p>
+        <span>Pulsa "Crear tablero" para empezar.</span>
       </div>
-      <h1 class="builder-title">Tablero Builder</h1>
-      <p class="builder-sub">Constructor visual de tableros de pictogramas</p>
-      <div class="builder-badge">Próximamente</div>
-      <p class="builder-desc">
-        Aquí podrás crear y personalizar tableros de comunicación aumentativa
-        con pictogramas ARASAAC y pictogramas personalizados.
-      </p>
-    </div>
+    } @else {
+      <div class="bb-board-list">
+        @for (board of boards; track board._id) {
+          <div class="bb-board-card" (click)="openEditor(board._id)">
+            <div class="bb-board-icon" [class.bb-board-icon--img]="!!board.imageUrl">
+              @if (board.imageUrl) {
+                <img [src]="buildSafeUrl(board.imageUrl)" class="bb-board-img" [alt]="board.name"/>
+              } @else {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+                  <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+                  <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+                  <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+                </svg>
+              }
+            </div>
+            <div class="bb-board-info">
+              <span class="bb-board-name">{{ board.name }}</span>
+              <span class="bb-board-meta">
+                {{ shapeLabel(board.shape) }} · {{ dimensionLabel(board) }}
+                @if (board.createdAt) { · {{ formatDate(board.createdAt) }} }
+              </span>
+            </div>
+            <div class="bb-board-actions">
+              <button class="bb-del-btn" (click)="deleteBoard(board, $event)" title="Eliminar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                  <path d="M10 11v6M14 11v6"/>
+                  <path d="M9 6V4h6v2"/>
+                </svg>
+              </button>
+              <svg class="bb-chevron" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </div>
+          </div>
+        }
+      </div>
+    }
 
   </div>
 </ion-content>

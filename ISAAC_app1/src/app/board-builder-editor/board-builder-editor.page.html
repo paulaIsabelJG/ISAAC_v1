@@ -1,0 +1,561 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar class="bbe-toolbar">
+
+    <!-- Botón volver -->
+    <ion-buttons slot="start">
+      @if (previewMode) {
+        <ion-button fill="clear" class="bbe-preview-back" (click)="togglePreview()">
+          <svg slot="start" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+          Editar
+        </ion-button>
+      } @else {
+        <ion-back-button defaultHref="/board-builder" text="Volver"
+                         (click)="$event.stopImmediatePropagation(); goBack()">
+        </ion-back-button>
+      }
+    </ion-buttons>
+
+    <!-- Título -->
+    <ion-title class="bbe-title">
+      @if (previewMode) { VISTA PREVIA }
+      @else { {{ board?.name ?? 'EDITOR' }} }
+    </ion-title>
+
+    <!-- Botones derecha -->
+    @if (!previewMode) {
+      <ion-buttons slot="end">
+        <ion-button fill="clear" class="bbe-hdr-btn" (click)="exportOBL()">
+          <svg slot="icon-only" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+        </ion-button>
+        <ion-button fill="clear" class="bbe-hdr-btn bbe-hdr-btn--preview" (click)="togglePreview()">
+          <svg slot="icon-only" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </ion-button>
+      </ion-buttons>
+    }
+
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="bbe-content">
+
+  <!-- ══════════════════════ ESTADO CARGANDO / ERROR ══════════════════════ -->
+  @if (isLoading) {
+    <div class="bbe-state">
+      <ion-spinner name="crescent" color="secondary"></ion-spinner>
+    </div>
+  } @else if (loadError) {
+    <div class="bbe-state bbe-state--error">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span>{{ loadError }}</span>
+    </div>
+
+  <!-- ══════════════════════ MODO VISTA PREVIA ══════════════════════════ -->
+  } @else if (previewMode) {
+
+    <!-- Barra AAC -->
+    <div class="aac-bar">
+      <button class="aac-btn aac-btn--home" (click)="aacClearPhrase()" title="Inicio">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+      </button>
+      <button class="aac-btn aac-btn--speaker" (click)="aacSpeak()" title="Leer frase">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+        </svg>
+      </button>
+
+      <div class="aac-phrase">
+        @for (p of aacPhrase; track $index) {
+          <div class="aac-phrase-item">
+            @if (p.imageUrl) {
+              <img [src]="buildSafeUrl(p.imageUrl)" class="aac-phrase-img" [alt]="p.label"/>
+            }
+            <span class="aac-phrase-label">{{ p.label }}</span>
+          </div>
+        }
+        @if (aacPhrase.length === 0) {
+          <span class="aac-phrase-hint">Pulsa los pictogramas para construir la frase…</span>
+        }
+      </div>
+
+      <button class="aac-btn aac-btn--del" (click)="aacDeleteLast()" title="Borrar último">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/>
+          <line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/>
+        </svg>
+      </button>
+      <button class="aac-btn aac-btn--trash" (click)="aacClearPhrase()" title="Limpiar frase">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+          <path d="M10 11v6M14 11v6M9 6V4h6v2"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Grid de vista previa -->
+    <div class="bbe-preview-board">
+      <div class="bbe-grid-area">
+
+        <!-- Columna IA en preview -->
+        @if (iaColumnVisible) {
+          <div class="bbe-ia-col"
+               [style.grid-template-columns]="'repeat(' + (board?.iaCols ?? 1) + ', 1fr)'">
+            @for (i of iaCells; track i) {
+              <div class="bbe-ia-cell">
+                <div class="bbe-ia-badge">IA</div>
+                <span class="bbe-ia-label">PICTO IA</span>
+              </div>
+            }
+          </div>
+        }
+
+      <div class="bbe-grid bbe-grid--preview"
+           [style.grid-template-columns]="'repeat(' + (board?.columns ?? 4) + ', 1fr)'"
+           style="flex:1">
+        @for (cell of gridCells; track $index) {
+          <div class="bbe-cell bbe-cell--preview"
+               [class.bbe-cell--disabled]="getCellIsDisabled(cell.row, cell.col)"
+               [style.background]="getCellBgColor(cell.row, cell.col)"
+               [style.border-color]="getCellBorderColor(cell.row, cell.col)"
+               (click)="onCellClick(cell.row, cell.col)">
+            @if (getCellPict(cell.row, cell.col); as p) {
+              @if (p.imageUrl) {
+                <img [src]="buildSafeUrl(p.imageUrl)" class="bbe-cell-img" [alt]="p.label"/>
+              } @else {
+                <div class="bbe-cell-img-placeholder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="3" y="3" width="18" height="18" rx="3"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                </div>
+              }
+              <span class="bbe-cell-label">{{ p.label }}</span>
+            } @else {
+              <div class="bbe-cell-empty-preview"></div>
+            }
+          </div>
+        }
+      </div><!-- /bbe-grid preview -->
+      </div><!-- /bbe-grid-area preview -->
+    </div><!-- /bbe-preview-board -->
+
+  <!-- ══════════════════════ MODO EDITOR NORMAL ═════════════════════════ -->
+  } @else {
+    <div class="bbe-layout">
+
+      <!-- ── COLUMNA IZQUIERDA ─────────────────────────────────────────── -->
+      <div class="bbe-col-left">
+
+        <!-- Preconfiguración -->
+        <div class="bbe-panel">
+          <div class="bbe-panel-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.07 4.93a10 10 0 0 0-14.14 0M4.93 19.07a10 10 0 0 0 14.14 0"/>
+            </svg>
+            CONFIGURACIÓN
+          </div>
+
+          <!-- Nombre -->
+          <label class="bbe-lbl">Nombre</label>
+          <input class="bbe-inp" [(ngModel)]="cfgName" type="text" placeholder="Nombre del tablero"/>
+
+          <!-- Imagen de portada -->
+          <label class="bbe-lbl">Imagen <span class="bbe-lbl-opt">(opcional)</span></label>
+          <div class="bbe-cfg-img-picker" (click)="pickBoardImage()">
+            @if (cfgImageB64) {
+              <img [src]="buildSafeUrl(cfgImageB64)" class="bbe-cfg-img-preview" alt="Portada"/>
+              <div class="bbe-cfg-img-overlay">Cambiar</div>
+            } @else {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="3" y="3" width="18" height="18" rx="3"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <span>Subir foto</span>
+            }
+          </div>
+          @if (cfgImageB64) {
+            <button type="button" class="bbe-cfg-img-remove" (click)="removeBoardImage()">Eliminar imagen</button>
+          }
+
+          <!-- Usuario -->
+          <label class="bbe-lbl">Usuario asignado</label>
+          <ion-select class="bbe-select"
+                      [value]="cfgUserId"
+                      (ionChange)="onUserSelect($event)"
+                      interface="action-sheet"
+                      placeholder="Usuario">
+            @for (u of centerUsers; track u._id) {
+              <ion-select-option [value]="u._id">{{ u.name }}</ion-select-option>
+            }
+          </ion-select>
+
+          <!-- Filas / Columnas -->
+          <div class="bbe-cfg-row">
+            <div class="bbe-cfg-field">
+              <label class="bbe-lbl">Filas</label>
+              <input class="bbe-inp bbe-inp--num" type="number" min="1" max="10" [(ngModel)]="cfgRows"/>
+            </div>
+            <div class="bbe-cfg-field">
+              <label class="bbe-lbl">Columnas</label>
+              <input class="bbe-inp bbe-inp--num" type="number" min="1" max="10" [(ngModel)]="cfgCols"/>
+            </div>
+          </div>
+
+          <!-- Toggles -->
+          <div class="bbe-toggle-row" (click)="cfgPredictor = !cfgPredictor">
+            <span class="bbe-toggle-lbl">Predictor IA</span>
+            <div class="bbe-toggle" [class.bbe-toggle--on]="cfgPredictor">
+              <div class="bbe-toggle-thumb"></div>
+            </div>
+          </div>
+
+          <!-- Tamaño columna IA (solo visible cuando predictor activo) -->
+          @if (cfgPredictor) {
+            <div class="bbe-ia-size-panel">
+              <div class="bbe-cfg-row">
+                <div class="bbe-cfg-field">
+                  <label class="bbe-lbl">Filas IA</label>
+                  <input class="bbe-inp bbe-inp--num" type="number" min="1" max="20" [(ngModel)]="cfgIaRows"/>
+                </div>
+                <div class="bbe-cfg-field">
+                  <label class="bbe-lbl">Columnas IA</label>
+                  <input class="bbe-inp bbe-inp--num" type="number" min="1" max="5" [(ngModel)]="cfgIaCols"/>
+                </div>
+              </div>
+            </div>
+          }
+
+          <div class="bbe-toggle-row" (click)="cfgAiRewrite = !cfgAiRewrite">
+            <span class="bbe-toggle-lbl">Corrector IA</span>
+            <div class="bbe-toggle" [class.bbe-toggle--on]="cfgAiRewrite">
+              <div class="bbe-toggle-thumb"></div>
+            </div>
+          </div>
+
+          <button class="bbe-save-cfg" (click)="saveConfig()" [disabled]="cfgSaving">
+            @if (cfgSaving) { <ion-spinner name="crescent" style="width:16px;height:16px"></ion-spinner> }
+            Guardar configuración
+          </button>
+        </div>
+
+        <!-- Tableros del usuario -->
+        <div class="bbe-panel bbe-panel--boards">
+          <div class="bbe-panel-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7" rx="1"/>
+              <rect x="14" y="3" width="7" height="7" rx="1"/>
+              <rect x="3" y="14" width="7" height="7" rx="1"/>
+              <rect x="14" y="14" width="7" height="7" rx="1"/>
+            </svg>
+            TABLEROS DEL USUARIO
+          </div>
+
+          @if (userBoardsLoading) {
+            <ion-spinner name="crescent" color="secondary" style="margin:8px auto;display:block"></ion-spinner>
+          } @else if (userBoards.length === 0) {
+            <span class="bbe-empty-msg">Sin otros tableros.</span>
+          } @else {
+            @for (b of userBoards; track b._id) {
+              <div class="bbe-board-item" (click)="openBoard(b._id)">
+                <span class="bbe-board-item-name">{{ b.name }}</span>
+                <span class="bbe-board-item-meta">{{ b.rows }}×{{ b.columns }}</span>
+              </div>
+            }
+          }
+        </div>
+
+      </div><!-- /col-left -->
+
+      <!-- ── COLUMNA CENTRAL ────────────────────────────────────────────── -->
+      <div class="bbe-col-center">
+
+        <!-- Acciones OBF -->
+        <div class="bbe-obf-bar">
+          <button class="bbe-obf-btn" (click)="importOBF()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Importar OBF
+          </button>
+          <button class="bbe-obf-btn" (click)="exportOBF()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            Exportar OBF
+          </button>
+        </div>
+
+        <!-- Grid del tablero + columna IA -->
+        <div class="bbe-grid-area">
+
+          <!-- Columna Predictor IA (solo si está activado) -->
+          @if (iaColumnVisible) {
+            <div class="bbe-ia-col"
+                 [style.grid-template-columns]="'repeat(' + (board?.iaCols ?? 1) + ', 1fr)'">
+              @for (i of iaCells; track i) {
+                <div class="bbe-ia-cell">
+                  <div class="bbe-ia-badge">IA</div>
+                  <span class="bbe-ia-label">PICTO IA</span>
+                </div>
+              }
+            </div>
+          }
+
+        <div class="bbe-grid-wrap">
+          <div class="bbe-grid"
+               [style.grid-template-columns]="'repeat(' + (board?.columns ?? 4) + ', 1fr)'">
+            @for (cell of gridCells; track $index) {
+              <div class="bbe-cell"
+                   [class.bbe-cell--selected]="isSelected(cell.row, cell.col)"
+                   [class.bbe-cell--filled]="!!getCellPict(cell.row, cell.col)"
+                   [style.background]="getCellBgColor(cell.row, cell.col)"
+                   [style.border-color]="getCellBorderColor(cell.row, cell.col)"
+                   (click)="onCellClick(cell.row, cell.col)">
+
+                @if (getCellPict(cell.row, cell.col); as p) {
+                  @if (p.imageUrl) {
+                    <img [src]="buildSafeUrl(p.imageUrl)" class="bbe-cell-img" [alt]="p.label"/>
+                  } @else {
+                    <div class="bbe-cell-img-placeholder">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <rect x="3" y="3" width="18" height="18" rx="3"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                      </svg>
+                    </div>
+                  }
+                  <span class="bbe-cell-label">{{ p.label }}</span>
+                  @if (getCellIsDisabled(cell.row, cell.col)) {
+                    <div class="bbe-cell-disabled-badge">OFF</div>
+                  }
+                } @else {
+                  <span class="bbe-cell-plus">+</span>
+                }
+
+              </div>
+            }
+          </div>
+        </div><!-- /grid-wrap -->
+        </div><!-- /grid-area -->
+
+      </div><!-- /col-center -->
+
+      <!-- ── COLUMNA DERECHA ────────────────────────────────────────────── -->
+      <div class="bbe-col-right">
+
+        @if (!hasSelectedCell) {
+          <div class="bbe-right-hint">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+              <path d="M15 3h6v6M14 10l6.1-6.1M9 21H3v-6M10 14l-6.1 6.1"/>
+            </svg>
+            <p>Selecciona una celda del tablero para editarla.</p>
+          </div>
+        } @else {
+
+          <!-- Vista previa del pictograma -->
+          <div class="bbe-pict-preview"
+               [style.background]="fitzgeraldBgColor"
+               [style.border-color]="fitzgeraldBorderColor">
+            @if (pictForm.imageUrl) {
+              <img [src]="buildSafeUrl(pictForm.imageUrl)" class="bbe-pict-preview-img" [alt]="pictForm.label"/>
+            } @else {
+              <div class="bbe-pict-preview-empty">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="3" y="3" width="18" height="18" rx="3"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+              </div>
+            }
+            <span class="bbe-pict-preview-label">{{ pictForm.label || '—' }}</span>
+          </div>
+
+          <!-- ── Sección 1: Añadir pictograma ─────────────────────────── -->
+          <div class="bbe-section-title">AÑADIR PICTOGRAMA</div>
+
+          <!-- Tabs: ARASAAC / Personal / Nuevo -->
+          <div class="bbe-tabs">
+            <button class="bbe-tab" [class.bbe-tab--active]="rightMode==='arasaac'"  (click)="rightMode='arasaac'">ARASAAC</button>
+            <button class="bbe-tab" [class.bbe-tab--active]="rightMode==='personal'" (click)="rightMode='personal'">Personal</button>
+            <button class="bbe-tab" [class.bbe-tab--active]="rightMode==='new'"      (click)="rightMode='new'">Nuevo</button>
+          </div>
+
+          <!-- Tab ARASAAC -->
+          @if (rightMode === 'arasaac') {
+            <div class="bbe-search-wrap">
+              <input class="bbe-search-inp" type="text"
+                     placeholder="Buscar pictograma ARASAAC…"
+                     [value]="arasaacQuery"
+                     (input)="onArasaacInput($event)"/>
+              @if (arasaacSearching) {
+                <ion-spinner name="crescent" color="secondary" class="bbe-search-spin"></ion-spinner>
+              }
+            </div>
+            <div class="bbe-arasaac-grid">
+              @for (r of arasaacResults; track r.id) {
+                <div class="bbe-arasaac-item" (click)="selectArasaacResult(r)">
+                  <img [src]="r.imageUrl" class="bbe-arasaac-img" [alt]="r.label"
+                       onerror="this.style.display='none'"/>
+                  <span class="bbe-arasaac-label">{{ r.label }}</span>
+                </div>
+              }
+              @if (!arasaacSearching && arasaacQuery.length >= 2 && arasaacResults.length === 0) {
+                <span class="bbe-empty-msg" style="grid-column:1/-1">Sin resultados.</span>
+              }
+            </div>
+          }
+
+          <!-- Tab Personal -->
+          @if (rightMode === 'personal') {
+            @if (personalLoading) {
+              <ion-spinner name="crescent" color="secondary" style="margin:10px auto;display:block"></ion-spinner>
+            } @else if (personalPicts.length === 0) {
+              <span class="bbe-empty-msg">El usuario no tiene pictogramas personales.</span>
+            } @else {
+              <div class="bbe-arasaac-grid">
+                @for (p of personalPicts; track p.id) {
+                  <div class="bbe-arasaac-item" (click)="selectPersonalPict(p)">
+                    <img [src]="buildSafeUrl(p.imageUrl)" class="bbe-arasaac-img" [alt]="p.label"
+                         onerror="this.style.display='none'"/>
+                    <span class="bbe-arasaac-label">{{ p.label }}</span>
+                  </div>
+                }
+              </div>
+            }
+          }
+
+          <!-- Tab Nuevo -->
+          @if (rightMode === 'new') {
+            <div class="bbe-new-form">
+
+              <!-- Imagen -->
+              <div class="bbe-new-img-row">
+                <div class="bbe-new-img-wrap" (click)="pickImage()">
+                  @if (newImgUrl) {
+                    <img [src]="newImgUrl" class="bbe-new-img"/>
+                  } @else {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                      <rect x="3" y="3" width="18" height="18" rx="3"/>
+                      <circle cx="8.5" cy="8.5" r="1.5"/>
+                      <polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                    <span>Foto</span>
+                  }
+                </div>
+                <div class="bbe-new-img-hint">Pulsa para subir imagen (máx. 2 MB)</div>
+              </div>
+
+            </div>
+          }
+
+          <!-- Separador: campos comunes tras selección -->
+          <div class="bbe-common-fields">
+            <label class="bbe-lbl">Etiqueta *</label>
+            <input class="bbe-inp" [(ngModel)]="pictForm.label" type="text" placeholder="Nombre del pictograma"/>
+
+            <label class="bbe-lbl">Sonido</label>
+            <input class="bbe-inp" [(ngModel)]="pictForm.sound" type="text" placeholder="Igual que etiqueta por defecto"/>
+
+            <label class="bbe-lbl">Tags</label>
+            <input class="bbe-inp" [(ngModel)]="pictForm.tags" type="text" placeholder="tag1, tag2, …"/>
+
+            <label class="bbe-lbl">Descripción</label>
+            <input class="bbe-inp" [(ngModel)]="pictForm.description" type="text" placeholder="Descripción breve"/>
+
+            <label class="bbe-lbl">Tipo de palabra</label>
+            <div class="bbe-word-types">
+              @for (wt of wordTypes; track wt) {
+                <button type="button"
+                        class="bbe-wt-btn"
+                        [class.bbe-wt-btn--active]="pictForm.wordType === wt"
+                        [style.background]="pictForm.wordType === wt ? (FITZGERALD[wt] ?? '#f5f5f5') : '#faf6f8'"
+                        (click)="pictForm.wordType = wt">
+                  {{ wordTypeLabels[wt] }}
+                </button>
+              }
+            </div>
+
+            <!-- Fitzgerald ON/OFF -->
+            <div class="bbe-fitz-row" (click)="pictForm.fitzgeraldEnabled = !pictForm.fitzgeraldEnabled">
+              <span class="bbe-lbl" style="margin:0">Color Fitzgerald</span>
+              <div class="bbe-toggle" [class.bbe-toggle--on]="pictForm.fitzgeraldEnabled">
+                <div class="bbe-toggle-thumb"></div>
+              </div>
+            </div>
+
+            @if (!pictForm.fitzgeraldEnabled) {
+              <label class="bbe-lbl">Color manual</label>
+              <input class="bbe-inp" type="color" [(ngModel)]="pictForm.color" style="height:36px;padding:2px 6px"/>
+            }
+          </div>
+
+          <!-- ── Sección 2: Acción ──────────────────────────────────────── -->
+          <div class="bbe-section-title" style="margin-top:12px">ACCIÓN</div>
+
+          <ion-select class="bbe-select-sm"
+                      [value]="actionForm.type"
+                      (ionChange)="onActionTypeSelect($event)"
+                      interface="popover">
+            @for (at of actionTypes; track at.value) {
+              <ion-select-option [value]="at.value">{{ at.label }}</ion-select-option>
+            }
+          </ion-select>
+
+          @if (actionForm.type === 'navigate' || actionForm.type === 'voice+navigate') {
+            <label class="bbe-lbl" style="margin-top:8px">Tablero destino</label>
+            <ion-select class="bbe-select-sm"
+                        [value]="actionForm.targetBoardId"
+                        (ionChange)="onTargetBoardSelect($event)"
+                        interface="action-sheet"
+                        placeholder="Selecciona tablero">
+              @for (b of userBoards; track b._id) {
+                <ion-select-option [value]="b._id">{{ b.name }}</ion-select-option>
+              }
+            </ion-select>
+          }
+
+          <!-- ── Sección 3: Botones de celda ──────────────────────────── -->
+          <div class="bbe-cell-btns">
+            <button class="bbe-btn-add" (click)="saveCell()" [disabled]="isSaving">
+              @if (isSaving) { <ion-spinner name="crescent" style="width:14px;height:14px"></ion-spinner> }
+              @else if (isEditingCell) { Guardar cambios }
+              @else { Añadir pictograma }
+            </button>
+
+            @if (isEditingCell) {
+              <button class="bbe-btn-del" (click)="removeCell()">Eliminar pictograma</button>
+            }
+          </div>
+
+        }<!-- /hasSelectedCell -->
+      </div><!-- /col-right -->
+
+    </div><!-- /bbe-layout -->
+  }
+
+</ion-content>

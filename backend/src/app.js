@@ -1,10 +1,11 @@
 const express = require('express');
 const cors = require('cors');
-const authRoutes = require('./routes/auth');
+const authRoutes   = require('./routes/auth');
 const arasaacRoutes = require('./routes/arasaac');
 const phrasesRoutes = require('./routes/phrases');
-const userRoutes = require('./routes/users');
+const userRoutes   = require('./routes/users');
 const placesRoutes = require('./routes/places');
+const boardRoutes  = require('./routes/boards');
 
 const app = express();
 
@@ -19,6 +20,9 @@ app.use('/api/arasaac', arasaacRoutes);
 
 // User routes
 app.use('/api/users', userRoutes);
+
+// Board routes
+app.use('/api/boards', boardRoutes);
 
 // Phrase routes
 app.use('/api/phrases', phrasesRoutes);

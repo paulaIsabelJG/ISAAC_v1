@@ -1,0 +1,221 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar class="bbc-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/board-builder" text="Volver"
+                       (click)="$event.stopImmediatePropagation(); goBack()">
+      </ion-back-button>
+    </ion-buttons>
+    <ion-title class="bbc-title">NUEVO TABLERO</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="bbc-content">
+  <div class="bbc-container">
+    <form [formGroup]="form" (ngSubmit)="create()">
+
+      <!-- ── Imagen de portada ──────────────────────────────────────────── -->
+      <div class="bbc-field">
+        <label class="bbc-label">Imagen del tablero <span class="bbc-optional">(opcional)</span></label>
+        <div class="bbc-img-row">
+          <div class="bbc-img-picker" (click)="pickImage()">
+            @if (imageSafeUrl) {
+              <img [src]="imageSafeUrl" class="bbc-img-preview" alt="Portada"/>
+              <div class="bbc-img-overlay">Cambiar</div>
+            } @else {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="3" y="3" width="18" height="18" rx="3"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <span>Subir imagen</span>
+            }
+          </div>
+          <div class="bbc-img-hint">
+            <p>Imagen de portada del tablero.</p>
+            <p>JPG, PNG, GIF o WebP · máx. 2 MB</p>
+            @if (imageB64) {
+              <button type="button" class="bbc-img-remove" (click)="removeImage()">Eliminar imagen</button>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Nombre ──────────────────────────────────────────────────────── -->
+      <div class="bbc-field">
+        <label class="bbc-label">Nombre del tablero *</label>
+        <input class="bbc-input"
+               formControlName="name"
+               type="text"
+               placeholder="Ej: Comunicación básica"
+               autocomplete="off"/>
+        @if (form.get('name')?.touched && form.get('name')?.invalid) {
+          <span class="bbc-error">Introduce un nombre (mín. 2 caracteres)</span>
+        }
+      </div>
+
+      <!-- ── Creador (read-only) ─────────────────────────────────────────── -->
+      <div class="bbc-field">
+        <label class="bbc-label">Creador</label>
+        <input class="bbc-input bbc-input--readonly"
+               [value]="creatorName"
+               type="text"
+               readonly/>
+      </div>
+
+      <!-- ── Usuario asignado ────────────────────────────────────────────── -->
+      <div class="bbc-field">
+        <label class="bbc-label">Usuario asignado *</label>
+
+        @if (usersLoading) {
+          <div class="bbc-loading">
+            <ion-spinner name="crescent" color="secondary"></ion-spinner>
+            <span>Cargando usuarios…</span>
+          </div>
+        } @else if (usersError) {
+          <span class="bbc-error">{{ usersError }}</span>
+        } @else if (centerUsers.length === 0) {
+          <span class="bbc-empty-msg">No hay usuarios finales en el centro.</span>
+        } @else {
+          <ion-select class="bbc-select"
+                      placeholder="Selecciona usuario"
+                      [value]="form.get('userId')?.value"
+                      (ionChange)="onUserSelect($event)"
+                      interface="action-sheet">
+            @for (u of centerUsers; track u._id) {
+              <ion-select-option [value]="u._id">{{ u.name }}</ion-select-option>
+            }
+          </ion-select>
+          @if (form.get('userId')?.touched && form.get('userId')?.invalid) {
+            <span class="bbc-error">Selecciona un usuario.</span>
+          }
+        }
+      </div>
+
+      <!-- ── Forma ───────────────────────────────────────────────────────── -->
+      <div class="bbc-field">
+        <label class="bbc-label">Forma del tablero</label>
+        <div class="bbc-shape-btns">
+
+          <button type="button"
+                  class="bbc-shape-btn"
+                  [class.bbc-shape-btn--active]="selectedShape === 'grid'"
+                  (click)="form.get('shape')!.setValue('grid')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+              <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+              <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+              <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+            </svg>
+            <span>Cuadrícula</span>
+          </button>
+
+          <button type="button"
+                  class="bbc-shape-btn bbc-shape-btn--disabled"
+                  disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="9"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            <span>Circular</span>
+            <span class="bbc-soon">Próx.</span>
+          </button>
+
+        </div>
+      </div>
+
+      <!-- ── Campos de cuadrícula ────────────────────────────────────────── -->
+      @if (selectedShape === 'grid') {
+        <div class="bbc-row">
+          <div class="bbc-field bbc-field--half">
+            <label class="bbc-label">Nº filas</label>
+            <input class="bbc-input bbc-input--num"
+                   formControlName="rows"
+                   type="number" min="1" max="10"/>
+          </div>
+          <div class="bbc-field bbc-field--half">
+            <label class="bbc-label">Nº columnas</label>
+            <input class="bbc-input bbc-input--num"
+                   formControlName="columns"
+                   type="number" min="1" max="10"/>
+          </div>
+        </div>
+
+        <div class="bbc-toggles">
+          <div class="bbc-toggle-row" (click)="form.get('predictorEnabled')!.setValue(!form.get('predictorEnabled')!.value)">
+            <div class="bbc-toggle-info">
+              <span class="bbc-toggle-label">Activar predictor IA</span>
+              <span class="bbc-toggle-sub">Sugiere el siguiente pictograma (próx.)</span>
+            </div>
+            <div class="bbc-toggle-switch"
+                 [class.bbc-toggle-switch--on]="form.get('predictorEnabled')?.value">
+              <div class="bbc-toggle-thumb"></div>
+            </div>
+          </div>
+
+          <!-- Tamaño columna IA (visible solo cuando predictor activo) -->
+          @if (predictorEnabled) {
+            <div class="bbc-ia-size-panel">
+              <p class="bbc-ia-size-title">Tamaño de la columna IA</p>
+              <div class="bbc-row">
+                <div class="bbc-field bbc-field--half" style="margin-bottom:0">
+                  <label class="bbc-label">Filas IA</label>
+                  <input class="bbc-input bbc-input--num"
+                         formControlName="iaRows"
+                         type="number" min="1" max="20"/>
+                </div>
+                <div class="bbc-field bbc-field--half" style="margin-bottom:0">
+                  <label class="bbc-label">Columnas IA</label>
+                  <input class="bbc-input bbc-input--num"
+                         formControlName="iaCols"
+                         type="number" min="1" max="5"/>
+                </div>
+              </div>
+            </div>
+          }
+
+          <div class="bbc-toggle-row" (click)="form.get('aiRewriteEnabled')!.setValue(!form.get('aiRewriteEnabled')!.value)">
+            <div class="bbc-toggle-info">
+              <span class="bbc-toggle-label">Corrector IA</span>
+              <span class="bbc-toggle-sub">Reformula frases automáticamente (próx.)</span>
+            </div>
+            <div class="bbc-toggle-switch"
+                 [class.bbc-toggle-switch--on]="form.get('aiRewriteEnabled')?.value">
+              <div class="bbc-toggle-thumb"></div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ── Aviso circular ─────────────────────────────────────────────── -->
+      @if (selectedShape === 'circular') {
+        <div class="bbc-info-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <span>Los tableros circulares están pendientes de implementación en esta versión.</span>
+        </div>
+      }
+
+      <!-- ── Botón CREAR ────────────────────────────────────────────────── -->
+      <button type="submit"
+              class="bbc-submit"
+              [disabled]="isSaving">
+        @if (isSaving) {
+          <ion-spinner name="crescent"></ion-spinner>
+        } @else {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+            <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+            <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+            <line x1="17.5" y1="14" x2="17.5" y2="21"/>
+            <line x1="14" y1="17.5" x2="21" y2="17.5"/>
+          </svg>
+          CREAR TABLERO
+        }
+      </button>
+
+    </form>
+  </div>
+</ion-content>

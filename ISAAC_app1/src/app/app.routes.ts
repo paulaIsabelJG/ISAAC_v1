@@ -42,6 +42,22 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    path: 'board-builder-create',
+    loadComponent: () =>
+      import('./board-builder-create/board-builder-create.page').then(
+        (m) => m.BoardBuilderCreatePage
+      ),
+    canActivate: [authGuard],
+  },
+  {
+    path: 'board-builder-editor/:boardId',
+    loadComponent: () =>
+      import('./board-builder-editor/board-builder-editor.page').then(
+        (m) => m.BoardBuilderEditorPage
+      ),
+    canActivate: [authGuard],
+  },
+  {
     path: 'user-placeholder',
     loadComponent: () =>
       import('./user-placeholder/user-placeholder.page').then(

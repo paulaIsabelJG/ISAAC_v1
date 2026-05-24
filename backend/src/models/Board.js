@@ -1,0 +1,52 @@
+const mongoose = require('mongoose');
+
+// ── Subdocumento: pictograma de celda ──────────────────────────────────────────
+const pictogramSchema = new mongoose.Schema({
+  source:            { type: String, enum: ['arasaac', 'custom', 'new'], default: 'new' },
+  id:                { type: String, default: '' },
+  label:             { type: String, required: true },
+  imageUrl:          { type: String, default: '' },
+  sound:             { type: String, default: '' },
+  tags:              [{ type: String }],
+  description:       { type: String, default: '' },
+  wordType:          { type: String, default: 'misc' },   // verb|pronoun|noun|descriptor|social|misc
+  fitzgeraldEnabled: { type: Boolean, default: true },
+  color:             { type: String, default: '#f5f5f5' },
+}, { _id: false });
+
+// ── Subdocumento: acción de celda ──────────────────────────────────────────────
+const actionSchema = new mongoose.Schema({
+  type:          { type: String, enum: ['voice', 'navigate', 'voice+navigate', 'disabled'], default: 'voice' },
+  targetBoardId: { type: mongoose.Schema.Types.ObjectId, ref: 'Board', default: null },
+}, { _id: false });
+
+// ── Subdocumento: celda ────────────────────────────────────────────────────────
+const cellSchema = new mongoose.Schema({
+  row:       { type: Number, required: true },
+  col:       { type: Number, required: true },
+  pictogram: { type: pictogramSchema, default: null },
+  action:    { type: actionSchema,    default: () => ({ type: 'voice', targetBoardId: null }) },
+}, { _id: false });
+
+// ── Esquema principal ──────────────────────────────────────────────────────────
+const boardSchema = new mongoose.Schema({
+  name:             { type: String, required: true, trim: true },
+  imageUrl:         { type: String, default: '' },
+  creatorId:        { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  userId:           { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  shape:            { type: String, enum: ['grid', 'circular'], default: 'grid' },
+  rows:             { type: Number, default: 3, min: 1, max: 10 },
+  columns:          { type: Number, default: 4, min: 1, max: 10 },
+  circleSlots:      { type: Number, default: 8 },
+  predictorEnabled: { type: Boolean, default: false },
+  aiRewriteEnabled: { type: Boolean, default: false },
+  iaRows:           { type: Number,  default: 5, min: 1, max: 20 },
+  iaCols:           { type: Number,  default: 1, min: 1, max: 5  },
+  cells:            [cellSchema],
+  createdAt:        { type: Date, default: Date.now },
+});
+
+boardSchema.index({ creatorId: 1 });
+boardSchema.index({ userId: 1 });
+
+module.exports = mongoose.model('Board', boardSchema);
