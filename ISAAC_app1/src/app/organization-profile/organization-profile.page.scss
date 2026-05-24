@@ -1,0 +1,212 @@
+$pink:       #ff69b4;
+$pink-dark:  #e91e8c;
+$pink-light: #fff0f7;
+$mint:       #20c997;
+$border:     #ffb6c1;
+$text-dark:  #222222;
+$text-muted: #7a5163;
+
+.profile-content { --background: #fdf5f9; }
+
+.profile-container {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 20px 20px 40px;
+}
+
+// ── Back ──────────────────────────────────────────────────────────────────────
+.profile-topbar { margin-bottom: 16px; }
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1.5px solid $border;
+  border-radius: 20px;
+  color: $text-muted;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 6px 16px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+
+  svg { width: 16px; height: 16px; }
+
+  &:hover {
+    background: $pink-light;
+    border-color: $pink;
+    color: $pink-dark;
+  }
+}
+
+// ── Card ──────────────────────────────────────────────────────────────────────
+.profile-card {
+  background: #ffffff;
+  border-radius: 28px;
+  border: 2px solid $border;
+  padding: 28px 24px 28px;
+  box-shadow: 0 12px 36px rgba(255, 105, 180, 0.1);
+}
+
+// ── Avatar con selector de imagen ────────────────────────────────────────────
+.avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.avatar-wrap {
+  position: relative;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  cursor: pointer;
+
+  &:hover .avatar-overlay { opacity: 1; }
+}
+
+.avatar-img {
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  border: 3px solid $pink;
+  object-fit: cover;
+  display: block;
+}
+
+.avatar-placeholder {
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  background: $pink-light;
+  border: 3px solid $border;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $pink;
+
+  svg { width: 42px; height: 42px; }
+}
+
+.avatar-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+
+  svg { width: 26px; height: 26px; stroke: #fff; }
+}
+
+.avatar-hint {
+  font-size: 11px;
+  color: #bbb;
+  margin: 8px 0 0;
+  text-align: center;
+}
+
+// ── Títulos ───────────────────────────────────────────────────────────────────
+.profile-title {
+  text-align: center;
+  font-size: 22px;
+  font-weight: 700;
+  color: $text-dark;
+  margin: 0 0 4px;
+}
+
+.profile-subtitle {
+  text-align: center;
+  font-size: 14px;
+  color: $text-muted;
+  margin: 0 0 24px;
+}
+
+// ── Form ──────────────────────────────────────────────────────────────────────
+.field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: $text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin: 0 0 6px 4px;
+}
+
+.form-item {
+  --border-radius: 14px;
+  --border-color: #ffccd9;
+  --background: #fff8fb;
+  --color: #333;
+  margin-bottom: 18px;
+  ion-input { --color: #42283a; }
+}
+
+.error-msg {
+  color: #d32f2f;
+  font-size: 13px;
+  margin: -14px 0 14px 4px;
+}
+
+// ── Campo contraseña con toggle ojo ──────────────────────────────────────────
+.password-wrap {
+  display: flex;
+  align-items: center;
+  background: #fff8fb;
+  border: 1.5px solid #ffccd9;
+  border-radius: 14px;
+  margin-bottom: 18px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+
+  &:focus-within {
+    border-color: $pink;
+  }
+}
+
+.password-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #42283a;
+  font-size: 16px;
+  font-family: inherit;
+  padding: 14px 4px 14px 16px;
+
+  &::placeholder { color: #ccc; font-size: 14px; }
+}
+
+.eye-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 14px;
+  color: $text-muted;
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  transition: color 0.15s;
+
+  svg { width: 20px; height: 20px; }
+
+  &:hover { color: $pink-dark; }
+}
+
+// ── Save ──────────────────────────────────────────────────────────────────────
+.save-btn {
+  --background: #ff69b4;
+  --background-hover: #e91e8c;
+  --background-activated: #e91e8c;
+  --color: #ffffff;
+  --border-radius: 25px;
+  height: 52px;
+  font-weight: 700;
+  margin-top: 8px;
+}

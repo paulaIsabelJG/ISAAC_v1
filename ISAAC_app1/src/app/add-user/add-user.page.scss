@@ -1,0 +1,144 @@
+$pink:        #ff69b4;
+$pink-dark:   #e91e8c;
+$pink-light:  #fff0f7;
+$mint:        #20c997;
+$mint-light:  #e0fff6;
+$blue:        #4a9eff;
+$blue-light:  #e8f4ff;
+$border:      #ffb6c1;
+$text-dark:   #222222;
+$text-muted:  #7a5163;
+
+.adduser-content { --background: #fdf5f9; }
+
+.adduser-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px 20px 40px;
+}
+
+// ── Back ──────────────────────────────────────────────────────────────────────
+.adduser-topbar { margin-bottom: 16px; }
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1.5px solid $border;
+  border-radius: 20px;
+  color: $text-muted;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 6px 16px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+
+  svg { width: 16px; height: 16px; }
+
+  &:hover {
+    background: $pink-light;
+    border-color: $pink;
+    color: $pink-dark;
+  }
+}
+
+// ── Card ──────────────────────────────────────────────────────────────────────
+.adduser-card {
+  background: #ffffff;
+  border-radius: 28px;
+  border: 2px solid $border;
+  padding: 32px 24px;
+  box-shadow: 0 12px 36px rgba(255, 105, 180, 0.1);
+}
+
+.adduser-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: $text-dark;
+  margin: 0 0 6px;
+  text-align: center;
+}
+
+.adduser-subtitle {
+  font-size: 14px;
+  color: $text-muted;
+  text-align: center;
+  margin: 0 0 32px;
+}
+
+// ── Type cards grid ───────────────────────────────────────────────────────────
+.type-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.type-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border: 2px solid transparent;
+  border-radius: 20px;
+  padding: 20px 20px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: transform 0.15s, box-shadow 0.15s;
+  position: relative;
+
+  &:hover  { transform: translateX(4px); box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
+  &:active { transform: translateX(2px); }
+
+  &--mint  { background: $mint-light;  border-color: darken($mint-light, 8%); }
+  &--blue  { background: $blue-light;  border-color: darken($blue-light, 6%); }
+  &--pink  { background: $pink-light;  border-color: darken($pink-light, 8%); }
+}
+
+.type-icon {
+  flex: 0 0 auto;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  svg { width: 26px; height: 26px; }
+
+  .type-card--mint & { background: $mint;  svg { stroke: #fff; } }
+  .type-card--blue & { background: $blue;  svg { stroke: #fff; } }
+  .type-card--pink & { background: $pink;  svg { stroke: #fff; } }
+}
+
+.type-label {
+  font-size: 17px;
+  font-weight: 700;
+  color: $text-dark;
+  display: block;
+}
+
+.type-desc {
+  font-size: 13px;
+  color: $text-muted;
+  display: block;
+  margin-top: 2px;
+}
+
+.type-soon {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11px;
+  font-weight: 600;
+  color: #aaa;
+  background: #f0f0f0;
+  border-radius: 10px;
+  padding: 3px 10px;
+}
+
+@media (max-width: 480px) {
+  .adduser-card { padding: 24px 16px; }
+}

@@ -1,0 +1,62 @@
+<ion-content class="adduser-content">
+  <div class="adduser-container">
+
+    <div class="adduser-topbar">
+      <button class="back-btn" (click)="goBack()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        Volver
+      </button>
+    </div>
+
+    <div class="adduser-card">
+      <h1 class="adduser-title">Agregar usuario</h1>
+      <p class="adduser-subtitle">Selecciona el tipo de usuario que quieres añadir</p>
+
+      <div class="type-grid">
+
+        <button class="type-card type-card--mint" (click)="onProfessional()">
+          <div class="type-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="7" r="4"/>
+              <path d="M5.5 21a8.38 8.38 0 0 1 13 0"/>
+              <path d="M12 14v3m-2 0h4"/>
+            </svg>
+          </div>
+          <span class="type-label">Profesional</span>
+          <span class="type-desc">Terapeuta, logopeda, educador...</span>
+          <span class="type-soon">Próximamente</span>
+        </button>
+
+        <button class="type-card type-card--blue" (click)="onFinalUser()">
+          <div class="type-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="8" r="4"/>
+              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+            </svg>
+          </div>
+          <span class="type-label">Usuario final</span>
+          <span class="type-desc">Persona que usa los tableros AAC</span>
+          <span class="type-soon">Próximamente</span>
+        </button>
+
+        <button class="type-card type-card--pink" (click)="onFamilyMember()">
+          <div class="type-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </div>
+          <span class="type-label">Familiar</span>
+          <span class="type-desc">Padre, madre, tutor legal...</span>
+          <span class="type-soon">Próximamente</span>
+        </button>
+
+      </div>
+    </div>
+
+  </div>
+</ion-content>

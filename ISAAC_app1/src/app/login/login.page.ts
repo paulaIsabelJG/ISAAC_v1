@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { IonicModule, ToastController } from '@ionic/angular';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
 @Component({
@@ -10,7 +10,7 @@ import { AuthService } from '../services/auth.service';
   templateUrl: './login.page.html',
   styleUrls: ['./login.page.scss'],
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, IonicModule]
+  imports: [CommonModule, ReactiveFormsModule, IonicModule, RouterModule],
 })
 export class LoginPage implements OnInit {
   loginForm!: FormGroup;
@@ -25,9 +25,18 @@ export class LoginPage implements OnInit {
   ) {}
 
   ngOnInit() {
+    // Si ya hay sesión activa, redirigir directamente al dashboard
+    if (this.authService.isLoggedIn()) {
+      const user = this.authService.getCurrentUser();
+      if (user) {
+        this.router.navigate([this.authService.getRedirectRoute(user)], { replaceUrl: true });
+        return;
+      }
+    }
+
     this.loginForm = this.fb.group({
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required]]
+      email:    ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required]],
     });
   }
 
@@ -43,26 +52,28 @@ export class LoginPage implements OnInit {
     this.authService.login(this.loginForm.value).subscribe({
       next: async (response) => {
         this.isLoading = false;
-        localStorage.setItem('token', response.token);
-        localStorage.setItem('user', JSON.stringify(response.user));
         const toast = await this.toastCtrl.create({
-          message: 'Bienvenido de nuevo',
+          message: `Bienvenido, ${response.user.name}`,
           duration: 1500,
-          color: 'success'
+          color: 'success',
+          position: 'top',
         });
         await toast.present();
-        this.router.navigate(['/home']);
+        // Navegar según tipo de usuario (saveSession ya fue llamado via tap() en el servicio)
+        this.router.navigate([this.authService.getRedirectRoute(response.user)], { replaceUrl: true });
       },
       error: async (err) => {
         this.isLoading = false;
-        this.errorMessage = err?.error?.error || err?.error?.message || 'Error al iniciar sesión. Revisa tus credenciales.';
+        this.errorMessage =
+          err?.error?.error || err?.error?.message || 'Error al iniciar sesión. Revisa tus credenciales.';
         const toast = await this.toastCtrl.create({
           message: this.errorMessage,
           duration: 2500,
-          color: 'danger'
+          color: 'danger',
+          position: 'top',
         });
         await toast.present();
-      }
+      },
     });
   }
 }

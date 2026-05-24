@@ -160,11 +160,11 @@ exports.getMe = async (req, res) => {
 exports.updateMe = async (req, res) => {
   try {
     const userId = req.userId;
-    const { name, email, type, gender, image, centro, hijos, parentId } = req.body;
+    const { name, email, type, gender, image, centro, hijos, parentId, password } = req.body;
 
     // Validate input - at least one field must be provided
-    if (!name && !email && !type && !gender && image === undefined && !centro && !hijos && !parentId) {
-      return res.status(400).json({ error: 'Provide at least name, email, type, gender, image, centro, hijos, or parentId to update' });
+    if (!name && !email && !type && !gender && image === undefined && !centro && !hijos && !parentId && !password) {
+      return res.status(400).json({ error: 'Provide at least name, email, type, gender, image, centro, hijos, parentId, or password to update' });
     }
 
     // Find the current user
@@ -248,6 +248,10 @@ exports.updateMe = async (req, res) => {
     if (centro !== undefined) user.centro = centro;
     if (hijos !== undefined) user.hijos = hijos;
     if (parentId !== undefined) user.parentId = parentId;
+    // Password: solo se actualiza si se envía un valor no vacío (el pre-save hook hashea automáticamente)
+    if (password && typeof password === 'string' && password.trim().length >= 6) {
+      user.password = password.trim();
+    }
 
     await user.save();
 
