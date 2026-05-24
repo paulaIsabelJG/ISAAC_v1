@@ -417,7 +417,7 @@ exports.getCustomPictogramsByUserId = async (req, res) => {
 exports.addCustomPictogramToUserById = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { id, label, imageUrl } = req.body;
+    const { id, label, imageUrl, wordType, description } = req.body;
 
     if (!validateObjectId(userId)) {
       return res.status(400).json({ error: 'Invalid user id' });
@@ -436,6 +436,8 @@ exports.addCustomPictogramToUserById = async (req, res) => {
       id,
       label,
       imageUrl,
+      wordType:    wordType    || 'misc',
+      description: description || '',
       createdAt: new Date()
     });
 

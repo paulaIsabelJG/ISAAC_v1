@@ -79,35 +79,53 @@
         </div>
 
         <div class="users-grid">
-          @for (u of filteredFinalUsers; track u.email) {
-            <div class="user-card">
-              <div class="user-card-avatar user-card-avatar--blue">
-                @if (u.image) {
-                  <img [src]="buildSafeUrl(u.image)" [alt]="u.name"/>
-                } @else {
-                  <span class="user-card-initial">{{ getInitial(u) }}</span>
-                }
+
+          <!-- Estado: cargando -->
+          @if (isLoading) {
+            <div class="col-loading">
+              <ion-spinner name="crescent" color="primary"></ion-spinner>
+            </div>
+          } @else if (loadError) {
+            <!-- Estado: error -->
+            <div class="no-results col-error">{{ loadError }}</div>
+          } @else {
+            <!-- Tarjetas de usuario -->
+            @for (u of filteredFinalUsers; track u.email) {
+              <div class="user-card">
+                <div class="user-card-avatar user-card-avatar--blue">
+                  @if (u.image) {
+                    <img [src]="buildSafeUrl(u.image)" [alt]="u.name"/>
+                  } @else {
+                    <span class="user-card-initial">{{ getInitial(u) }}</span>
+                  }
+                </div>
+                <span class="user-card-name">{{ u.name }}</span>
+                <span class="user-card-surname">{{ u.surname }}</span>
               </div>
-              <span class="user-card-name">{{ u.name }}</span>
-              <span class="user-card-surname">{{ u.surname }}</span>
+            }
+
+            <!-- Botón añadir -->
+            <div class="user-card user-card--add" (click)="goToAddUser()">
+              <div class="user-card-avatar user-card-avatar--add">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+              </div>
+              <span class="user-card-name">Añadir</span>
+              <span class="user-card-surname">&nbsp;</span>
             </div>
+
+            <!-- Sin resultados (búsqueda) -->
+            @if (filteredFinalUsers.length === 0 && searchFinalUsers) {
+              <div class="no-results">Sin resultados</div>
+            }
+            <!-- Vacío (sin usuarios todavía) -->
+            @if (allFinalUsers.length === 0 && !searchFinalUsers) {
+              <div class="no-results">Aún no hay usuarios finales</div>
+            }
           }
 
-          <!-- Botón añadir -->
-          <div class="user-card user-card--add" (click)="goToAddUser()">
-            <div class="user-card-avatar user-card-avatar--add">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <line x1="12" y1="5" x2="12" y2="19"/>
-                <line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-            </div>
-            <span class="user-card-name">Añadir</span>
-            <span class="user-card-surname">&nbsp;</span>
-          </div>
-
-          @if (filteredFinalUsers.length === 0 && searchFinalUsers) {
-            <div class="no-results">Sin resultados</div>
-          }
         </div>
       </div>
 
@@ -128,35 +146,53 @@
         </div>
 
         <div class="users-grid">
-          @for (u of filteredProfessionals; track u.email) {
-            <div class="user-card">
-              <div class="user-card-avatar user-card-avatar--mint">
-                @if (u.image) {
-                  <img [src]="buildSafeUrl(u.image)" [alt]="u.name"/>
-                } @else {
-                  <span class="user-card-initial">{{ getInitial(u) }}</span>
-                }
+
+          <!-- Estado: cargando -->
+          @if (isLoading) {
+            <div class="col-loading">
+              <ion-spinner name="crescent" color="primary"></ion-spinner>
+            </div>
+          } @else if (loadError) {
+            <!-- Estado: error -->
+            <div class="no-results col-error">{{ loadError }}</div>
+          } @else {
+            <!-- Tarjetas de profesional -->
+            @for (u of filteredProfessionals; track u.email) {
+              <div class="user-card">
+                <div class="user-card-avatar user-card-avatar--mint">
+                  @if (u.image) {
+                    <img [src]="buildSafeUrl(u.image)" [alt]="u.name"/>
+                  } @else {
+                    <span class="user-card-initial">{{ getInitial(u) }}</span>
+                  }
+                </div>
+                <span class="user-card-name">{{ u.name }}</span>
+                <span class="user-card-surname">{{ u.surname }}</span>
               </div>
-              <span class="user-card-name">{{ u.name }}</span>
-              <span class="user-card-surname">{{ u.surname }}</span>
+            }
+
+            <!-- Botón añadir -->
+            <div class="user-card user-card--add" (click)="goToAddUser()">
+              <div class="user-card-avatar user-card-avatar--add">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+              </div>
+              <span class="user-card-name">Añadir</span>
+              <span class="user-card-surname">&nbsp;</span>
             </div>
+
+            <!-- Sin resultados (búsqueda) -->
+            @if (filteredProfessionals.length === 0 && searchProfessionals) {
+              <div class="no-results">Sin resultados</div>
+            }
+            <!-- Vacío (sin profesionales todavía) -->
+            @if (allProfessionals.length === 0 && !searchProfessionals) {
+              <div class="no-results">Aún no hay profesionales</div>
+            }
           }
 
-          <!-- Botón añadir -->
-          <div class="user-card user-card--add" (click)="goToAddUser()">
-            <div class="user-card-avatar user-card-avatar--add">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <line x1="12" y1="5" x2="12" y2="19"/>
-                <line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-            </div>
-            <span class="user-card-name">Añadir</span>
-            <span class="user-card-surname">&nbsp;</span>
-          </div>
-
-          @if (filteredProfessionals.length === 0 && searchProfessionals) {
-            <div class="no-results">Sin resultados</div>
-          }
         </div>
       </div>
 

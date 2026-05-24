@@ -49,6 +49,22 @@ export const routes: Routes = [
       ),
     canActivate: [authGuard],
   },
+  {
+    path: 'own-pictograms-placeholder',
+    loadComponent: () =>
+      import('./own-pictograms-placeholder/own-pictograms-placeholder.page').then(
+        (m) => m.OwnPictogramsPlaceholderPage
+      ),
+    canActivate: [authGuard],
+  },
+  {
+    path: 'assigned-professionals-placeholder',
+    loadComponent: () =>
+      import('./assigned-professionals-placeholder/assigned-professionals-placeholder.page').then(
+        (m) => m.AssignedProfessionalsPlaceholderPage
+      ),
+    canActivate: [authGuard],
+  },
 
   // ── Redirección por defecto ─────────────────────────────────────────────────
   {

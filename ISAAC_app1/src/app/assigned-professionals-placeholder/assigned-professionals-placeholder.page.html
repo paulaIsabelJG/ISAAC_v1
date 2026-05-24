@@ -1,0 +1,35 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar class="ph-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/add-user" text="Volver"
+                       (click)="$event.stopImmediatePropagation(); goBack()">
+      </ion-back-button>
+    </ion-buttons>
+    <ion-title class="ph-title">Profesionales encargados</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ph-content">
+  <div class="ph-frame">
+
+    <img src="assets/pictograms/assigned-professionals.png" class="ph-img" alt="Profesionales encargados"/>
+
+    <h1 class="ph-heading">Profesionales encargados</h1>
+    <p class="ph-desc">
+      Aquí podrás ver y gestionar qué profesionales están asignados a este usuario:<br/>
+      terapeutas, logopedas, educadores y más.
+    </p>
+
+    <div class="ph-badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      Funcionalidad en desarrollo — próximo sprint
+    </div>
+
+    <button class="ph-back-btn" (click)="goBack()">← Volver</button>
+
+  </div>
+</ion-content>

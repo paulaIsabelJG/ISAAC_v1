@@ -3,8 +3,9 @@ import { IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { AuthService, User } from '../services/auth.service';
+import { UserService, BackendUser } from '../services/user.service';
 
-// ─── Estructura de tarjeta de usuario (placeholder hasta API real) ─────────────
+// ─── Estructura de tarjeta de usuario ────────────────────────────────────────
 export interface UserCardData {
   name:    string;
   surname: string;
@@ -29,33 +30,15 @@ export class OrganizationDashboardPage implements OnInit {
   searchFinalUsers    = '';
   searchProfessionals = '';
 
-  // ── Datos placeholder (estructura real para cuando llegue el backend) ────────
-  readonly finalUsers: UserCardData[] = [
-    { name: 'María',   surname: 'García López',     email: 'maria@ejemplo.com',   type: 'user' },
-    { name: 'Luis',    surname: 'Martínez Ruiz',    email: 'luis@ejemplo.com',    type: 'user' },
-    { name: 'Ana',     surname: 'López Fernández',  email: 'ana@ejemplo.com',     type: 'user' },
-    { name: 'Carlos',  surname: 'Rodríguez Pérez',  email: 'carlos@ejemplo.com',  type: 'user' },
-    { name: 'Sofía',   surname: 'Hernández Gil',    email: 'sofia@ejemplo.com',   type: 'user' },
-    { name: 'Javier',  surname: 'Sánchez Torres',   email: 'javier@ejemplo.com',  type: 'user' },
-    { name: 'Paula',   surname: 'Díaz Serrano',     email: 'paula@ejemplo.com',   type: 'user' },
-    { name: 'Miguel',  surname: 'Flores Vega',      email: 'miguel@ejemplo.com',  type: 'user' },
-    { name: 'Elena',   surname: 'Castro Moreno',    email: 'elena.u@ejemplo.com', type: 'user' },
-    { name: 'David',   surname: 'Ruiz Delgado',     email: 'david@ejemplo.com',   type: 'user' },
-    { name: 'Laura',   surname: 'Navarro Cruz',     email: 'laura@ejemplo.com',   type: 'user' },
-    { name: 'Tomás',   surname: 'Jiménez Alba',     email: 'tomas@ejemplo.com',   type: 'user' },
-  ];
-
-  readonly professionals: UserCardData[] = [
-    { name: 'Elena',   surname: 'Ramírez Vega',    email: 'elena@centro.com',   type: 'parent' },
-    { name: 'Pedro',   surname: 'González Cruz',   email: 'pedro@centro.com',   type: 'parent' },
-    { name: 'Carmen',  surname: 'Flores Mora',     email: 'carmen@centro.com',  type: 'parent' },
-    { name: 'Roberto', surname: 'Díaz Guerrero',   email: 'roberto@centro.com', type: 'parent' },
-    { name: 'Lucía',   surname: 'Ortega Fuentes',  email: 'lucia@centro.com',   type: 'parent' },
-    { name: 'Ignacio', surname: 'Ramos Soler',     email: 'ignacio@centro.com', type: 'parent' },
-  ];
+  // ── Datos reales desde backend ────────────────────────────────────────────
+  allFinalUsers:    UserCardData[] = [];
+  allProfessionals: UserCardData[] = [];
+  isLoading = false;
+  loadError = '';
 
   constructor(
     private authService: AuthService,
+    private userService: UserService,
     private router: Router,
     private sanitizer: DomSanitizer
   ) {}
@@ -65,12 +48,13 @@ export class OrganizationDashboardPage implements OnInit {
   }
 
   /**
-   * ionViewWillEnter — llamado por IonicRouteStrategy CADA VEZ que
-   * la página se hace visible, incluso si el componente estaba en caché.
-   * Esto garantiza que el dashboard muestre datos actualizados tras editar el perfil.
+   * ionViewWillEnter — se ejecuta cada vez que la página se hace visible,
+   * incluso si el componente estaba en caché. Garantiza datos frescos
+   * al volver desde /add-user o cualquier otra ruta.
    */
   ionViewWillEnter() {
     this.refreshUser();
+    this.loadUsers();
   }
 
   private refreshUser(): void {
@@ -78,9 +62,60 @@ export class OrganizationDashboardPage implements OnInit {
     this.orgAvatarUrl = this.buildSafeUrl(this.user?.image);
   }
 
+  /** Carga usuarios del centro desde el backend */
+  private loadUsers(): void {
+    const centro = this.user?.centro;
+
+    if (!centro) {
+      this.loadError = 'No se encontró el centro asociado a esta cuenta.';
+      return;
+    }
+
+    this.isLoading = true;
+    this.loadError = '';
+
+    this.userService.getUsersByCenter(centro).subscribe({
+      next: (res) => {
+        const myEmail = this.user?.email;
+
+        this.allFinalUsers = res.users
+          .filter(u => u.type === 'user')
+          .map(u => this.toCard(u));
+
+        // Excluimos al propio admin/org de la lista de profesionales
+        this.allProfessionals = res.users
+          .filter(u => u.type === 'teacher' && u.email !== myEmail)
+          .map(u => this.toCard(u));
+
+        this.isLoading = false;
+      },
+      error: () => {
+        this.loadError = 'Error al cargar usuarios. Inténtalo de nuevo.';
+        this.isLoading = false;
+      },
+    });
+  }
+
+  /**
+   * Convierte BackendUser a UserCardData.
+   * add-user guarda "nombre apellidos" concatenado en el campo name,
+   * así que lo separamos: primera palabra → name, el resto → surname.
+   */
+  private toCard(u: BackendUser): UserCardData {
+    const parts   = u.name.trim().split(/\s+/);
+    const name    = parts[0] ?? '';
+    const surname = parts.slice(1).join(' ');
+    return {
+      name,
+      surname,
+      email: u.email,
+      image: u.image ?? undefined,
+      type:  u.type,
+    };
+  }
+
   /**
    * Devuelve SafeUrl para imágenes base64 (data:) o la URL directamente.
-   * Necesario porque Angular bloquea data: URLs en [src] sin bypassSecurityTrustUrl.
    */
   buildSafeUrl(imageStr?: string | null): SafeUrl | string {
     if (!imageStr) return '';
@@ -94,16 +129,16 @@ export class OrganizationDashboardPage implements OnInit {
 
   get filteredFinalUsers(): UserCardData[] {
     const q = this.searchFinalUsers.trim().toLowerCase();
-    if (!q) return this.finalUsers;
-    return this.finalUsers.filter((u) =>
+    if (!q) return this.allFinalUsers;
+    return this.allFinalUsers.filter((u) =>
       `${u.name} ${u.surname}`.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
     );
   }
 
   get filteredProfessionals(): UserCardData[] {
     const q = this.searchProfessionals.trim().toLowerCase();
-    if (!q) return this.professionals;
-    return this.professionals.filter((u) =>
+    if (!q) return this.allProfessionals;
+    return this.allProfessionals.filter((u) =>
       `${u.name} ${u.surname}`.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
     );
   }

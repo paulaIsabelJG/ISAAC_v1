@@ -1,0 +1,560 @@
+// ── Variables ─────────────────────────────────────────────────────────────────
+$mint:       #20c997;
+$mint-dark:  #17a682;
+$mint-light: #e0fff6;
+$pink:       #ff69b4;
+$pink-dark:  #e91e8c;
+$pink-light: #fff0f7;
+$border:     #e2e8ef;
+$bg:         #eef2f7;
+$text-dark:  #1a1a1a;
+$text-muted: #6b7280;
+
+// ── Toolbar ───────────────────────────────────────────────────────────────────
+.op-toolbar {
+  --background: #{$mint};
+  --color: #ffffff;
+  --border-color: transparent;
+  box-shadow: 0 2px 12px rgba(32, 201, 151, 0.28);
+
+  ion-back-button { --color: #ffffff; }
+}
+
+.op-title {
+  --color: #ffffff;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  font-size: 17px;
+}
+
+// ── Content / contenedor ──────────────────────────────────────────────────────
+.op-content { --background: #{$bg}; }
+
+.op-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px 16px 56px;
+}
+
+// ── Sección genérica (card blanca) ────────────────────────────────────────────
+.card-section {
+  background: #ffffff;
+  border-radius: 18px;
+  border: 1.5px solid $border;
+  padding: 20px 20px 22px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+}
+
+.sec-divider {
+  height: 1px;
+  background: $border;
+  margin: 16px 0;
+}
+
+// Cabecera de sección
+.sec-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.sec-head-left {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.sec-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  &.sec-dot--mint { background: $mint; }
+  &.sec-dot--pink { background: $pink; }
+}
+
+.sec-title {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: $text-dark;
+  margin: 0;
+}
+
+// ── Álbum ─────────────────────────────────────────────────────────────────────
+.album-badge {
+  background: $mint-light;
+  color: $mint-dark;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 12px;
+  border-radius: 10px;
+  border: 1px solid darken($mint-light, 6%);
+}
+
+// ── Estado genérico del álbum (loading / error / vacío) ──────────────────────
+.album-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 0 20px;
+  color: $text-muted;
+  font-size: 14px;
+  text-align: center;
+
+  svg { width: 48px; height: 48px; stroke: #c8d5e0; }
+  ion-spinner { width: 32px; height: 32px; }
+
+  &--error {
+    color: #e53935;
+    svg { stroke: #e57373; }
+  }
+}
+
+// (mantener .album-empty por retrocompatibilidad — ahora usa .album-state)
+.album-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 0 20px;
+  color: $text-muted;
+  font-size: 14px;
+  text-align: center;
+
+  svg {
+    width: 52px;
+    height: 52px;
+    stroke: #c8d5e0;
+  }
+}
+
+.album-scroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+
+  scrollbar-width: thin;
+  scrollbar-color: #d5dde5 transparent;
+  &::-webkit-scrollbar       { height: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: #d5dde5; border-radius: 4px; }
+}
+
+// ── Tarjeta de pictograma ─────────────────────────────────────────────────────
+.picto-card {
+  flex: 0 0 84px;
+  width: 84px;
+  height: 114px;
+  border-radius: 12px;
+  border: 2.5px solid #ddd;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+  transition: transform 0.15s;
+
+  &:hover { transform: translateY(-2px); }
+
+  // Variante grande para la preview
+  &--lg {
+    flex: 0 0 128px;
+    width: 128px;
+    height: 168px;
+    border-radius: 14px;
+    cursor: pointer;
+    border-width: 3px;
+
+    &:hover { transform: scale(1.02); }
+  }
+}
+
+.picto-bar {
+  height: 8px;
+  flex: 0 0 8px;
+}
+
+.picto-body {
+  flex: 1;
+  position: relative;            // necesario para el botón tres puntos
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  overflow: hidden;
+
+  &.picto-body--click { cursor: pointer; }
+}
+
+// Botón tres puntos sobre la tarjeta
+.picto-menu-btn {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.88);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  color: #555;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  transition: background 0.15s, color 0.15s;
+  z-index: 2;
+
+  &:hover {
+    background: #fff;
+    color: $mint-dark;
+  }
+}
+
+.picto-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.picto-img-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: #c0c0c0;
+  font-size: 10px;
+
+  svg { width: 30px; height: 30px; stroke: #c8c8c8; }
+}
+
+.picto-foot {
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+  padding: 5px 4px;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// ── Sección crear ─────────────────────────────────────────────────────────────
+.create-body {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+
+  @media (max-width: 540px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+// Columna preview
+.create-preview {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+
+  @media (max-width: 540px) {
+    align-self: center;
+  }
+}
+
+.preview-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: $text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin: 0;
+}
+
+.color-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  max-width: 128px;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.color-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: 0 0 10px;
+  border: 1.5px solid transparent;
+}
+
+// Columna formulario
+.create-form {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+// ── Campos ────────────────────────────────────────────────────────────────────
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.field-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: $text-dark;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.field-hint {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: $text-muted;
+  font-size: 11px;
+}
+
+.field-input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1.5px solid #d0d8e4;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  color: $text-dark;
+  background: #f9fafb;
+  box-sizing: border-box;
+  transition: border-color 0.2s, background 0.2s;
+
+  &:focus {
+    outline: none;
+    border-color: $mint;
+    background: #fff;
+  }
+}
+
+.field-select {
+  appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
+}
+
+.field-textarea {
+  resize: vertical;
+  min-height: 58px;
+  line-height: 1.5;
+}
+
+.field-error {
+  font-size: 12px;
+  color: #e53935;
+  font-weight: 500;
+}
+
+// Botón selector de imagen
+.img-pick-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px dashed #c5cfd8;
+  border-radius: 10px;
+  background: #f9fafb;
+  color: $text-muted;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s;
+
+  svg { width: 16px; height: 16px; flex: 0 0 16px; }
+
+  &:hover {
+    border-color: $mint;
+    color: $mint-dark;
+    background: $mint-light;
+  }
+
+  &--ok {
+    border-style: solid;
+    border-color: $mint;
+    color: $mint-dark;
+    background: $mint-light;
+  }
+}
+
+// Botón submit
+.submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 13px;
+  background: $mint;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 800;
+  font-family: inherit;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.15s;
+  margin-top: 4px;
+
+  svg { width: 18px; height: 18px; }
+
+  &:hover {
+    background: $mint-dark;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(32, 201, 151, 0.35);
+  }
+
+  &:active { transform: translateY(0); box-shadow: none; }
+}
+
+// ── Guía Fitzgerald ───────────────────────────────────────────────────────────
+.fitz-section { padding-bottom: 20px; }
+
+.fitz-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: $text-dark;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin: 0 0 4px;
+}
+
+.fitz-subtitle {
+  font-size: 12px;
+  color: $text-muted;
+  margin: 0 0 14px;
+}
+
+.fitz-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+
+  @media (max-width: 500px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.fitz-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  border: 2.5px solid transparent;
+  transition: transform 0.15s, box-shadow 0.15s;
+
+  &:hover { transform: translateY(-1px); }
+
+  &--active {
+    border-color: #1a1a1a;
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.12);
+    transform: scale(1.02);
+  }
+}
+
+.fitz-chip-name {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.fitz-chip-help {
+  font-size: 10px;
+  font-weight: 400;
+  opacity: 0.85;
+  line-height: 1.3;
+}
+
+// ── Modo edición: sección crear resaltada ─────────────────────────────────────
+.card-section--editing {
+  border-color: #fb8c00;
+  box-shadow: 0 0 0 3px rgba(251, 140, 0, 0.14);
+}
+
+.sec-dot--orange { background: #fb8c00; }
+
+// Botón cancelar edición
+.cancel-edit-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: 1.5px solid #f0d0b0;
+  border-radius: 20px;
+  color: #9e5500;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  svg { width: 13px; height: 13px; stroke: #9e5500; }
+
+  &:hover {
+    background: #fff3e0;
+    border-color: #fb8c00;
+  }
+}
+
+// ── Spinner en botón submit ───────────────────────────────────────────────────
+.btn-spinner {
+  width: 18px;
+  height: 18px;
+  --color: #fff;
+}
+
+// Variante naranja del botón cuando edita
+.submit-btn--edit {
+  background: #fb8c00;
+  &:hover { background: #e65100; }
+}
+
+// ── ion-select personalizado ──────────────────────────────────────────────────
+ion-select.word-type-select {
+  --border-radius: 10px;
+  --border-color: #d0d8e4;
+  --border-width: 1.5px;
+  --padding-start: 12px;
+  --padding-end: 12px;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  --placeholder-color: #{$text-muted};
+  --highlight-color-focused: #{$mint};
+  color: $text-dark;
+  font-size: 14px;
+  font-family: inherit;
+  width: 100%;
+  min-height: 42px;
+}

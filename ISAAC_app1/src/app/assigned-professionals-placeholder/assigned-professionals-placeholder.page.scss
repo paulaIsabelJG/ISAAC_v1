@@ -1,0 +1,80 @@
+$violet:       #7c4dff;
+$violet-light: #f0ebff;
+$pink:         #ff69b4;
+$pink-dark:    #e91e8c;
+
+.ph-toolbar {
+  --background: #{$violet};
+  --color: #ffffff;
+  ion-back-button { --color: #ffffff; }
+}
+
+.ph-title {
+  --color: #ffffff;
+  font-weight: 700;
+}
+
+.ph-content { --background: #f4f0ff; }
+
+.ph-frame {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 70vh;
+  padding: 40px 24px;
+  text-align: center;
+  gap: 18px;
+}
+
+.ph-img {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  opacity: 0.85;
+}
+
+.ph-heading {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.ph-desc {
+  font-size: 15px;
+  color: #6b6b6b;
+  max-width: 360px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.ph-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: $violet-light;
+  color: $violet;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 18px;
+  border-radius: 20px;
+  border: 1.5px solid darken($violet-light, 6%);
+
+  svg { width: 16px; height: 16px; stroke: $violet; }
+}
+
+.ph-back-btn {
+  background: none;
+  border: 1.5px solid #d0d0d0;
+  border-radius: 20px;
+  padding: 8px 20px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #888;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all 0.2s;
+
+  &:hover { border-color: $violet; color: $violet; background: $violet-light; }
+}

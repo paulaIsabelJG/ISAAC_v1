@@ -63,6 +63,14 @@ const userSchema = new mongoose.Schema({
       type: String,
       required: true
     },
+    wordType: {
+      type: String,
+      default: 'misc'
+    },
+    description: {
+      type: String,
+      default: ''
+    },
     createdAt: {
       type: Date,
       default: Date.now

@@ -1,26 +1,121 @@
+// ── Variables ──────────────────────────────────────────────────────────────────
 $pink:        #ff69b4;
 $pink-dark:   #e91e8c;
 $pink-light:  #fff0f7;
 $mint:        #20c997;
+$mint-dark:   #17a682;
 $mint-light:  #e0fff6;
-$blue:        #4a9eff;
-$blue-light:  #e8f4ff;
 $border:      #ffb6c1;
-$text-dark:   #222222;
+$text-dark:   #1a1a1a;
 $text-muted:  #7a5163;
 
-.adduser-content { --background: #fdf5f9; }
+// ── Ion-header: barra superior rosa ISAAC ─────────────────────────────────────
+.au-toolbar {
+  --background: #{$pink};
+  --color: #ffffff;
+  --border-color: transparent;
+  box-shadow: 0 2px 12px rgba(233, 30, 140, 0.25);
 
-.adduser-container {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 20px 20px 40px;
+  ion-back-button {
+    --color: #ffffff;
+    --icon-font-size: 20px;
+  }
 }
 
-// ── Back ──────────────────────────────────────────────────────────────────────
-.adduser-topbar { margin-bottom: 16px; }
+.au-title {
+  --color: #ffffff;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 0.3px;
+}
 
-.back-btn {
+// ── Ion-content: fondo exterior ───────────────────────────────────────────────
+.au-content {
+  --background: #f0e8f4;
+}
+
+// ── Tablet frame: contenedor principal ───────────────────────────────────────
+.tablet-frame {
+  max-width: 740px;
+  margin: 24px auto 48px;
+  background: #ffffff;
+  border: 4px solid #1a1a1a;
+  border-radius: 24px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+  min-height: 480px;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// VISTA: SELECTOR DE TIPO
+// ══════════════════════════════════════════════════════════════════════════════
+
+.view-select {
+  padding: 36px 32px 48px;
+}
+
+.select-hint {
+  text-align: center;
+  font-size: 15px;
+  color: $text-muted;
+  margin: 0 0 32px;
+}
+
+// Tres tarjetas en fila — imagen arriba + label abajo
+.type-grid {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.type-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 160px;
+  padding: 24px 12px 20px;
+  background: $mint-light;
+  border: 2px solid darken($mint-light, 10%);
+  border-radius: 20px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+
+  &:hover  { transform: translateY(-4px); box-shadow: 0 10px 24px rgba(32,201,151,0.22); }
+  &:active { transform: translateY(0); }
+}
+
+.type-img {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  display: block;
+}
+
+.type-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: $mint-dark;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  text-align: center;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// VISTA: FORMULARIOS (compartido)
+// ══════════════════════════════════════════════════════════════════════════════
+
+.view-form {
+  padding: 28px 32px 40px;
+
+  @media (max-width: 520px) { padding: 20px 16px 32px; }
+}
+
+// ── Botón "Volver a tipos" ────────────────────────────────────────────────────
+.back-link {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -28,117 +123,391 @@ $text-muted:  #7a5163;
   border: 1.5px solid $border;
   border-radius: 20px;
   color: $text-muted;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
+  font-family: inherit;
+  padding: 5px 14px;
+  cursor: pointer;
+  margin-bottom: 24px;
+  transition: all 0.2s;
+
+  svg { width: 14px; height: 14px; }
+  &:hover { background: $pink-light; border-color: $pink; color: $pink-dark; }
+}
+
+// ── Avatar ────────────────────────────────────────────────────────────────────
+.avatar-wrap {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  margin: 0 auto 8px;
+  cursor: pointer;
+
+  &:hover .avatar-overlay { opacity: 1; }
+}
+
+.avatar-img {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: 3px solid $pink;
+  object-fit: cover;
+  display: block;
+}
+
+.avatar-placeholder {
+  border-color: $border;
+  object-fit: contain;
+  padding: 4px;
+  background: $pink-light;
+}
+
+.avatar-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.42);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+
+  svg { width: 26px; height: 26px; stroke: #fff; }
+}
+
+.avatar-hint {
+  text-align: center;
+  font-size: 11px;
+  color: #bbb;
+  margin: 0 0 24px;
+}
+
+// ── Grid de campos 2 columnas ─────────────────────────────────────────────────
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 20px;
+  margin-bottom: 18px;
+
+  @media (max-width: 520px) { grid-template-columns: 1fr; }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+
+  &--full { grid-column: 1 / -1; }
+}
+
+.field-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: $text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+// Input nativo con estilo rosa ISAAC
+.field-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: $pink-light;
+  border: 1.5px solid #ffccd9;
+  border-radius: 12px;
+  padding: 11px 14px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #42283a;
+  outline: none;
+  transition: border-color 0.2s;
+
+  &:focus        { border-color: $pink; }
+  &::placeholder { color: #ccc; }
+}
+
+// Select nativo con flecha personalizada
+.field-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23e91e8c' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+  cursor: pointer;
+}
+
+.field-error {
+  font-size: 11px;
+  color: #d32f2f;
+  margin-top: 2px;
+}
+
+// ── Campo contraseña con ojo ──────────────────────────────────────────────────
+.pwd-wrap {
+  display: flex;
+  align-items: center;
+  background: $pink-light;
+  border: 1.5px solid #ffccd9;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+
+  &:focus-within { border-color: $pink; }
+}
+
+.pwd-input {
+  flex: 1;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding-right: 4px;
+}
+
+.eye-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 12px;
+  color: $text-muted;
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  transition: color 0.15s;
+
+  svg { width: 18px; height: 18px; }
+  &:hover { color: $pink-dark; }
+}
+
+// ── Autocompletado de dirección ───────────────────────────────────────────────
+.autocomplete-wrap {
+  position: relative;
+  z-index: 10;
+}
+
+.suggestions-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1.5px solid $border;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(255, 105, 180, 0.14);
+  overflow: hidden;
+  z-index: 20;
+}
+
+.suggestion-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: $text-dark;
+  cursor: pointer;
+  line-height: 1.4;
+  transition: background 0.12s;
+
+  &:not(:last-child) { border-bottom: 1px solid #fce8f1; }
+  &:hover { background: $pink-light; color: $pink-dark; .suggestion-pin { stroke: $pink-dark; } }
+}
+
+.suggestion-pin {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 15px;
+  margin-top: 2px;
+  stroke: $text-muted;
+  transition: stroke 0.12s;
+}
+
+// ── Sección sonido ────────────────────────────────────────────────────────────
+.section-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 18px 0 16px;
+}
+
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: $text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  flex: 0 0 auto;
+}
+
+.sound-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: none;
+  border: 1.5px solid $border;
+  border-radius: 20px;
   padding: 6px 16px;
   cursor: pointer;
   font-family: inherit;
   transition: all 0.2s;
 
-  svg { width: 16px; height: 16px; }
-
-  &:hover {
-    background: $pink-light;
-    border-color: $pink;
-    color: $pink-dark;
-  }
+  &:hover { background: $pink-light; border-color: $pink; }
 }
 
-// ── Card ──────────────────────────────────────────────────────────────────────
-.adduser-card {
-  background: #ffffff;
-  border-radius: 28px;
-  border: 2px solid $border;
-  padding: 32px 24px;
-  box-shadow: 0 12px 36px rgba(255, 105, 180, 0.1);
+.sound-img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
 }
 
-.adduser-title {
-  font-size: 26px;
-  font-weight: 700;
-  color: $text-dark;
-  margin: 0 0 6px;
-  text-align: center;
+.sound-state {
+  font-size: 13px;
+  font-weight: 600;
+
+  &--on  { color: $mint-dark; }
+  &--off { color: #aaa; }
 }
 
-.adduser-subtitle {
-  font-size: 14px;
-  color: $text-muted;
-  text-align: center;
-  margin: 0 0 32px;
+// ── Permisos ─────────────────────────────────────────────────────────────────
+.perms-section {
+  margin: 4px 0 20px;
 }
 
-// ── Type cards grid ───────────────────────────────────────────────────────────
-.type-grid {
+.perms-grid {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 10px;
+  margin-top: 10px;
 }
 
-.type-card {
+.perm-item {
   display: flex;
   align-items: center;
-  gap: 16px;
-  border: 2px solid transparent;
-  border-radius: 20px;
-  padding: 20px 20px;
+  gap: 10px;
   cursor: pointer;
-  font-family: inherit;
-  text-align: left;
-  transition: transform 0.15s, box-shadow 0.15s;
-  position: relative;
-
-  &:hover  { transform: translateX(4px); box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
-  &:active { transform: translateX(2px); }
-
-  &--mint  { background: $mint-light;  border-color: darken($mint-light, 8%); }
-  &--blue  { background: $blue-light;  border-color: darken($blue-light, 6%); }
-  &--pink  { background: $pink-light;  border-color: darken($pink-light, 8%); }
 }
 
-.type-icon {
-  flex: 0 0 auto;
-  width: 54px;
-  height: 54px;
-  border-radius: 50%;
+.perm-check {
+  width: 18px;
+  height: 18px;
+  accent-color: $pink;
+  flex: 0 0 18px;
+  cursor: pointer;
+}
+
+.perm-text {
+  font-size: 14px;
+  color: $text-dark;
+}
+
+// ── Accesos rápidos (Pictogramas / Profesionales) ─────────────────────────────
+.extra-btns {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 0 0 28px;
+}
+
+.extra-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 120px;
+  padding: 14px 10px;
+  background: $mint-light;
+  border: 2px solid darken($mint-light, 8%);
+  border-radius: 16px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: $mint-dark;
+  text-align: center;
+  transition: transform 0.15s, box-shadow 0.15s;
+
+  &:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(32,201,151,0.18); }
+}
+
+.extra-img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+// ── Tabla familiar: placeholder ───────────────────────────────────────────────
+.charge-section {
+  margin: 18px 0 24px;
+}
+
+.charge-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 28px 20px;
+  background: #f9f9f9;
+  border: 2px dashed #e0e0e0;
+  border-radius: 16px;
+  margin-top: 10px;
+  text-align: center;
+}
+
+.charge-icon {
+  width: 44px;
+  height: 44px;
+  stroke: #ccc;
+}
+
+.charge-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #aaa;
+  margin: 0;
+}
+
+.charge-sub {
+  font-size: 12px;
+  color: #bbb;
+}
+
+// ── Botón principal ───────────────────────────────────────────────────────────
+.submit-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-
-  svg { width: 26px; height: 26px; }
-
-  .type-card--mint & { background: $mint;  svg { stroke: #fff; } }
-  .type-card--blue & { background: $blue;  svg { stroke: #fff; } }
-  .type-card--pink & { background: $pink;  svg { stroke: #fff; } }
-}
-
-.type-label {
-  font-size: 17px;
+  gap: 8px;
+  width: 100%;
+  padding: 15px;
+  background: $pink;
+  color: #fff;
+  font-size: 16px;
   font-weight: 700;
-  color: $text-dark;
-  display: block;
+  font-family: inherit;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background 0.2s, transform 0.1s;
+
+  &:hover:not(:disabled)  { background: $pink-dark; transform: translateY(-1px); }
+  &:active:not(:disabled) { transform: translateY(0); }
+  &:disabled { background: #e0a0c0; cursor: not-allowed; }
 }
 
-.type-desc {
-  font-size: 13px;
-  color: $text-muted;
-  display: block;
-  margin-top: 2px;
+.btn-spinner {
+  --color: #ffffff;
+  width: 18px;
+  height: 18px;
 }
 
-.type-soon {
-  position: absolute;
-  right: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 11px;
-  font-weight: 600;
-  color: #aaa;
-  background: #f0f0f0;
-  border-radius: 10px;
-  padding: 3px 10px;
-}
-
-@media (max-width: 480px) {
-  .adduser-card { padding: 24px 16px; }
+// ── Responsive ────────────────────────────────────────────────────────────────
+@media (max-width: 600px) {
+  .tablet-frame { margin: 12px 8px 32px; border-radius: 16px; }
+  .view-select  { padding: 24px 16px 32px; }
+  .type-card    { width: 130px; padding: 18px 10px 16px; }
+  .type-img     { width: 64px; height: 64px; }
+  .extra-btns   { gap: 10px; }
 }

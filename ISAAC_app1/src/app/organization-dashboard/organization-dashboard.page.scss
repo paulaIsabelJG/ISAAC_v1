@@ -402,3 +402,17 @@ $visible-rows: 3;
   font-size: 13px;
   padding: 20px 0;
 }
+
+// ── Estado cargando ───────────────────────────────────────────────────────────
+.col-loading {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 32px 0;
+}
+
+// ── Estado error ──────────────────────────────────────────────────────────────
+.col-error {
+  color: #c0392b;
+}
