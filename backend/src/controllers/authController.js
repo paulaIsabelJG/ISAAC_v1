@@ -110,6 +110,11 @@ exports.login = async (req, res) => {
       type: user.type,
       gender: user.gender,
       image: user.image,
+      centro: user.centro,
+      latitude: user.latitude,
+      longitude: user.longitude,
+      city: user.city,
+      country: user.country,
       createdAt: user.createdAt
     };
 
@@ -143,6 +148,11 @@ exports.getMe = async (req, res) => {
       type: user.type,
       gender: user.gender,
       image: user.image,
+      centro: user.centro,
+      latitude: user.latitude,
+      longitude: user.longitude,
+      city: user.city,
+      country: user.country,
       createdAt: user.createdAt
     };
 
@@ -160,11 +170,13 @@ exports.getMe = async (req, res) => {
 exports.updateMe = async (req, res) => {
   try {
     const userId = req.userId;
-    const { name, email, type, gender, image, centro, hijos, parentId, password } = req.body;
+    const { name, email, type, gender, image, centro, hijos, parentId, password,
+            latitude, longitude, city, country } = req.body;
 
     // Validate input - at least one field must be provided
-    if (!name && !email && !type && !gender && image === undefined && !centro && !hijos && !parentId && !password) {
-      return res.status(400).json({ error: 'Provide at least name, email, type, gender, image, centro, hijos, parentId, or password to update' });
+    if (!name && !email && !type && !gender && image === undefined && !centro && !hijos && !parentId && !password
+        && latitude === undefined && longitude === undefined && !city && !country) {
+      return res.status(400).json({ error: 'Provide at least one field to update' });
     }
 
     // Find the current user
@@ -252,6 +264,11 @@ exports.updateMe = async (req, res) => {
     if (password && typeof password === 'string' && password.trim().length >= 6) {
       user.password = password.trim();
     }
+    // Geolocalización (procedente del autocompletado de direcciones)
+    if (latitude  !== undefined) user.latitude  = latitude;
+    if (longitude !== undefined) user.longitude = longitude;
+    if (city      !== undefined) user.city      = city;
+    if (country   !== undefined) user.country   = country;
 
     await user.save();
 
@@ -305,6 +322,10 @@ exports.updateMe = async (req, res) => {
       gender: user.gender,
       image: user.image,
       centro: user.centro,
+      latitude: user.latitude,
+      longitude: user.longitude,
+      city: user.city,
+      country: user.country,
       hijos: user.hijos,
       parentId: user.parentId,
       createdAt: user.createdAt

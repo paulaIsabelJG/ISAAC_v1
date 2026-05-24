@@ -4,6 +4,7 @@ const authRoutes = require('./routes/auth');
 const arasaacRoutes = require('./routes/arasaac');
 const phrasesRoutes = require('./routes/phrases');
 const userRoutes = require('./routes/users');
+const placesRoutes = require('./routes/places');
 
 const app = express();
 
@@ -21,5 +22,8 @@ app.use('/api/users', userRoutes);
 
 // Phrase routes
 app.use('/api/phrases', phrasesRoutes);
+
+// Places / geocoding routes
+app.use('/api/places', placesRoutes);
 
 module.exports = app;

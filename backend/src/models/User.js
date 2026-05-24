@@ -36,6 +36,11 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  // Geolocalización (se rellena desde el autocompletado de direcciones)
+  latitude:  { type: Number, default: null },
+  longitude: { type: Number, default: null },
+  city:      { type: String, default: null },
+  country:   { type: String, default: null },
   hijos: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'

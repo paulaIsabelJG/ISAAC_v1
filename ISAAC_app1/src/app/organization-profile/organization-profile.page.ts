@@ -3,7 +3,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { IonicModule, ToastController } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
-import { AuthService, User } from '../services/auth.service';
+import { AuthService, User, AddressSuggestion } from '../services/auth.service';
 
 /** Tamaño máximo permitido para imagen base64 (2 MB) */
 const MAX_IMAGE_SIZE_BYTES = 2 * 1024 * 1024;
@@ -22,6 +22,15 @@ export class OrganizationProfilePage implements OnInit {
 
   /** Controla si el campo contraseña muestra texto plano o puntos */
   showPassword = false;
+
+  // ─── Autocompletado de dirección ─────────────────────────────────────────
+  suggestions: AddressSuggestion[] = [];
+  showSuggestions = false;
+  private _selectedLat:     number | null = null;
+  private _selectedLng:     number | null = null;
+  private _selectedCity:    string | null = null;
+  private _selectedCountry: string | null = null;
+  private _debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
   /**
    * URL para mostrar el preview de la imagen.
@@ -98,6 +107,54 @@ export class OrganizationProfilePage implements OnInit {
     input.click();
   }
 
+  // ─── Autocompletado de dirección ─────────────────────────────────────────
+
+  onCentroInput(event: any): void {
+    const value: string = event.detail?.value ?? '';
+
+    // Al escribir manualmente se borran las coordenadas previas
+    this._selectedLat     = null;
+    this._selectedLng     = null;
+    this._selectedCity    = null;
+    this._selectedCountry = null;
+
+    if (this._debounceTimer) clearTimeout(this._debounceTimer);
+
+    if (value.length < 3) {
+      this.suggestions    = [];
+      this.showSuggestions = false;
+      return;
+    }
+
+    this._debounceTimer = setTimeout(() => {
+      this.authService.getPlaceSuggestions(value).subscribe({
+        next: (res) => {
+          this.suggestions     = res.suggestions;
+          this.showSuggestions = res.suggestions.length > 0;
+        },
+        error: () => {
+          this.suggestions     = [];
+          this.showSuggestions = false;
+        },
+      });
+    }, 300);
+  }
+
+  selectSuggestion(s: AddressSuggestion): void {
+    this.profileForm.get('centro')!.setValue(s.formattedAddress);
+    this._selectedLat     = s.lat;
+    this._selectedLng     = s.lng;
+    this._selectedCity    = s.city;
+    this._selectedCountry = s.country;
+    this.showSuggestions  = false;
+    this.suggestions      = [];
+  }
+
+  /** Delay de 150 ms para que mousedown sobre sugerencia se complete antes de ocultar */
+  closeSuggestions(): void {
+    setTimeout(() => { this.showSuggestions = false; }, 150);
+  }
+
   // ─── Navegación ───────────────────────────────────────────────────────────
 
   goBack(): void {
@@ -116,12 +173,19 @@ export class OrganizationProfilePage implements OnInit {
     const { name, email, centro, password } = this.profileForm.value;
 
     // Construir payload con solo los campos que tienen valor
-    const payload: Record<string, string> = { name, email };
-    if (centro?.trim())         payload['centro']   = centro.trim();
-    if (this.imageBase64)       payload['image']    = this.imageBase64;
-    if (password?.trim())       payload['password'] = password.trim();
+    const payload: Record<string, string | number | null> = { name, email };
+    if (centro?.trim())               payload['centro']    = centro.trim();
+    if (this.imageBase64)             payload['image']     = this.imageBase64;
+    if (password?.trim())             payload['password']  = password.trim();
+    if (this._selectedLat !== null) {
+      payload['latitude']  = this._selectedLat;
+      payload['longitude'] = this._selectedLng;
+      payload['city']      = this._selectedCity;
+      payload['country']   = this._selectedCountry;
+    }
 
-    this.authService.updateMe(payload).subscribe({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    this.authService.updateMe(payload as any).subscribe({
       next: async () => {
         this.isSaving = false;
         const toast = await this.toastCtrl.create({

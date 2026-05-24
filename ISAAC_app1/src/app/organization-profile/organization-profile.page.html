@@ -95,12 +95,35 @@
           </button>
         </div>
 
-        <!-- Centro / Dirección -->
+        <!-- Centro / Dirección con autocompletado -->
         <div class="field-label">Centro / Dirección</div>
-        <ion-item class="form-item">
-          <ion-input formControlName="centro" type="text"
-                     placeholder="Nombre del centro o dirección"></ion-input>
-        </ion-item>
+        <div class="autocomplete-wrap">
+          <ion-item class="form-item form-item--no-mb">
+            <ion-input
+              formControlName="centro"
+              type="text"
+              placeholder="Nombre del centro o dirección"
+              autocomplete="off"
+              (ionInput)="onCentroInput($event)"
+              (ionBlur)="closeSuggestions()">
+            </ion-input>
+          </ion-item>
+
+          @if (showSuggestions && suggestions.length > 0) {
+            <div class="suggestions-dropdown">
+              @for (s of suggestions; track s.formattedAddress) {
+                <div class="suggestion-item" (mousedown)="selectSuggestion(s)">
+                  <svg class="suggestion-pin" viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" stroke-width="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                  </svg>
+                  <span>{{ s.formattedAddress }}</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
 
         <ion-button expand="block" type="submit" class="save-btn"
                     [disabled]="!profileForm.valid || isSaving">

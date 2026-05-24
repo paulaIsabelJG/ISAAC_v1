@@ -14,7 +14,20 @@ export interface User {
   gender?: string;
   image?: string;
   centro?: string;
+  latitude?:  number | null;
+  longitude?: number | null;
+  city?:      string | null;
+  country?:   string | null;
   createdAt?: string;
+}
+
+/** Sugerencia devuelta por /api/places/autocomplete */
+export interface AddressSuggestion {
+  formattedAddress: string;
+  lat: number;
+  lng: number;
+  city: string | null;
+  country: string | null;
 }
 
 export interface RegisterPayload {
@@ -50,6 +63,10 @@ export interface UpdateMePayload {
   centro?: string;
   gender?: string;
   password?: string;
+  latitude?:  number | null;
+  longitude?: number | null;
+  city?:      string | null;
+  country?:   string | null;
 }
 
 // ─── Servicio ─────────────────────────────────────────────────────────────────
@@ -59,7 +76,8 @@ export class AuthService {
   private readonly TOKEN_KEY = 'isaac_token';
   private readonly USER_KEY  = 'isaac_user';
 
-  private apiUrl = `${environment.apiUrl}/auth`;
+  private apiUrl    = `${environment.apiUrl}/auth`;
+  private placesUrl = `${environment.apiUrl}/places`;
 
   /** Estado reactivo del usuario autenticado */
   private currentUserSubject = new BehaviorSubject<User | null>(null);
@@ -151,5 +169,15 @@ export class AuthService {
   logout(): void {
     this.clearSession();
     this.router.navigate(['/login']);
+  }
+
+  // ─── Geocodificación ────────────────────────────────────────────────────────
+
+  /** Devuelve sugerencias de dirección desde nuestro proxy backend → Nominatim */
+  getPlaceSuggestions(q: string): Observable<{ suggestions: AddressSuggestion[] }> {
+    return this.http.get<{ suggestions: AddressSuggestion[] }>(
+      `${this.placesUrl}/autocomplete`,
+      { params: { q } }
+    );
   }
 }

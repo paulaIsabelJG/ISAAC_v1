@@ -199,6 +199,64 @@ $text-muted: #7a5163;
   &:hover { color: $pink-dark; }
 }
 
+// ── Autocompletado de dirección ───────────────────────────────────────────────
+
+// Variante del form-item sin margen inferior (el wrapper lo gestiona)
+.form-item--no-mb { margin-bottom: 0 !important; }
+
+.autocomplete-wrap {
+  position: relative;   // ancla el dropdown
+  margin-bottom: 18px;
+}
+
+.suggestions-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border: 1.5px solid $border;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(255, 105, 180, 0.12);
+  z-index: 100;
+  overflow: hidden;
+}
+
+.suggestion-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 14px;
+  font-size: 13px;
+  color: $text-dark;
+  cursor: pointer;
+  line-height: 1.4;
+  transition: background 0.12s;
+
+  &:not(:last-child) {
+    border-bottom: 1px solid #fce8f1;
+  }
+
+  &:hover {
+    background: $pink-light;
+    color: $pink-dark;
+
+    .suggestion-pin { stroke: $pink-dark; }
+  }
+
+  &:first-child { border-radius: 13px 13px 0 0; }
+  &:last-child  { border-radius: 0 0 13px 13px; }
+}
+
+.suggestion-pin {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  margin-top: 1px;
+  stroke: $text-muted;
+  transition: stroke 0.12s;
+}
+
 // ── Save ──────────────────────────────────────────────────────────────────────
 .save-btn {
   --background: #ff69b4;
