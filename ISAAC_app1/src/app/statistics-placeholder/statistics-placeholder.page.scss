@@ -1,0 +1,79 @@
+$pink:      #ff69b4;
+$pink-dark: #e91e8c;
+$pink-light:#fff0f7;
+$border:    #ffb6c1;
+$bg:        #fdf5f9;
+$text-dark: #222222;
+$text-muted:#6b5462;
+
+.sp-toolbar {
+  --background: #{$bg};
+  --border-color: #{$border};
+}
+
+.sp-title {
+  font-size:   15px;
+  font-weight: 700;
+  color:       $text-dark;
+  text-align:  center;
+}
+
+.sp-content {
+  --background: #{$bg};
+}
+
+.sp-container {
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  padding:         60px 24px;
+  text-align:      center;
+  min-height:      60vh;
+  gap:             12px;
+}
+
+.sp-icon-wrap {
+  width:         90px;
+  height:        90px;
+  background:    $pink-light;
+  border-radius: 24px;
+  display:       flex;
+  align-items:   center;
+  justify-content: center;
+  margin-bottom: 8px;
+  border:        1.5px solid $border;
+}
+
+.sp-icon {
+  width:      60px;
+  height:     60px;
+  object-fit: contain;
+}
+
+.sp-heading {
+  font-size:   22px;
+  font-weight: 800;
+  color:       $text-dark;
+  margin:      0;
+}
+
+.sp-sub {
+  font-size:     12px;
+  font-weight:   700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color:         $pink-dark;
+  background:    $pink-light;
+  border-radius: 20px;
+  padding:       4px 14px;
+  margin:        0;
+}
+
+.sp-desc {
+  max-width:  320px;
+  font-size:  14px;
+  color:      $text-muted;
+  line-height: 1.5;
+  margin:     4px 0 0;
+}

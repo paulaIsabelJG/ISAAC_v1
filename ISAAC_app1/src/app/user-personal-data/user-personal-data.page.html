@@ -1,0 +1,114 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar class="upd-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button [defaultHref]="'/user-session/' + userId" text="Volver"
+                       (click)="$event.stopImmediatePropagation(); goBack()">
+      </ion-back-button>
+    </ion-buttons>
+    <ion-title class="upd-title">Datos personales</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="upd-content">
+
+  <!-- ── Cargando ──────────────────────────────────────────────────────────── -->
+  @if (isLoading) {
+    <div class="upd-state-block">
+      <ion-spinner name="crescent" color="primary"></ion-spinner>
+    </div>
+  }
+
+  <!-- ── Error ─────────────────────────────────────────────────────────────── -->
+  @else if (loadError) {
+    <div class="upd-state-block upd-state-block--error">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8"  x2="12"   y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span>{{ loadError }}</span>
+    </div>
+  }
+
+  <!-- ── Formulario ────────────────────────────────────────────────────────── -->
+  @else {
+    <div class="upd-container">
+      <form [formGroup]="form" (ngSubmit)="save()">
+
+        <!-- Avatar -->
+        <div class="upd-avatar-wrap" (click)="pickImage()" title="Toca para cambiar imagen">
+          @if (imgUrl) {
+            <img [src]="imgUrl" class="upd-avatar-img" alt="Foto"/>
+          } @else {
+            <div class="upd-avatar-placeholder">{{ getInitial() }}</div>
+          }
+          <div class="upd-avatar-overlay">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Nombre -->
+        <div class="upd-field">
+          <label class="upd-label">Nombre *</label>
+          <input class="upd-input"
+                 formControlName="name"
+                 type="text"
+                 placeholder="Nombre"/>
+          @if (form.get('name')?.invalid && form.get('name')?.touched) {
+            <span class="upd-error">El nombre es obligatorio (mín. 2 caracteres)</span>
+          }
+        </div>
+
+        <!-- Apellidos -->
+        <div class="upd-field">
+          <label class="upd-label">Apellidos</label>
+          <input class="upd-input"
+                 formControlName="surname"
+                 type="text"
+                 placeholder="Apellidos"/>
+        </div>
+
+        <!-- Género -->
+        <div class="upd-field">
+          <label class="upd-label">Género</label>
+          <select class="upd-select" formControlName="gender">
+            <option value="prefer_not_to_say">Prefiero no decirlo</option>
+            <option value="male">Masculino</option>
+            <option value="female">Femenino</option>
+            <option value="other">Otro</option>
+          </select>
+        </div>
+
+        <!-- Email (solo lectura) -->
+        <div class="upd-field">
+          <label class="upd-label">Correo electrónico</label>
+          <input class="upd-input upd-input--readonly"
+                 formControlName="email"
+                 type="email"
+                 readonly/>
+        </div>
+
+        <!-- Botón guardar -->
+        <button type="submit"
+                class="upd-save-btn"
+                [disabled]="isSaving || form.invalid">
+          @if (isSaving) {
+            <ion-spinner name="crescent" class="btn-spinner"></ion-spinner>
+          } @else {
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+              <polyline points="17 21 17 13 7 13 7 21"/>
+              <polyline points="7 3 7 8 15 8"/>
+            </svg>
+          }
+          Guardar cambios
+        </button>
+
+      </form>
+    </div>
+  }
+
+</ion-content>

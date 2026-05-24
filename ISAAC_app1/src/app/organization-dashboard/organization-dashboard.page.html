@@ -91,7 +91,7 @@
           } @else {
             <!-- Tarjetas de usuario -->
             @for (u of filteredFinalUsers; track u.email) {
-              <div class="user-card">
+              <div class="user-card user-card--clickable" (click)="goToUserSession(u._id)">
                 <div class="user-card-avatar user-card-avatar--blue">
                   @if (u.image) {
                     <img [src]="buildSafeUrl(u.image)" [alt]="u.name"/>

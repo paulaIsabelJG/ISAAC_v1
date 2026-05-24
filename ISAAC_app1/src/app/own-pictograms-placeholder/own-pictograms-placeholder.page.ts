@@ -6,7 +6,7 @@ import {
   ToastController,
 } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
-import { Location } from '@angular/common';
+import { Router } from '@angular/router';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { firstValueFrom } from 'rxjs';
 import {
@@ -80,7 +80,7 @@ export class OwnPictogramsPlaceholderPage {
   }
 
   constructor(
-    private location: Location,
+    private router: Router,
     private sanitizer: DomSanitizer,
     private state: PictogramStateService,
     private userSvc: UserService,
@@ -100,7 +100,11 @@ export class OwnPictogramsPlaceholderPage {
   }
 
   goBack(): void {
-    this.location.back();
+    if (this.userId) {
+      this.router.navigate(['/user-final-form', this.userId]);
+    } else {
+      this.router.navigate(['/add-user']);
+    }
   }
 
   // ── Carga desde backend ───────────────────────────────────────────────────────

@@ -7,6 +7,7 @@ import { UserService, BackendUser } from '../services/user.service';
 
 // ─── Estructura de tarjeta de usuario ────────────────────────────────────────
 export interface UserCardData {
+  _id:     string;          // necesario para navegar a /user-session/:userId
   name:    string;
   surname: string;
   email:   string;
@@ -78,13 +79,18 @@ export class OrganizationDashboardPage implements OnInit {
       next: (res) => {
         const myEmail = this.user?.email;
 
+        // Tipos considerados "usuario final" (robusto ante variantes futuras)
+        const isFinalUser    = (t: string) => t === 'user'    || t === 'final_user';
+        // Tipos considerados "profesional" (robusto ante variantes futuras)
+        const isProfessional = (t: string) => t === 'teacher' || t === 'professional';
+
         this.allFinalUsers = res.users
-          .filter(u => u.type === 'user')
+          .filter(u => isFinalUser(u.type))
           .map(u => this.toCard(u));
 
         // Excluimos al propio admin/org de la lista de profesionales
         this.allProfessionals = res.users
-          .filter(u => u.type === 'teacher' && u.email !== myEmail)
+          .filter(u => isProfessional(u.type) && u.email !== myEmail)
           .map(u => this.toCard(u));
 
         this.isLoading = false;
@@ -106,6 +112,7 @@ export class OrganizationDashboardPage implements OnInit {
     const name    = parts[0] ?? '';
     const surname = parts.slice(1).join(' ');
     return {
+      _id:   u._id,
       name,
       surname,
       email: u.email,
@@ -162,6 +169,11 @@ export class OrganizationDashboardPage implements OnInit {
 
   goToProfile()      { this.router.navigate(['/organization-profile']); }
   goToAddUser()      { this.router.navigate(['/add-user']);             }
-  goToBoardBuilder() { this.router.navigate(['/board-builder']);        }
+  goToBoardBuilder() { this.router.navigate(['/board-builder'], { queryParams: { returnTo: '/organization-dashboard' } }); }
   logout()           { this.authService.logout();                       }
+
+  /** Abre la sesión/perfil de un usuario final */
+  goToUserSession(userId: string) {
+    this.router.navigate(['/user-session', userId]);
+  }
 }

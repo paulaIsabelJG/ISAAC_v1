@@ -3,11 +3,26 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { IonicModule, ToastController } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import { firstValueFrom } from 'rxjs';
 import { AuthService, AddressSuggestion } from '../services/auth.service';
+import { UserService, BackendUser, ChildrenAccessEntry, SelfPermissions } from '../services/user.service';
+import { PictogramStateService } from '../services/pictogram-state.service';
 
 type View = 'select' | 'professional' | 'final-user' | 'family';
 
 const MAX_IMG = 2 * 1024 * 1024; // 2 MB
+
+// ─── Fila de la tabla de usuarios a cargo del familiar ────────────────────────
+interface FamUserRow {
+  childId:            string;
+  name:               string;
+  surname:            string;
+  infoLabel:          string;   // género traducido o "Sin información"
+  image?:             string | null;
+  canViewStats:       boolean;
+  canEditBoards:      boolean;
+  canEditPersonalData: boolean;
+}
 
 @Component({
   selector: 'app-add-user',
@@ -42,13 +57,22 @@ export class AddUserPage implements OnInit {
   perms = { editData: false, editBoards: false, editStats: false };
 
   // ── Autocompletado de dirección ──────────────────────────────────────
-  suggestions:    AddressSuggestion[] = [];
-  showSuggestions = false;
-  private _lat: number | null = null;
-  private _lng: number | null = null;
+  suggestions:     AddressSuggestion[] = [];
+  showSuggestions  = false;
+  private _lat:     number | null = null;
+  private _lng:     number | null = null;
   private _city:    string | null = null;
   private _country: string | null = null;
   private _deb: ReturnType<typeof setTimeout> | null = null;
+
+  // ── Familiar: tabla de usuarios a cargo ─────────────────────────────
+  famRows:          FamUserRow[] = [];
+  centerFinalUsers: BackendUser[] = [];
+  selectedChildId   = '';
+  famUsersLoading   = false;
+  famUsersError     = '';
+
+  // ── Getters ──────────────────────────────────────────────────────────
 
   get headerTitle(): string {
     return ({
@@ -59,12 +83,20 @@ export class AddUserPage implements OnInit {
     } as Record<View, string>)[this.view];
   }
 
+  /** Usuarios finales del centro que aún no están en la tabla */
+  get availableFinalUsers(): BackendUser[] {
+    const assignedIds = new Set(this.famRows.map((r) => r.childId));
+    return this.centerFinalUsers.filter((u) => !assignedIds.has(u._id));
+  }
+
   constructor(
     private fb:        FormBuilder,
     private authSvc:   AuthService,
+    private userSvc:   UserService,
     private router:    Router,
     private toastCtrl: ToastController,
     private sanitizer: DomSanitizer,
+    private state:     PictogramStateService,
   ) {}
 
   ngOnInit() {
@@ -94,18 +126,32 @@ export class AddUserPage implements OnInit {
   }
 
   // ── Navegación ───────────────────────────────────────────────────────
+
   goBack() {
     this.view === 'select'
       ? this.router.navigate(['/organization-dashboard'])
       : (this.view = 'select');
   }
 
-  setView(v: View) { this.view = v; }
+  setView(v: View): void {
+    this.view = v;
+    // Cargar usuarios finales del centro la primera vez que se abre el formulario
+    if (v === 'family' && this.centerFinalUsers.length === 0 && !this.famUsersLoading) {
+      this.loadFinalUsersForFamily();
+    }
+  }
 
-  goOwnPictograms()         { this.router.navigate(['/own-pictograms-placeholder']); }
-  goAssignedProfessionals() { this.router.navigate(['/assigned-professionals-placeholder']); }
+  goOwnPictograms() {
+    this.state.userId = null;   // modo creación: sin userId → goBack() volverá a /add-user
+    this.router.navigate(['/own-pictograms-placeholder']);
+  }
+  goAssignedProfessionals() {
+    this.state.userId = null;   // modo creación: sin userId → goBack() volverá a /add-user
+    this.router.navigate(['/assigned-professionals-placeholder']);
+  }
 
   // ── Selector de imagen ───────────────────────────────────────────────
+
   pickImage(target: 'prof' | 'final' | 'fam') {
     const input = document.createElement('input');
     input.type   = 'file';
@@ -138,9 +184,11 @@ export class AddUserPage implements OnInit {
   }
 
   // ── Sonido ───────────────────────────────────────────────────────────
+
   toggleSound() { this.soundEnabled = !this.soundEnabled; }
 
   // ── Autocompletado de dirección ──────────────────────────────────────
+
   onAddressInput(e: Event) {
     const val = (e.target as HTMLInputElement).value;
     this._lat = this._lng = this._city = this._country = null;
@@ -148,8 +196,8 @@ export class AddUserPage implements OnInit {
     if (val.length < 3) { this.suggestions = []; this.showSuggestions = false; return; }
     this._deb = setTimeout(() => {
       this.authSvc.getPlaceSuggestions(val).subscribe({
-        next: r  => { this.suggestions = r.suggestions; this.showSuggestions = r.suggestions.length > 0; },
-        error: () => { this.suggestions = []; this.showSuggestions = false; },
+        next:  (r) => { this.suggestions = r.suggestions; this.showSuggestions = r.suggestions.length > 0; },
+        error: ()  => { this.suggestions = []; this.showSuggestions = false; },
       });
     }, 300);
   }
@@ -163,6 +211,7 @@ export class AddUserPage implements OnInit {
   closeSuggestions() { setTimeout(() => { this.showSuggestions = false; }, 150); }
 
   // ── Guardar: Profesional ─────────────────────────────────────────────
+
   async saveProfessional() {
     if (this.profForm.invalid) { this.profForm.markAllAsTouched(); return; }
     this.isSaving = true;
@@ -183,7 +232,7 @@ export class AddUserPage implements OnInit {
         this.profForm.reset({ professionalType: 'Terapeuta' });
         this.profImgB64 = null; this.profImgUrl = null;
       },
-      error: async err => {
+      error: async (err) => {
         this.isSaving = false;
         (await this.toastCtrl.create({ message: err?.error?.error || 'Error al añadir profesional', duration: 3000, color: 'danger', position: 'top' })).present();
       },
@@ -191,59 +240,183 @@ export class AddUserPage implements OnInit {
   }
 
   // ── Guardar: Usuario final ───────────────────────────────────────────
+
   async saveFinalUser() {
     if (this.finalForm.invalid) { this.finalForm.markAllAsTouched(); return; }
     this.isSaving = true;
-    const { email, password, name, surname, gender, address } = this.finalForm.value;
+    const { email, password, name, surname, gender } = this.finalForm.value;
     const org = this.authSvc.getCurrentUser();
 
-    this.authSvc.register({
-      email, password,
-      name:   [name, surname].filter(Boolean).join(' '),
-      type:   'user',
-      gender,
-      centro: address?.trim() || org?.centro || 'Centro ISAAC',
-      image:  this.finalImgB64 ?? undefined,
-    }).subscribe({
-      next: async () => {
-        this.isSaving = false;
-        (await this.toastCtrl.create({ message: '✓ Usuario añadido', duration: 2000, color: 'success', position: 'top' })).present();
-        this.view = 'select';
-        this.finalForm.reset({ gender: 'prefer_not_to_say' });
-        this.finalImgB64 = null; this.finalImgUrl = null;
-        this._lat = this._lng = null;
-        this.perms = { editData: false, editBoards: false, editStats: false };
-      },
-      error: async err => {
-        this.isSaving = false;
-        (await this.toastCtrl.create({ message: err?.error?.error || 'Error al añadir usuario', duration: 3000, color: 'danger', position: 'top' })).present();
-      },
-    });
+    try {
+      // 1. Crear el usuario final
+      const regRes = await firstValueFrom(
+        this.authSvc.register({
+          email, password,
+          name:   [name, surname].filter(Boolean).join(' '),
+          type:   'user',
+          gender,
+          centro: org?.centro || 'Centro ISAAC',
+          image:  this.finalImgB64 ?? undefined,
+        })
+      );
+
+      // 2. Si hay algún permiso activo, guardarlo en selfPermissions del usuario creado
+      if (this.perms.editData || this.perms.editBoards || this.perms.editStats) {
+        const selfPerms: SelfPermissions = {
+          canEditPersonalData: this.perms.editData,
+          canEditBoards:       this.perms.editBoards,
+          canViewStats:        this.perms.editStats,
+        };
+        await firstValueFrom(
+          this.userSvc.updateUserById(regRes.user.id, { selfPermissions: selfPerms })
+        );
+      }
+
+      this.isSaving = false;
+      (await this.toastCtrl.create({
+        message: '✓ Usuario añadido', duration: 2000, color: 'success', position: 'top',
+      })).present();
+
+      // Reset completo del formulario
+      this.view = 'select';
+      this.finalForm.reset({ gender: 'prefer_not_to_say' });
+      this.finalImgB64 = null; this.finalImgUrl = null;
+      this._lat = this._lng = null;
+      this.perms = { editData: false, editBoards: false, editStats: false };
+      this.centerFinalUsers = []; // Invalidar caché para el familiar
+
+    } catch (err: any) {
+      this.isSaving = false;
+      (await this.toastCtrl.create({
+        message: err?.error?.error || 'Error al añadir usuario', duration: 3000, color: 'danger', position: 'top',
+      })).present();
+    }
   }
 
   // ── Guardar: Familiar ────────────────────────────────────────────────
-  async saveFamily() {
+
+  async saveFamily(): Promise<void> {
     if (this.famForm.invalid) { this.famForm.markAllAsTouched(); return; }
     this.isSaving = true;
     const { email, password } = this.famForm.value;
 
-    this.authSvc.register({
-      email, password,
-      name:  email.split('@')[0],
-      type:  'parent',
-      image: this.famImgB64 ?? undefined,
-    }).subscribe({
-      next: async () => {
-        this.isSaving = false;
-        (await this.toastCtrl.create({ message: '✓ Familiar añadido', duration: 2000, color: 'success', position: 'top' })).present();
-        this.view = 'select';
-        this.famForm.reset();
-        this.famImgB64 = null; this.famImgUrl = null;
-      },
-      error: async err => {
-        this.isSaving = false;
-        (await this.toastCtrl.create({ message: err?.error?.error || 'Error al añadir familiar', duration: 3000, color: 'danger', position: 'top' })).present();
-      },
+    try {
+      // Paso 1: Registrar el familiar (type='parent')
+      const regRes = await firstValueFrom(
+        this.authSvc.register({
+          email, password,
+          name:  email.split('@')[0],
+          type:  'parent',
+          image: this.famImgB64 ?? undefined,
+        })
+      );
+
+      const parentId = regRes.user.id;
+
+      // Paso 2: Guardar childrenAccess si hay filas en la tabla
+      if (this.famRows.length > 0 && parentId) {
+        const entries: ChildrenAccessEntry[] = this.famRows.map((r) => ({
+          childId:            r.childId,
+          canViewStats:       r.canViewStats,
+          canEditBoards:      r.canEditBoards,
+          canEditPersonalData: r.canEditPersonalData,
+        }));
+        await firstValueFrom(
+          this.userSvc.updateChildrenAccess(parentId, entries)
+        );
+      }
+
+      this.isSaving = false;
+      const t = await this.toastCtrl.create({
+        message: '✓ Familiar añadido', duration: 2200, color: 'success', position: 'top',
+      });
+      await t.present();
+
+      // Reset completo
+      this.view = 'select';
+      this.famForm.reset();
+      this.famImgB64 = null;
+      this.famImgUrl = null;
+      this.famRows   = [];
+      this.selectedChildId = '';
+
+    } catch (err: any) {
+      this.isSaving = false;
+      const t = await this.toastCtrl.create({
+        message:  err?.error?.error || 'Error al añadir familiar',
+        duration: 3000, color: 'danger', position: 'top',
+      });
+      await t.present();
+    }
+  }
+
+  // ── Familiar: tabla de usuarios a cargo ──────────────────────────────
+
+  private async loadFinalUsersForFamily(): Promise<void> {
+    const org = this.authSvc.getCurrentUser();
+    if (!org?.centro) {
+      this.famUsersError = 'No se encontró el centro de la organización.';
+      return;
+    }
+    this.famUsersLoading = true;
+    this.famUsersError   = '';
+    try {
+      const res = await firstValueFrom(
+        this.userSvc.getUsersByCenter(org.centro)
+      );
+      this.centerFinalUsers = res.users.filter((u) => u.type === 'user');
+    } catch {
+      this.famUsersError = 'Error al cargar usuarios finales.';
+    } finally {
+      this.famUsersLoading = false;
+    }
+  }
+
+  /** Recibe el cambio del ion-select para la fila de añadir */
+  onChildSelect(event: Event): void {
+    this.selectedChildId = (event as CustomEvent<{ value: string }>).detail.value ?? '';
+  }
+
+  addFamUser(): void {
+    if (!this.selectedChildId) return;
+    const user = this.centerFinalUsers.find((u) => u._id === this.selectedChildId);
+    if (!user) return;
+    if (this.famRows.some((r) => r.childId === user._id)) return; // sin duplicados
+
+    const parts = user.name.trim().split(/\s+/);
+    this.famRows.push({
+      childId:            user._id,
+      name:               parts[0] ?? '',
+      surname:            parts.slice(1).join(' '),
+      infoLabel:          this.genderLabel(user.gender),
+      image:              user.image ?? null,
+      canViewStats:       false,
+      canEditBoards:      false,
+      canEditPersonalData: false,
     });
+    this.selectedChildId = '';
+  }
+
+  removeFamRow(index: number): void {
+    this.famRows.splice(index, 1);
+  }
+
+  /** Sanitiza imágenes base64 o URLs directas (usada en tabla de familiar) */
+  buildSafeUrl(imageStr?: string | null): SafeUrl | string {
+    if (!imageStr) return '';
+    if (imageStr.startsWith('data:')) {
+      return this.sanitizer.bypassSecurityTrustUrl(imageStr);
+    }
+    return imageStr;
+  }
+
+  private genderLabel(gender?: string | null): string {
+    const labels: Record<string, string> = {
+      male:              'Masculino',
+      female:            'Femenino',
+      other:             'Otro género',
+      prefer_not_to_say: 'No especificado',
+    };
+    return gender ? (labels[gender] ?? gender) : 'Sin información';
   }
 }

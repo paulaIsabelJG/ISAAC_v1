@@ -1,80 +1,499 @@
-$violet:       #7c4dff;
-$violet-light: #f0ebff;
-$pink:         #ff69b4;
-$pink-dark:    #e91e8c;
+// ── Variables ─────────────────────────────────────────────────────────────────
+$mint:        #20c997;
+$mint-dark:   #17a682;
+$mint-light:  #e0fff6;
+$mint-faint:  #f0fff9;
+$border:      #e2e8ef;
+$bg:          #eef2f7;
+$text-dark:   #1a1a1a;
+$text-muted:  #6b7280;
+$red:         #ef5350;
+$red-light:   #fff0f0;
+$yellow-light:#fffbeb;
 
-.ph-toolbar {
-  --background: #{$violet};
+// ── Toolbar ───────────────────────────────────────────────────────────────────
+.ap-toolbar {
+  --background: #{$mint};
   --color: #ffffff;
+  --border-color: transparent;
+  box-shadow: 0 2px 12px rgba(32, 201, 151, 0.28);
+
   ion-back-button { --color: #ffffff; }
 }
 
-.ph-title {
+.ap-title {
   --color: #ffffff;
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  font-size: 17px;
 }
 
-.ph-content { --background: #f4f0ff; }
+// ── Contenido ─────────────────────────────────────────────────────────────────
+.ap-content { --background: #{$bg}; }
 
-.ph-frame {
+.ap-container {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 20px 16px 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+// ── Banner: usuario sin userId ────────────────────────────────────────────────
+.no-user-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 18px;
+  background: $yellow-light;
+  border: 1.5px solid #fcd34d;
+  border-radius: 14px;
+  font-size: 13px;
+  color: #92400e;
+  line-height: 1.55;
+
+  strong { display: block; font-weight: 700; margin-bottom: 2px; }
+  em     { font-style: italic; }
+}
+
+.no-user-icon {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  stroke: #f59e0b;
+  margin-top: 1px;
+}
+
+// ── Card blanca principal ─────────────────────────────────────────────────────
+.card-section {
+  background: #ffffff;
+  border-radius: 18px;
+  border: 1.5px solid $border;
+  padding: 20px 20px 22px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+}
+
+// ── Cabecera sección ──────────────────────────────────────────────────────────
+.sec-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.sec-head-left {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.sec-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  &.sec-dot--mint { background: $mint; }
+}
+
+.sec-title {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: $text-dark;
+  margin: 0;
+}
+
+.count-badge {
+  background: $mint-light;
+  color: $mint-dark;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 12px;
+  border-radius: 10px;
+  border: 1px solid darken($mint-light, 6%);
+}
+
+// ── Estados genéricos ─────────────────────────────────────────────────────────
+.state-block {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  min-height: 70vh;
-  padding: 40px 24px;
+  gap: 10px;
+  padding: 36px 0 24px;
+  color: $text-muted;
+  font-size: 14px;
   text-align: center;
-  gap: 18px;
+
+  ion-spinner { width: 32px; height: 32px; }
+  svg         { width: 40px; height: 40px; stroke: #c8d5e0; }
+
+  &--error { color: $red; svg { stroke: #f87171; } }
 }
 
-.ph-img {
-  width: 120px;
-  height: 120px;
-  object-fit: contain;
-  opacity: 0.85;
+// ── Tabla ─────────────────────────────────────────────────────────────────────
+.table-scroll-wrap {
+  overflow-x: auto;
+  margin-bottom: 4px;
+
+  scrollbar-width: thin;
+  scrollbar-color: #d5dde5 transparent;
+  &::-webkit-scrollbar       { height: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: #d5dde5; border-radius: 4px; }
 }
 
-.ph-heading {
-  font-size: 24px;
+.prof-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 560px;
+}
+
+.prof-table thead tr {
+  background: $mint-faint;
+  border-bottom: 2px solid $mint-light;
+}
+
+.th-prof,
+.th-center,
+.th-del {
+  padding: 10px 12px;
+  font-size: 11px;
   font-weight: 700;
-  color: #1a1a1a;
-  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: $mint-dark;
+  white-space: nowrap;
 }
 
-.ph-desc {
+.th-prof   { text-align: left; width: 38%; }
+.th-center { text-align: center; }
+.th-del    { width: 40px; }
+
+.prof-row {
+  border-bottom: 1px solid $border;
+  transition: background 0.12s;
+
+  &:hover { background: $mint-faint; }
+  &:last-child { border-bottom: none; }
+}
+
+.td-prof {
+  padding: 12px 12px;
+  vertical-align: middle;
+}
+
+.td-center {
+  padding: 12px 8px;
+  vertical-align: middle;
+  text-align: center;
+}
+
+.td-del {
+  padding: 12px 8px;
+  vertical-align: middle;
+  text-align: center;
+  width: 40px;
+}
+
+// ── Info profesional ──────────────────────────────────────────────────────────
+.prof-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.prof-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: $mint-light;
+  border: 2px solid $mint;
+  overflow: hidden;
+  flex: 0 0 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &--ghost {
+    background: #f0f0f0;
+    border-color: #ddd;
+  }
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-initial {
   font-size: 15px;
-  color: #6b6b6b;
-  max-width: 360px;
-  line-height: 1.6;
-  margin: 0;
+  font-weight: 800;
+  color: $mint-dark;
 }
 
-.ph-badge {
+.prof-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.prof-fullname {
+  font-size: 13px;
+  font-weight: 700;
+  color: $text-dark;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.prof-email {
+  font-size: 11px;
+  color: $text-muted;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// ── Fila de ejemplo/ayuda (no persistente) ────────────────────────────────────
+.help-row {
+  opacity: 0.35;
+  pointer-events: none;
+  user-select: none;
+}
+
+.help-text { font-style: italic; }
+
+// ── Chips de permisos ─────────────────────────────────────────────────────────
+.perm-chip {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  background: $violet-light;
-  color: $violet;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 10px 18px;
+  justify-content: center;
+  gap: 4px;
+  padding: 5px 12px;
   border-radius: 20px;
-  border: 1.5px solid darken($violet-light, 6%);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: 1.5px solid #d0d8e4;
+  background: #ffffff;
+  color: $text-muted;
+  transition: background 0.18s, border-color 0.18s, color 0.18s, box-shadow 0.18s;
+  white-space: nowrap;
 
-  svg { width: 16px; height: 16px; stroke: $violet; }
+  svg { width: 12px; height: 12px; flex: 0 0 12px; }
+
+  &:hover {
+    border-color: $mint;
+    color: $mint-dark;
+    background: $mint-light;
+  }
+
+  // Activo → verde agua
+  &--on {
+    background: $mint;
+    border-color: $mint-dark;
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(32, 201, 151, 0.3);
+
+    &:hover {
+      background: $mint-dark;
+      color: #ffffff;
+    }
+  }
+
+  // Ejemplo (no clicable)
+  &--example {
+    cursor: default;
+    pointer-events: none;
+  }
 }
 
-.ph-back-btn {
+// ── Botón eliminar fila ───────────────────────────────────────────────────────
+.del-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: none;
-  border: 1.5px solid #d0d0d0;
-  border-radius: 20px;
-  padding: 8px 20px;
+  border: 1.5px solid #e0c0c0;
+  border-radius: 50%;
+  cursor: pointer;
+  color: #c0a0a0;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+
+  svg { width: 14px; height: 14px; }
+
+  &:hover {
+    background: $red-light;
+    border-color: $red;
+    color: $red;
+  }
+}
+
+// ── Mensaje vacío ─────────────────────────────────────────────────────────────
+.empty-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: $text-muted;
+  margin: 12px 0 4px;
+  padding: 10px 12px;
+  background: $mint-faint;
+  border-radius: 10px;
+  border: 1px dashed darken($mint-light, 10%);
+  line-height: 1.4;
+
+  svg { width: 18px; height: 18px; flex: 0 0 18px; stroke: $mint; }
+}
+
+// ── Fila añadir ───────────────────────────────────────────────────────────────
+.add-row {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1.5px dashed darken($mint-light, 12%);
+}
+
+.add-row-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: $mint-dark;
+  margin-bottom: 10px;
+
+  svg { width: 14px; height: 14px; stroke: $mint; }
+}
+
+.add-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.add-select {
+  flex: 1;
+  min-width: 200px;
+  padding: 9px 12px;
+  border: 1.5px solid #d0d8e4;
+  border-radius: 10px;
   font-size: 14px;
   font-family: inherit;
-  color: #888;
+  color: $text-dark;
+  background: #f9fafb;
+  box-sizing: border-box;
+  appearance: none;
   cursor: pointer;
-  margin-top: 8px;
-  transition: all 0.2s;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2317a682' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
+  transition: border-color 0.2s;
 
-  &:hover { border-color: $violet; color: $violet; background: $violet-light; }
+  &:focus {
+    outline: none;
+    border-color: $mint;
+    background-color: #fff;
+  }
+}
+
+.add-confirm-btn {
+  padding: 9px 20px;
+  background: $mint;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s, transform 0.15s;
+
+  &:hover:not(:disabled) {
+    background: $mint-dark;
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    background: darken($mint-light, 10%);
+    color: #aaa;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+.add-all-done,
+.add-none {
+  font-size: 13px;
+  color: $text-muted;
+  margin: 4px 0 0;
+  font-style: italic;
+}
+
+// ── Botón guardar ─────────────────────────────────────────────────────────────
+.save-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  padding: 15px;
+  background: $mint;
+  color: #ffffff;
+  border: none;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 800;
+  font-family: inherit;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.15s;
+
+  svg { width: 18px; height: 18px; flex: 0 0 18px; }
+
+  &:hover:not(:disabled) {
+    background: $mint-dark;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(32, 201, 151, 0.32);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: none;
+  }
+
+  &:disabled {
+    background: darken($mint-light, 12%);
+    color: #a0b8b0;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+.btn-spinner {
+  --color: #ffffff;
+  width: 18px;
+  height: 18px;
+}
+
+// ── Responsive ────────────────────────────────────────────────────────────────
+@media (max-width: 600px) {
+  .ap-container { padding: 14px 10px 40px; }
+  .card-section { padding: 16px 14px 18px; }
+  .th-prof,
+  .th-center   { font-size: 10px; }
+  .perm-chip   { padding: 5px 8px; font-size: 11px; }
+  .save-btn    { font-size: 14px; padding: 13px; }
 }

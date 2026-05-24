@@ -437,40 +437,301 @@ $text-muted:  #7a5163;
   object-fit: contain;
 }
 
-// ── Tabla familiar: placeholder ───────────────────────────────────────────────
+// ── Tabla familiar: usuarios a cargo y permisos ───────────────────────────────
 .charge-section {
   margin: 18px 0 24px;
 }
 
-.charge-placeholder {
+.charge-header {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.charge-count {
+  background: $mint-light;
+  color: $mint-dark;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 10px;
+  border: 1px solid darken($mint-light, 6%);
+}
+
+// ── Estados loading / error ────────────────────────────────────────────────────
+.fam-state {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 12px;
+  font-size: 13px;
+  color: #9e9e9e;
+  background: #f9f9f9;
+  border-radius: 12px;
+  border: 1.5px dashed #e0e0e0;
+
+  ion-spinner { --color: #{$pink}; width: 20px; height: 20px; }
+
+  &--error { color: #e53935; }
+}
+
+// ── Tabla ─────────────────────────────────────────────────────────────────────
+.fam-table-wrap {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1.5px solid #f0d4e2;
+
+  scrollbar-width: thin;
+  scrollbar-color: #f0d4e2 transparent;
+  &::-webkit-scrollbar       { height: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: #f0d4e2; border-radius: 4px; }
+}
+
+.fam-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 520px;
+  background: #fff;
+}
+
+.fam-table thead tr {
+  background: $pink-light;
+  border-bottom: 2px solid #ffccd9;
+}
+
+.fth-user,
+.fth-info,
+.fth-perm,
+.fth-del {
+  padding: 9px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: $pink-dark;
+  white-space: nowrap;
+}
+
+.fth-user  { text-align: left; width: 32%; }
+.fth-info  { text-align: left; width: 18%; }
+.fth-perm  { text-align: center; }
+.fth-del   { width: 36px; }
+
+.fam-row {
+  border-bottom: 1px solid #fce8f1;
+  transition: background 0.1s;
+
+  &:hover { background: #fff8fc; }
+  &:last-child { border-bottom: none; }
+}
+
+.ftd-user { padding: 10px 10px; vertical-align: middle; }
+.ftd-info { padding: 10px 10px; vertical-align: middle; }
+.ftd-perm { padding: 10px 6px;  vertical-align: middle; text-align: center; }
+.ftd-del  { padding: 10px 6px;  vertical-align: middle; text-align: center; width: 36px; }
+
+// ── Celda usuario (avatar + nombre) ──────────────────────────────────────────
+.fam-user-cell {
+  display: flex;
   align-items: center;
   gap: 8px;
-  padding: 28px 20px;
-  background: #f9f9f9;
-  border: 2px dashed #e0e0e0;
-  border-radius: 16px;
-  margin-top: 10px;
-  text-align: center;
 }
 
-.charge-icon {
-  width: 44px;
-  height: 44px;
-  stroke: #ccc;
+.fam-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: $pink-light;
+  border: 2px solid $pink;
+  overflow: hidden;
+  flex: 0 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &--ghost {
+    background: #f5f5f5;
+    border-color: #e0e0e0;
+  }
 }
 
-.charge-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: #aaa;
-  margin: 0;
+.fam-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.charge-sub {
+.fam-avatar-initial {
+  font-size: 13px;
+  font-weight: 800;
+  color: $pink-dark;
+}
+
+.fam-user-meta { display: flex; flex-direction: column; min-width: 0; }
+
+.fam-user-name {
   font-size: 12px;
-  color: #bbb;
+  font-weight: 700;
+  color: #42283a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// ── Fila de ejemplo (no persistente) ─────────────────────────────────────────
+.fam-help-row {
+  opacity: 0.33;
+  pointer-events: none;
+  user-select: none;
+}
+
+.fam-ghost-text { font-style: italic; }
+
+// ── Celda info básica ─────────────────────────────────────────────────────────
+.fam-info-tag {
+  font-size: 11px;
+  color: #9e7a8e;
+  white-space: nowrap;
+}
+
+// ── Chips de permiso (toggle) ─────────────────────────────────────────────────
+.fam-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: 1.5px solid #e0d0d8;
+  background: #ffffff;
+  color: #b0a0a8;
+  transition: background 0.18s, border-color 0.18s, color 0.18s, box-shadow 0.18s;
+  white-space: nowrap;
+
+  svg { width: 11px; height: 11px; flex: 0 0 11px; }
+
+  &:hover {
+    border-color: $mint;
+    color: $mint-dark;
+    background: $mint-light;
+  }
+
+  // Activo → verde agua (mint)
+  &--on {
+    background: $mint;
+    border-color: $mint-dark;
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(32, 201, 151, 0.28);
+
+    &:hover {
+      background: $mint-dark;
+      color: #ffffff;
+    }
+  }
+}
+
+// ── Botón eliminar fila ───────────────────────────────────────────────────────
+.fam-del-btn {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1.5px solid #f0d0d8;
+  border-radius: 50%;
+  cursor: pointer;
+  color: #d0a0b0;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+
+  svg { width: 13px; height: 13px; }
+
+  &:hover {
+    background: #fff0f0;
+    border-color: #ef5350;
+    color: #ef5350;
+  }
+}
+
+// ── Fila "añadir usuario" ─────────────────────────────────────────────────────
+.fam-add-row {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1.5px dashed #ffccd9;
+}
+
+.fam-add-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+// ion-select dentro del formulario familiar
+.fam-select {
+  flex: 1;
+  min-width: 180px;
+  --placeholder-color: #c0a0b0;
+  --color: #42283a;
+  --border-radius: 12px;
+  --border-color: #ffccd9;
+  --border-width: 1.5px;
+  --padding-start: 12px;
+  --padding-end: 12px;
+  --padding-top: 9px;
+  --padding-bottom: 9px;
+  --highlight-color-focused: #{$pink};
+  background: $pink-light;
+  border: 1.5px solid #ffccd9;
+  border-radius: 12px;
+  font-size: 13px;
+  font-family: inherit;
+  min-height: 40px;
+}
+
+.fam-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: $pink;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s, transform 0.15s;
+
+  svg { width: 14px; height: 14px; }
+
+  &:hover:not(:disabled) {
+    background: $pink-dark;
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    background: #e0a0c0;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+.fam-msg {
+  font-size: 12px;
+  color: #b0a0a8;
+  font-style: italic;
+  margin: 4px 0 0;
+
+  &--done { color: $mint-dark; font-style: normal; font-weight: 600; }
 }
 
 // ── Botón principal ───────────────────────────────────────────────────────────

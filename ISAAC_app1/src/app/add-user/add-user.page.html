@@ -416,20 +416,183 @@
 
           </div><!-- /form-grid -->
 
-          <!-- Tabla de usuarios a cargo: placeholder -->
+          <!-- ── Tabla de usuarios a cargo y permisos ─────────────────── -->
           <div class="charge-section">
-            <span class="section-label">Usuarios a cargo y permisos</span>
-            <div class="charge-placeholder">
-              <svg class="charge-icon" viewBox="0 0 24 24" fill="none"
-                   stroke="currentColor" stroke-width="1.5">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                <circle cx="9" cy="7" r="4"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
-              </svg>
-              <p class="charge-title">Sin usuarios a cargo</p>
-              <span class="charge-sub">Se podrán asignar usuarios tras el registro del familiar</span>
+
+            <!-- Cabecera -->
+            <div class="charge-header">
+              <span class="section-label">Usuarios a cargo y permisos</span>
+              @if (famRows.length > 0) {
+                <span class="charge-count">{{ famRows.length }}</span>
+              }
             </div>
-          </div>
+
+            <!-- Cargando -->
+            @if (famUsersLoading) {
+              <div class="fam-state">
+                <ion-spinner name="crescent"></ion-spinner>
+                <span>Cargando usuarios finales…</span>
+              </div>
+
+            } @else if (famUsersError) {
+              <div class="fam-state fam-state--error">{{ famUsersError }}</div>
+
+            } @else {
+
+              <!-- Tabla -->
+              <div class="fam-table-wrap">
+                <table class="fam-table">
+
+                  <thead>
+                    <tr>
+                      <th class="fth-user">Usuario final</th>
+                      <th class="fth-info">Info</th>
+                      <th class="fth-perm">Estadísticas</th>
+                      <th class="fth-perm">Tableros</th>
+                      <th class="fth-perm">Datos pers.</th>
+                      <th class="fth-del"></th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+
+                    <!-- Filas reales -->
+                    @for (row of famRows; track row.childId; let i = $index) {
+                      <tr class="fam-row">
+
+                        <!-- Columna: usuario -->
+                        <td class="ftd-user">
+                          <div class="fam-user-cell">
+                            <div class="fam-avatar">
+                              @if (row.image) {
+                                <img [src]="buildSafeUrl(row.image)" [alt]="row.name" class="fam-avatar-img"/>
+                              } @else {
+                                <span class="fam-avatar-initial">{{ row.name.charAt(0).toUpperCase() }}</span>
+                              }
+                            </div>
+                            <div class="fam-user-meta">
+                              <span class="fam-user-name">{{ row.name }} {{ row.surname }}</span>
+                            </div>
+                          </div>
+                        </td>
+
+                        <!-- Columna: info básica -->
+                        <td class="ftd-info">
+                          <span class="fam-info-tag">{{ row.infoLabel }}</span>
+                        </td>
+
+                        <!-- Permiso: Estadísticas -->
+                        <td class="ftd-perm">
+                          <button type="button" class="fam-chip"
+                                  [class.fam-chip--on]="row.canViewStats"
+                                  (click)="row.canViewStats = !row.canViewStats">
+                            @if (row.canViewStats) {
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="20 6 9 17 4 12"/>
+                              </svg>
+                            }
+                            {{ row.canViewStats ? 'Activado' : 'Inactivo' }}
+                          </button>
+                        </td>
+
+                        <!-- Permiso: Tableros -->
+                        <td class="ftd-perm">
+                          <button type="button" class="fam-chip"
+                                  [class.fam-chip--on]="row.canEditBoards"
+                                  (click)="row.canEditBoards = !row.canEditBoards">
+                            @if (row.canEditBoards) {
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="20 6 9 17 4 12"/>
+                              </svg>
+                            }
+                            {{ row.canEditBoards ? 'Activado' : 'Inactivo' }}
+                          </button>
+                        </td>
+
+                        <!-- Permiso: Datos personales -->
+                        <td class="ftd-perm">
+                          <button type="button" class="fam-chip"
+                                  [class.fam-chip--on]="row.canEditPersonalData"
+                                  (click)="row.canEditPersonalData = !row.canEditPersonalData">
+                            @if (row.canEditPersonalData) {
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="20 6 9 17 4 12"/>
+                              </svg>
+                            }
+                            {{ row.canEditPersonalData ? 'Activado' : 'Inactivo' }}
+                          </button>
+                        </td>
+
+                        <!-- Eliminar fila -->
+                        <td class="ftd-del">
+                          <button type="button" class="fam-del-btn" (click)="removeFamRow(i)" title="Quitar">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                              <line x1="18" y1="6"  x2="6"  y2="18"/>
+                              <line x1="6"  y1="6"  x2="18" y2="18"/>
+                            </svg>
+                          </button>
+                        </td>
+
+                      </tr>
+                    }
+
+                    <!-- Fila de ejemplo (solo cuando vacío, NO persistente) -->
+                    @if (famRows.length === 0) {
+                      <tr class="fam-help-row">
+                        <td class="ftd-user">
+                          <div class="fam-user-cell">
+                            <div class="fam-avatar fam-avatar--ghost"></div>
+                            <div class="fam-user-meta">
+                              <span class="fam-user-name fam-ghost-text">Nombre Apellidos</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="ftd-info"><span class="fam-info-tag fam-ghost-text">Sin información</span></td>
+                        <td class="ftd-perm"><span class="fam-chip">Inactivo</span></td>
+                        <td class="ftd-perm"><span class="fam-chip">Inactivo</span></td>
+                        <td class="ftd-perm"><span class="fam-chip">Inactivo</span></td>
+                        <td class="ftd-del"></td>
+                      </tr>
+                    }
+
+                  </tbody>
+                </table>
+              </div><!-- /fam-table-wrap -->
+
+              <!-- Fila "añadir usuario" -->
+              <div class="fam-add-row">
+                @if (availableFinalUsers.length > 0) {
+                  <div class="fam-add-controls">
+                    <ion-select
+                      [value]="selectedChildId"
+                      placeholder="Seleccionar usuario final…"
+                      (ionChange)="onChildSelect($event)"
+                      class="fam-select"
+                      interface="action-sheet">
+                      @for (u of availableFinalUsers; track u._id) {
+                        <ion-select-option [value]="u._id">{{ u.name }}</ion-select-option>
+                      }
+                    </ion-select>
+                    <button type="button" class="fam-add-btn"
+                            (click)="addFamUser()"
+                            [disabled]="!selectedChildId">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5"  y1="12" x2="19" y2="12"/>
+                      </svg>
+                      Añadir
+                    </button>
+                  </div>
+                } @else if (centerFinalUsers.length === 0) {
+                  <p class="fam-msg">No hay usuarios finales en este centro todavía.</p>
+                } @else {
+                  <p class="fam-msg fam-msg--done">✓ Todos los usuarios finales ya están asignados.</p>
+                }
+              </div>
+
+            }<!-- /else loading -->
+
+          </div><!-- /charge-section -->
 
           <button type="submit" class="submit-btn" [disabled]="!famForm.valid || isSaving">
             @if (isSaving) { <ion-spinner name="crescent" class="btn-spinner"></ion-spinner> }

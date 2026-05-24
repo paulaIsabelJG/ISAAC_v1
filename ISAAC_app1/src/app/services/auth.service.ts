@@ -133,11 +133,15 @@ export class AuthService {
   /**
    * Devuelve la ruta a la que redirigir según el tipo de usuario:
    *   teacher → /organization-dashboard
-   *   parent | user → /user-placeholder
+   *   user   → /user-session/:id  (usuario final va a su propia sesión)
+   *   parent → /user-placeholder  (sin pantalla propia todavía)
    */
   getRedirectRoute(user: User): string {
     if (user.type === 'teacher') {
       return '/organization-dashboard';
+    }
+    if (user.type === 'user') {
+      return `/user-session/${user.id}`;
     }
     return '/user-placeholder';
   }

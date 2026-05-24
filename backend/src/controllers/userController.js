@@ -352,6 +352,16 @@ const updateUserInternal = async (req, res) => {
     }
 
     applyUserUpdates(user, normalized);
+
+    // selfPermissions: se maneja fuera de validateUserPayload (campo propio de usuario final)
+    if (payload.selfPermissions !== undefined) {
+      user.selfPermissions = {
+        canEditPersonalData: !!payload.selfPermissions?.canEditPersonalData,
+        canEditBoards:       !!payload.selfPermissions?.canEditBoards,
+        canViewStats:        !!payload.selfPermissions?.canViewStats,
+      };
+    }
+
     await user.save();
 
     await synchronizeRelationships(user, previousState);
@@ -478,6 +488,195 @@ exports.deleteCustomPictogramByUserId = async (req, res) => {
     res.json({ message: 'Custom pictogram deleted successfully' });
   } catch (error) {
     console.error('Delete user pictogram error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// ─── childrenAccess: familiar → usuarios finales a cargo ─────────────────────
+
+/**
+ * PUT /api/users/:parentId/children-access
+ * Reemplaza la lista completa de childrenAccess para un familiar (type='parent').
+ * Mantiene compatibilidad con hijos[] y parentId en los hijos.
+ * Body: { childrenAccess: [{ childId, canViewStats, canEditBoards, canEditPersonalData }] }
+ */
+exports.updateChildrenAccess = async (req, res) => {
+  try {
+    const { parentId }       = req.params;
+    const { childrenAccess } = req.body;
+
+    if (!validateObjectId(parentId)) {
+      return res.status(400).json({ error: 'Invalid parentId' });
+    }
+    if (!Array.isArray(childrenAccess)) {
+      return res.status(400).json({ error: 'childrenAccess must be an array' });
+    }
+
+    const parent = await User.findById(parentId);
+    if (!parent) {
+      return res.status(404).json({ error: 'Parent not found' });
+    }
+    if (parent.type !== 'parent') {
+      return res.status(400).json({ error: 'User is not of type parent' });
+    }
+
+    // Validar que todos los childId son usuarios reales de tipo user
+    const newChildIds = [];
+    for (const entry of childrenAccess) {
+      if (!validateObjectId(entry.childId)) {
+        return res.status(400).json({ error: `Invalid childId: ${entry.childId}` });
+      }
+      const child = await User.findById(entry.childId).select('type');
+      if (!child) {
+        return res.status(404).json({ error: `Child not found: ${entry.childId}` });
+      }
+      if (child.type !== 'user') {
+        return res.status(400).json({
+          error: `User ${entry.childId} is not a final user (type must be 'user')`
+        });
+      }
+      newChildIds.push(entry.childId.toString());
+    }
+
+    // Capturar hijos anteriores para detectar cambios
+    const previousHijoIds = (parent.hijos || []).map((id) => id.toString());
+
+    // Actualizar childrenAccess y hijos[] en el familiar (compatibilidad)
+    parent.childrenAccess = childrenAccess.map((e) => ({
+      childId:            e.childId,
+      canViewStats:       !!e.canViewStats,
+      canEditBoards:      !!e.canEditBoards,
+      canEditPersonalData: !!e.canEditPersonalData,
+    }));
+    parent.hijos = newChildIds;
+
+    await parent.save();
+
+    // Actualizar parentId en hijos añadidos (compatibilidad)
+    const added   = newChildIds.filter((id) => !previousHijoIds.includes(id));
+    const removed = previousHijoIds.filter((id) => !newChildIds.includes(id));
+
+    for (const childId of added) {
+      await User.findByIdAndUpdate(childId, { $set: { parentId } });
+    }
+    // Retirar parentId solo si apuntaba a este familiar
+    for (const childId of removed) {
+      await User.findOneAndUpdate(
+        { _id: childId, parentId: parentId },
+        { $set: { parentId: null } }
+      );
+    }
+
+    res.json({
+      message: 'Children access updated successfully',
+      count:   parent.childrenAccess.length,
+    });
+  } catch (error) {
+    console.error('Update children access error:', error);
+    res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+};
+
+// ─── Profesionales asignados ──────────────────────────────────────────────────
+
+/**
+ * GET /api/users/:userId/assigned-professionals
+ * Devuelve los profesionales asignados a un usuario final, populados con sus datos.
+ */
+exports.getAssignedProfessionals = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    if (!validateObjectId(userId)) {
+      return res.status(400).json({ error: 'Invalid user id' });
+    }
+
+    const user = await User.findById(userId)
+      .select('assignedProfessionals')
+      .populate('assignedProfessionals.professionalId', 'name email image');
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const result = (user.assignedProfessionals || [])
+      .filter((ap) => !!ap.professionalId)
+      .map((ap) => {
+        const prof  = ap.professionalId;
+        const parts = (prof.name || '').trim().split(/\s+/);
+        return {
+          professionalId:     prof._id.toString(),
+          name:               parts[0] ?? '',
+          surname:            parts.slice(1).join(' '),
+          email:              prof.email,
+          image:              prof.image || null,
+          canViewStats:       ap.canViewStats,
+          canEditBoards:      ap.canEditBoards,
+          canEditPersonalData: ap.canEditPersonalData,
+        };
+      });
+
+    res.json({ assignedProfessionals: result });
+  } catch (error) {
+    console.error('Get assigned professionals error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+/**
+ * PUT /api/users/:userId/assigned-professionals
+ * Reemplaza la lista completa de profesionales asignados al usuario final.
+ * Body: { assignedProfessionals: [{ professionalId, canViewStats, canEditBoards, canEditPersonalData }] }
+ */
+exports.updateAssignedProfessionals = async (req, res) => {
+  try {
+    const { userId }             = req.params;
+    const { assignedProfessionals } = req.body;
+
+    if (!validateObjectId(userId)) {
+      return res.status(400).json({ error: 'Invalid user id' });
+    }
+
+    if (!Array.isArray(assignedProfessionals)) {
+      return res.status(400).json({ error: 'assignedProfessionals must be an array' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Validar que todos los professionalId existen y son type=teacher
+    for (const ap of assignedProfessionals) {
+      if (!validateObjectId(ap.professionalId)) {
+        return res.status(400).json({ error: `Invalid professionalId: ${ap.professionalId}` });
+      }
+      const prof = await User.findById(ap.professionalId).select('type');
+      if (!prof) {
+        return res.status(404).json({ error: `Professional not found: ${ap.professionalId}` });
+      }
+      if (prof.type !== 'teacher') {
+        return res.status(400).json({
+          error: `User ${ap.professionalId} is not a professional (type must be 'teacher')`
+        });
+      }
+    }
+
+    // Reemplazar lista completa
+    user.assignedProfessionals = assignedProfessionals.map((ap) => ({
+      professionalId:     ap.professionalId,
+      canViewStats:       !!ap.canViewStats,
+      canEditBoards:      !!ap.canEditBoards,
+      canEditPersonalData: !!ap.canEditPersonalData,
+    }));
+
+    await user.save();
+
+    res.json({
+      message: 'Assigned professionals updated successfully',
+      count:   user.assignedProfessionals.length,
+    });
+  } catch (error) {
+    console.error('Update assigned professionals error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

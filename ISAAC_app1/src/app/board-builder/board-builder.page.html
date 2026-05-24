@@ -1,14 +1,16 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar class="bb-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/organization-dashboard" text="Volver"
+                       (click)="$event.stopImmediatePropagation(); goBack()">
+      </ion-back-button>
+    </ion-buttons>
+    <ion-title class="bb-title">Tablero Builder</ion-title>
+  </ion-toolbar>
+</ion-header>
+
 <ion-content class="builder-content">
   <div class="builder-container">
-
-    <div class="builder-topbar">
-      <button class="back-btn" (click)="goBack()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <polyline points="15 18 9 12 15 6"/>
-        </svg>
-        Volver
-      </button>
-    </div>
 
     <div class="builder-card">
       <div class="builder-icon">

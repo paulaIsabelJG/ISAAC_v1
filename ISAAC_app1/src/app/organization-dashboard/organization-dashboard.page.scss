@@ -346,6 +346,15 @@ $visible-rows: 3;
     cursor: pointer;
     &:hover { background: $mint-light; transform: scale(1.03); }
   }
+
+  &--clickable {
+    cursor: pointer;
+    &:hover {
+      background: $blue-light;
+      border-color: $blue;
+      transform: scale(1.03);
+    }
+  }
 }
 
 .user-card-avatar {

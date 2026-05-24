@@ -22,6 +22,13 @@ router.get('/:userId/pictograms', userController.getCustomPictogramsByUserId);
 router.post('/:userId/pictograms', userController.addCustomPictogramToUserById);
 router.delete('/:userId/pictograms/:pictogramId', userController.deleteCustomPictogramByUserId);
 
+// childrenAccess del familiar (antes de /:userId genérico)
+router.put('/:parentId/children-access', userController.updateChildrenAccess);
+
+// Rutas de profesionales asignados (antes de /:userId genérico)
+router.get('/:userId/assigned-professionals', userController.getAssignedProfessionals);
+router.put('/:userId/assigned-professionals', userController.updateAssignedProfessionals);
+
 // CRUD de usuario por ID (al final para evitar conflictos con rutas con sufijo)
 router.put('/:userId', userController.updateUserById);
 router.patch('/:userId', userController.patchUserById);

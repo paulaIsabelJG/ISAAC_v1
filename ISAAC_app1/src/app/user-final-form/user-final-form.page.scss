@@ -1,0 +1,26 @@
+// Solo overrides/additions sobre add-user.page.scss (que ya está en styleUrls)
+
+// Estado cargando / error centrado
+.uff-state {
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  gap:             12px;
+  padding:         60px 20px;
+  font-size:       14px;
+  color:           #6b5462;
+
+  svg { width: 36px; height: 36px; stroke: #6b5462; }
+
+  &--error { color: #c0392b; svg { stroke: #c0392b; } }
+}
+
+// Hint junto al label de contraseña (hint gris pequeño)
+.field-label-hint {
+  font-size:      10px;
+  font-weight:    400;
+  text-transform: none;
+  color:          #aaa;
+  margin-left:    4px;
+}

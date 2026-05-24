@@ -1,35 +1,266 @@
 <ion-header class="ion-no-border">
-  <ion-toolbar class="ph-toolbar">
+  <ion-toolbar class="ap-toolbar">
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/add-user" text="Volver"
                        (click)="$event.stopImmediatePropagation(); goBack()">
       </ion-back-button>
     </ion-buttons>
-    <ion-title class="ph-title">Profesionales encargados</ion-title>
+    <ion-title class="ap-title">Profesionales encargados</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ph-content">
-  <div class="ph-frame">
+<ion-content class="ap-content">
+  <div class="ap-container">
 
-    <img src="assets/pictograms/assigned-professionals.png" class="ph-img" alt="Profesionales encargados"/>
+    <!-- ── Aviso: usuario sin userId (aún no guardado en BD) ─────────────────── -->
+    @if (!hasUserId) {
+      <div class="no-user-banner">
+        <svg class="no-user-icon" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <div class="no-user-text">
+          <strong>Usuario no registrado aún</strong><br/>
+          Puedes preparar la lista, pero los cambios <em>no se guardarán</em> hasta
+          que el usuario exista en el sistema. Regístralo primero desde el formulario.
+        </div>
+      </div>
+    }
 
-    <h1 class="ph-heading">Profesionales encargados</h1>
-    <p class="ph-desc">
-      Aquí podrás ver y gestionar qué profesionales están asignados a este usuario:<br/>
-      terapeutas, logopedas, educadores y más.
-    </p>
+    <!-- ══════════════════════════════════════════════════════════════════════════
+         CARD: TABLA PROFESIONALES
+    ══════════════════════════════════════════════════════════════════════════════ -->
+    <div class="card-section">
 
-    <div class="ph-badge">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="12" y1="8" x2="12" y2="12"/>
-        <line x1="12" y1="16" x2="12.01" y2="16"/>
-      </svg>
-      Funcionalidad en desarrollo — próximo sprint
-    </div>
+      <!-- Cabecera -->
+      <div class="sec-head">
+        <div class="sec-head-left">
+          <div class="sec-dot sec-dot--mint"></div>
+          <h2 class="sec-title">Profesionales encargados</h2>
+        </div>
+        <span class="count-badge">{{ rows.length }}</span>
+      </div>
 
-    <button class="ph-back-btn" (click)="goBack()">← Volver</button>
+      <!-- ── Estado: cargando ──────────────────────────────────────────────── -->
+      @if (isLoading) {
+        <div class="state-block">
+          <ion-spinner name="crescent" color="primary"></ion-spinner>
+          <span>Cargando profesionales…</span>
+        </div>
 
-  </div>
+      } @else if (loadError) {
+      <!-- ── Estado: error ─────────────────────────────────────────────────── -->
+        <div class="state-block state-block--error">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8"  x2="12"   y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <span>{{ loadError }}</span>
+        </div>
+
+      } @else {
+      <!-- ── Tabla ──────────────────────────────────────────────────────────── -->
+        <div class="table-scroll-wrap">
+          <table class="prof-table">
+
+            <!-- Cabecera tabla -->
+            <thead>
+              <tr>
+                <th class="th-prof">Profesional</th>
+                <th class="th-center">Estadísticas</th>
+                <th class="th-center">Tableros</th>
+                <th class="th-center">Datos pers.</th>
+                <th class="th-del"></th>
+              </tr>
+            </thead>
+
+            <tbody>
+
+              <!-- ── Filas reales ──────────────────────────────────────────── -->
+              @for (row of rows; track row.professionalId; let i = $index) {
+                <tr class="prof-row">
+
+                  <!-- Profesional: avatar + nombre + email -->
+                  <td class="td-prof">
+                    <div class="prof-info">
+                      <div class="prof-avatar">
+                        @if (row.image) {
+                          <img [src]="buildSafeUrl(row.image)" [alt]="row.name" class="avatar-img"/>
+                        } @else {
+                          <span class="avatar-initial">{{ getInitial(row) }}</span>
+                        }
+                      </div>
+                      <div class="prof-meta">
+                        <span class="prof-fullname">{{ row.name }} {{ row.surname }}</span>
+                        <span class="prof-email">{{ row.email }}</span>
+                      </div>
+                    </div>
+                  </td>
+
+                  <!-- Permiso: Estadísticas -->
+                  <td class="td-center">
+                    <button class="perm-chip"
+                            [class.perm-chip--on]="row.canViewStats"
+                            (click)="row.canViewStats = !row.canViewStats"
+                            [title]="row.canViewStats ? 'Desactivar' : 'Activar'">
+                      @if (row.canViewStats) {
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        Activado
+                      } @else {
+                        Inactivo
+                      }
+                    </button>
+                  </td>
+
+                  <!-- Permiso: Tableros -->
+                  <td class="td-center">
+                    <button class="perm-chip"
+                            [class.perm-chip--on]="row.canEditBoards"
+                            (click)="row.canEditBoards = !row.canEditBoards"
+                            [title]="row.canEditBoards ? 'Desactivar' : 'Activar'">
+                      @if (row.canEditBoards) {
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        Activado
+                      } @else {
+                        Inactivo
+                      }
+                    </button>
+                  </td>
+
+                  <!-- Permiso: Datos personales -->
+                  <td class="td-center">
+                    <button class="perm-chip"
+                            [class.perm-chip--on]="row.canEditPersonalData"
+                            (click)="row.canEditPersonalData = !row.canEditPersonalData"
+                            [title]="row.canEditPersonalData ? 'Desactivar' : 'Activar'">
+                      @if (row.canEditPersonalData) {
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        Activado
+                      } @else {
+                        Inactivo
+                      }
+                    </button>
+                  </td>
+
+                  <!-- Eliminar fila -->
+                  <td class="td-del">
+                    <button class="del-btn" (click)="removeRow(i)" title="Quitar profesional">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="18" y1="6"  x2="6"  y2="18"/>
+                        <line x1="6"  y1="6"  x2="18" y2="18"/>
+                      </svg>
+                    </button>
+                  </td>
+
+                </tr>
+              }
+
+              <!-- ── Fila de ayuda (solo cuando no hay asignados, NO persistente) ── -->
+              @if (rows.length === 0) {
+                <tr class="help-row">
+                  <td class="td-prof">
+                    <div class="prof-info">
+                      <div class="prof-avatar prof-avatar--ghost"></div>
+                      <div class="prof-meta">
+                        <span class="prof-fullname help-text">Nombre Apellidos</span>
+                        <span class="prof-email help-text">correo@ejemplo.com</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="td-center">
+                    <span class="perm-chip perm-chip--example">Inactivo</span>
+                  </td>
+                  <td class="td-center">
+                    <span class="perm-chip perm-chip--example">Inactivo</span>
+                  </td>
+                  <td class="td-center">
+                    <span class="perm-chip perm-chip--example">Inactivo</span>
+                  </td>
+                  <td class="td-del"></td>
+                </tr>
+              }
+
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ── Mensaje si no hay filas ───────────────────────────────────── -->
+        @if (rows.length === 0) {
+          <p class="empty-hint">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            Aún no hay profesionales asignados a este usuario.
+            Usa el selector de abajo para añadir uno.
+          </p>
+        }
+
+        <!-- ── Fila "añadir profesional" ─────────────────────────────────── -->
+        <div class="add-row">
+          <div class="add-row-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5"  y1="12" x2="19" y2="12"/>
+            </svg>
+            Añadir profesional
+          </div>
+
+          @if (availableProfessionals.length > 0) {
+            <div class="add-controls">
+              <select [(ngModel)]="selectedProfId" class="add-select">
+                <option value="">— Seleccionar profesional —</option>
+                @for (p of availableProfessionals; track p._id) {
+                  <option [value]="p._id">{{ p.name }}</option>
+                }
+              </select>
+              <button class="add-confirm-btn"
+                      (click)="addProfessional()"
+                      [disabled]="!selectedProfId">
+                Añadir a la lista
+              </button>
+            </div>
+          } @else if (centerProfessionals.length > 0) {
+            <p class="add-all-done">
+              ✓ Todos los profesionales del centro ya están asignados.
+            </p>
+          } @else {
+            <p class="add-none">
+              No hay otros profesionales en el centro todavía.
+            </p>
+          }
+        </div>
+
+      }<!-- /else (no loading/error) -->
+
+    </div><!-- /card-section -->
+
+    <!-- ── Botón guardar ──────────────────────────────────────────────────────── -->
+    <button class="save-btn"
+            (click)="save()"
+            [disabled]="isSaving || isLoading">
+      @if (isSaving) {
+        <ion-spinner name="crescent" class="btn-spinner"></ion-spinner>
+      }
+      @if (!isSaving) {
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+          <polyline points="17 21 17 13 7 13 7 21"/>
+          <polyline points="7 3 7 8 15 8"/>
+        </svg>
+      }
+      Guardar profesionales encargados
+    </button>
+
+  </div><!-- /ap-container -->
 </ion-content>

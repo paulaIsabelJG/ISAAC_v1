@@ -66,6 +66,44 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
 
+  // ── Formulario completo de edición de usuario final ─────────────────────────
+  {
+    path: 'user-final-form/:userId',
+    loadComponent: () =>
+      import('./user-final-form/user-final-form.page').then(
+        (m) => m.UserFinalFormPage
+      ),
+    canActivate: [authGuard],
+  },
+
+  // ── Sesión / perfil de usuario final ────────────────────────────────────────
+  {
+    path: 'user-session/:userId',
+    loadComponent: () =>
+      import('./user-session/user-session.page').then((m) => m.UserSessionPage),
+    canActivate: [authGuard],
+  },
+
+  // ── Datos personales del usuario final ──────────────────────────────────────
+  {
+    path: 'user-personal-data/:userId',
+    loadComponent: () =>
+      import('./user-personal-data/user-personal-data.page').then(
+        (m) => m.UserPersonalDataPage
+      ),
+    canActivate: [authGuard],
+  },
+
+  // ── Placeholder Estadísticas ─────────────────────────────────────────────────
+  {
+    path: 'statistics-placeholder',
+    loadComponent: () =>
+      import('./statistics-placeholder/statistics-placeholder.page').then(
+        (m) => m.StatisticsPlaceholderPage
+      ),
+    canActivate: [authGuard],
+  },
+
   // ── Redirección por defecto ─────────────────────────────────────────────────
   {
     path: '',

@@ -50,6 +50,51 @@ const userSchema = new mongoose.Schema({
     ref: 'User',
     default: null
   },
+  // Relación familiar → usuarios finales a cargo, con permisos por relación
+  childrenAccess: [{
+    childId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref:  'User',
+      required: true
+    },
+    canViewStats: {
+      type: Boolean,
+      default: false
+    },
+    canEditBoards: {
+      type: Boolean,
+      default: false
+    },
+    canEditPersonalData: {
+      type: Boolean,
+      default: false
+    }
+  }],
+  // Permisos propios del usuario final (qué puede ver cuando se loguea como él mismo)
+  selfPermissions: {
+    canEditPersonalData: { type: Boolean, default: false },
+    canEditBoards:       { type: Boolean, default: false },
+    canViewStats:        { type: Boolean, default: false },
+  },
+  assignedProfessionals: [{
+    professionalId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref:  'User',
+      required: true
+    },
+    canViewStats: {
+      type: Boolean,
+      default: false
+    },
+    canEditBoards: {
+      type: Boolean,
+      default: false
+    },
+    canEditPersonalData: {
+      type: Boolean,
+      default: false
+    }
+  }],
   customPictograms: [{
     id: {
       type: String,
