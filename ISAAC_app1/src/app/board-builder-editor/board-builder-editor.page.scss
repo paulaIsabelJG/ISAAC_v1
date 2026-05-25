@@ -570,37 +570,61 @@ $panel-bg:     #faf5f8;
   &--disabled { opacity: 0.45; }
 }
 
-.bbe-cell-img {
-  width:        clamp(32px, 62cqi, 82px);  // 62% of cell width, 32-82px
-  height:       auto;
-  aspect-ratio: 1;
-  object-fit:   contain;
-  flex:         0 0 auto;
-}
-
-.bbe-cell-img-placeholder {
-  width:           clamp(28px, 52cqi, 72px);
-  height:          auto;
-  aspect-ratio:    1;
+// ── Wrapper de imagen: garantiza que la imagen NUNCA invade el label ──────────
+// flex: 1 / min-height: 0 → en contexto flex (base)
+// Como grid item en 1fr row → se estira automáticamente por align-items: stretch
+.bbe-cell-img-wrap {
+  flex:            1;          // crecer en flex parent
+  min-height:      0;          // evita desbordamiento en flex
+  min-width:       0;
+  width:           100%;
   display:         flex;
   align-items:     center;
   justify-content: center;
-  flex:            0 0 auto;
-  svg { width: 60%; height: auto; stroke: #ccc; }
+  overflow:        hidden;
+  padding:         6px 6px 3px;
+  box-sizing:      border-box;
+}
+
+.bbe-cell-img {
+  // Rellena el wrapper respetando el aspect ratio original
+  width:        100%;
+  height:       100%;
+  max-width:    100%;
+  max-height:   100%;
+  object-fit:   contain;   // nunca distorsionar ni recortar
+  display:      block;
+  flex:         unset;
+  aspect-ratio: unset;     // NO forzar cuadrado
+}
+
+.bbe-cell-img-placeholder {
+  width:           100%;
+  height:          100%;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  flex:            unset;
+  aspect-ratio:    unset;
+  svg { width: min(70%, 48px); height: auto; stroke: #ccc; }
 }
 
 .bbe-cell-label {
-  flex:           0 0 auto;              // nunca se comprime — garantía base
+  flex:           0 0 auto;        // nunca comprime — siempre visible
+  width:          100%;
+  padding:        3px 6px 6px;
   font-size:      clamp(9px, 11cqi, 14px);
   font-weight:    700;
   text-align:     center;
   color:          $text-dark;
-  line-height:    1.2;
-  max-width:      90%;
-  overflow:       hidden;
+  line-height:    1.1;
   text-transform: uppercase;
-  text-overflow:  ellipsis;
-  white-space:    nowrap;
+  // Máximo 2 líneas — sin recortar con ellipsis de 1 línea
+  overflow:             hidden;
+  display:              -webkit-box;
+  -webkit-line-clamp:   2;
+  -webkit-box-orient:   vertical;
+  // SIN white-space: nowrap — se permite wrapping
 }
 
 .bbe-cell-plus {
@@ -953,8 +977,8 @@ $panel-bg:     #faf5f8;
   display:               grid;
   grid-template-rows:    1fr auto;
   grid-template-columns: 1fr;
-  align-items:           center;
-  justify-items:         center;
+  align-items:           stretch;
+  justify-items:         stretch;
   gap:                   3px;
   padding:               clamp(4px, 5cqi, 8px);
   width:                 auto;
@@ -964,7 +988,9 @@ $panel-bg:     #faf5f8;
 
 // Plus (celda vacía) ocupa ambas filas centrado
 .bbe-col-center .bbe-cell .bbe-cell-plus {
-  grid-row: 1 / -1;
+  grid-row:     1 / -1;
+  align-self:   center;
+  justify-self: center;
 }
 
 // Imagen ocupa la fila 1fr; object-fit mantiene proporciones
@@ -989,13 +1015,10 @@ $panel-bg:     #faf5f8;
   svg { width: min(75%, 56px); height: auto; stroke: #ccc; }
 }
 
-// Label siempre en fila auto → siempre visible
+// Label siempre en fila auto → siempre visible (2 líneas máx.)
 .bbe-col-center .bbe-cell-label {
-  font-size:     clamp(8px, 11cqi, 14px);
-  max-width:     100%;
-  overflow:      hidden;
-  text-overflow: ellipsis;
-  white-space:   nowrap;
+  font-size: clamp(8px, 11cqi, 14px);
+  max-width: 100%;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1069,8 +1092,8 @@ $panel-bg:     #faf5f8;
   display:               grid;
   grid-template-rows:    1fr auto;
   grid-template-columns: 1fr;
-  align-items:           center;
-  justify-items:         center;
+  align-items:           stretch;
+  justify-items:         stretch;
   gap:                   3px;
   padding:               clamp(4px, 5cqi, 8px);
   width:                 auto;
@@ -1078,13 +1101,10 @@ $panel-bg:     #faf5f8;
   max-height:            none;
 }
 
-// Label siempre en fila auto
+// Label siempre en fila auto (2 líneas máx.)
 .bbe-preview-board .bbe-cell-label {
-  font-size:     clamp(8px, 11cqi, 14px);
-  max-width:     100%;
-  overflow:      hidden;
-  text-overflow: ellipsis;
-  white-space:   nowrap;
+  font-size: clamp(8px, 11cqi, 14px);
+  max-width: 100%;
 }
 
 // Imagen ocupa la fila 1fr
@@ -1149,8 +1169,8 @@ $panel-bg:     #faf5f8;
   display:               grid;
   grid-template-rows:    1fr auto;
   grid-template-columns: 1fr;
-  align-items:           center;
-  justify-items:         center;
+  align-items:           stretch;
+  justify-items:         stretch;
   gap:                   2px;
   padding:               clamp(3px, 4cqi, 7px);
   box-sizing:            border-box;
@@ -1208,8 +1228,8 @@ $panel-bg:     #faf5f8;
   display:               grid;
   grid-template-rows:    1fr auto;
   grid-template-columns: 1fr;
-  align-items:           center;
-  justify-items:         center;
+  align-items:           stretch;
+  justify-items:         stretch;
   gap:                   1px;
   padding:               clamp(3px, 9%, 8px);
   box-sizing:            border-box;
@@ -1246,8 +1266,8 @@ $panel-bg:     #faf5f8;
   display:               grid;
   grid-template-rows:    1fr auto;
   grid-template-columns: 1fr;
-  align-items:           center;
-  justify-items:         center;
+  align-items:           stretch;
+  justify-items:         stretch;
   gap:                   2px;
   padding:               clamp(4px, 10%, 10px);
   box-sizing:            border-box;
@@ -1260,6 +1280,15 @@ $panel-bg:     #faf5f8;
 
   &:hover             { transform: translate(-50%, -50%) scale(1.08); }
   &.bbe-cell--selected { box-shadow: 0 0 0 5px $violet; }
+}
+
+// Plus (celda vacía) en celdas con grid 1fr-auto — centrar en ambas filas
+.bbe-loc-cell .bbe-cell-plus,
+.bbe-circ-slot .bbe-cell-plus,
+.bbe-circ-center .bbe-cell-plus {
+  grid-row:     1 / -1;
+  align-self:   center;
+  justify-self: center;
 }
 
 .bbe-circ-center-hint {

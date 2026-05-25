@@ -62,7 +62,9 @@ export interface Board {
   _id:                   string;
   name:                  string;
   imageUrl?:             string;
-  creatorId:             string;
+  creatorId:             string;   // campo legacy
+  createdBy?:            string;   // ID del creador de contexto (fijado por backend)
+  creatorName?:          string;   // nombre visible del creador, solo para UI
   userId:                string;
   shape:                 BoardShape;
   rows:                  number;
@@ -99,6 +101,9 @@ export interface CreateBoardPayload {
   iaRows?:                number;
   iaCols?:                number;
   boardRole?:             'main' | 'secondary';
+  /** ID del creador de contexto (builder que se está editando).
+   *  El backend valida permisos y lo usa como createdBy si procede. */
+  contextCreatorId?:      string;
 }
 
 export interface UpdateBoardPayload {
@@ -137,9 +142,23 @@ export class BoardService {
 
   constructor(private http: HttpClient) {}
 
-  /** GET /api/boards/my — tableros creados por el usuario de sesión */
+  /** GET /api/boards/my — tableros creados por el usuario de sesión (legacy) */
   getMyBoards(): Observable<{ boards: Board[] }> {
     return this.http.get<{ boards: Board[] }>(`${this.url}/my`);
+  }
+
+  /** GET /api/boards/builder/:creatorId — tableros del builder de un creador concreto */
+  getBoardsByCreator(creatorId: string): Observable<{ boards: Board[] }> {
+    return this.http.get<{ boards: Board[] }>(
+      `${this.url}/builder/${encodeURIComponent(creatorId)}`
+    );
+  }
+
+  /** GET /api/boards/assigned/:userId — tableros principales asignados (userId) a un usuario */
+  getAssignedBoards(userId: string): Observable<{ boards: Board[] }> {
+    return this.http.get<{ boards: Board[] }>(
+      `${this.url}/assigned/${encodeURIComponent(userId)}`
+    );
   }
 
   /** GET /api/boards/user/:userId — tableros asignados a un usuario */
@@ -174,6 +193,14 @@ export class BoardService {
     return this.http.patch<{ board: Board }>(
       `${this.url}/${encodeURIComponent(boardId)}/cell`,
       payload
+    );
+  }
+
+  /** POST /api/boards/:boardId/duplicate — duplicar tablero */
+  duplicateBoard(boardId: string): Observable<{ board: Board }> {
+    return this.http.post<{ board: Board }>(
+      `${this.url}/${encodeURIComponent(boardId)}/duplicate`,
+      {}
     );
   }
 

@@ -157,17 +157,19 @@
                    [style.border-color]="getCellBorderColor(cell.row, cell.col)"
                    (click)="onCellClick(cell.row, cell.col)">
                 @if (getCellPict(cell.row, cell.col); as p) {
-                  @if (p.imageUrl) {
-                    <img [src]="buildSafeUrl(p.imageUrl)" class="bbe-cell-img" [alt]="p.label" draggable="false"/>
-                  } @else {
-                    <div class="bbe-cell-img-placeholder">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <rect x="3" y="3" width="18" height="18" rx="3"/>
-                        <circle cx="8.5" cy="8.5" r="1.5"/>
-                        <polyline points="21 15 16 10 5 21"/>
-                      </svg>
-                    </div>
-                  }
+                  <div class="bbe-cell-img-wrap">
+                    @if (p.imageUrl) {
+                      <img [src]="buildSafeUrl(p.imageUrl)" class="bbe-cell-img" [alt]="p.label" draggable="false"/>
+                    } @else {
+                      <div class="bbe-cell-img-placeholder">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                          <rect x="3" y="3" width="18" height="18" rx="3"/>
+                          <circle cx="8.5" cy="8.5" r="1.5"/>
+                          <polyline points="21 15 16 10 5 21"/>
+                        </svg>
+                      </div>
+                    }
+                  </div>
                   <span class="bbe-cell-label">{{ p.label }}</span>
                 } @else {
                   <div class="bbe-cell-empty-preview"></div>
@@ -193,17 +195,19 @@
                    [style.border-color]="getCellBorderColor(i, -2)"
                    (click)="onCellClick(i, -2)">
                 @if (getCellPict(i, -2); as p) {
-                  @if (p.imageUrl) {
-                    <img [src]="buildSafeUrl(p.imageUrl)" class="bbe-cell-img" [alt]="p.label" draggable="false"/>
-                  } @else {
-                    <div class="bbe-cell-img-placeholder">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <rect x="3" y="3" width="18" height="18" rx="3"/>
-                        <circle cx="8.5" cy="8.5" r="1.5"/>
-                        <polyline points="21 15 16 10 5 21"/>
-                      </svg>
-                    </div>
-                  }
+                  <div class="bbe-cell-img-wrap">
+                    @if (p.imageUrl) {
+                      <img [src]="buildSafeUrl(p.imageUrl)" class="bbe-cell-img" [alt]="p.label" draggable="false"/>
+                    } @else {
+                      <div class="bbe-cell-img-placeholder">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                          <rect x="3" y="3" width="18" height="18" rx="3"/>
+                          <circle cx="8.5" cy="8.5" r="1.5"/>
+                          <polyline points="21 15 16 10 5 21"/>
+                        </svg>
+                      </div>
+                    }
+                  </div>
                   <span class="bbe-cell-label">{{ p.label }}</span>
                 } @else {
                   <div class="bbe-cell-empty-preview"></div>
@@ -232,17 +236,19 @@
                 <div class="bbe-cell-empty-preview"></div>
               } @else {
                 @if (getCellPict(i, 0); as p) {
-                  @if (p.imageUrl) {
-                    <img [src]="buildSafeUrl(p.imageUrl)" class="bbe-cell-img" [alt]="p.label" draggable="false"/>
-                  } @else {
-                    <div class="bbe-cell-img-placeholder">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <rect x="3" y="3" width="18" height="18" rx="3"/>
-                        <circle cx="8.5" cy="8.5" r="1.5"/>
-                        <polyline points="21 15 16 10 5 21"/>
-                      </svg>
-                    </div>
-                  }
+                  <div class="bbe-cell-img-wrap">
+                    @if (p.imageUrl) {
+                      <img [src]="buildSafeUrl(p.imageUrl)" class="bbe-cell-img" [alt]="p.label" draggable="false"/>
+                    } @else {
+                      <div class="bbe-cell-img-placeholder">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                          <rect x="3" y="3" width="18" height="18" rx="3"/>
+                          <circle cx="8.5" cy="8.5" r="1.5"/>
+                          <polyline points="21 15 16 10 5 21"/>
+                        </svg>
+                      </div>
+                    }
+                  </div>
                   <span class="bbe-cell-label">{{ p.label }}</span>
                 } @else {
                   <div class="bbe-cell-empty-preview"></div>
@@ -257,17 +263,19 @@
                [style.border-color]="circularSimMode ? '#7c4dff' : getCellBorderColor(0, -1)"
                (click)="circularSimMode ? circularSimReset() : onCellClick(0, -1)">
             @if (previewCenterPict; as p) {
-              @if (p.imageUrl) {
-                <img [src]="buildSafeUrl(p.imageUrl)" class="bbe-cell-img" [alt]="p.label" draggable="false"/>
-              } @else {
-                <div class="bbe-cell-img-placeholder">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <rect x="3" y="3" width="18" height="18" rx="3"/>
-                    <circle cx="8.5" cy="8.5" r="1.5"/>
-                    <polyline points="21 15 16 10 5 21"/>
-                  </svg>
-                </div>
-              }
+              <div class="bbe-cell-img-wrap">
+                @if (p.imageUrl) {
+                  <img [src]="buildSafeUrl(p.imageUrl)" class="bbe-cell-img" [alt]="p.label" draggable="false"/>
+                } @else {
+                  <div class="bbe-cell-img-placeholder">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                      <rect x="3" y="3" width="18" height="18" rx="3"/>
+                      <circle cx="8.5" cy="8.5" r="1.5"/>
+                      <polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                  </div>
+                }
+              </div>
               <span class="bbe-cell-label">{{ p.label }}</span>
             } @else {
               <div class="bbe-circ-center-hint">
@@ -547,17 +555,19 @@
                        (drop)="onCellDrop($event, cell.row, cell.col)"
                        (dragend)="onCellDragEnd()">
                     @if (getCellPict(cell.row, cell.col); as p) {
-                      @if (p.imageUrl) {
-                        <img [src]="buildSafeUrl(p.imageUrl)" class="bbe-cell-img" [alt]="p.label" draggable="false"/>
-                      } @else {
-                        <div class="bbe-cell-img-placeholder">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <rect x="3" y="3" width="18" height="18" rx="3"/>
-                            <circle cx="8.5" cy="8.5" r="1.5"/>
-                            <polyline points="21 15 16 10 5 21"/>
-                          </svg>
-                        </div>
-                      }
+                      <div class="bbe-cell-img-wrap">
+                        @if (p.imageUrl) {
+                          <img [src]="buildSafeUrl(p.imageUrl)" class="bbe-cell-img" [alt]="p.label" draggable="false"/>
+                        } @else {
+                          <div class="bbe-cell-img-placeholder">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                              <rect x="3" y="3" width="18" height="18" rx="3"/>
+                              <circle cx="8.5" cy="8.5" r="1.5"/>
+                              <polyline points="21 15 16 10 5 21"/>
+                            </svg>
+                          </div>
+                        }
+                      </div>
                       <span class="bbe-cell-label">{{ p.label }}</span>
                       @if (getCellIsDisabled(cell.row, cell.col)) {
                         <div class="bbe-cell-disabled-badge">OFF</div>
@@ -597,17 +607,19 @@
                        (drop)="onCellDrop($event, i, -2)"
                        (dragend)="onCellDragEnd()">
                     @if (getCellPict(i, -2); as p) {
-                      @if (p.imageUrl) {
-                        <img [src]="buildSafeUrl(p.imageUrl)" class="bbe-cell-img" [alt]="p.label" draggable="false"/>
-                      } @else {
-                        <div class="bbe-cell-img-placeholder">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <rect x="3" y="3" width="18" height="18" rx="3"/>
-                            <circle cx="8.5" cy="8.5" r="1.5"/>
-                            <polyline points="21 15 16 10 5 21"/>
-                          </svg>
-                        </div>
-                      }
+                      <div class="bbe-cell-img-wrap">
+                        @if (p.imageUrl) {
+                          <img [src]="buildSafeUrl(p.imageUrl)" class="bbe-cell-img" [alt]="p.label" draggable="false"/>
+                        } @else {
+                          <div class="bbe-cell-img-placeholder">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                              <rect x="3" y="3" width="18" height="18" rx="3"/>
+                              <circle cx="8.5" cy="8.5" r="1.5"/>
+                              <polyline points="21 15 16 10 5 21"/>
+                            </svg>
+                          </div>
+                        }
+                      </div>
                       <span class="bbe-cell-label">{{ p.label }}</span>
                     } @else {
                       <span class="bbe-cell-plus">+</span>
@@ -643,17 +655,19 @@
                      (drop)="onCellDrop($event, i, 0)"
                      (dragend)="onCellDragEnd()">
                   @if (getCellPict(i, 0); as p) {
-                    @if (p.imageUrl) {
-                      <img [src]="buildSafeUrl(p.imageUrl)" class="bbe-cell-img" [alt]="p.label" draggable="false"/>
-                    } @else {
-                      <div class="bbe-cell-img-placeholder">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                          <rect x="3" y="3" width="18" height="18" rx="3"/>
-                          <circle cx="8.5" cy="8.5" r="1.5"/>
-                          <polyline points="21 15 16 10 5 21"/>
-                        </svg>
-                      </div>
-                    }
+                    <div class="bbe-cell-img-wrap">
+                      @if (p.imageUrl) {
+                        <img [src]="buildSafeUrl(p.imageUrl)" class="bbe-cell-img" [alt]="p.label" draggable="false"/>
+                      } @else {
+                        <div class="bbe-cell-img-placeholder">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="3"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <polyline points="21 15 16 10 5 21"/>
+                          </svg>
+                        </div>
+                      }
+                    </div>
                     <span class="bbe-cell-label">{{ p.label }}</span>
                   } @else {
                     <span class="bbe-cell-plus">+</span>
@@ -679,17 +693,19 @@
                    (drop)="onCellDrop($event, 0, -1)"
                    (dragend)="onCellDragEnd()">
                 @if (circularCenterPict; as p) {
-                  @if (p.imageUrl) {
-                    <img [src]="buildSafeUrl(p.imageUrl)" class="bbe-cell-img" [alt]="p.label" draggable="false"/>
-                  } @else {
-                    <div class="bbe-cell-img-placeholder">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <rect x="3" y="3" width="18" height="18" rx="3"/>
-                        <circle cx="8.5" cy="8.5" r="1.5"/>
-                        <polyline points="21 15 16 10 5 21"/>
-                      </svg>
-                    </div>
-                  }
+                  <div class="bbe-cell-img-wrap">
+                    @if (p.imageUrl) {
+                      <img [src]="buildSafeUrl(p.imageUrl)" class="bbe-cell-img" [alt]="p.label" draggable="false"/>
+                    } @else {
+                      <div class="bbe-cell-img-placeholder">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                          <rect x="3" y="3" width="18" height="18" rx="3"/>
+                          <circle cx="8.5" cy="8.5" r="1.5"/>
+                          <polyline points="21 15 16 10 5 21"/>
+                        </svg>
+                      </div>
+                    }
+                  </div>
                   <span class="bbe-cell-label">{{ p.label }}</span>
                 } @else {
                   <span class="bbe-cell-plus">+</span>

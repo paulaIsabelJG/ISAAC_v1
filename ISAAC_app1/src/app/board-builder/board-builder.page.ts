@@ -82,6 +82,11 @@ export class BoardBuilderPage implements OnInit {
   /** Ruta a la que volver — la impone el caller vía ?returnTo= */
   private returnTo = '/organization-dashboard';
 
+  /** Contexto del builder: de quién son los tableros que se muestran.
+   *  Si no se pasa creatorId en query params, se usa el usuario de sesión. */
+  contextCreatorId   = '';
+  contextCreatorName = '';
+
   boards: Board[] = [];
   isLoading = false;
   loadError = '';
@@ -106,19 +111,46 @@ export class BoardBuilderPage implements OnInit {
   ngOnInit() {
     const rt = this.route.snapshot.queryParamMap.get('returnTo');
     if (rt) { this.returnTo = rt; }
+
+    // Contexto del builder: ¿de quién son los tableros que vamos a mostrar?
+    const qCreatorId   = this.route.snapshot.queryParamMap.get('creatorId');
+    const qCreatorName = this.route.snapshot.queryParamMap.get('creatorName');
+
+    const me = this.authSvc.getCurrentUser();
+
+    // Si viene creatorId por param, ese es el contexto; si no, yo mismo soy el contexto.
+    this.contextCreatorId   = qCreatorId   || me?.id   || '';
+    this.contextCreatorName = qCreatorName || me?.name || '';
   }
 
   ionViewWillEnter() {
+    // Refrescar contexto del route snapshot (cubre el caso en que Ionic reutiliza
+    // la instancia y el dashboard abre un builder con un creatorId diferente)
+    const qCreatorId   = this.route.snapshot.queryParamMap.get('creatorId');
+    const qCreatorName = this.route.snapshot.queryParamMap.get('creatorName');
+    const me           = this.authSvc.getCurrentUser();
+    if (qCreatorId)   { this.contextCreatorId   = qCreatorId; }
+    if (qCreatorName) { this.contextCreatorName = qCreatorName; }
+    if (!this.contextCreatorId) {
+      this.contextCreatorId   = me?.id   || '';
+      this.contextCreatorName = me?.name || '';
+    }
     this.loadBoards();
   }
 
   // ── Carga ────────────────────────────────────────────────────────────────────
 
   private async loadBoards(): Promise<void> {
+    if (!this.contextCreatorId) {
+      this.loadError = 'No se pudo determinar el creador del builder.';
+      return;
+    }
     this.isLoading = true;
     this.loadError = '';
     try {
-      const res = await firstValueFrom(this.boardSvc.getMyBoards());
+      const res = await firstValueFrom(
+        this.boardSvc.getBoardsByCreator(this.contextCreatorId)
+      );
       this.boards = res.boards;
     } catch {
       this.loadError = 'Error al cargar los tableros.';
@@ -133,13 +165,21 @@ export class BoardBuilderPage implements OnInit {
 
   goToCreate() {
     this.router.navigate(['/board-builder-create'], {
-      queryParams: { returnTo: '/board-builder' },
+      queryParams: {
+        returnTo:    '/board-builder',
+        creatorId:   this.contextCreatorId,
+        creatorName: this.contextCreatorName,
+      },
     });
   }
 
   openEditor(boardId: string) {
     this.router.navigate(['/board-builder-editor', boardId], {
-      queryParams: { returnTo: '/board-builder' },
+      queryParams: {
+        returnTo:    '/board-builder',
+        creatorId:   this.contextCreatorId,
+        creatorName: this.contextCreatorName,
+      },
     });
   }
 
@@ -342,7 +382,9 @@ export class BoardBuilderPage implements OnInit {
 
     console.log('[OBZ] Tableros a importar:', allBoardPaths.size, [...allBoardPaths.entries()]);
 
-    // ── 2. Obtener userId del usuario activo ──────────────────────────────
+    // ── 2. Resolver contexto de creación ─────────────────────────────────
+    // userId asignado = el creador de contexto (el builder que estamos editando)
+    // contextCreatorId = createdBy que se enviará al backend
     const currentUser = this.authSvc.getCurrentUser();
     if (!currentUser?.id) {
       (await this.toastCtrl.create({
@@ -351,7 +393,8 @@ export class BoardBuilderPage implements OnInit {
       })).present();
       return;
     }
-    const userId = currentUser.id;
+    // userId = contexto del builder (puede ser diferente al usuario de sesión)
+    const userId = this.contextCreatorId || currentUser.id;
 
     // ── 3. PASADA 1 — parsear y crear todos los tableros sin enlaces ───────
     const entries: ObzParsedBoard[]   = [];
@@ -423,6 +466,8 @@ export class BoardBuilderPage implements OnInit {
             locationColumnEnabled: locEnabled,
             locationColumnSlots:   locSlots,
             boardRole,
+            // createdBy lo fija el backend usando contextCreatorId con validación de permisos
+            contextCreatorId:      this.contextCreatorId || undefined,
           };
           const created = await firstValueFrom(this.boardSvc.createBoard(createPayload));
           const mongoId = created.board._id;
@@ -981,6 +1026,40 @@ export class BoardBuilderPage implements OnInit {
       return btn.vocalization?.trim() ? 'voice+navigate' : 'navigate';
     }
     return 'voice';
+  }
+
+  async duplicateBoard(board: Board, event: Event): Promise<void> {
+    event.stopPropagation();
+    this.isLoading = true;
+    try {
+      const res = await firstValueFrom(this.boardSvc.duplicateBoard(board._id));
+      // Insertar la copia justo después del tablero original en la lista local
+      const idx = this.boards.findIndex((b) => b._id === board._id);
+      if (idx >= 0) {
+        this.boards = [
+          ...this.boards.slice(0, idx + 1),
+          res.board,
+          ...this.boards.slice(idx + 1),
+        ];
+      } else {
+        this.boards = [res.board, ...this.boards];
+      }
+      (await this.toastCtrl.create({
+        message:  `✓ "${res.board.name}" creado`,
+        duration: 2000,
+        color:    'success',
+        position: 'top',
+      })).present();
+    } catch {
+      (await this.toastCtrl.create({
+        message:  'No se pudo duplicar el tablero',
+        duration: 2500,
+        color:    'danger',
+        position: 'top',
+      })).present();
+    } finally {
+      this.isLoading = false;
+    }
   }
 
   async deleteBoard(board: Board, event: Event) {

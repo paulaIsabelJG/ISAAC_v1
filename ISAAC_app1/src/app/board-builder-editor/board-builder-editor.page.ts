@@ -104,6 +104,9 @@ export class BoardBuilderEditorPage implements OnInit {
   // ── Routing ─────────────────────────────────────────────────────────────────
   boardId = '';
   returnTo = '/board-builder';
+  /** Contexto del builder: se propaga al volver para que la lista filtre correctamente. */
+  contextCreatorId   = '';
+  contextCreatorName = '';
 
   // ── Estado principal ─────────────────────────────────────────────────────────
   board: Board | null = null;
@@ -221,10 +224,15 @@ export class BoardBuilderEditorPage implements OnInit {
 
   ngOnInit() {
     this.boardId = this.route.snapshot.paramMap.get('boardId') ?? '';
+
     const rt = this.route.snapshot.queryParamMap.get('returnTo');
-    if (rt) {
-      this.returnTo = rt;
-    }
+    if (rt) { this.returnTo = rt; }
+
+    // Contexto del builder — se propaga al volver para que la lista filtre bien
+    const qCreatorId   = this.route.snapshot.queryParamMap.get('creatorId');
+    const qCreatorName = this.route.snapshot.queryParamMap.get('creatorName');
+    if (qCreatorId)   { this.contextCreatorId   = qCreatorId; }
+    if (qCreatorName) { this.contextCreatorName = qCreatorName; }
   }
 
   ionViewWillEnter() {
@@ -2331,14 +2339,24 @@ export class BoardBuilderEditorPage implements OnInit {
 
   openBoard(boardId: string): void {
     this.router.navigate(['/board-builder-editor', boardId], {
-      queryParams: { returnTo: this.returnTo },
+      queryParams: {
+        returnTo:    this.returnTo,
+        creatorId:   this.contextCreatorId   || undefined,
+        creatorName: this.contextCreatorName || undefined,
+      },
     });
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────────
 
   goBack(): void {
-    this.router.navigateByUrl(this.returnTo);
+    // Volver al builder propagando el contexto para que filtre por el creador correcto
+    this.router.navigate([this.returnTo], {
+      queryParams: {
+        creatorId:   this.contextCreatorId   || undefined,
+        creatorName: this.contextCreatorName || undefined,
+      },
+    });
   }
 
   buildSafeUrl(url?: string | null): SafeUrl | string {

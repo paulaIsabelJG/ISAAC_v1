@@ -169,8 +169,19 @@ export class OrganizationDashboardPage implements OnInit {
 
   goToProfile()      { this.router.navigate(['/organization-profile']); }
   goToAddUser()      { this.router.navigate(['/add-user']);             }
-  goToBoardBuilder() { this.router.navigate(['/board-builder'], { queryParams: { returnTo: '/organization-dashboard' } }); }
-  logout()           { this.authService.logout();                       }
+
+  /** Abre el board builder del propio usuario de sesión (la organización) */
+  goToBoardBuilder() {
+    this.router.navigate(['/board-builder'], {
+      queryParams: {
+        returnTo:    '/organization-dashboard',
+        creatorId:   this.user?.id   || '',
+        creatorName: this.user?.name || '',
+      },
+    });
+  }
+
+  logout() { this.authService.logout(); }
 
   /** Abre la sesión/perfil de un usuario final */
   goToUserSession(userId: string) {

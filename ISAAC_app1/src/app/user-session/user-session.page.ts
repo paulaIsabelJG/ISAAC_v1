@@ -5,6 +5,7 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 import { UserService, FullBackendUser } from '../services/user.service';
+import { BoardService, Board } from '../services/board.service';
 
 // ─── Permisos resueltos para la vista ────────────────────────────────────────
 interface ViewPermissions {
@@ -12,20 +13,6 @@ interface ViewPermissions {
   canViewStats:        boolean;
   canEditBoards:       boolean;
 }
-
-// ─── Tarjeta de tablero placeholder ──────────────────────────────────────────
-interface BoardCard {
-  id:    string;
-  label: string;
-  image: string;
-}
-
-const BOARD_PLACEHOLDERS: BoardCard[] = [
-  { id: 'basic-grid',  label: 'Básico cuadrado', image: 'assets/user-session/board-basic-grid.png'  },
-  { id: 'basic-round', label: 'Básico redondo',  image: 'assets/user-session/board-basic-round.png' },
-  { id: 'food',        label: 'Comida',           image: 'assets/user-session/board-food.png'        },
-  { id: 'studies',     label: 'Estudios',         image: 'assets/user-session/board-studies.png'     },
-];
 
 @Component({
   selector: 'app-user-session',
@@ -49,13 +36,17 @@ export class UserSessionPage implements OnInit {
   isLoading = true;
   loadError = '';
 
-  boards: BoardCard[] = BOARD_PLACEHOLDERS;
+  // ── Tableros asignados (boardRole=main, userId=this.userId) ──────────────────
+  assignedBoards: Board[] = [];
+  boardsLoading  = true;
+  boardsError    = '';
 
   constructor(
     private route:        ActivatedRoute,
     private router:       Router,
     private authService:  AuthService,
     private userService:  UserService,
+    private boardService: BoardService,
     private sanitizer:    DomSanitizer,
   ) {}
 
@@ -70,6 +61,7 @@ export class UserSessionPage implements OnInit {
   ionViewWillEnter() {
     if (this.userId) {
       this.loadData();
+      this.loadBoards();
     }
   }
 
@@ -88,6 +80,19 @@ export class UserSessionPage implements OnInit {
       this.loadError = 'Error al cargar el usuario. Inténtalo de nuevo.';
     } finally {
       this.isLoading = false;
+    }
+  }
+
+  private async loadBoards(): Promise<void> {
+    this.boardsLoading = true;
+    this.boardsError   = '';
+    try {
+      const res = await firstValueFrom(this.boardService.getAssignedBoards(this.userId));
+      this.assignedBoards = res.boards;
+    } catch {
+      this.boardsError = 'No se pudieron cargar los tableros.';
+    } finally {
+      this.boardsLoading = false;
     }
   }
 
@@ -207,6 +212,27 @@ export class UserSessionPage implements OnInit {
   }
   goToPersonalData(){ this.router.navigate(['/user-final-form', this.userId]); }
   goToStats()       { this.router.navigate(['/statistics-placeholder']); }
-  /** Pasa el userId como returnTo para que board-builder sepa dónde volver */
-  goToBoardBuilder(){ this.router.navigate(['/board-builder'], { queryParams: { returnTo: '/user-session/' + this.userId } }); }
+
+  /** Abre el board builder del usuario cuya sesión se está visualizando.
+   *  creatorId = userId del perfil → el builder filtra por ese creador. */
+  goToBoardBuilder(){
+    this.router.navigate(['/board-builder'], {
+      queryParams: {
+        returnTo:    '/user-session/' + this.userId,
+        creatorId:   this.userId,
+        creatorName: this.targetUser?.name || '',
+      },
+    });
+  }
+
+  /** Abre el editor de un tablero asignado al usuario. */
+  openBoard(board: Board) {
+    this.router.navigate(['/board-builder-editor', board._id], {
+      queryParams: {
+        returnTo:    '/user-session/' + this.userId,
+        creatorId:   board.createdBy || board.creatorId || '',
+        creatorName: board.creatorName || '',
+      },
+    });
+  }
 }

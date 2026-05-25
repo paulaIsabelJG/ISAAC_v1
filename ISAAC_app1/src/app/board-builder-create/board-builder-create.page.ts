@@ -22,6 +22,10 @@ export class BoardBuilderCreatePage implements OnInit {
   form!: FormGroup;
   isSaving = false;
 
+  /** Contexto del builder: ID y nombre del creador para el que se va a crear el tablero. */
+  contextCreatorId   = '';
+  contextCreatorName = '';
+
   // Imagen de portada del tablero (opcional)
   imageB64:    string | null = null;
   imageSafeUrl: SafeUrl | null = null;
@@ -44,8 +48,9 @@ export class BoardBuilderCreatePage implements OnInit {
     return !!this.form?.get('locationColumnEnabled')?.value;
   }
 
+  /** Nombre del creador a mostrar en el formulario (contexto, no sesión). */
   get creatorName(): string {
-    return this.authSvc.getCurrentUser()?.name ?? '';
+    return this.contextCreatorName || this.authSvc.getCurrentUser()?.name || '';
   }
 
   constructor(
@@ -62,6 +67,14 @@ export class BoardBuilderCreatePage implements OnInit {
   ngOnInit() {
     const rt = this.route.snapshot.queryParamMap.get('returnTo');
     if (rt) { this.returnTo = rt; }
+
+    // Contexto del builder: de quién es el tablero que se va a crear
+    const qCreatorId   = this.route.snapshot.queryParamMap.get('creatorId');
+    const qCreatorName = this.route.snapshot.queryParamMap.get('creatorName');
+    const me           = this.authSvc.getCurrentUser();
+
+    this.contextCreatorId   = qCreatorId   || me?.id   || '';
+    this.contextCreatorName = qCreatorName || me?.name || '';
 
     this.form = this.fb.group({
       name:                   ['', [Validators.required, Validators.minLength(2)]],
@@ -158,14 +171,20 @@ export class BoardBuilderCreatePage implements OnInit {
           locationColumnSlots,
           predictorEnabled, aiRewriteEnabled,
           iaRows, iaCols,
-          imageUrl: this.imageB64 ?? '',
+          imageUrl:         this.imageB64 ?? '',
+          // El backend valida permisos y usa contextCreatorId como createdBy si procede
+          contextCreatorId: this.contextCreatorId || undefined,
         })
       );
       (await this.toastCtrl.create({
         message: '✓ Tablero creado', duration: 1800, color: 'success', position: 'top',
       })).present();
       this.router.navigate(['/board-builder-editor', res.board._id], {
-        queryParams: { returnTo: '/board-builder' },
+        queryParams: {
+          returnTo:    '/board-builder',
+          creatorId:   this.contextCreatorId,
+          creatorName: this.contextCreatorName,
+        },
       });
     } catch (err: any) {
       (await this.toastCtrl.create({

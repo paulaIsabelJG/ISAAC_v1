@@ -34,7 +34,14 @@ const cellSchema = new mongoose.Schema({
 const boardSchema = new mongoose.Schema({
   name:             { type: String, required: true, trim: true },
   imageUrl:         { type: String, default: '' },
+  // creatorId: campo legacy. Sustituido por createdBy (más explícito).
+  // Mantener para compatibilidad con datos antiguos.
   creatorId:        { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  // createdBy: quién creó/importó el tablero (contexto de builder, NUNCA sobreescribible desde frontend)
+  createdBy:        { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
+  // creatorName: nombre denormalizado del creador para mostrar en UI (se fija en createBoard)
+  creatorName:      { type: String, default: '' },
+  // userId: usuario final ASIGNADO al tablero (puede ser distinto del creador)
   userId:           { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   shape:            { type: String, enum: ['grid', 'circular'], default: 'grid' },
   rows:             { type: Number, default: 3, min: 1, max: 10 },
@@ -57,6 +64,7 @@ const boardSchema = new mongoose.Schema({
 });
 
 boardSchema.index({ creatorId: 1 });
+boardSchema.index({ createdBy: 1 });
 boardSchema.index({ userId: 1 });
 
 module.exports = mongoose.model('Board', boardSchema);

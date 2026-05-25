@@ -294,6 +294,31 @@ $board-rows:  2;
   @media (max-width: 420px) { grid-template-columns: repeat(2, 1fr); }
 }
 
+// ── Estados de carga/error/vacío de la sección tableros ──────────────────────
+.us-boards-state {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  padding:         28px 0;
+  color:           $text-muted;
+  font-size:       13px;
+  gap:             8px;
+
+  &--error { color: #c0392b; }
+}
+
+.us-boards-empty {
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  gap:             10px;
+  padding:         28px 0;
+  text-align:      center;
+
+  svg  { width: 40px; height: 40px; stroke: $border; }
+  span { font-size: 13px; color: $text-muted; }
+}
+
 // ── Tarjeta de tablero ────────────────────────────────────────────────────────
 .us-board-card {
   height:         $board-h;
@@ -333,6 +358,15 @@ $board-rows:  2;
   height:     100%;
   object-fit: cover;
   display:    block;
+}
+
+// Icono SVG cuando el tablero no tiene imagen de portada
+.us-board-icon {
+  width:   36px;
+  height:  36px;
+  stroke:  $pink-dark;
+  opacity: 0.4;
+  display: block;
 }
 
 .us-board-label {
