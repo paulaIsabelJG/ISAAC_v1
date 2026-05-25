@@ -45,8 +45,10 @@ export interface CellPictogram {
 }
 
 export interface CellAction {
-  type:          ActionType;
-  targetBoardId: string | null;
+  type:                   ActionType;
+  targetBoardId:          string | null;
+  aiGeneratedBoardTarget?: boolean;
+  showLastPhrase?:         boolean;
 }
 
 export interface BoardCell {
@@ -57,48 +59,67 @@ export interface BoardCell {
 }
 
 export interface Board {
-  _id:              string;
-  name:             string;
-  imageUrl?:        string;
-  creatorId:        string;
-  userId:           string;
-  shape:            BoardShape;
-  rows:             number;
-  columns:          number;
-  circleSlots:      number;
-  predictorEnabled: boolean;
-  aiRewriteEnabled: boolean;
-  iaRows:           number;
-  iaCols:           number;
-  cells:            BoardCell[];
-  createdAt?:       string;
+  _id:                   string;
+  name:                  string;
+  imageUrl?:             string;
+  creatorId:             string;
+  userId:                string;
+  shape:                 BoardShape;
+  rows:                  number;
+  columns:               number;
+  circleSlots:           number;
+  locationColumnEnabled: boolean;
+  locationColumnSlots:   number;
+  predictorEnabled:      boolean;
+  aiRewriteEnabled:      boolean;
+  iaRows:                number;
+  iaCols:                number;
+  cells:                 BoardCell[];
+  createdAt?:            string;
+  // Rol y perfil
+  boardRole?:          'main' | 'secondary';
+  visibleInProfile?:   boolean;
+  profileName?:        string;
+  profileImage?:       string;
+  profileDescription?: string;
 }
 
 export interface CreateBoardPayload {
-  name:              string;
-  imageUrl?:         string;
-  userId:            string;
-  shape:             BoardShape;
-  rows?:             number;
-  columns?:          number;
-  circleSlots?:      number;
-  predictorEnabled?: boolean;
-  aiRewriteEnabled?: boolean;
-  iaRows?:           number;
-  iaCols?:           number;
+  name:                   string;
+  imageUrl?:              string;
+  userId:                 string;
+  shape:                  BoardShape;
+  rows?:                  number;
+  columns?:               number;
+  circleSlots?:           number;
+  locationColumnEnabled?: boolean;
+  locationColumnSlots?:   number;
+  predictorEnabled?:      boolean;
+  aiRewriteEnabled?:      boolean;
+  iaRows?:                number;
+  iaCols?:                number;
+  boardRole?:             'main' | 'secondary';
 }
 
 export interface UpdateBoardPayload {
-  name?:             string;
-  imageUrl?:         string;
-  userId?:           string;
-  rows?:             number;
-  columns?:          number;
-  predictorEnabled?: boolean;
-  aiRewriteEnabled?: boolean;
-  iaRows?:           number;
-  iaCols?:           number;
-  cells?:            BoardCell[];
+  name?:                  string;
+  imageUrl?:              string;
+  userId?:                string;
+  rows?:                  number;
+  columns?:               number;
+  circleSlots?:           number;
+  locationColumnEnabled?: boolean;
+  locationColumnSlots?:   number;
+  predictorEnabled?:      boolean;
+  aiRewriteEnabled?:      boolean;
+  iaRows?:                number;
+  iaCols?:                number;
+  cells?:                 BoardCell[];
+  boardRole?:             'main' | 'secondary';
+  visibleInProfile?:      boolean;
+  profileName?:           string;
+  profileImage?:          string;
+  profileDescription?:    string;
 }
 
 export interface UpdateCellPayload {

@@ -40,6 +40,10 @@ export class BoardBuilderCreatePage implements OnInit {
     return !!this.form?.get('predictorEnabled')?.value;
   }
 
+  get locationColumnEnabled(): boolean {
+    return !!this.form?.get('locationColumnEnabled')?.value;
+  }
+
   get creatorName(): string {
     return this.authSvc.getCurrentUser()?.name ?? '';
   }
@@ -60,15 +64,18 @@ export class BoardBuilderCreatePage implements OnInit {
     if (rt) { this.returnTo = rt; }
 
     this.form = this.fb.group({
-      name:             ['', [Validators.required, Validators.minLength(2)]],
-      userId:           ['', Validators.required],
-      shape:            ['grid'],
-      rows:             [3,  [Validators.required, Validators.min(1), Validators.max(10)]],
-      columns:          [4,  [Validators.required, Validators.min(1), Validators.max(10)]],
-      predictorEnabled: [false],
-      aiRewriteEnabled: [false],
-      iaRows:           [5,  [Validators.min(1), Validators.max(20)]],
-      iaCols:           [1,  [Validators.min(1), Validators.max(5)]],
+      name:                   ['', [Validators.required, Validators.minLength(2)]],
+      userId:                 ['', Validators.required],
+      shape:                  ['grid'],
+      rows:                   [3,  [Validators.required, Validators.min(1), Validators.max(10)]],
+      columns:                [4,  [Validators.required, Validators.min(1), Validators.max(10)]],
+      circleSlots:            [8,  [Validators.required, Validators.min(3), Validators.max(20)]],
+      locationColumnEnabled:  [false],
+      locationColumnSlots:    [6,  [Validators.min(1), Validators.max(20)]],
+      predictorEnabled:       [false],
+      aiRewriteEnabled:       [false],
+      iaRows:                 [5,  [Validators.min(1), Validators.max(20)]],
+      iaCols:                 [1,  [Validators.min(1), Validators.max(5)]],
     });
   }
 
@@ -134,22 +141,21 @@ export class BoardBuilderCreatePage implements OnInit {
   async create(): Promise<void> {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
 
-    const { name, userId, shape, rows, columns, predictorEnabled, aiRewriteEnabled, iaRows, iaCols } = this.form.value;
-
-    if (shape === 'circular') {
-      const t = await this.toastCtrl.create({
-        message:  'Los tableros circulares están pendientes de implementación.',
-        duration: 2800, color: 'warning', position: 'top',
-      });
-      await t.present();
-      return;
-    }
+    const {
+      name, userId, shape, rows, columns,
+      circleSlots, locationColumnEnabled, locationColumnSlots,
+      predictorEnabled, aiRewriteEnabled, iaRows, iaCols,
+    } = this.form.value;
 
     this.isSaving = true;
     try {
       const res = await firstValueFrom(
         this.boardSvc.createBoard({
-          name, userId, shape, rows, columns,
+          name, userId, shape,
+          rows, columns,
+          circleSlots,
+          locationColumnEnabled,
+          locationColumnSlots,
           predictorEnabled, aiRewriteEnabled,
           iaRows, iaCols,
           imageUrl: this.imageB64 ?? '',

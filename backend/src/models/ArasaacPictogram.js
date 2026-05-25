@@ -12,7 +12,7 @@ const ArasaacPictogramSchema = new mongoose.Schema({
     required: true
   },
   keywords: {
-    type: [String],
+    type: [mongoose.Schema.Types.Mixed], // { keyword: string, type: number } o string (legado)
     default: []
   },
   imageUrl: {

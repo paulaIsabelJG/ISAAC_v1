@@ -36,7 +36,8 @@ $panel-bg:     #faf5f8;
 
   svg { width: 20px; height: 20px; stroke: $text-muted; }
 
-  &--preview svg { stroke: $violet; }
+  &--preview    svg { stroke: $violet; }
+  &--in-profile svg { stroke: #2ecc71; }
 }
 .bbe-preview-back {
   --color: #{$violet};
@@ -67,49 +68,75 @@ $panel-bg:     #faf5f8;
 //  VISTA PREVIA
 // ─────────────────────────────────────────────────────────────────────────────
 
-// ── Barra AAC ────────────────────────────────────────────────────────────────
+// ── Barra AAC ─────────────────────────────────────────────────────────────────
+// Diseño: fondo blanco, borde inferior negro, botones circulares ISAAC
 .aac-bar {
-  display:      flex;
-  align-items:  center;
-  gap:          6px;
-  background:   #2d2d3a;
-  padding:      8px 12px;
-  min-height:   70px;
-  overflow-x:   auto;
-  scrollbar-width: none;
-  &::-webkit-scrollbar { display: none; }
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+  background:  #ffffff;
+  border-bottom: 2px solid #222;
+  padding:     10px 14px;
+  height:      76px;
+  flex:        0 0 auto;
+  overflow:    hidden;
+  box-sizing:  border-box;
 }
 
 .aac-btn {
   flex:            0 0 auto;
-  width:           44px;
-  height:          44px;
-  border-radius:   10px;
-  border:          none;
+  width:           50px;
+  height:          50px;
+  border-radius:   50%;
+  border:          2px solid #ccc;
+  background:      #f5f5f5;
   cursor:          pointer;
   display:         flex;
   align-items:     center;
   justify-content: center;
-  transition:      opacity 0.15s;
+  transition:      background 0.15s, transform 0.1s, border-color 0.15s;
 
-  svg { width: 22px; height: 22px; }
+  svg { width: 26px; height: 26px; }
 
-  &:hover  { opacity: 0.82; }
-  &:active { opacity: 0.68; }
+  &:hover  { background: #e8e8e8; transform: scale(1.06); }
+  &:active { transform: scale(0.94); }
 
-  &--home    { background: #444; svg { stroke: #aaa; } }
-  &--speaker { background: $violet; svg { stroke: #fff; } }
-  &--del     { background: #664; svg { stroke: #ffd; } }
-  &--trash   { background: #644; svg { stroke: #fdd; } }
+  &--home {
+    border-color: $violet;
+    svg { stroke: $violet; fill: none; }
+  }
+  &--speaker {
+    background:   $violet;
+    border-color: $violet;
+    svg { stroke: #fff; fill: none; }
+    &:hover { background: #6B3FFF; }
+  }
+  &--del {
+    border-color: #f39c12;
+    svg { stroke: #f39c12; fill: none; }
+    &:hover { background: #fff8ec; }
+  }
+  &--trash {
+    border-color: #e74c3c;
+    svg { stroke: #e74c3c; fill: none; }
+    &:hover { background: #fff0ee; }
+  }
 }
 
+// Zona de frase: rectángulo gris claro con borde
 .aac-phrase {
-  flex:          1;
-  display:       flex;
-  align-items:   center;
-  gap:           6px;
-  min-width:     0;
-  overflow-x:    auto;
+  flex:            1;
+  height:          52px;
+  background:      #f2f2f2;
+  border:          1.5px solid #cccccc;
+  border-radius:   10px;
+  display:         flex;
+  align-items:     center;
+  gap:             6px;
+  padding:         0 10px;
+  overflow-x:      auto;
+  min-width:       0;
+  box-sizing:      border-box;
   scrollbar-width: none;
   &::-webkit-scrollbar { display: none; }
 }
@@ -120,27 +147,41 @@ $panel-bg:     #faf5f8;
   align-items:    center;
   gap:            2px;
   flex:           0 0 auto;
-  background:     rgba(255,255,255,0.1);
+  background:     #ffffff;
+  border:         1px solid #ddd;
   border-radius:  8px;
-  padding:        4px 6px;
+  padding:        4px 8px;
 }
-.aac-phrase-img   { width: 36px; height: 36px; object-fit: contain; border-radius: 4px; }
-.aac-phrase-label { font-size: 10px; color: #fff; font-weight: 600; white-space: nowrap; }
-.aac-phrase-hint  { font-size: 12px; color: rgba(255,255,255,0.4); white-space: nowrap; }
+.aac-phrase-img   { width: 32px; height: 32px; object-fit: contain; border-radius: 4px; }
+.aac-phrase-label { font-size: 9px; color: #333; font-weight: 700; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.5px; }
+.aac-phrase-hint  { font-size: 12px; color: #aaa; white-space: nowrap; font-style: italic; }
 
 // ── Board preview ─────────────────────────────────────────────────────────────
 .bbe-preview-board {
-  padding: 16px;
+  flex:            1;
+  min-height:      0;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  padding:         10px 14px 14px;
+  box-sizing:      border-box;
+  overflow:        hidden;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  LAYOUT EDITOR
 // ─────────────────────────────────────────────────────────────────────────────
 .bbe-layout {
-  display:  flex;
-  height:   100%;
-  overflow: hidden;
+  display:    flex;
+  // Altura explícita: viewport - barra de herramientas de Ionic (56 px)
+  // dvh para que funcione igual en escritorio, tablet y móvil
+  height:     calc(100dvh - 56px);
+  max-height: calc(100dvh - 56px);
+  overflow:   hidden;
 }
+
+// La barra OBF no debe comprimirse nunca
+.bbe-obf-bar { flex: 0 0 auto; }
 
 // ── Columna izquierda ─────────────────────────────────────────────────────────
 .bbe-col-left {
@@ -308,13 +349,13 @@ $panel-bg:     #faf5f8;
 
 // ── Columna central ───────────────────────────────────────────────────────────
 .bbe-col-center {
-  flex:       1;
-  overflow-y: auto;
-  padding:    16px;
-  box-sizing: border-box;
-  display:    flex;
+  flex:           1;
+  overflow:       hidden;    // no scroll → el grid rellena el alto disponible
+  padding:        12px 12px 12px;
+  box-sizing:     border-box;
+  display:        flex;
   flex-direction: column;
-  gap:        12px;
+  gap:            10px;
 }
 
 .bbe-obf-bar {
@@ -347,13 +388,15 @@ $panel-bg:     #faf5f8;
   gap:         10px;
   align-items: flex-start;
   flex:        1;
-  overflow:    auto;
-  padding:     4px;
+  min-height:  0;       // permite que el flex-child se encoja
+  overflow:    hidden;
+  padding:     0;
 }
 
 .bbe-grid-wrap {
-  flex:     1;
-  overflow: visible;   // el scroll lo gestiona bbe-grid-area
+  flex:       1;
+  min-height: 0;
+  overflow:   hidden;
 }
 
 // ── Columna Predictor IA ──────────────────────────────────────────────────────
@@ -463,25 +506,20 @@ $panel-bg:     #faf5f8;
   box-sizing:      border-box;
   cursor:          default;
   user-select:     none;
+  container-type:  inline-size;  // enables cqi scaling for children
 }
 
-.bbe-ia-badge {
-  width:           52px;
-  height:          52px;
-  border-radius:   10px;
-  background:      linear-gradient(135deg, $pink 0%, $pink-dark 100%);
-  display:         flex;
-  align-items:     center;
-  justify-content: center;
-  font-size:       20px;
-  font-weight:     900;
-  color:           #fff;
-  letter-spacing:  1px;
-  flex:            0 0 auto;
+.bbe-ia-logo {
+  width:         clamp(28px, 60cqi, 64px);  // 60% of cell width
+  height:        auto;
+  aspect-ratio:  1;
+  object-fit:    contain;
+  border-radius: 8px;
+  flex:          0 0 auto;
 }
 
 .bbe-ia-label {
-  font-size:      9px;
+  font-size:      clamp(8px, 10cqi, 12px);  // 10% of cell width
   font-weight:    800;
   color:          $pink-dark;
   text-align:     center;
@@ -492,31 +530,32 @@ $panel-bg:     #faf5f8;
 
 // ── Grid (compartido editor + preview) ───────────────────────────────────────
 .bbe-grid {
-  display:     grid;
-  gap:         6px;
-  padding:     4px;
-  width:       fit-content;
-  min-width:   100%;
+  display:  grid;
+  gap:      6px;
+  padding:  4px;
+  width:    100%;
 }
 
 .bbe-cell {
-  width:           100px;
-  min-height:      110px;
-  max-height:      130px;
-  border:          1.5px solid $border;
-  border-radius:   12px;
-  background:      $card-bg;
-  display:         flex;
-  flex-direction:  column;
-  align-items:     center;
-  justify-content: center;
-  gap:             4px;
-  padding:         6px 4px;
-  box-sizing:      border-box;
-  cursor:          pointer;
-  transition:      border-color 0.15s, transform 0.12s, box-shadow 0.12s;
-  position:        relative;
-  overflow:        hidden;
+  width:            100px;
+  min-height:       110px;
+  max-height:       130px;
+  border:           1.5px solid $border;
+  border-radius:    12px;
+  background:       $card-bg;
+  display:          flex;
+  flex-direction:   column;
+  align-items:      center;
+  justify-content:  center;
+  gap:              4px;
+  padding:          6px 4px;
+  box-sizing:       border-box;
+  cursor:           pointer;
+  transition:       border-color 0.15s, transform 0.12s, box-shadow 0.12s;
+  position:         relative;
+  overflow:         hidden;
+  container-type:   inline-size;   // enables cqi units for child elements
+  container-name:   cell;
 
   &:hover { border-color: $violet; transform: scale(1.03); }
 
@@ -532,37 +571,40 @@ $panel-bg:     #faf5f8;
 }
 
 .bbe-cell-img {
-  width:      68px;
-  height:     68px;
-  object-fit: contain;
-  flex:       0 0 auto;
+  width:        clamp(32px, 62cqi, 82px);  // 62% of cell width, 32-82px
+  height:       auto;
+  aspect-ratio: 1;
+  object-fit:   contain;
+  flex:         0 0 auto;
 }
 
 .bbe-cell-img-placeholder {
-  width:           68px;
-  height:          68px;
+  width:           clamp(28px, 52cqi, 72px);
+  height:          auto;
+  aspect-ratio:    1;
   display:         flex;
   align-items:     center;
   justify-content: center;
   flex:            0 0 auto;
-  svg { width: 36px; height: 36px; stroke: #ccc; }
+  svg { width: 60%; height: auto; stroke: #ccc; }
 }
 
 .bbe-cell-label {
-  font-size:      10px;
+  flex:           0 0 auto;              // nunca se comprime — garantía base
+  font-size:      clamp(9px, 11cqi, 14px);
   font-weight:    700;
   text-align:     center;
   color:          $text-dark;
   line-height:    1.2;
-  max-width:      90px;
+  max-width:      90%;
   overflow:       hidden;
   text-transform: uppercase;
-  text-overflow: ellipsis;
-  white-space:   nowrap;
+  text-overflow:  ellipsis;
+  white-space:    nowrap;
 }
 
 .bbe-cell-plus {
-  font-size:   28px;
+  font-size:   clamp(16px, 25cqi, 36px);  // scales with cell
   color:       #ddd;
   line-height: 1;
 }
@@ -856,13 +898,511 @@ $panel-bg:     #faf5f8;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+//  EDITOR — canvas que rellena la columna central
+// ─────────────────────────────────────────────────────────────────────────────
+
+// IA col y canvas igualan altura
+.bbe-col-center .bbe-grid-area {
+  align-items: stretch;
+}
+
+// Columna IA: filas repartidas uniformemente
+.bbe-col-center .bbe-ia-col {
+  align-content: stretch;
+}
+
+// Celda IA: min-width fija para que cqi resuelva correctamente (evita loop)
+.bbe-col-center .bbe-ia-cell {
+  width:      auto;
+  min-width:  100px;   // garantiza que 60cqi ≈ 60px → logo visible
+  height:     auto;
+  min-height: 80px;
+}
+
+// Canvas — columna flex para que el grid rellene el alto con flex:1
+.bbe-col-center .bbe-grid-wrap {
+  display:        flex;
+  flex-direction: column;
+  flex:           1;
+  min-height:     0;
+  overflow:       hidden;
+  background:     $card-bg;
+  border-radius:  14px;
+  border:         1.5px solid $border;
+  box-shadow:     0 2px 16px rgba(0,0,0,0.06);
+  padding:        8px;
+  box-sizing:     border-box;
+}
+
+// Grid llena el alto del canvas con flex:1
+.bbe-col-center .bbe-grid {
+  flex:          1;
+  min-height:    0;
+  min-width:     0;
+  width:         100%;
+  padding:       0;
+  align-items:   stretch;
+  justify-items: stretch;
+}
+
+// ── Layout interno de cada celda del editor ───────────────────────────────────
+// CSS Grid con 2 filas: "1fr" para la imagen + "auto" para el label.
+// Garantiza que el label NUNCA desaparece: ocupa su fila auto y la imagen
+// absorbe el espacio restante sin empujar al label fuera de la celda.
+.bbe-col-center .bbe-cell {
+  display:               grid;
+  grid-template-rows:    1fr auto;
+  grid-template-columns: 1fr;
+  align-items:           center;
+  justify-items:         center;
+  gap:                   3px;
+  padding:               clamp(4px, 5cqi, 8px);
+  width:                 auto;
+  min-height:            60px;
+  max-height:            none;
+}
+
+// Plus (celda vacía) ocupa ambas filas centrado
+.bbe-col-center .bbe-cell .bbe-cell-plus {
+  grid-row: 1 / -1;
+}
+
+// Imagen ocupa la fila 1fr; object-fit mantiene proporciones
+.bbe-col-center .bbe-cell-img {
+  width:      100%;
+  height:     100%;
+  object-fit: contain;
+  max-width:  none;
+  flex:       unset;
+  aspect-ratio: unset;
+}
+
+// Placeholder igual que imagen
+.bbe-col-center .bbe-cell-img-placeholder {
+  width:           100%;
+  height:          100%;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  max-width:       none;
+  aspect-ratio:    unset;
+  svg { width: min(75%, 56px); height: auto; stroke: #ccc; }
+}
+
+// Label siempre en fila auto → siempre visible
+.bbe-col-center .bbe-cell-label {
+  font-size:     clamp(8px, 11cqi, 14px);
+  max-width:     100%;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+  white-space:   nowrap;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  VISTA PREVIA — layout dinámico (ocupa todo el espacio disponible)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Contenedor raíz: columna flex anclada a calc(100dvh - 56px)
+.bbe-preview-container {
+  display:        flex;
+  flex-direction: column;
+  height:         calc(100dvh - 56px);
+  overflow:       hidden;
+}
+
+// Canvas del tablero en preview: misma estética visual que el editor
+// (mismo borde, fondo, sombra, border-radius → proporción unificada)
+.bbe-preview-board {
+  flex:          1;
+  min-height:    0;
+  display:       flex;
+  align-items:   stretch;
+  padding:       10px 14px 14px;
+  box-sizing:    border-box;
+  overflow:      hidden;
+  background:    $card-bg;
+  border-radius: 14px;
+  border:        1.5px solid $border;
+  box-shadow:    0 2px 16px rgba(0,0,0,0.06);
+  margin:        0 8px 8px;
+}
+
+// Área IA + grid: hereda el alto de preview-board por stretch
+.bbe-preview-board .bbe-grid-area {
+  flex:        1;
+  display:     flex;
+  gap:         8px;
+  align-items: stretch;
+  overflow:    hidden;
+  padding:     0;
+  min-height:  0;
+  min-width:   0;
+}
+
+// Columna IA: filas repartidas uniformemente
+.bbe-preview-board .bbe-ia-col {
+  align-content: stretch;
+}
+
+// Celda IA: misma min-size que en editor para cqi estable
+.bbe-preview-board .bbe-ia-cell {
+  width:      auto;
+  min-width:  100px;
+  height:     auto;
+  min-height: 80px;
+}
+
+// Grid preview: flex:1 ancho, alto por stretch del padre
+.bbe-grid.bbe-grid--preview {
+  flex:          1;
+  min-width:     0;
+  min-height:    0;
+  padding:       0;
+  gap:           6px;
+  align-items:   stretch;
+  justify-items: stretch;
+}
+
+// ── Layout interno de cada celda en vista previa ──────────────────────────────
+// Idéntico al editor: CSS Grid 1fr + auto para imagen + label siempre visible
+.bbe-cell.bbe-cell--preview {
+  display:               grid;
+  grid-template-rows:    1fr auto;
+  grid-template-columns: 1fr;
+  align-items:           center;
+  justify-items:         center;
+  gap:                   3px;
+  padding:               clamp(4px, 5cqi, 8px);
+  width:                 auto;
+  min-height:            60px;
+  max-height:            none;
+}
+
+// Label siempre en fila auto
+.bbe-preview-board .bbe-cell-label {
+  font-size:     clamp(8px, 11cqi, 14px);
+  max-width:     100%;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+  white-space:   nowrap;
+}
+
+// Imagen ocupa la fila 1fr
+.bbe-preview-board .bbe-cell-img {
+  width:      100%;
+  height:     100%;
+  object-fit: contain;
+  max-width:  none;
+  flex:       unset;
+  aspect-ratio: unset;
+}
+
+// Placeholder igual que imagen
+.bbe-preview-board .bbe-cell-img-placeholder {
+  width:           100%;
+  height:          100%;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  max-width:       none;
+  aspect-ratio:    unset;
+  svg { width: min(75%, 56px); height: auto; stroke: #ccc; }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  TABLERO CIRCULAR — editor + preview  (v2: slots redondos sobre el anillo)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Área que envuelve col-ubicación + canvas
+.bbe-circle-area {
+  display:         flex;
+  flex:            1;
+  gap:             12px;
+  align-items:     center;
+  justify-content: center;
+  min-height:      0;
+  overflow:        hidden;
+  padding:         8px;
+}
+
+// Columna de ubicación
+.bbe-loc-col {
+  flex:           0 0 auto;
+  display:        flex;
+  flex-direction: column;
+  gap:            6px;
+  width:          76px;
+  align-self:     stretch;
+  overflow-y:     auto;
+  scrollbar-width: none;
+}
+
+.bbe-loc-col--preview { width: 72px; }
+
+// Celda de ubicación
+.bbe-loc-cell {
+  flex:                  1;
+  min-height:            52px;
+  border:                1.5px solid $border;
+  border-radius:         10px;
+  background:            $card-bg;
+  display:               grid;
+  grid-template-rows:    1fr auto;
+  grid-template-columns: 1fr;
+  align-items:           center;
+  justify-items:         center;
+  gap:                   2px;
+  padding:               clamp(3px, 4cqi, 7px);
+  box-sizing:            border-box;
+  cursor:                pointer;
+  container-type:        inline-size;
+  transition:            border-color 0.15s, transform 0.12s;
+  overflow:              hidden;
+
+  &:hover              { border-color: $violet; transform: scale(1.04); }
+  &.bbe-cell--selected { border-color: $violet; box-shadow: 0 0 0 2.5px $violet; }
+}
+
+// ── Canvas circular ─────────────────────────────────────────────────────────
+// Contenedor cuadrado sin border-radius propio.
+// El anillo visual es el ::before; los slots sobresalen del ::before.
+.bbe-circle-canvas {
+  position:    relative;
+  flex:        0 0 auto;
+  overflow:    visible;      // slots salen hasta la línea del anillo
+  align-self:  center;
+  aspect-ratio: 1;
+
+  // Tamaño: menor de alto disponible en editor o 480 px
+  width:  min(calc(100dvh - 140px), 480px);
+
+  // Anillo decorativo dibujado con ::before
+  // inset: 6% → outer-edge del anillo a 44% del centro → coincide con R=44%
+  &::before {
+    content:      '';
+    position:     absolute;
+    inset:        6%;
+    border-radius: 50%;
+    background:   color-mix(in srgb, #{$violet} 5%, #{$bg});
+    border:       2px solid $border;
+    box-shadow:   0 2px 12px rgba(0,0,0,0.06);
+    pointer-events: none;
+    z-index:      0;
+  }
+}
+
+.bbe-circle-canvas--preview {
+  // Preview: sin paneles laterales, más espacio disponible
+  width: min(calc(100dvh - 200px), calc(100dvw - 60px), 520px);
+}
+
+// ── Slot exterior — REDONDO ──────────────────────────────────────────────────
+// width/height se aplican desde el template mediante [style.width]/[style.height]
+.bbe-circ-slot {
+  position:              absolute;
+  transform:             translate(-50%, -50%);
+  // Tamaño se inyecta via binding en el template (circleSlotSizePx)
+  border:                2px solid $border;
+  border-radius:         50%;                 // ← REDONDO
+  background:            $card-bg;
+  display:               grid;
+  grid-template-rows:    1fr auto;
+  grid-template-columns: 1fr;
+  align-items:           center;
+  justify-items:         center;
+  gap:                   1px;
+  padding:               clamp(3px, 9%, 8px);
+  box-sizing:            border-box;
+  cursor:                pointer;
+  container-type:        inline-size;
+  z-index:               2;
+  overflow:              hidden;
+  transition:            border-color 0.15s, transform 0.12s, box-shadow 0.12s;
+
+  &:hover {
+    border-color: $violet;
+    transform:    translate(-50%, -50%) scale(1.1);
+    z-index:      4;
+  }
+  &.bbe-cell--selected {
+    border-color: $violet;
+    box-shadow:   0 0 0 3px $violet;
+    z-index:      4;
+  }
+  &.bbe-cell--disabled { opacity: 0.4; cursor: default; }
+}
+
+// ── Celda central — también redonda pero mayor y distintiva ─────────────────
+.bbe-circ-center {
+  position:              absolute;
+  left:                  50%;
+  top:                   50%;
+  transform:             translate(-50%, -50%);
+  width:                 clamp(64px, 18%, 104px);
+  height:                clamp(64px, 18%, 104px);
+  border:                2.5px solid $violet;
+  border-radius:         50%;
+  background:            $violet-light;
+  display:               grid;
+  grid-template-rows:    1fr auto;
+  grid-template-columns: 1fr;
+  align-items:           center;
+  justify-items:         center;
+  gap:                   2px;
+  padding:               clamp(4px, 10%, 10px);
+  box-sizing:            border-box;
+  cursor:                pointer;
+  container-type:        inline-size;
+  z-index:               3;
+  overflow:              hidden;
+  box-shadow:            0 0 0 4px rgba($violet, 0.15);
+  transition:            border-color 0.15s, box-shadow 0.15s, transform 0.12s;
+
+  &:hover             { transform: translate(-50%, -50%) scale(1.08); }
+  &.bbe-cell--selected { box-shadow: 0 0 0 5px $violet; }
+}
+
+.bbe-circ-center-hint {
+  grid-row:        1 / -1;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  color:           $violet;
+}
+
+.bbe-center-wait-icon {
+  width:  clamp(20px, 50cqi, 36px);
+  height: auto;
+  stroke: $violet;
+  opacity: 0.6;
+}
+
+.bbe-resume-img {
+  width:        clamp(28px, 52cqi, 56px);
+  height:       auto;
+  aspect-ratio: 1;
+  object-fit:   contain;
+}
+
+.bbe-circ-sim-badge {
+  position:       absolute;
+  top:            3px;
+  right:          4px;
+  background:     $violet;
+  color:          #fff;
+  font-size:      7px;
+  font-weight:    800;
+  border-radius:  3px;
+  padding:        1px 3px;
+  letter-spacing: 0.5px;
+  pointer-events: none;
+}
+
+// Preview board circular: row con col-ubicación + canvas
+.bbe-preview-board--circular {
+  display:         flex;
+  flex-direction:  row;
+  align-items:     center;
+  justify-content: center;
+  gap:             12px;
+  padding:         14px;
+}
+
+// Subapartado en la lista de tableros del panel izquierdo
+.bbe-boards-sub {
+  display:        block;
+  font-size:      9px;
+  font-weight:    800;
+  color:          $text-muted;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding:        8px 0 4px;
+  margin-top:     2px;
+  border-top:     1px solid #f4e8ee;
+
+  &:first-of-type { border-top: none; margin-top: 0; padding-top: 2px; }
+}
+
+// Hint pequeño en columna derecha
+.bbe-hint-sm {
+  display:     block;
+  font-size:   10px;
+  color:       $text-muted;
+  margin-top:  4px;
+  line-height: 1.4;
+  font-style:  italic;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  DRAG AND DROP  +  MODO MOVER TÁCTIL
+// ─────────────────────────────────────────────────────────────────────────────
+
+// touch-action: manipulation → previene el zoom al doble-tap en tableta
+// mientras conserva el scroll y el tap normal
+.bbe-cell,
+.bbe-loc-cell,
+.bbe-circ-slot,
+.bbe-circ-center {
+  touch-action: manipulation;
+}
+
+// ── Drag and drop ──────────────────────────────────────────────────────────────
+
+// Celda siendo arrastrada: semitransparente (pointer-events se mantiene para que el
+// navegador siga generando drag events; quitarlo rompía Chrome/Safari/Ionic)
+.bbe-cell--dragging {
+  opacity: 0.35;
+}
+
+// Celda destino mientras hover de arrastre (grid / loc-cell)
+.bbe-cell--dragover {
+  border-color: $violet !important;
+  box-shadow:   0 0 0 3px rgba($violet, 0.3) !important;
+  transform:    scale(1.05) !important;
+}
+
+// Slots circulares: el transform base es translate(-50%,-50%), hay que conservarlo
+.bbe-circ-slot.bbe-cell--dragover {
+  transform: translate(-50%, -50%) scale(1.12) !important;
+  z-index:   5;
+}
+
+// Centro circular: misma corrección de transform
+.bbe-circ-center.bbe-cell--dragover {
+  transform: translate(-50%, -50%) scale(1.1) !important;
+}
+
+// ── Modo mover táctil ──────────────────────────────────────────────────────────
+
+// Celda ORIGEN seleccionada con doble toque: borde verde pulsante
+.bbe-cell--move-src {
+  border-color: $mint !important;
+  box-shadow:   0 0 0 3px rgba($mint, 0.35) !important;
+  animation:    bbe-move-pulse 1.2s ease-in-out infinite;
+}
+
+// Anulaciones de transform para las circulares (no afectan a translate)
+.bbe-circ-slot.bbe-cell--move-src  { z-index: 5; }
+.bbe-circ-center.bbe-cell--move-src { z-index: 5; }
+
+// Celdas DESTINO disponibles: borde verde suave para indicar que son tapeables
+.bbe-cell--move-dst {
+  border-color: $mint !important;
+  opacity:      0.85;
+}
+
+@keyframes bbe-move-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba($mint, 0.35); }
+  50%       { box-shadow: 0 0 0 6px rgba($mint, 0.15); }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 //  RESPONSIVE — pantallas pequeñas
 // ─────────────────────────────────────────────────────────────────────────────
 @media (max-width: 900px) {
+  // Solo reducir paneles laterales; las celdas escalan dinámicamente con cqi
   .bbe-col-left  { width: 200px; flex: 0 0 200px; }
   .bbe-col-right { width: 240px; flex: 0 0 240px; }
-  .bbe-cell      { width: 80px; min-height: 90px; }
-  .bbe-cell-img  { width: 50px; height: 50px; }
 }
 
 @media (max-width: 680px) {
@@ -882,6 +1422,45 @@ $panel-bg:     #faf5f8;
     border-top:  1.5px solid $border;
   }
 
-  .bbe-cell { width: 72px; min-height: 80px; }
-  .bbe-cell-img { width: 44px; height: 44px; }
+  // En móvil vertical el layout scrollea, celdas base tienen tamaño mínimo razonable
+  .bbe-cell { width: 72px; min-height: 72px; }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  SELECTOR PRINCIPAL / SECUNDARIO
+// ─────────────────────────────────────────────────────────────────────────────
+
+.bbe-role-selector {
+  display:   flex;
+  gap:       8px;
+  margin:    4px 0 10px;
+}
+
+.bbe-role-btn {
+  flex:            1;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  gap:             6px;
+  padding:         8px 10px;
+  border:          1.5px solid #e0d0e8;
+  border-radius:   10px;
+  background:      #fafafa;
+  color:           $text-muted;
+  font-size:       12px;
+  font-weight:     600;
+  font-family:     inherit;
+  cursor:          pointer;
+  transition:      border-color 0.15s, background 0.15s, color 0.15s;
+
+  svg { width: 14px; height: 14px; flex: 0 0 auto; }
+
+  &:hover { border-color: $violet; color: $violet; }
+
+  &--active {
+    border-color: $violet;
+    background:   $violet-light;
+    color:        $violet;
+    font-weight:  700;
+  }
 }

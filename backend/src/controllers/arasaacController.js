@@ -1,4 +1,5 @@
-const arasaacService = require('../services/arasaacService');
+const arasaacService     = require('../services/arasaacService');
+const ArasaacPictogram   = require('../models/ArasaacPictogram');
 
 const buildImageUrl = (id) => `https://static.arasaac.org/pictograms/${id}/${id}_500.png`;
 
@@ -61,6 +62,33 @@ exports.search = async (req, res) => {
   }
 };
 
+// ── GET /api/arasaac/local/:id  — consulta la BD local sin llamar a ARASAAC ──
+exports.getLocalPictogram = async (req, res) => {
+  try {
+    const numId = parseInt(req.params.id, 10);
+    if (isNaN(numId)) {
+      return res.status(400).json({ error: 'Invalid id' });
+    }
+    const doc = await ArasaacPictogram.findOne({ arasaacId: numId }).lean();
+    console.log('[ARASAAC local lookup]', req.params.id, doc?.arasaacId, doc?.keywords?.[0]);
+    if (!doc) {
+      return res.status(404).json({ error: 'Pictogram not found in local DB' });
+    }
+    return res.json({
+      arasaacId:  doc.arasaacId,
+      label:      doc.label,
+      keywords:   doc.keywords   ?? [],
+      categories: doc.categories ?? [],
+      tags:       doc.tags       ?? [],
+      imageUrl:   doc.imageUrl   ?? buildImageUrl(doc.arasaacId),
+    });
+  } catch (err) {
+    console.error('getLocalPictogram error:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// ── GET /api/arasaac/pictogram/:id  — consulta la API externa ARASAAC ─────────
 exports.getPictogram = async (req, res) => {
   try {
     const { id } = req.params;

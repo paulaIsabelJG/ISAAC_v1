@@ -110,14 +110,14 @@
           </button>
 
           <button type="button"
-                  class="bbc-shape-btn bbc-shape-btn--disabled"
-                  disabled>
+                  class="bbc-shape-btn"
+                  [class.bbc-shape-btn--active]="selectedShape === 'circular'"
+                  (click)="form.get('shape')!.setValue('circular')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="9"/>
               <circle cx="12" cy="12" r="3"/>
             </svg>
             <span>Circular</span>
-            <span class="bbc-soon">Próx.</span>
           </button>
 
         </div>
@@ -186,15 +186,38 @@
         </div>
       }
 
-      <!-- ── Aviso circular ─────────────────────────────────────────────── -->
+      <!-- ── Campos de tablero circular ────────────────────────────────── -->
       @if (selectedShape === 'circular') {
-        <div class="bbc-info-box">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="8" x2="12" y2="12"/>
-            <line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
-          <span>Los tableros circulares están pendientes de implementación en esta versión.</span>
+        <div class="bbc-field">
+          <label class="bbc-label">Nº ranuras exteriores</label>
+          <input class="bbc-input bbc-input--num"
+                 formControlName="circleSlots"
+                 type="number" min="3" max="20"/>
+          <span class="bbc-hint">Pictogramas alrededor del centro (3–20)</span>
+        </div>
+
+        <div class="bbc-toggles">
+          <div class="bbc-toggle-row" (click)="form.get('locationColumnEnabled')!.setValue(!form.get('locationColumnEnabled')!.value)">
+            <div class="bbc-toggle-info">
+              <span class="bbc-toggle-label">Columna de ubicación</span>
+              <span class="bbc-toggle-sub">Ranuras laterales para contexto de lugar</span>
+            </div>
+            <div class="bbc-toggle-switch"
+                 [class.bbc-toggle-switch--on]="form.get('locationColumnEnabled')?.value">
+              <div class="bbc-toggle-thumb"></div>
+            </div>
+          </div>
+
+          @if (locationColumnEnabled) {
+            <div class="bbc-ia-size-panel">
+              <p class="bbc-ia-size-title">Nº ranuras de ubicación</p>
+              <div class="bbc-field" style="margin-bottom:0">
+                <input class="bbc-input bbc-input--num"
+                       formControlName="locationColumnSlots"
+                       type="number" min="1" max="20"/>
+              </div>
+            </div>
+          }
         </div>
       }
 

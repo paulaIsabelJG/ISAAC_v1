@@ -54,7 +54,12 @@ exports.getBoardById = async (req, res) => {
 // ── POST /api/boards ──────────────────────────────────────────────────────────
 exports.createBoard = async (req, res) => {
   try {
-    const { name, userId, shape, rows, columns, circleSlots, predictorEnabled, aiRewriteEnabled, iaRows, iaCols, imageUrl } = req.body;
+    const {
+      name, userId, shape, rows, columns, circleSlots,
+      locationColumnEnabled, locationColumnSlots,
+      predictorEnabled, aiRewriteEnabled, iaRows, iaCols, imageUrl,
+      boardRole,
+    } = req.body;
 
     if (!name || !userId) {
       return res.status(400).json({ error: 'name and userId are required' });
@@ -64,18 +69,21 @@ exports.createBoard = async (req, res) => {
     }
 
     const board = new Board({
-      name:             name.trim(),
-      imageUrl:         imageUrl         || '',
-      creatorId:        req.userId,
+      name:                  name.trim(),
+      imageUrl:              imageUrl              || '',
+      creatorId:             req.userId,
       userId,
-      shape:            shape            || 'grid',
-      rows:             rows             || 3,
-      columns:          columns          || 4,
-      circleSlots:      circleSlots      || 8,
-      predictorEnabled: !!predictorEnabled,
-      aiRewriteEnabled: !!aiRewriteEnabled,
-      iaRows:           iaRows           || 5,
-      iaCols:           iaCols           || 1,
+      shape:                 shape                 || 'grid',
+      rows:                  rows                  || 3,
+      columns:               columns               || 4,
+      circleSlots:           circleSlots           || 8,
+      locationColumnEnabled: !!locationColumnEnabled,
+      locationColumnSlots:   locationColumnSlots   || 6,
+      predictorEnabled:      !!predictorEnabled,
+      aiRewriteEnabled:      !!aiRewriteEnabled,
+      iaRows:                iaRows                || 5,
+      iaCols:                iaCols                || 1,
+      boardRole:             boardRole             || 'main',
       cells: [],
     });
 
@@ -100,18 +108,31 @@ exports.updateBoard = async (req, res) => {
       return res.status(404).json({ error: 'Board not found' });
     }
 
-    const { name, imageUrl, userId, rows, columns, predictorEnabled, aiRewriteEnabled, iaRows, iaCols, cells } = req.body;
+    const {
+      name, imageUrl, userId, rows, columns, circleSlots,
+      locationColumnEnabled, locationColumnSlots,
+      predictorEnabled, aiRewriteEnabled, iaRows, iaCols, cells,
+      boardRole, visibleInProfile, profileName, profileImage, profileDescription,
+    } = req.body;
 
-    if (name             !== undefined) board.name             = name.trim();
-    if (imageUrl         !== undefined) board.imageUrl         = imageUrl;
-    if (userId           !== undefined) board.userId           = userId;
-    if (rows             !== undefined) board.rows             = rows;
-    if (columns          !== undefined) board.columns          = columns;
-    if (predictorEnabled !== undefined) board.predictorEnabled = !!predictorEnabled;
-    if (aiRewriteEnabled !== undefined) board.aiRewriteEnabled = !!aiRewriteEnabled;
-    if (iaRows           !== undefined) board.iaRows           = iaRows;
-    if (iaCols           !== undefined) board.iaCols           = iaCols;
-    if (cells            !== undefined) {
+    if (name                  !== undefined) board.name                  = name.trim();
+    if (imageUrl              !== undefined) board.imageUrl              = imageUrl;
+    if (userId                !== undefined) board.userId                = userId;
+    if (rows                  !== undefined) board.rows                  = rows;
+    if (columns               !== undefined) board.columns               = columns;
+    if (circleSlots           !== undefined) board.circleSlots           = circleSlots;
+    if (locationColumnEnabled !== undefined) board.locationColumnEnabled = !!locationColumnEnabled;
+    if (locationColumnSlots   !== undefined) board.locationColumnSlots   = locationColumnSlots;
+    if (predictorEnabled      !== undefined) board.predictorEnabled      = !!predictorEnabled;
+    if (aiRewriteEnabled      !== undefined) board.aiRewriteEnabled      = !!aiRewriteEnabled;
+    if (iaRows                !== undefined) board.iaRows                = iaRows;
+    if (iaCols                !== undefined) board.iaCols                = iaCols;
+    if (boardRole             !== undefined) board.boardRole             = boardRole;
+    if (visibleInProfile      !== undefined) board.visibleInProfile      = !!visibleInProfile;
+    if (profileName           !== undefined) board.profileName           = profileName;
+    if (profileImage          !== undefined) board.profileImage          = profileImage;
+    if (profileDescription    !== undefined) board.profileDescription    = profileDescription;
+    if (cells                 !== undefined) {
       board.cells = cells;
       board.markModified('cells');
     }

@@ -16,8 +16,10 @@ const pictogramSchema = new mongoose.Schema({
 
 // ── Subdocumento: acción de celda ──────────────────────────────────────────────
 const actionSchema = new mongoose.Schema({
-  type:          { type: String, enum: ['voice', 'navigate', 'voice+navigate', 'disabled'], default: 'voice' },
-  targetBoardId: { type: mongoose.Schema.Types.ObjectId, ref: 'Board', default: null },
+  type:                  { type: String, enum: ['voice', 'navigate', 'voice+navigate', 'disabled'], default: 'voice' },
+  targetBoardId:         { type: mongoose.Schema.Types.ObjectId, ref: 'Board', default: null },
+  aiGeneratedBoardTarget:{ type: Boolean, default: false },
+  showLastPhrase:        { type: Boolean, default: false },
 }, { _id: false });
 
 // ── Subdocumento: celda ────────────────────────────────────────────────────────
@@ -37,11 +39,19 @@ const boardSchema = new mongoose.Schema({
   shape:            { type: String, enum: ['grid', 'circular'], default: 'grid' },
   rows:             { type: Number, default: 3, min: 1, max: 10 },
   columns:          { type: Number, default: 4, min: 1, max: 10 },
-  circleSlots:      { type: Number, default: 8 },
-  predictorEnabled: { type: Boolean, default: false },
+  circleSlots:           { type: Number, default: 8,  min: 3, max: 20 },
+  locationColumnEnabled: { type: Boolean, default: false },
+  locationColumnSlots:   { type: Number, default: 6,  min: 1, max: 20 },
+  predictorEnabled:      { type: Boolean, default: false },
   aiRewriteEnabled: { type: Boolean, default: false },
   iaRows:           { type: Number,  default: 5, min: 1, max: 20 },
   iaCols:           { type: Number,  default: 1, min: 1, max: 5  },
+  // ── Rol y perfil ──────────────────────────────────────────────────────────────
+  boardRole:          { type: String, enum: ['main', 'secondary'], default: 'main' },
+  visibleInProfile:   { type: Boolean, default: false },
+  profileName:        { type: String,  default: '' },
+  profileImage:       { type: String,  default: '' },
+  profileDescription: { type: String,  default: '' },
   cells:            [cellSchema],
   createdAt:        { type: Date, default: Date.now },
 });

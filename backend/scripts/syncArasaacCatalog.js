@@ -34,22 +34,29 @@ const buildImageUrl = (id) => {
   return `https://static.arasaac.org/pictograms/${id}/${id}_500.png`;
 };
 
+/**
+ * Normaliza el array de keywords de ARASAAC preservando el campo `type` numérico.
+ * Devuelve objetos { keyword: string, type: number | null }.
+ * ARASAAC type map: 1=noun/misc, 2=noun, 3=verb, 4=descriptor/adjective.
+ */
 const normalizeKeywords = (keywordsInput) => {
-  if (!Array.isArray(keywordsInput)) {
-    return [];
-  }
+  if (!Array.isArray(keywordsInput)) return [];
 
   return keywordsInput
-    .map((keyword) => {
-      if (typeof keyword === 'string') {
-        return keyword.trim();
+    .map((k) => {
+      if (typeof k === 'string') {
+        const trimmed = k.trim();
+        return trimmed ? { keyword: trimmed, type: null } : null;
       }
-      if (keyword && typeof keyword === 'object' && keyword.keyword) {
-        return keyword.keyword.trim();
+      if (k && typeof k === 'object' && k.keyword) {
+        const trimmed = String(k.keyword).trim();
+        return trimmed
+          ? { keyword: trimmed, type: typeof k.type === 'number' ? k.type : null }
+          : null;
       }
-      return '';
+      return null;
     })
-    .filter((keyword) => keyword.length > 0);
+    .filter((k) => k !== null);
 };
 
 const normalizeCategories = (categoriesInput) => {
@@ -89,7 +96,7 @@ const syncPictograms = async (pictograms) => {
       }
 
       const keywords = normalizeKeywords(pic.keywords || []);
-      const label = keywords.length > 0 ? keywords[0] : `Pictogram ${id}`;
+      const label = keywords.length > 0 ? keywords[0].keyword : `Pictogram ${id}`;
       const categories = normalizeCategories(pic.categories || []);
       const tags = Array.isArray(pic.tags) ? pic.tags : [];
 

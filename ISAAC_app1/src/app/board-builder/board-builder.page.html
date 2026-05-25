@@ -6,6 +6,13 @@
       </ion-back-button>
     </ion-buttons>
     <ion-title class="bb-title">BOARD BUILDER</ion-title>
+    <ion-buttons slot="end">
+      <button type="button" class="bb-select-toggle"
+              [class.bb-select-toggle--active]="selectMode"
+              (click)="toggleSelectMode()">
+        @if (selectMode) { Cancelar } @else { Seleccionar }
+      </button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
@@ -13,42 +20,66 @@
   <div class="bb-container">
 
     <!-- ── Acciones principales ──────────────────────────────────────────── -->
-    <p class="bb-section-label">¿QUÉ QUIERES HACER?</p>
-    <div class="bb-actions">
+    @if (!selectMode) {
+      <p class="bb-section-label">¿QUÉ QUIERES HACER?</p>
+      <div class="bb-actions">
 
-      <button type="button" class="bb-action-btn bb-action-btn--violet" (click)="goToCreate()">
-        <div class="bb-action-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="7" height="7" rx="1.5"/>
-            <rect x="14" y="3" width="7" height="7" rx="1.5"/>
-            <rect x="3" y="14" width="7" height="7" rx="1.5"/>
-            <line x1="17.5" y1="14" x2="17.5" y2="21"/>
-            <line x1="14" y1="17.5" x2="21" y2="17.5"/>
-          </svg>
-        </div>
-        <span class="bb-action-label">Crear tablero</span>
-      </button>
+        <button type="button" class="bb-action-btn bb-action-btn--violet" (click)="goToCreate()">
+          <div class="bb-action-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+              <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+              <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+              <line x1="17.5" y1="14" x2="17.5" y2="21"/>
+              <line x1="14" y1="17.5" x2="21" y2="17.5"/>
+            </svg>
+          </div>
+          <span class="bb-action-label">Crear tablero</span>
+        </button>
 
-      <button type="button" class="bb-action-btn bb-action-btn--blue" (click)="importOBL()">
-        <div class="bb-action-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="7 10 12 15 17 10"/>
-            <line x1="12" y1="15" x2="12" y2="3"/>
-          </svg>
-        </div>
-        <span class="bb-action-label">Importar OBF / OBL</span>
-      </button>
+        <button type="button" class="bb-action-btn bb-action-btn--blue" (click)="importOBZ()">
+          <div class="bb-action-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+          </div>
+          <span class="bb-action-label">Importar OBZ</span>
+        </button>
 
-    </div>
+      </div>
+    }
 
-    <!-- ── Lista de tableros ─────────────────────────────────────────────── -->
+    <!-- ── Cabecera de lista ─────────────────────────────────────────────── -->
     <div class="bb-section-header">
       <p class="bb-section-label" style="margin:0">MIS TABLEROS</p>
       @if (!isLoading) {
         <span class="bb-count">{{ boards.length }}</span>
       }
     </div>
+
+    <!-- ── Buscador ──────────────────────────────────────────────────────── -->
+    @if (!isLoading && boards.length > 0) {
+      <div class="bb-search-wrap">
+        <svg class="bb-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input class="bb-search-inp"
+               type="text"
+               placeholder="Buscar tablero…"
+               [(ngModel)]="searchQuery"/>
+        @if (searchQuery) {
+          <button class="bb-search-clear" (click)="searchQuery = ''">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        }
+      </div>
+    }
 
     @if (isLoading) {
       <div class="bb-state">
@@ -74,47 +105,177 @@
         <p>Aún no has creado ningún tablero.</p>
         <span>Pulsa "Crear tablero" para empezar.</span>
       </div>
+    } @else if (filteredBoards.length === 0) {
+      <div class="bb-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <p>Sin resultados para "{{ searchQuery }}"</p>
+      </div>
     } @else {
-      <div class="bb-board-list">
-        @for (board of boards; track board._id) {
-          <div class="bb-board-card" (click)="openEditor(board._id)">
-            <div class="bb-board-icon" [class.bb-board-icon--img]="!!board.imageUrl">
-              @if (board.imageUrl) {
-                <img [src]="buildSafeUrl(board.imageUrl)" class="bb-board-img" [alt]="board.name"/>
-              } @else {
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                  <rect x="3" y="3" width="7" height="7" rx="1.5"/>
-                  <rect x="14" y="3" width="7" height="7" rx="1.5"/>
-                  <rect x="3" y="14" width="7" height="7" rx="1.5"/>
-                  <rect x="14" y="14" width="7" height="7" rx="1.5"/>
-                </svg>
+
+      <!-- ── Sección: Tableros principales ──────────────────────────────── -->
+      @if (mainBoards.length > 0) {
+        <div class="bb-sub-header">
+          <span class="bb-sub-label">Tableros principales</span>
+          <span class="bb-sub-count">{{ mainBoards.length }}</span>
+        </div>
+        <div class="bb-board-list">
+          @for (board of mainBoards; track board._id) {
+            <div class="bb-board-card"
+                 [class.bb-board-card--selected]="isSelected(board._id)"
+                 [class.bb-board-card--select-mode]="selectMode"
+                 (click)="selectMode ? toggleSelect(board._id) : openEditor(board._id)">
+
+              @if (selectMode) {
+                <div class="bb-checkbox" [class.bb-checkbox--checked]="isSelected(board._id)">
+                  @if (isSelected(board._id)) {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  }
+                </div>
+              }
+
+              <div class="bb-board-icon" [class.bb-board-icon--img]="!!board.imageUrl">
+                @if (board.imageUrl) {
+                  <img [src]="buildSafeUrl(board.imageUrl)" class="bb-board-img" [alt]="board.name"/>
+                } @else if (board.shape === 'circular') {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <circle cx="12" cy="12" r="9"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                } @else {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+                    <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+                    <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+                    <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+                  </svg>
+                }
+              </div>
+              <div class="bb-board-info">
+                <span class="bb-board-name">{{ board.name }}</span>
+                <span class="bb-board-meta">
+                  {{ shapeLabel(board.shape) }} · {{ dimensionLabel(board) }}
+                  @if (board.createdAt) { · {{ formatDate(board.createdAt) }} }
+                </span>
+                @if (board.visibleInProfile) {
+                  <span class="bb-profile-badge">En perfil</span>
+                }
+              </div>
+              @if (!selectMode) {
+                <div class="bb-board-actions">
+                  <button class="bb-del-btn" (click)="deleteBoard(board, $event)" title="Eliminar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="3 6 5 6 21 6"/>
+                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                      <path d="M10 11v6M14 11v6"/>
+                      <path d="M9 6V4h6v2"/>
+                    </svg>
+                  </button>
+                  <svg class="bb-chevron" viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </div>
               }
             </div>
-            <div class="bb-board-info">
-              <span class="bb-board-name">{{ board.name }}</span>
-              <span class="bb-board-meta">
-                {{ shapeLabel(board.shape) }} · {{ dimensionLabel(board) }}
-                @if (board.createdAt) { · {{ formatDate(board.createdAt) }} }
-              </span>
+          }
+        </div>
+      }
+
+      <!-- ── Sección: Tableros secundarios ──────────────────────────────── -->
+      @if (secondaryBoards.length > 0) {
+        <div class="bb-sub-header" style="margin-top:20px">
+          <span class="bb-sub-label">Tableros secundarios</span>
+          <span class="bb-sub-count">{{ secondaryBoards.length }}</span>
+        </div>
+        <div class="bb-board-list">
+          @for (board of secondaryBoards; track board._id) {
+            <div class="bb-board-card bb-board-card--secondary"
+                 [class.bb-board-card--selected]="isSelected(board._id)"
+                 [class.bb-board-card--select-mode]="selectMode"
+                 (click)="selectMode ? toggleSelect(board._id) : openEditor(board._id)">
+
+              @if (selectMode) {
+                <div class="bb-checkbox" [class.bb-checkbox--checked]="isSelected(board._id)">
+                  @if (isSelected(board._id)) {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  }
+                </div>
+              }
+
+              <div class="bb-board-icon bb-board-icon--secondary" [class.bb-board-icon--img]="!!board.imageUrl">
+                @if (board.imageUrl) {
+                  <img [src]="buildSafeUrl(board.imageUrl)" class="bb-board-img" [alt]="board.name"/>
+                } @else if (board.shape === 'circular') {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <circle cx="12" cy="12" r="9"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                } @else {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+                    <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+                    <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+                    <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+                  </svg>
+                }
+              </div>
+              <div class="bb-board-info">
+                <span class="bb-board-name">{{ board.name }}</span>
+                <span class="bb-board-meta">
+                  {{ shapeLabel(board.shape) }} · {{ dimensionLabel(board) }}
+                  @if (board.createdAt) { · {{ formatDate(board.createdAt) }} }
+                </span>
+              </div>
+              @if (!selectMode) {
+                <div class="bb-board-actions">
+                  <button class="bb-del-btn" (click)="deleteBoard(board, $event)" title="Eliminar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="3 6 5 6 21 6"/>
+                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                      <path d="M10 11v6M14 11v6"/>
+                      <path d="M9 6V4h6v2"/>
+                    </svg>
+                  </button>
+                  <svg class="bb-chevron" viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </div>
+              }
             </div>
-            <div class="bb-board-actions">
-              <button class="bb-del-btn" (click)="deleteBoard(board, $event)" title="Eliminar">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="3 6 5 6 21 6"/>
-                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                  <path d="M10 11v6M14 11v6"/>
-                  <path d="M9 6V4h6v2"/>
-                </svg>
-              </button>
-              <svg class="bb-chevron" viewBox="0 0 24 24" fill="none"
-                   stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6"/>
-              </svg>
-            </div>
-          </div>
-        }
-      </div>
+          }
+        </div>
+      }
+
     }
 
   </div>
+
+  <!-- ── Barra de acción en modo selección ─────────────────────────────── -->
+  @if (selectMode) {
+    <div class="bb-select-bar">
+      <span class="bb-select-info">
+        {{ selectedCount }} seleccionado{{ selectedCount !== 1 ? 's' : '' }}
+      </span>
+      <button class="bb-select-del"
+              [disabled]="selectedCount === 0"
+              (click)="deleteSelected()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+          <path d="M10 11v6M14 11v6"/>
+          <path d="M9 6V4h6v2"/>
+        </svg>
+        Eliminar seleccionados
+      </button>
+    </div>
+  }
+
 </ion-content>
