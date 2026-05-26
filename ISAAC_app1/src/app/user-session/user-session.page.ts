@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { IonicModule } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import { buildSafeUrl as buildSafeUrlUtil } from '../shared/utils/image.utils';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 import { UserService, FullBackendUser } from '../services/user.service';
@@ -176,11 +177,7 @@ export class UserSessionPage implements OnInit {
   // ── Helpers ─────────────────────────────────────────────────────────────────
 
   buildSafeUrl(imageStr?: string | null): SafeUrl | string {
-    if (!imageStr) return '';
-    if (imageStr.startsWith('data:')) {
-      return this.sanitizer.bypassSecurityTrustUrl(imageStr);
-    }
-    return imageStr;
+    return buildSafeUrlUtil(imageStr, this.sanitizer);
   }
 
   getInitial(): string {

@@ -10,6 +10,7 @@ import {
 import { IonicModule, ToastController } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import { buildSafeUrl as buildSafeUrlUtil } from '../shared/utils/image.utils';
 import { firstValueFrom } from 'rxjs';
 import { AuthService, AddressSuggestion } from '../services/auth.service';
 import { UserService, UpdateUserPayload, SelfPermissions } from '../services/user.service';
@@ -279,10 +280,6 @@ export class UserFinalFormPage implements OnInit {
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
   buildSafeUrl(imageStr?: string | null): SafeUrl | string {
-    if (!imageStr) return '';
-    if (imageStr.startsWith('data:')) {
-      return this.sanitizer.bypassSecurityTrustUrl(imageStr);
-    }
-    return imageStr;
+    return buildSafeUrlUtil(imageStr, this.sanitizer);
   }
 }

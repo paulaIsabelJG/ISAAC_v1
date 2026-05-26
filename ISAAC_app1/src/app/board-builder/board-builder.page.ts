@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { IonicModule, ToastController, AlertController } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import { buildSafeUrl as buildSafeUrlUtil } from '../shared/utils/image.utils';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import JSZip from 'jszip';
@@ -365,8 +366,6 @@ export class BoardBuilderPage implements OnInit {
   }
 
   buildSafeUrl(url?: string | null): SafeUrl | string {
-    if (!url) return '';
-    if (url.startsWith('data:')) return this.sanitizer.bypassSecurityTrustUrl(url);
-    return url;
+    return buildSafeUrlUtil(url, this.sanitizer);
   }
 }

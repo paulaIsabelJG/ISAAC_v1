@@ -3,6 +3,7 @@ import { IonicModule, ToastController } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import { buildSafeUrl as buildSafeUrlUtil } from '../shared/utils/image.utils';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 import {
@@ -194,11 +195,7 @@ export class AssignedProfessionalsPlaceholderPage {
   // ── Helpers ───────────────────────────────────────────────────────────────────
 
   buildSafeUrl(imageStr?: string | null): SafeUrl | string {
-    if (!imageStr) return '';
-    if (imageStr.startsWith('data:')) {
-      return this.sanitizer.bypassSecurityTrustUrl(imageStr);
-    }
-    return imageStr;
+    return buildSafeUrlUtil(imageStr, this.sanitizer);
   }
 
   getInitial(row: ProfRow): string {

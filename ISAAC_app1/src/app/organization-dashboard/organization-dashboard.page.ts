@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import { buildSafeUrl as buildSafeUrlUtil } from '../shared/utils/image.utils';
 import { AuthService, User } from '../services/auth.service';
 import { UserService, BackendUser } from '../services/user.service';
 
@@ -125,11 +126,7 @@ export class OrganizationDashboardPage implements OnInit {
    * Devuelve SafeUrl para imágenes base64 (data:) o la URL directamente.
    */
   buildSafeUrl(imageStr?: string | null): SafeUrl | string {
-    if (!imageStr) return '';
-    if (imageStr.startsWith('data:')) {
-      return this.sanitizer.bypassSecurityTrustUrl(imageStr);
-    }
-    return imageStr;
+    return buildSafeUrlUtil(imageStr, this.sanitizer);
   }
 
   // ── Getters filtrados ────────────────────────────────────────────────────────

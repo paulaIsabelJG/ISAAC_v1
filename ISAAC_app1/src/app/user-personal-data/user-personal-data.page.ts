@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { IonicModule, ToastController } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import { buildSafeUrl as buildSafeUrlUtil } from '../shared/utils/image.utils';
 import { firstValueFrom } from 'rxjs';
 import { UserService, FullBackendUser } from '../services/user.service';
 
@@ -158,11 +159,7 @@ export class UserPersonalDataPage implements OnInit {
   // ── Helpers ─────────────────────────────────────────────────────────────────
 
   buildSafeUrl(imageStr?: string | null): SafeUrl | string {
-    if (!imageStr) return '';
-    if (imageStr.startsWith('data:')) {
-      return this.sanitizer.bypassSecurityTrustUrl(imageStr);
-    }
-    return imageStr;
+    return buildSafeUrlUtil(imageStr, this.sanitizer);
   }
 
   getInitial(): string {

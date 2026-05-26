@@ -12,10 +12,12 @@ import { firstValueFrom } from 'rxjs';
 import {
   PictogramStateService,
   OwnPictogram,
-  WordType,
-  FITZGERALD,
-  FitzgeraldColor,
 } from '../services/pictogram-state.service';
+import {
+  WordType,
+  FitzgeraldColor,
+  FITZGERALD_COLORS,
+} from '../shared/constants/fitzgerald';
 import { UserService, BackendPictogram } from '../services/user.service';
 
 const MAX_IMG = 2 * 1024 * 1024; // 2 MB
@@ -36,7 +38,8 @@ const VALID_WORD_TYPES: WordType[] = [
   imports: [IonicModule, FormsModule],
 })
 export class OwnPictogramsPlaceholderPage {
-  readonly FITZGERALD = FITZGERALD;
+  // Expuesta con el mismo nombre para que el template no cambie
+  readonly FITZGERALD = FITZGERALD_COLORS;
 
   // ── Estado de carga ──────────────────────────────────────────────────────────
   userId: string | null = null;
@@ -70,13 +73,11 @@ export class OwnPictogramsPlaceholderPage {
   }
 
   get selectedColor(): FitzgeraldColor {
-    return (
-      FITZGERALD.find((c) => c.type === this.formWordType) ?? FITZGERALD[5]
-    );
+    return FITZGERALD_COLORS.find((c) => c.type === this.formWordType) ?? FITZGERALD_COLORS[5];
   }
 
   getColor(type: WordType): FitzgeraldColor {
-    return FITZGERALD.find((c) => c.type === type) ?? FITZGERALD[5];
+    return FITZGERALD_COLORS.find((c) => c.type === type) ?? FITZGERALD_COLORS[5];
   }
 
   constructor(

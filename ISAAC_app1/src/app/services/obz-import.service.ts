@@ -27,11 +27,10 @@ import {
   CellPictogram,
   CellAction,
   ActionType,
-  WordType,
-  FITZGERALD,
   BoardShape,
   CreateBoardPayload,
 } from './board.service';
+import { WordType, FITZGERALD } from '../shared/constants/fitzgerald';
 
 // ─── Tipos OBF exportados ─────────────────────────────────────────────────────
 // Usados tanto por este servicio como por los componentes que los necesiten

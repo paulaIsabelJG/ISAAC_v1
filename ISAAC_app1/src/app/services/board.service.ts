@@ -2,32 +2,15 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { WordType } from '../shared/constants/fitzgerald';
 
 // ─── Tipos de datos ───────────────────────────────────────────────────────────
 
-export type BoardShape    = 'grid' | 'circular';
-export type WordType      = 'verb' | 'pronoun' | 'noun' | 'descriptor' | 'social' | 'misc';
-export type ActionType    = 'voice' | 'navigate' | 'voice+navigate' | 'disabled';
-export type PictSource    = 'arasaac' | 'custom' | 'new';
+export type BoardShape  = 'grid' | 'circular';
+export type ActionType  = 'voice' | 'navigate' | 'voice+navigate' | 'disabled';
+export type PictSource  = 'arasaac' | 'custom' | 'new';
 
-/** Colores Fitzgerald por tipo de palabra */
-export const FITZGERALD: Record<WordType, string> = {
-  verb:       '#4caf50', // verde
-  pronoun:    '#ffd700', // amarillo
-  noun:       '#ff9800', // naranja
-  descriptor: '#2196f3', // azul
-  social:     '#9c27b0', // morado
-  misc:       '#f5f5f5', // blanco/gris
-};
-
-export const WORD_TYPE_LABELS: Record<WordType, string> = {
-  verb:       'Verbo / acción',
-  pronoun:    'Pronombre / persona',
-  noun:       'Sustantivo',
-  descriptor: 'Descriptor / adjetivo',
-  social:     'Social / cortesía',
-  misc:       'Miscelánea',
-};
+// WordType, FITZGERALD, FITZGERALD_COLORS y WORD_TYPE_LABELS → shared/constants/fitzgerald.ts
 
 // ─── Interfaces ───────────────────────────────────────────────────────────────
 
