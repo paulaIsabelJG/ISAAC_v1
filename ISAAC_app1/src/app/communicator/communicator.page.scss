@@ -1,0 +1,188 @@
+$violet:       #7c4dff;
+$violet-light: #f0ebff;
+$pink:         #ff69b4;
+$bg:           #fdf5f9;
+$text-dark:    #222;
+$text-muted:   #6b5462;
+
+// ── Root ──────────────────────────────────────────────────────────────────────
+.comm-root {
+  display:        flex;
+  flex-direction: column;
+  height:         100vh;
+  background:     $bg;
+  overflow:       hidden;
+}
+
+// ── AAC Header ────────────────────────────────────────────────────────────────
+.comm-header {
+  display:        flex;
+  align-items:    stretch;
+  gap:            8px;
+  padding:        8px;
+  background:     #fff;
+  border-bottom:  2px solid #f0e8f4;
+  flex:           0 0 auto;
+  min-height:     88px;
+}
+
+.comm-phrase-strip {
+  flex:           1;
+  display:        flex;
+  align-items:    center;
+  gap:            6px;
+  overflow-x:     auto;
+  padding:        4px;
+  background:     #faf0f8;
+  border-radius:  12px;
+  border:         1.5px solid #f4d0e4;
+  min-height:     72px;
+}
+
+.comm-phrase-placeholder {
+  font-size:  13px;
+  color:      $text-muted;
+  padding:    0 8px;
+  font-style: italic;
+}
+
+.comm-phrase-item {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            2px;
+  min-width:      56px;
+  max-width:      72px;
+  padding:        4px 6px;
+  background:     #fff;
+  border:         1.5px solid #f4d0e4;
+  border-radius:  10px;
+  flex:           0 0 auto;
+}
+
+.comm-phrase-img {
+  width:      44px;
+  height:     44px;
+  object-fit: contain;
+}
+
+.comm-phrase-label {
+  font-size:  10px;
+  font-weight: 600;
+  color:      $text-dark;
+  text-align: center;
+  word-break: break-word;
+  line-height: 1.2;
+}
+
+// ── Controls ──────────────────────────────────────────────────────────────────
+.comm-controls {
+  display:   flex;
+  gap:       6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.comm-ctrl {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  justify-content: center;
+  gap:            3px;
+  width:          60px;
+  height:         72px;
+  border:         1.5px solid #e0d4ec;
+  border-radius:  12px;
+  background:     #fff;
+  cursor:         pointer;
+  font-family:    inherit;
+  font-size:      10px;
+  font-weight:    700;
+  color:          $text-muted;
+  transition:     background 0.15s, border-color 0.15s;
+
+  svg { width: 24px; height: 24px; stroke: $text-muted; }
+
+  &:disabled { opacity: 0.4; cursor: default; }
+  &:not(:disabled):hover { background: $violet-light; border-color: $violet; }
+
+  &--speak {
+    border-color: $violet;
+    color:        $violet;
+    svg { stroke: $violet; }
+    &:not(:disabled) { background: $violet-light; }
+  }
+}
+
+// ── Board area ────────────────────────────────────────────────────────────────
+.comm-board {
+  flex:     1;
+  overflow: auto;
+  padding:  10px;
+}
+
+.comm-loading,
+.comm-error,
+.comm-unsupported {
+  display:     flex;
+  align-items: center;
+  justify-content: center;
+  height:      100%;
+  font-size:   14px;
+  color:       $text-muted;
+}
+
+// ── Grid ──────────────────────────────────────────────────────────────────────
+.comm-grid {
+  display:  grid;
+  gap:      8px;
+  height:   100%;
+  min-height: 0;
+}
+
+.comm-cell {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  justify-content: center;
+  gap:            4px;
+  border:         2px solid #f0e0ec;
+  border-radius:  16px;
+  background:     #fff;
+  cursor:         pointer;
+  padding:        6px;
+  transition:     background 0.12s, border-color 0.12s, transform 0.1s;
+  overflow:       hidden;
+  user-select:    none;
+  -webkit-tap-highlight-color: transparent;
+  min-height:     70px;
+
+  &--filled:active {
+    transform:    scale(0.95);
+    background:   $violet-light;
+    border-color: $violet;
+  }
+
+  &--disabled {
+    opacity: 0.35;
+    cursor: default;
+    &:active { transform: none; background: #fff; }
+  }
+}
+
+.comm-cell-img {
+  flex:       0 0 auto;
+  width:      min(55%, 60px);
+  height:     auto;
+  object-fit: contain;
+  max-height: 60px;
+}
+
+.comm-cell-label {
+  font-size:  11px;
+  font-weight: 700;
+  color:      $text-dark;
+  text-align: center;
+  word-break: break-word;
+  line-height: 1.2;
+}

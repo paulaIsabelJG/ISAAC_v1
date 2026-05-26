@@ -1,11 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { IonicModule, ToastController, AlertController } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, Subscription } from 'rxjs';
 import JSZip from 'jszip';
-import { environment } from '../../environments/environment';
 import { AuthService } from '../services/auth.service';
 import {
   UserService,
@@ -24,6 +23,13 @@ import {
   FITZGERALD,
   WORD_TYPE_LABELS,
 } from '../services/board.service';
+import { AacRuntimeService } from '../services/aac-runtime.service';
+import {
+  ObzImportService,
+  ObfButtonOBZ,
+  ObfDocumentOBZ,
+  ObfImageOBZ,
+} from '../services/obz-import.service';
 
 // ─── Resultado de búsqueda ARASAAC ───────────────────────────────────────────
 interface ArasaacResult {
@@ -52,47 +58,6 @@ interface ActionForm {
   targetBoardId: string;
 }
 
-// ─── Tipos OBF para importación ───────────────────────────────────────────────
-
-interface ObfImage {
-  id: string | number;
-  data?: string; // base64 data URI  — prioridad 1
-  path?: string; // path en ZIP      — no disponible en OBF individual
-  url?: string; // URL HTTP         — prioridad 3
-  content_type?: string;
-  width?: number;
-  height?: number;
-}
-
-interface ObfButton {
-  id: string | number;
-  label?: string;
-  vocalization?: string;
-  background_color?: string;
-  border_color?: string;
-  image_id?: string | number;
-  action?: string;
-  load_board?: { id?: string | number; name?: string; path?: string };
-  ext_isaac_disabled?: boolean;
-  ext_isaac_role?: string;
-}
-
-interface ObfGrid {
-  rows: number;
-  columns: number;
-  order: (string | number | null)[][];
-}
-
-interface ObfDocument {
-  format?: string;
-  id?: string | number;
-  name?: string;
-  buttons?: ObfButton[];
-  images?: ObfImage[];
-  grid?: ObfGrid;
-  ext_isaac_layout?: string;
-}
-
 @Component({
   selector: 'app-board-builder-editor',
   templateUrl: './board-builder-editor.page.html',
@@ -100,13 +65,25 @@ interface ObfDocument {
   standalone: true,
   imports: [IonicModule, FormsModule],
 })
-export class BoardBuilderEditorPage implements OnInit {
+export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   // ── Routing ─────────────────────────────────────────────────────────────────
   boardId = '';
   returnTo = '/board-builder';
   /** Contexto del builder: se propaga al volver para que la lista filtre correctamente. */
   contextCreatorId   = '';
   contextCreatorName = '';
+
+  /** Suscripción al observable paramMap para detectar cambios de :boardId
+   *  cuando Ionic reutiliza el componente (el snapshot no se actualiza en ese caso). */
+  private routeSub?: Subscription;
+
+  // ── Pending link (vuelta desde "Crear nuevo tablero") ────────────────────────
+  // Se leen en ionViewWillEnter para poder capturarlos aunque el componente
+  // esté cacheado (Ionic reutiliza la instancia, ngOnInit no vuelve a disparar).
+  private pendingLinkBoardId    = '';
+  private pendingLinkRow        = -1;
+  private pendingLinkCol        = -1;
+  private pendingLinkActionType = '';
 
   // ── Estado principal ─────────────────────────────────────────────────────────
   board: Board | null = null;
@@ -159,6 +136,12 @@ export class BoardBuilderEditorPage implements OnInit {
   userBoards: Board[] = [];
   userBoardsLoading = false;
   boardsReady = false; // true cuando userBoards ha cargado (evita bug ion-select timing)
+  /** ID del tablero recién creado (resaltado ~5 s en la lista lateral). */
+  highlightedBoardId = '';
+
+  // Usuarios asignados al tablero (nuevo campo multi-usuario)
+  // cfgUserId se mantiene como campo legacy (= primer elemento de cfgAssignedUserIds)
+  cfgAssignedUserIds: string[] = [];
 
   // Usuarios del centro (para cambiar userId en config)
   centerUsers: BackendUser[] = [];
@@ -208,9 +191,6 @@ export class BoardBuilderEditorPage implements OnInit {
   actionFormAiTarget = false;
   actionFormShowLastPhrase = false; // "Último pictograma pulsado" (solo celda central)
 
-  // Caché de metadata ARASAAC local (persiste durante la sesión, evita peticiones duplicadas)
-  private _arasaacMetaCache = new Map<string, Record<string, unknown> | null>();
-
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -220,11 +200,25 @@ export class BoardBuilderEditorPage implements OnInit {
     private toastCtrl: ToastController,
     private alertCtrl: AlertController,
     private sanitizer: DomSanitizer,
+    private aacRuntime: AacRuntimeService,
+    private obzImportSvc: ObzImportService,
   ) {}
 
   ngOnInit() {
-    this.boardId = this.route.snapshot.paramMap.get('boardId') ?? '';
+    // ── boardId desde paramMap observable (NO snapshot) ───────────────────────
+    // route.snapshot.paramMap NO se actualiza cuando Ionic reutiliza el componente
+    // cacheado al navegar entre boards. El observable sí emite con el valor nuevo.
+    // Emite inmediatamente con el valor actual → boardId queda listo antes de
+    // ionViewWillEnter (que es quien llama a loadBoard).
+    this.routeSub = this.route.paramMap.subscribe(params => {
+      const freshId = params.get('boardId') ?? '';
+      if (freshId) {
+        console.log('[paramMap boardId]', this.boardId, '→', freshId);
+        this.boardId = freshId;
+      }
+    });
 
+    // QueryParams: snapshot es suficiente — son estables durante la sesión del editor
     const rt = this.route.snapshot.queryParamMap.get('returnTo');
     if (rt) { this.returnTo = rt; }
 
@@ -235,9 +229,23 @@ export class BoardBuilderEditorPage implements OnInit {
     if (qCreatorName) { this.contextCreatorName = qCreatorName; }
   }
 
+  ngOnDestroy(): void {
+    this.routeSub?.unsubscribe();
+  }
+
   ionViewWillEnter() {
+    // Leer params de link-back cada vez que la página vuelve a primer plano.
+    // (Ionic puede reutilizar el componente cacheado: ngOnInit no vuelve a correr.)
+    const linkFlag = this.route.snapshot.queryParamMap.get('linkCreatedBoard');
+    if (linkFlag === 'true') {
+      this.pendingLinkBoardId    = this.route.snapshot.queryParamMap.get('newlyCreatedTargetBoardId') ?? '';
+      this.pendingLinkRow        = Number(this.route.snapshot.queryParamMap.get('sourceCellRow') ?? '-1');
+      this.pendingLinkCol        = Number(this.route.snapshot.queryParamMap.get('sourceCellCol') ?? '-1');
+      this.pendingLinkActionType = this.route.snapshot.queryParamMap.get('sourceActionType') ?? 'navigate';
+    }
+
     if (this.boardId) {
-      this.loadBoard();
+      void this.loadBoard().then(() => this.applyLinkedBoard());
     }
     this.loadCenterUsers();
   }
@@ -245,16 +253,24 @@ export class BoardBuilderEditorPage implements OnInit {
   // ── Carga ────────────────────────────────────────────────────────────────────
 
   private async loadBoard(): Promise<void> {
+    console.log('[loadBoard]', this.boardId);
     this.isLoading = true;
     this.loadError = '';
     try {
       const res = await firstValueFrom(
         this.boardSvc.getBoardById(this.boardId),
       );
+      console.log('[loadBoard response]', {
+        requestedId:  this.boardId,
+        receivedId:   res.board?._id,
+        receivedName: res.board?.name,
+        match:        this.boardId === res.board?._id,
+      });
       this.board = res.board;
       this.syncConfigFromBoard();
-      this.loadUserBoards(this.board.userId);
-      this.loadPersonalPicts(this.board.userId);
+      // Usar la lista multi-usuario ya sincronizada para cargar tableros y pictos
+      this.loadUserBoards(this.cfgAssignedUserIds);
+      this.loadPersonalPicts(this.cfgAssignedUserIds[0] || this.board.userId);
     } catch {
       this.loadError = 'Error al cargar el tablero.';
     } finally {
@@ -273,18 +289,32 @@ export class BoardBuilderEditorPage implements OnInit {
     this.cfgIaRows = this.board.iaRows ?? 5;
     this.cfgIaCols = this.board.iaCols ?? 1;
     this.cfgUserId = this.board.userId;
+    // Sincronizar lista multi-usuario: nuevo campo o fallback a userId legacy
+    this.cfgAssignedUserIds = (this.board.assignedUserIds?.length)
+      ? [...this.board.assignedUserIds]
+      : (this.board.userId ? [this.board.userId] : []);
     this.cfgCircleSlots = this.board.circleSlots ?? 8;
     this.cfgLocationEnabled = this.board.locationColumnEnabled ?? false;
     this.cfgLocationSlots = this.board.locationColumnSlots ?? 6;
     this.cfgBoardRole = this.board.boardRole ?? 'main';
   }
 
-  private async loadUserBoards(userId: string): Promise<void> {
+  private async loadUserBoards(assignedUserIds: string[]): Promise<void> {
+    if (assignedUserIds.length === 0) {
+      this.userBoards = [];
+      this.userBoardsLoading = false;
+      this.boardsReady = true;
+      return;
+    }
     this.userBoardsLoading = true;
     this.boardsReady = false;
     try {
-      const res = await firstValueFrom(this.boardSvc.getBoardsByUser(userId));
+      const res = await firstValueFrom(this.boardSvc.getAvailableTargets(assignedUserIds));
       this.userBoards = res.boards.filter((b) => b._id !== this.boardId);
+      for (const b of this.userBoards) {
+        console.log('[userBoards item]', { name: b.name, id: b._id, shape: b.shape,
+          assignedUserIds: b.assignedUserIds, userId: b.userId });
+      }
     } catch {
       /* silencioso */
     } finally {
@@ -294,6 +324,12 @@ export class BoardBuilderEditorPage implements OnInit {
   }
 
   private async loadPersonalPicts(userId: string): Promise<void> {
+    // Tableros compartidos (varios usuarios) no tienen pictogramas personales
+    if (this.isSharedBoard) {
+      this.personalPicts = [];
+      this.personalLoading = false;
+      return;
+    }
     this.personalLoading = true;
     try {
       const res = await firstValueFrom(
@@ -618,6 +654,12 @@ export class BoardBuilderEditorPage implements OnInit {
 
   async saveCell(): Promise<void> {
     if (!this.selectedCell || !this.board) return;
+    console.log('[saveCell target]', {
+      label:         this.pictForm.label,
+      actionType:    this.actionForm.type,
+      targetBoardId: this.actionForm.targetBoardId,
+      targetName:    this.userBoards.find((b) => b._id === this.actionForm.targetBoardId)?.name,
+    });
     if (!this.pictForm.label.trim()) {
       (
         await this.toastCtrl.create({
@@ -681,7 +723,8 @@ export class BoardBuilderEditorPage implements OnInit {
     };
 
     // Si es pictograma nuevo, guardarlo también en pictogramas del usuario
-    if (this.pictForm.source === 'new') {
+    // (no aplicable en tableros compartidos entre varios usuarios)
+    if (this.pictForm.source === 'new' && !this.isSharedBoard) {
       try {
         const payload: AddPictogramPayload = {
           id: 'bb-' + Date.now(),
@@ -823,7 +866,8 @@ export class BoardBuilderEditorPage implements OnInit {
         this.boardSvc.updateBoard(this.boardId, {
           name: this.cfgName,
           imageUrl: this.cfgImageB64 ?? '',
-          userId: this.cfgUserId,
+          userId: this.cfgAssignedUserIds[0] || this.cfgUserId,
+          assignedUserIds: this.cfgAssignedUserIds,
           rows: this.cfgRows,
           columns: this.cfgCols,
           circleSlots: this.cfgCircleSlots,
@@ -839,11 +883,9 @@ export class BoardBuilderEditorPage implements OnInit {
       );
       this.board = res.board;
       this.syncConfigFromBoard();
-      // Si cambió el userId, recargar tableros y pictogramas del nuevo usuario
-      if (this.cfgUserId !== this.board.userId) {
-        this.loadUserBoards(this.board.userId);
-        this.loadPersonalPicts(this.board.userId);
-      }
+      // Recargar tableros disponibles y pictogramas del usuario asignado
+      this.loadUserBoards(this.cfgAssignedUserIds);
+      this.loadPersonalPicts(this.cfgAssignedUserIds[0] || this.cfgUserId);
       (
         await this.toastCtrl.create({
           message: '✓ Configuración guardada',
@@ -876,6 +918,9 @@ export class BoardBuilderEditorPage implements OnInit {
       this.moveSrcCell  = null; // cancelar modo mover táctil al entrar en preview
       this.circularSimMode = false;
       this.circularSimCenter = null;
+      void this.aacRuntime.startSession('', this.boardId, 'preview');
+    } else {
+      this.aacRuntime.reset();
     }
   }
 
@@ -884,15 +929,20 @@ export class BoardBuilderEditorPage implements OnInit {
     if (!cell?.pictogram) return;
     if (cell.action?.type === 'disabled') return;
 
-    const type = cell.action?.type ?? 'voice';
+    // Delegate voice + OBL logging to the runtime service
+    this.aacRuntime.handlePictogramPress(cell, this.boardId);
+    // Keep local copy in sync for the template (map AacPhraseItem → CellPictogram)
+    this.aacPhrase = this.aacRuntime.phrase.map(p => this.phraseItemToCellPict(p));
 
-    // Añadir a frase cuando la acción incluye voz
-    if (type === 'voice' || type === 'voice+navigate') {
-      this.aacPhrase.push({ ...cell.pictogram });
-    }
-
-    // Navegar cuando la acción incluye navigate: cargar el tablero destino en el mismo componente
+    // Board navigation: load the target board inside the editor (preview stays active)
     // La frase NO se borra al navegar (sigue acumulando pictogramas entre tableros)
+    const type = cell.action?.type ?? 'voice';
+    console.log('[NAV DEBUG]', {
+      label:         cell.pictogram?.label,
+      type:          cell.action?.type,
+      targetBoardId: cell.action?.targetBoardId,
+      fullAction:    cell.action,
+    });
     if (type === 'navigate' || type === 'voice+navigate') {
       const targetId = cell.action.targetBoardId;
       if (targetId) {
@@ -903,21 +953,33 @@ export class BoardBuilderEditorPage implements OnInit {
   }
 
   aacDeleteLast(): void {
-    this.aacPhrase.pop();
-  }
-  aacClearPhrase(): void {
-    this.aacPhrase = [];
+    this.aacRuntime.deleteLast();
+    this.aacPhrase = this.aacRuntime.phrase.map(p => this.phraseItemToCellPict(p));
   }
 
-  async aacSpeak() {
-    (
-      await this.toastCtrl.create({
-        message: 'Síntesis de voz pendiente de implementación.',
-        duration: 2200,
-        color: 'medium',
-        position: 'top',
-      })
-    ).present();
+  aacClearPhrase(): void {
+    this.aacRuntime.clearPhrase();
+    this.aacPhrase = this.aacRuntime.phrase.map(p => this.phraseItemToCellPict(p));
+  }
+
+  aacSpeak(): void {
+    this.aacRuntime.speakPhrase();
+  }
+
+  /** Maps an AacPhraseItem back to the minimal CellPictogram shape used by the editor template. */
+  private phraseItemToCellPict(p: import('../services/aac-runtime.service').AacPhraseItem): CellPictogram {
+    return {
+      source:            'arasaac',
+      id:                p.id,
+      label:             p.label,
+      imageUrl:          p.imageUrl,
+      sound:             p.sound,
+      tags:              [],
+      description:       '',
+      wordType:          'misc',
+      fitzgeraldEnabled: false,
+      color:             '',
+    };
   }
 
   // ── ARASAAC search ────────────────────────────────────────────────────────────
@@ -1283,7 +1345,7 @@ export class BoardBuilderEditorPage implements OnInit {
           ).present();
           return;
         }
-        await this.processOBFImport(parsed as ObfDocument);
+        await this.processOBFImport(parsed as ObfDocumentOBZ);
       } catch (err) {
         console.error('importOBF error:', err);
         (
@@ -1300,7 +1362,8 @@ export class BoardBuilderEditorPage implements OnInit {
   }
 
   /** Valida, parsea y aplica el OBF al tablero activo */
-  private async processOBFImport(doc: ObfDocument): Promise<void> {
+  private async processOBFImport(doc: ObfDocumentOBZ): Promise<void> {
+    console.log('IMPORT OBZ ENTRY');
     // ── 1. Validación de estructura básica ─────────────────────────────────
     if (doc.format && doc.format !== 'open-board-0.1') {
       (
@@ -1391,7 +1454,7 @@ export class BoardBuilderEditorPage implements OnInit {
 
     // ── 4. Recopilar advertencias informativas ────────────────────────────
     const warnings: string[] = [];
-    const images: ObfImage[] = doc.images ?? [];
+    const images: ObfImageOBZ[] = doc.images ?? [];
 
     if (images.some((img) => img.path && !img.data && !img.url)) {
       warnings.push(
@@ -1434,8 +1497,8 @@ export class BoardBuilderEditorPage implements OnInit {
       // symbol: sin soporte en ISAAC → ignorado
     }
 
-    // ── 6. Mapa de botones: id → ObfButton ───────────────────────────────
-    const btnMap = new Map<string, ObfButton>();
+    // ── 6. Mapa de botones: id → ObfButtonOBZ ───────────────────────────────
+    const btnMap = new Map<string, ObfButtonOBZ>();
     for (const btn of doc.buttons) {
       btnMap.set(String(btn.id), btn);
     }
@@ -1448,9 +1511,9 @@ export class BoardBuilderEditorPage implements OnInit {
         const imgId   = String(btn.image_id);
         const imgUrl  = imgMap.get(imgId) ?? '';
         if (!imgUrl) return;
-        const arasaacId = this.extractArasaacIdFromUrl(imgUrl);
+        const arasaacId = this.obzImportSvc.extractArasaacIdFromUrl(imgUrl);
         if (!arasaacId) return;
-        const meta = await this.getLocalArasaacMetadata(arasaacId);
+        const meta = await this.obzImportSvc.getLocalArasaacMetadata(arasaacId);
         console.log('[ARASAAC meta]', btn.label?.trim() || String(btn.id), arasaacId,
           (meta as Record<string, unknown> | null)?.['keywords']);
         metaByBtnId.set(String(btn.id), meta);
@@ -1460,6 +1523,7 @@ export class BoardBuilderEditorPage implements OnInit {
     // ── 7. Convertir grid.order a cells[] ────────────────────────────────
     const rows = grid.rows;
     const columns = grid.columns;
+    console.log('🔥 USING OLD CELL BUILDER (processOBFImport)', { rows, columns });
     const cells: BoardCell[] = [];
     const missingBtns: string[] = [];
     const missingImgs: string[] = [];
@@ -1496,17 +1560,17 @@ export class BoardBuilderEditorPage implements OnInit {
         let wordType: WordType;
         let fitzgeraldEnabled: boolean;
 
-        const arasaacId = this.extractArasaacIdFromUrl(imageUrl);
+        const arasaacId = this.obzImportSvc.extractArasaacIdFromUrl(imageUrl);
 
         if (btn.background_color) {
-          color              = this.normalizeCssColorToHex(btn.background_color);
+          color              = this.obzImportSvc.normalizeCssColorToHex(btn.background_color);
           wordType           = 'misc';
           fitzgeraldEnabled  = false;
           console.log('[OBF color]', label, btn.background_color, '→', color);
         } else {
           const meta     = metaByBtnId.get(btnId) ?? null;
           const inferred = meta
-            ? this.inferWordTypeFromLocalArasaacMetadata(meta, label)
+            ? this.obzImportSvc.inferWordTypeFromLocalArasaacMetadata(meta, label)
             : null;
           if (inferred !== null) {
             wordType          = inferred;
@@ -1544,7 +1608,7 @@ export class BoardBuilderEditorPage implements OnInit {
           color,
         };
         const action: CellAction = {
-          type: this.resolveOBFActionType(btn),
+          type: this.obzImportSvc.resolveObzActionType(btn),
           targetBoardId: null, // load_board no se resuelve en OBF individual
         };
 
@@ -1588,20 +1652,6 @@ export class BoardBuilderEditorPage implements OnInit {
     await alert.present();
   }
 
-  /** Resuelve el tipo de acción ISAAC a partir de un botón OBF */
-  private resolveOBFActionType(btn: ObfButton): ActionType {
-    if (
-      btn.action === ':ext_isaac_disabled' ||
-      btn.ext_isaac_disabled === true
-    ) {
-      return 'disabled';
-    }
-    if (btn.load_board) {
-      return btn.vocalization?.trim() ? 'voice+navigate' : 'navigate';
-    }
-    return 'voice';
-  }
-
   /** Guarda el tablero importado en backend y refresca el editor */
   private async applyOBFImport(
     name: string,
@@ -1642,6 +1692,95 @@ export class BoardBuilderEditorPage implements OnInit {
       this.isLoading = false;
     }
   }
+
+  // ── OBZ Import ───────────────────────────────────────────────────────────────
+
+  /**
+   * Importa un paquete .obz usando el servicio compartido.
+   * El tablero raíz del OBZ actualiza el tablero activo (existingRootBoardId).
+   * Los tableros enlazados se crean como secundarios con los mismos usuarios asignados.
+   */
+  async importOBZ(): Promise<void> {
+    const input  = document.createElement('input');
+    input.type   = 'file';
+    input.accept = '.obz,.zip,application/zip,application/octet-stream';
+    input.onchange = async (e: Event) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      let zip: JSZip;
+      try { zip = await JSZip.loadAsync(file); }
+      catch {
+        (await this.toastCtrl.create({
+          message: 'Error al leer el archivo OBZ. ¿Es un ZIP válido?',
+          duration: 3000, color: 'danger', position: 'top',
+        })).present();
+        return;
+      }
+
+      // Resolver userId/assignedUserIds desde el estado actual del editor
+      const effectiveAssignedUserIds =
+        this.cfgAssignedUserIds?.length
+          ? this.cfgAssignedUserIds.map(String)
+          : this.board?.assignedUserIds?.length
+            ? this.board.assignedUserIds.map(String)
+            : this.board?.userId
+              ? [String(this.board.userId)]
+              : this.cfgUserId
+                ? [String(this.cfgUserId)]
+                : [];
+      const effectiveUserId = effectiveAssignedUserIds[0] ?? '';
+
+      if (!effectiveUserId) {
+        (await this.toastCtrl.create({
+          message: 'No hay usuario asignado. Configura el tablero antes de importar.',
+          duration: 3000, color: 'warning', position: 'top',
+        })).present();
+        return;
+      }
+
+      this.isLoading = true;
+      try {
+        const result = await this.obzImportSvc.importOBZ(zip, {
+          existingRootBoardId: this.boardId,
+          userId:              effectiveUserId,
+          assignedUserIds:     effectiveAssignedUserIds,
+          contextCreatorId:    this.contextCreatorId || undefined,
+        });
+
+        // Recargar el tablero activo y resetear selección
+        await this.loadBoard();
+        this.selectedCell  = null;
+        this.isEditingCell = false;
+        this.pictForm      = this.emptyPictForm();
+        this.actionForm    = { type: 'voice', targetBoardId: '' };
+
+        (await this.toastCtrl.create({
+          message: `✓ OBZ importado · ${result.entries.length} tablero(s)`
+            + (result.warnings.length > 0 ? ` · ${result.warnings.length} aviso(s)` : ''),
+          duration: 3500, color: 'success', position: 'top',
+        })).present();
+
+        if (result.warnings.length > 0) {
+          (await this.alertCtrl.create({
+            header:  'Avisos de importación OBZ',
+            message: result.warnings.map(w => `• ${w}`).join('\n'),
+            buttons: ['Cerrar'],
+          })).present();
+        }
+      } catch (err) {
+        console.error('importOBZ error:', err);
+        (await this.toastCtrl.create({
+          message: 'Error durante la importación OBZ.',
+          duration: 3000, color: 'danger', position: 'top',
+        })).present();
+      } finally {
+        this.isLoading = false;
+      }
+    };
+    input.click();
+  }
+
 
   /** Exporta el tablero actual como archivo .obf (Open Board Format 0.1) */
   async exportOBF(): Promise<void> {
@@ -2011,166 +2150,6 @@ export class BoardBuilderEditorPage implements OnInit {
     return { rows: gSize, columns: gSize, order };
   }
 
-  /**
-   * Normaliza cualquier color CSS a #rrggbb para su uso en pictogram.color.
-   * Soporta: #rgb · #rrggbb · rgb(r,g,b) · rgba(r,g,b,a)
-   * Si no puede parsear devuelve '#f5f5f5'.
-   */
-  // ── Helpers ARASAAC metadata local ───────────────────────────────────────────
-
-  /**
-   * Extrae el ID numérico ARASAAC de una URL de imagen.
-   * Soporta:
-   *   https://api.arasaac.org/api/pictograms/36914?download=false&...
-   *   https://static.arasaac.org/pictograms/36914/36914_500.png
-   */
-  private extractArasaacIdFromUrl(url?: string | null): string | null {
-    if (!url) return null;
-
-    const clean = String(url);
-
-    const apiMatch = clean.match(/\/api\/pictograms\/(\d+)/);
-    if (apiMatch?.[1]) {
-      console.log('[extractArasaacIdFromUrl]', clean, '→', apiMatch[1]);
-      return apiMatch[1];
-    }
-
-    const staticMatch = clean.match(/\/pictograms\/(\d+)(?:\/|$)/);
-    if (staticMatch?.[1]) {
-      console.log('[extractArasaacIdFromUrl]', clean, '→', staticMatch[1]);
-      return staticMatch[1];
-    }
-
-    const genericMatch = clean.match(/pictograms\/(\d+)/);
-    if (genericMatch?.[1]) {
-      console.log('[extractArasaacIdFromUrl]', clean, '→', genericMatch[1]);
-      return genericMatch[1];
-    }
-
-    console.log('[extractArasaacIdFromUrl]', clean, '→', null);
-    return null;
-  }
-
-  /**
-   * Consulta la BD local ARASAAC sin llamar a la API externa.
-   * Cachea por arasaacId durante la sesión para evitar peticiones duplicadas.
-   */
-  private async getLocalArasaacMetadata(
-    arasaacId: string,
-  ): Promise<Record<string, unknown> | null> {
-    if (this._arasaacMetaCache.has(arasaacId)) {
-      return this._arasaacMetaCache.get(arasaacId) ?? null;
-    }
-    console.log('[getLocalArasaacMetadata] request id:', arasaacId);
-    try {
-      const res = await fetch(
-        `${environment.apiUrl}/arasaac/local/${arasaacId}`,
-        { headers: { Authorization: `Bearer ${this.authSvc.getToken()}` } },
-      );
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const data = res.ok ? (await res.json()) as Record<string, unknown> : null;
-      this._arasaacMetaCache.set(arasaacId, data);
-      console.log('[getLocalArasaacMetadata] response:', {
-        id:         arasaacId,
-        found:      !!data,
-        arasaacId:  (data as any)?.arasaacId,
-        label:      (data as any)?.label,
-        keywords:   (data as any)?.keywords,
-        categories: (data as any)?.categories,
-        tags:       (data as any)?.tags,
-      });
-      return data;
-    } catch {
-      this._arasaacMetaCache.set(arasaacId, null);
-      return null;
-    }
-  }
-
-  /**
-   * Infiere WordType ISAAC solo si alguna keyword coincide exactamente
-   * (case-insensitive) con el label del botón.
-   * Devuelve null si no hay coincidencia → el caller aplica fallback visual.
-   *
-   * Mapeo ARASAAC type → WordType:
-   *   3 → verb | 4 → descriptor | 2 → noun | 1 → noun
-   */
-  private inferWordTypeFromLocalArasaacMetadata(
-    meta:          Record<string, unknown>,
-    fallbackLabel: string,
-  ): WordType | null {
-    const normalizedLabel = fallbackLabel.trim().toLowerCase();
-    const rawKeywords     = (meta['keywords'] as unknown[]) ?? [];
-
-    // Buscar keyword que coincida exactamente con el label del botón
-    let matchType: number | null = null;
-    for (const k of rawKeywords) {
-      if (k !== null && typeof k === 'object') {
-        const kw = String((k as Record<string, unknown>)['keyword'] ?? '').trim().toLowerCase();
-        if (kw === normalizedLabel) {
-          const t = (k as Record<string, unknown>)['type'];
-          matchType = typeof t === 'number' ? t : null;
-          break;
-        }
-      }
-    }
-
-    // Sin coincidencia exacta → no aplicar Fitzgerald
-    if (matchType === null) {
-      console.log('[inferWordType]', {
-        fallbackLabel,
-        metaLabel:    (meta as any)?.label,
-        keywordTypes: (meta as any)?.keywords?.map((k: any) => k.type),
-        keywords:     (meta as any)?.keywords?.map((k: any) => k.keyword),
-        result:       null,
-      });
-      return null;
-    }
-
-    // Mapeo ARASAAC type → WordType
-    let wordType: WordType;
-    if      (matchType === 3) wordType = 'verb';
-    else if (matchType === 4) wordType = 'descriptor';
-    else if (matchType === 2) wordType = 'noun';
-    else if (matchType === 1) wordType = 'noun';
-    else                      wordType = 'misc';
-
-    console.log('[inferWordType]', {
-      fallbackLabel,
-      metaLabel:    (meta as any)?.label,
-      keywordTypes: (meta as any)?.keywords?.map((k: any) => k.type),
-      keywords:     (meta as any)?.keywords?.map((k: any) => k.keyword),
-      result:       wordType,
-    });
-    return wordType;
-  }
-
-  private normalizeCssColorToHex(color: string | undefined): string {
-    if (!color) return '#f5f5f5';
-
-    // ── #rgb o #rrggbb ────────────────────────────────────────────────────
-    if (color.startsWith('#')) {
-      const hex = color.slice(1);
-      if (hex.length === 3) {
-        const r = parseInt(hex[0] + hex[0], 16);
-        const g = parseInt(hex[1] + hex[1], 16);
-        const b = parseInt(hex[2] + hex[2], 16);
-        return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-      }
-      if (hex.length === 6) return color.toLowerCase();
-      return '#f5f5f5';
-    }
-
-    // ── rgb(r,g,b) o rgba(r,g,b,a) ───────────────────────────────────────
-    const m = color.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
-    if (m) {
-      const r = parseInt(m[1], 10);
-      const g = parseInt(m[2], 10);
-      const b = parseInt(m[3], 10);
-      return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-    }
-
-    return '#f5f5f5';
-  }
 
   /** Convierte color HEX (#rrggbb | #rgb) a rgb(...) compatible con OBF. No modifica rgb/rgba. */
   private hexToRgb(color: string): string {
@@ -2325,6 +2304,12 @@ export class BoardBuilderEditorPage implements OnInit {
     }
   }
 
+  /** true cuando el tablero está asignado a más de un usuario.
+   *  En ese caso los pictogramas personales no están disponibles. */
+  get isSharedBoard(): boolean {
+    return this.cfgAssignedUserIds.length > 1;
+  }
+
   /** Getter: mostrar botón "Añadir al perfil" solo en tableros principales con usuario */
   get canAddToProfile(): boolean {
     return (this.board?.boardRole ?? 'main') === 'main' && !!this.board?.userId;
@@ -2338,6 +2323,8 @@ export class BoardBuilderEditorPage implements OnInit {
   // ── Navegación a otro tablero del panel izquierdo ─────────────────────────────
 
   openBoard(boardId: string): void {
+    console.log('[openBoard called]', boardId);
+    if (!boardId) { console.warn('[openBoard] boardId vacío, ignorado'); return; }
     this.router.navigate(['/board-builder-editor', boardId], {
       queryParams: {
         returnTo:    this.returnTo,
@@ -2563,8 +2550,52 @@ export class BoardBuilderEditorPage implements OnInit {
   }
 
   onUserSelect(event: Event): void {
-    this.cfgUserId =
-      (event as CustomEvent<{ value: string }>).detail.value ?? '';
+    const values: string[] =
+      (event as CustomEvent<{ value: string[] }>).detail.value ?? [];
+    this.cfgAssignedUserIds = values;
+    this.cfgUserId = values[0] ?? '';
+  }
+
+  /** Selecciona todos los usuarios del centro como asignados al tablero. */
+  selectAllUsers(): void {
+    this.cfgAssignedUserIds = this.centerUsers.map((u) => u._id);
+    this.cfgUserId = this.cfgAssignedUserIds[0] ?? '';
+  }
+
+  /** Navega al formulario de creación de tablero.
+   *  Pasa SOLO contexto heredado (usuarios, rol, forma) y el contexto de la celda
+   *  para el link-back. NO pasa datos del tablero origen (nombre, imagen, config). */
+  async navigateToCreateBoard(): Promise<void> {
+    if (!this.selectedCell) {
+      const t = await this.toastCtrl.create({
+        message:  'Selecciona primero la celda que tendrá la acción de navegación.',
+        duration: 2500, color: 'warning', position: 'top',
+      });
+      t.present();
+      return;
+    }
+
+    this.router.navigate(['/board-builder-create'], {
+      queryParams: {
+        // Navegación de retorno (URL exacta del editor para preservar su contexto)
+        returnTo:          this.router.url,
+        // ID del tablero origen (para extraer sourceBoardId en create page)
+        sourceBoardId:     this.boardId,
+        // Contexto heredado — NO incluir datos del tablero (name, imageUrl, rows, cols…)
+        assignedUserIds:   this.cfgAssignedUserIds.join(','),
+        lockAssignedUsers: 'true',
+        boardRole:         'secondary',
+        lockBoardRole:     'true',
+        shape:             this.board?.shape ?? 'grid',
+        creatorId:         this.contextCreatorId   || undefined,
+        creatorName:       this.contextCreatorName || undefined,
+        // Celda origen y link-back
+        linkBack:          'true',
+        sourceCellRow:     this.selectedCell.row,
+        sourceCellCol:     this.selectedCell.col,
+        sourceActionType:  this.actionForm.type,
+      },
+    });
   }
 
   onActionTypeSelect(event: Event): void {
@@ -2576,5 +2607,84 @@ export class BoardBuilderEditorPage implements OnInit {
   onTargetBoardSelect(event: Event): void {
     this.actionForm.targetBoardId =
       (event as CustomEvent<{ value: string }>).detail.value ?? '';
+  }
+
+  // ── Link-back: enlazar tablero recién creado a la celda origen ───────────────
+
+  /** Aplica el enlace pendiente (nuevo tablero → celda origen) después de que
+   *  loadBoard() haya terminado. Es idempotente: si no hay pending no hace nada. */
+  private async applyLinkedBoard(): Promise<void> {
+    if (!this.pendingLinkBoardId || this.pendingLinkRow < 0 || this.pendingLinkCol < 0) return;
+    if (!this.board) return;
+
+    const row              = this.pendingLinkRow;
+    const col              = this.pendingLinkCol;
+    const newTargetBoardId = this.pendingLinkBoardId;
+    const actionType       = (this.pendingLinkActionType as ActionType) || 'navigate';
+
+    // Limpiar estado pending de inmediato (evita reentrada si el método se llama dos veces)
+    this.pendingLinkBoardId    = '';
+    this.pendingLinkRow        = -1;
+    this.pendingLinkCol        = -1;
+    this.pendingLinkActionType = '';
+
+    // Preservar el pictograma que ya existía en la celda (si lo había)
+    const existingPict = this.getCellData(row, col)?.pictogram ?? null;
+
+    try {
+      const res = await firstValueFrom(
+        this.boardSvc.updateCell(this.boardId, {
+          row,
+          col,
+          pictogram: existingPict,
+          action: { type: actionType, targetBoardId: newTargetBoardId },
+        }),
+      );
+      this.board = res.board;
+      // Refrescar la lista de tableros disponibles para que el nuevo aparezca en el selector
+      this.loadUserBoards(this.cfgAssignedUserIds);
+      // Resaltar el tablero recién creado en la lista lateral
+      this.highlightedBoardId = newTargetBoardId;
+      // Scroll suave hasta el item (pequeño delay para que el DOM se actualice)
+      setTimeout(() => {
+        document.getElementById('board-item-' + newTargetBoardId)
+          ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 250);
+      // Quitar el resaltado después de 5 s (3 pulsos × 1,2 s/pulso + margen)
+      setTimeout(() => {
+        if (this.highlightedBoardId === newTargetBoardId) {
+          this.highlightedBoardId = '';
+        }
+      }, 5000);
+      const t = await this.toastCtrl.create({
+        message:  '✓ Tablero creado y enlazado a la celda',
+        duration: 2200, color: 'success', position: 'top',
+      });
+      t.present();
+    } catch {
+      const t = await this.toastCtrl.create({
+        message:  'Error al enlazar el nuevo tablero a la celda.',
+        duration: 3000, color: 'danger', position: 'top',
+      });
+      t.present();
+    } finally {
+      this.clearLinkParams();
+    }
+  }
+
+  /** Limpia los query-params del link-back de la URL sin re-renderizar la página. */
+  private clearLinkParams(): void {
+    this.router.navigate([], {
+      relativeTo:          this.route,
+      queryParamsHandling: 'merge',
+      queryParams: {
+        linkCreatedBoard:          null,
+        newlyCreatedTargetBoardId: null,
+        sourceCellRow:             null,
+        sourceCellCol:             null,
+        sourceActionType:          null,
+      },
+      replaceUrl: true,
+    });
   }
 }

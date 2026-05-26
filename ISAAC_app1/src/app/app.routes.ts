@@ -120,6 +120,14 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
 
+  // ── Comunicador AAC ─────────────────────────────────────────────────────────
+  {
+    path: 'communicator/:boardId',
+    loadComponent: () =>
+      import('./communicator/communicator.page').then((m) => m.CommunicatorPage),
+    canActivate: [authGuard],
+  },
+
   // ── Redirección por defecto ─────────────────────────────────────────────────
   {
     path: '',

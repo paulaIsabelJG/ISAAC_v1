@@ -10,6 +10,7 @@ router.get('/my',                    boardController.getMyBoards);
 router.get('/builder/:creatorId',    boardController.getBoardsByCreator);
 router.get('/assigned/:userId',      boardController.getAssignedBoards);
 router.get('/user/:userId',          boardController.getBoardsByUser);
+router.get('/available-targets',     boardController.getAvailableTargets);
 
 // CRUD por boardId
 router.get   ('/:boardId',            boardController.getBoardById);

@@ -78,6 +78,8 @@ export interface Board {
   iaCols:                number;
   cells:                 BoardCell[];
   createdAt?:            string;
+  // Usuarios asignados (1-N). assignedUserIds es el nuevo campo; userId es legacy.
+  assignedUserIds?:    string[];
   // Rol y perfil
   boardRole?:          'main' | 'secondary';
   visibleInProfile?:   boolean;
@@ -101,6 +103,8 @@ export interface CreateBoardPayload {
   iaRows?:                number;
   iaCols?:                number;
   boardRole?:             'main' | 'secondary';
+  /** Usuarios asignados al tablero (1-N). userId = primer elemento (legacy). */
+  assignedUserIds?:       string[];
   /** ID del creador de contexto (builder que se está editando).
    *  El backend valida permisos y lo usa como createdBy si procede. */
   contextCreatorId?:      string;
@@ -110,6 +114,7 @@ export interface UpdateBoardPayload {
   name?:                  string;
   imageUrl?:              string;
   userId?:                string;
+  assignedUserIds?:       string[];
   rows?:                  number;
   columns?:               number;
   circleSlots?:           number;
@@ -158,6 +163,18 @@ export class BoardService {
   getAssignedBoards(userId: string): Observable<{ boards: Board[] }> {
     return this.http.get<{ boards: Board[] }>(
       `${this.url}/assigned/${encodeURIComponent(userId)}`
+    );
+  }
+
+  /** GET /api/boards/available-targets?assignedUserIds=id1,id2,…
+   *  Tableros disponibles como destino de navegación para un conjunto de usuarios asignados.
+   *  - 1 usuario: boards con assignedUserIds ∋ userId OR legacy userId
+   *  - N usuarios: boards con assignedUserIds ⊇ todos los IDs
+   */
+  getAvailableTargets(assignedUserIds: string[]): Observable<{ boards: Board[] }> {
+    const param = assignedUserIds.map(encodeURIComponent).join(',');
+    return this.http.get<{ boards: Board[] }>(
+      `${this.url}/available-targets?assignedUserIds=${param}`
     );
   }
 

@@ -143,10 +143,13 @@ exports.getAssignedBoards = async (req, res) => {
     }
 
     // Sólo tableros principales asignados a este usuario.
-    // Fallback: docs sin boardRole (creados antes de añadir el campo) → se tratan como 'main'
+    // Fallback boardRole: docs sin campo → se tratan como 'main'.
+    // Soporte dual: nuevo campo assignedUserIds (array) + legacy userId.
     const boards = await Board.find({
-      userId,
-      $or: [{ boardRole: 'main' }, { boardRole: { $exists: false } }],
+      $and: [
+        { $or: [{ boardRole: 'main' }, { boardRole: { $exists: false } }] },
+        { $or: [{ assignedUserIds: userId }, { userId: userId }] },
+      ],
     })
       .sort({ createdAt: -1 })
       .select('-cells');
@@ -181,6 +184,52 @@ exports.getBoardsByUser = async (req, res) => {
   }
 };
 
+// ── GET /api/boards/available-targets?assignedUserIds=id1,id2,…  ─────────────
+// Devuelve tableros disponibles como destino de navegación para un conjunto de
+// usuarios asignados. Usado por el editor para rellenar el selector "Tablero destino".
+//   - 1 usuario:  boards donde assignedUserIds incluye ese ID OR userId === ID (legacy)
+//   - N usuarios: boards donde assignedUserIds $all ids
+exports.getAvailableTargets = async (req, res) => {
+  try {
+    const { assignedUserIds: queryParam } = req.query;
+    if (!queryParam) {
+      return res.json({ boards: [] });
+    }
+
+    const ids = String(queryParam)
+      .split(',')
+      .map((s) => s.trim())
+      .filter(validateObjectId);
+
+    if (ids.length === 0) {
+      return res.json({ boards: [] });
+    }
+
+    let query;
+    if (ids.length === 1) {
+      // Un solo usuario: nueva forma O legacy userId
+      query = {
+        $or: [
+          { assignedUserIds: ids[0] },
+          { userId: ids[0] },
+        ],
+      };
+    } else {
+      // Varios usuarios: el tablero debe estar asignado a TODOS ellos
+      query = { assignedUserIds: { $all: ids } };
+    }
+
+    const boards = await Board.find(query)
+      .sort({ createdAt: -1 })
+      .select('-cells');
+
+    res.json({ boards });
+  } catch (err) {
+    console.error('getAvailableTargets error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 // ── GET /api/boards/:boardId ───────────────────────────────────────────────────
 exports.getBoardById = async (req, res) => {
   try {
@@ -189,6 +238,7 @@ exports.getBoardById = async (req, res) => {
       return res.status(400).json({ error: 'Invalid boardId' });
     }
     const board = await Board.findById(boardId);
+    console.log('[GET board by id]', boardId, board?._id?.toString(), board?.name);
     if (!board) {
       return res.status(404).json({ error: 'Board not found' });
     }
@@ -208,13 +258,27 @@ exports.createBoard = async (req, res) => {
       predictorEnabled, aiRewriteEnabled, iaRows, iaCols, imageUrl,
       boardRole,
       contextCreatorId,   // opcional: ID del creador de contexto (builder que se está editando)
+      assignedUserIds,    // nuevo: array de IDs de usuarios asignados (1-N)
     } = req.body;
 
-    if (!name || !userId) {
+    // Resolver lista efectiva de usuarios asignados.
+    // Si viene assignedUserIds válido: úsarlo. Si no, caer en userId.
+    let effectiveAssignedUserIds = [];
+    if (Array.isArray(assignedUserIds) && assignedUserIds.length > 0) {
+      effectiveAssignedUserIds = assignedUserIds.filter(validateObjectId);
+    }
+    // Primer usuario = userId efectivo (campo legacy)
+    const effectiveUserId = effectiveAssignedUserIds[0] || userId;
+
+    if (!name || !effectiveUserId) {
       return res.status(400).json({ error: 'name and userId are required' });
     }
-    if (!validateObjectId(userId)) {
+    if (!validateObjectId(effectiveUserId)) {
       return res.status(400).json({ error: 'Invalid userId' });
+    }
+    // Si sólo se envió userId sin assignedUserIds, usarlo como primer elemento
+    if (effectiveAssignedUserIds.length === 0 && validateObjectId(userId)) {
+      effectiveAssignedUserIds = [userId];
     }
 
     // ── Resolver creador efectivo ─────────────────────────────────────────────
@@ -256,6 +320,13 @@ exports.createBoard = async (req, res) => {
     const creatorDoc  = await User.findById(effectiveCreatorId).select('name type').lean();
     const creatorName = creatorDoc?.name ?? '';
 
+    // ── boardRole: aceptar 'secondary' del body; nunca forzar 'main' sin motivo ──
+    const finalBoardRole = boardRole === 'secondary' ? 'secondary' : 'main';
+    console.log('[backend createBoard boardRole]', {
+      bodyBoardRole:  boardRole,
+      finalBoardRole,
+      name,
+    });
     console.log('[createBoard]', {
       name,
       userIdAssigned:    userId,
@@ -271,7 +342,8 @@ exports.createBoard = async (req, res) => {
       creatorId:             req.userId,           // campo legacy = sesión real
       createdBy:             effectiveCreatorId,   // creador de contexto (builder)
       creatorName,
-      userId,
+      userId:                effectiveUserId,
+      assignedUserIds:       effectiveAssignedUserIds,
       shape:                 shape                 || 'grid',
       rows:                  rows                  || 3,
       columns:               columns               || 4,
@@ -282,7 +354,7 @@ exports.createBoard = async (req, res) => {
       aiRewriteEnabled:      !!aiRewriteEnabled,
       iaRows:                iaRows                || 5,
       iaCols:                iaCols                || 1,
-      boardRole:             boardRole             || 'main',
+      boardRole:             finalBoardRole,
       cells: [],
     });
 
@@ -313,12 +385,25 @@ exports.updateBoard = async (req, res) => {
       locationColumnEnabled, locationColumnSlots,
       predictorEnabled, aiRewriteEnabled, iaRows, iaCols, cells,
       boardRole, visibleInProfile, profileName, profileImage, profileDescription,
+      assignedUserIds,  // nuevo: array de usuarios asignados (1-N)
     } = req.body;
     // (Si el body incluyese createdBy, se descarta silenciosamente al no desestructurarlo)
 
     if (name                  !== undefined) board.name                  = name.trim();
     if (imageUrl              !== undefined) board.imageUrl              = imageUrl;
-    if (userId                !== undefined) board.userId                = userId;
+    // assignedUserIds y userId se sincronizan: assignedUserIds tiene precedencia
+    if (assignedUserIds !== undefined && Array.isArray(assignedUserIds)) {
+      const validIds = assignedUserIds.filter(validateObjectId);
+      board.assignedUserIds = validIds;
+      // Sincronizar userId con el primer elemento del array
+      if (validIds.length > 0) board.userId = validIds[0];
+    } else if (userId !== undefined) {
+      board.userId = userId;
+      // Si no vienen assignedUserIds pero sí userId, asegura que el array contenga al menos ese ID
+      if (!board.assignedUserIds || board.assignedUserIds.length === 0) {
+        board.assignedUserIds = [userId];
+      }
+    }
     if (rows                  !== undefined) board.rows                  = rows;
     if (columns               !== undefined) board.columns               = columns;
     if (circleSlots           !== undefined) board.circleSlots           = circleSlots;
@@ -463,6 +548,7 @@ exports.duplicateBoard = async (req, res) => {
       createdBy:             effectiveCreatorId,                // mismo contexto que el original
       creatorName:           originalObj.creatorName           || '',
       userId:                originalObj.userId,
+      assignedUserIds:       originalObj.assignedUserIds       || (originalObj.userId ? [originalObj.userId] : []),
       shape:                 originalObj.shape,
       rows:                  originalObj.rows,
       columns:               originalObj.columns,

@@ -225,13 +225,18 @@ export class UserSessionPage implements OnInit {
     });
   }
 
-  /** Abre el editor de un tablero asignado al usuario. */
+  /**
+   * Abre un tablero asignado SIEMPRE en modo comunicador activo.
+   * Tanto si quien lo abre es el propio usuario final, como si es
+   * organización / profesional / familiar: los tableros asignados
+   * se visualizan en el comunicador, no en el editor.
+   * El Board Builder se accede únicamente desde el botón "Tablero Builder".
+   */
   openBoard(board: Board) {
-    this.router.navigate(['/board-builder-editor', board._id], {
+    this.router.navigate(['/communicator', board._id], {
       queryParams: {
-        returnTo:    '/user-session/' + this.userId,
-        creatorId:   board.createdBy || board.creatorId || '',
-        creatorName: board.creatorName || '',
+        userId:   this.userId,
+        returnTo: '/user-session/' + this.userId,
       },
     });
   }

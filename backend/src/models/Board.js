@@ -42,7 +42,12 @@ const boardSchema = new mongoose.Schema({
   // creatorName: nombre denormalizado del creador para mostrar en UI (se fija en createBoard)
   creatorName:      { type: String, default: '' },
   // userId: usuario final ASIGNADO al tablero (puede ser distinto del creador)
+  // Mantenido como campo legacy/primer usuario para compatibilidad con código antiguo.
   userId:           { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  // assignedUserIds: lista de usuarios a los que está asignado el tablero (1-N).
+  // Si se envía desde frontend, userId se sincroniza con assignedUserIds[0].
+  // Boards creados antes de este campo no tendrán este array → fallan hacia userId.
+  assignedUserIds:  [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   shape:            { type: String, enum: ['grid', 'circular'], default: 'grid' },
   rows:             { type: Number, default: 3, min: 1, max: 10 },
   columns:          { type: Number, default: 4, min: 1, max: 10 },
@@ -66,5 +71,6 @@ const boardSchema = new mongoose.Schema({
 boardSchema.index({ creatorId: 1 });
 boardSchema.index({ createdBy: 1 });
 boardSchema.index({ userId: 1 });
+boardSchema.index({ assignedUserIds: 1 });
 
 module.exports = mongoose.model('Board', boardSchema);

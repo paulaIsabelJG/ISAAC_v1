@@ -343,17 +343,28 @@
             <button type="button" class="bbe-cfg-img-remove" (click)="removeBoardImage()">Eliminar imagen</button>
           }
 
-          <!-- Usuario -->
-          <label class="bbe-lbl">Usuario asignado</label>
+          <!-- Usuario(s) asignado(s) -->
+          <label class="bbe-lbl">
+            Usuario(s) asignado(s)
+            @if (isSharedBoard) {
+              <span class="bbe-shared-badge">Compartido</span>
+            }
+          </label>
           <ion-select class="bbe-select"
-                      [value]="cfgUserId"
+                      [multiple]="true"
+                      [value]="cfgAssignedUserIds"
                       (ionChange)="onUserSelect($event)"
-                      interface="action-sheet"
-                      placeholder="Usuario">
+                      interface="alert"
+                      placeholder="Selecciona usuario(s)"
+                      cancelText="Cancelar"
+                      okText="Aceptar">
             @for (u of centerUsers; track u._id) {
               <ion-select-option [value]="u._id">{{ u.name }}</ion-select-option>
             }
           </ion-select>
+          <button type="button" class="bbe-all-users-btn" (click)="selectAllUsers()">
+            Seleccionar todos
+          </button>
 
           <!-- Filas / Columnas (sólo grid) -->
           @if (!isCircular) {
@@ -471,9 +482,15 @@
             @if (gridBoards.length > 0) {
               <span class="bbe-boards-sub">Cuadrícula</span>
               @for (b of gridBoards; track b._id) {
-                <div class="bbe-board-item" (click)="openBoard(b._id)">
+                <div class="bbe-board-item"
+                     [class.bbe-board-item--new]="b._id === highlightedBoardId"
+                     [id]="'board-item-' + b._id"
+                     (click)="openBoard(b._id)">
                   <span class="bbe-board-item-name">{{ b.name }}</span>
                   <span class="bbe-board-item-meta">{{ b.rows }}×{{ b.columns }}</span>
+                  @if (b._id === highlightedBoardId) {
+                    <span class="bbe-board-item-new-badge">Nuevo</span>
+                  }
                 </div>
               }
             }
@@ -481,9 +498,15 @@
             @if (circularBoards.length > 0) {
               <span class="bbe-boards-sub">Circular</span>
               @for (b of circularBoards; track b._id) {
-                <div class="bbe-board-item" (click)="openBoard(b._id)">
+                <div class="bbe-board-item"
+                     [class.bbe-board-item--new]="b._id === highlightedBoardId"
+                     [id]="'board-item-' + b._id"
+                     (click)="openBoard(b._id)">
                   <span class="bbe-board-item-name">{{ b.name }}</span>
                   <span class="bbe-board-item-meta">⊙ {{ b.circleSlots || 8 }}</span>
+                  @if (b._id === highlightedBoardId) {
+                    <span class="bbe-board-item-new-badge">Nuevo</span>
+                  }
                 </div>
               }
             }
@@ -495,7 +518,7 @@
       <!-- ── COLUMNA CENTRAL ────────────────────────────────────────────── -->
       <div class="bbe-col-center">
 
-        <!-- Acciones OBF -->
+        <!-- Acciones OBF / OBZ -->
         <div class="bbe-obf-bar">
           <button class="bbe-obf-btn" (click)="importOBF()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -504,6 +527,15 @@
               <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
             Importar OBF
+          </button>
+          <button class="bbe-obf-btn" (click)="importOBZ()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+              <rect x="3" y="3" width="5" height="5" rx="1"/>
+            </svg>
+            Importar OBZ
           </button>
           <button class="bbe-obf-btn" (click)="exportOBF()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -785,7 +817,15 @@
 
           <!-- Tab Personal -->
           @if (rightMode === 'personal') {
-            @if (personalLoading) {
+            @if (isSharedBoard) {
+              <div class="bbe-personal-blocked">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M8 12h8M12 8v8"/>
+                </svg>
+                <span>Los pictogramas personales no están disponibles en tableros asignados a varios usuarios.</span>
+              </div>
+            } @else if (personalLoading) {
               <ion-spinner name="crescent" color="secondary" style="margin:10px auto;display:block"></ion-spinner>
             } @else if (personalPicts.length === 0) {
               <span class="bbe-empty-msg">El usuario no tiene pictogramas personales.</span>
@@ -883,18 +923,30 @@
             <label class="bbe-lbl" style="margin-top:8px">Tablero destino</label>
             @if (!boardsReady) {
               <ion-spinner name="crescent" color="secondary" style="width:18px;height:18px;margin:6px 0;display:block"></ion-spinner>
-            } @else if (sameShapeBoards.length === 0) {
-              <span class="bbe-empty-msg">No hay otros tableros del mismo tipo.</span>
             } @else {
-              <ion-select class="bbe-select-sm"
-                          [value]="actionForm.targetBoardId"
-                          (ionChange)="onTargetBoardSelect($event)"
-                          interface="action-sheet"
-                          placeholder="Selecciona tablero">
-                @for (b of sameShapeBoards; track b._id) {
-                  <ion-select-option [value]="b._id">{{ b.name }}</ion-select-option>
-                }
-              </ion-select>
+              @if (sameShapeBoards.length > 0) {
+                <ion-select class="bbe-select-sm"
+                            [value]="actionForm.targetBoardId"
+                            (ionChange)="onTargetBoardSelect($event)"
+                            interface="action-sheet"
+                            placeholder="Selecciona tablero">
+                  @for (b of sameShapeBoards; track b._id) {
+                    <ion-select-option [value]="b._id">{{ b.name }}</ion-select-option>
+                  }
+                </ion-select>
+              } @else {
+                <span class="bbe-empty-msg">No hay otros tableros del mismo tipo.</span>
+              }
+              <button type="button" class="bbe-create-board-btn" (click)="navigateToCreateBoard()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+                  <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+                  <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+                  <line x1="17.5" y1="14" x2="17.5" y2="21"/>
+                  <line x1="14" y1="17.5" x2="21" y2="17.5"/>
+                </svg>
+                + Crear nuevo tablero
+              </button>
             }
           }
 

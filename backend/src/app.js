@@ -6,6 +6,7 @@ const phrasesRoutes = require('./routes/phrases');
 const userRoutes   = require('./routes/users');
 const placesRoutes = require('./routes/places');
 const boardRoutes  = require('./routes/boards');
+const oblRoutes    = require('./routes/obl');
 
 const app = express();
 
@@ -23,6 +24,9 @@ app.use('/api/users', userRoutes);
 
 // Board routes
 app.use('/api/boards', boardRoutes);
+
+// OBL routes
+app.use('/api/obl', oblRoutes);
 
 // Phrase routes
 app.use('/api/phrases', phrasesRoutes);

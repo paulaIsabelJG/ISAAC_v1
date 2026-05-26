@@ -334,16 +334,45 @@ $panel-bg:     #faf5f8;
   display:         flex;
   align-items:     center;
   justify-content: space-between;
-  padding:         8px 0;
+  padding:         8px 4px;
   border-bottom:   1px solid #f4e8ee;
+  border-radius:   6px;
   cursor:          pointer;
-  transition:      color 0.15s;
+  transition:      color 0.15s, background 0.15s, border-color 0.15s;
 
   &:last-child { border-bottom: none; }
   &:hover      { .bbe-board-item-name { color: $violet; } }
+
+  // ── Resaltado tablero recién creado ──────────────────────────────────────
+  &--new {
+    border-color: $violet !important;
+    background:   rgba(124, 77, 255, 0.08);
+    animation:    bbeNewBoardPulse 1.2s ease-in-out 3;
+
+    .bbe-board-item-name { color: $violet; font-weight: 700; }
+  }
 }
+
 .bbe-board-item-name { font-size: 12px; font-weight: 600; color: $text-dark; }
 .bbe-board-item-meta { font-size: 10px; color: $text-muted; }
+
+// Badge "Nuevo" dentro del item resaltado
+.bbe-board-item-new-badge {
+  flex:          0 0 auto;
+  font-size:     9px;
+  font-weight:   800;
+  color:         #fff;
+  background:    $violet;
+  border-radius: 6px;
+  padding:       2px 6px;
+  letter-spacing: 0.3px;
+  margin-left:   6px;
+}
+
+@keyframes bbeNewBoardPulse {
+  0%,  100% { transform: scale(1);    box-shadow: none; }
+  50%       { transform: scale(1.02); box-shadow: 0 0 0 4px rgba(124, 77, 255, 0.14); }
+}
 
 .bbe-empty-msg { font-size: 12px; color: $text-muted; display: block; padding: 6px 0; }
 
@@ -489,6 +518,77 @@ $panel-bg:     #faf5f8;
   transition:    background 0.15s;
 
   &:hover { background: #fff0f0; }
+}
+
+// ── Badge "Compartido" (tablero con varios usuarios asignados) ────────────────
+.bbe-shared-badge {
+  display:       inline-block;
+  background:    $violet-light;
+  color:         $violet;
+  font-size:     9px;
+  font-weight:   700;
+  letter-spacing: 0.4px;
+  border-radius: 6px;
+  padding:       1px 6px;
+  margin-left:   6px;
+  vertical-align: middle;
+  text-transform: uppercase;
+}
+
+// ── Botón "Seleccionar todos" (asignación multi-usuario) ──────────────────────
+.bbe-all-users-btn {
+  display:       block;
+  width:         100%;
+  height:        26px;
+  background:    transparent;
+  border:        1px solid $border;
+  border-radius: 7px;
+  color:         $text-muted;
+  font-size:     10px;
+  font-weight:   700;
+  font-family:   inherit;
+  cursor:        pointer;
+  margin-top:    4px;
+  margin-bottom: 6px;
+  transition:    background 0.15s, border-color 0.15s;
+
+  &:hover { background: $pink-light; border-color: $pink; color: $pink-dark; }
+}
+
+// ── Pestaña Personal bloqueada (tablero compartido) ───────────────────────────
+.bbe-personal-blocked {
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  gap:             8px;
+  padding:         20px 10px;
+  text-align:      center;
+
+  svg  { width: 32px; height: 32px; stroke: $border; flex: 0 0 auto; }
+  span { font-size: 11px; color: $text-muted; line-height: 1.5; }
+}
+
+// ── Botón "+ Crear nuevo tablero" (selector de acción) ───────────────────────
+.bbe-create-board-btn {
+  display:         flex;
+  align-items:     center;
+  gap:             5px;
+  width:           100%;
+  height:          30px;
+  margin-top:      6px;
+  padding:         0 8px;
+  background:      $blue-light;
+  border:          1.5px dashed darken($blue-light, 14%);
+  border-radius:   8px;
+  color:           $blue;
+  font-size:       10px;
+  font-weight:     700;
+  font-family:     inherit;
+  cursor:          pointer;
+  transition:      background 0.15s, border-color 0.15s;
+
+  svg { width: 14px; height: 14px; stroke: $blue; flex: 0 0 auto; }
+  &:hover { background: darken($blue-light, 6%); border-color: $blue; }
 }
 
 .bbe-ia-cell {
