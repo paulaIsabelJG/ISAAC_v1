@@ -7,6 +7,8 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { AacRuntimeService, AacPhraseItem } from '../services/aac-runtime.service';
 import { BoardService, Board, BoardCell, CellPictogram } from '../services/board.service';
 import { UserService, FullBackendUser } from '../services/user.service';
+import { BoardLayoutService } from '../services/board-layout.service';
+import { buildSafeUrl as buildSafeUrlUtil } from '../shared/utils/image.utils';
 
 @Component({
   selector: 'app-communicator',
@@ -30,12 +32,13 @@ export class CommunicatorPage implements OnInit, OnDestroy {
   private phraseSub?: Subscription;
 
   constructor(
-    private route:     ActivatedRoute,
-    private router:    Router,
-    private aac:       AacRuntimeService,
-    private boardSvc:  BoardService,
-    private userSvc:   UserService,
-    private sanitizer: DomSanitizer,
+    private route:          ActivatedRoute,
+    private router:         Router,
+    private aac:            AacRuntimeService,
+    private boardSvc:       BoardService,
+    private userSvc:        UserService,
+    private sanitizer:      DomSanitizer,
+    private boardLayoutSvc: BoardLayoutService,
   ) {}
 
   ngOnInit() {
@@ -99,29 +102,22 @@ export class CommunicatorPage implements OnInit, OnDestroy {
     }
   }
 
-  // ── Grid helpers ──────────────────────────────────────────────────────────
+  // ── Grid helpers (delegados a BoardLayoutService) ────────────────────────────
 
   get gridCells(): { row: number; col: number }[] {
-    if (!this.board) return [];
-    const cells: { row: number; col: number }[] = [];
-    for (let r = 0; r < this.board.rows; r++)
-      for (let c = 0; c < this.board.columns; c++)
-        cells.push({ row: r, col: c });
-    return cells;
+    return this.boardLayoutSvc.gridCells(this.board);
   }
 
   getCellData(row: number, col: number): BoardCell | null {
-    return this.board?.cells.find(c => c.row === row && c.col === col) ?? null;
+    return this.boardLayoutSvc.getCellData(this.board, row, col);
   }
 
   getCellPict(row: number, col: number): CellPictogram | null {
-    return this.getCellData(row, col)?.pictogram ?? null;
+    return this.boardLayoutSvc.getCellPict(this.board, row, col);
   }
 
   buildImageUrl(url?: string | null): SafeUrl | string {
-    if (!url) return '';
-    if (url.startsWith('data:')) return this.sanitizer.bypassSecurityTrustUrl(url);
-    return url;
+    return buildSafeUrlUtil(url, this.sanitizer);
   }
 
   // ── Cell press ────────────────────────────────────────────────────────────

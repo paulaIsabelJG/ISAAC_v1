@@ -30,6 +30,7 @@ import {
   ObfDocumentOBZ,
   ObfImageOBZ,
 } from '../services/obz-import.service';
+import { BoardLayoutService } from '../services/board-layout.service';
 
 // ─── Resultado de búsqueda ARASAAC ───────────────────────────────────────────
 interface ArasaacResult {
@@ -203,6 +204,7 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     private aacRuntime: AacRuntimeService,
     private obfExportSvc: ObfExportService,
     private obzImportSvc: ObzImportService,
+    private boardLayoutSvc: BoardLayoutService,
   ) {}
 
   ngOnInit() {
@@ -357,28 +359,18 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     }
   }
 
-  // ── Grid helpers ─────────────────────────────────────────────────────────────
+  // ── Grid helpers (delegados a BoardLayoutService) ────────────────────────────
 
-  /** Genera la lista de coordenadas {row, col} para el grid actual */
   get gridCells(): { row: number; col: number }[] {
-    if (!this.board) return [];
-    const cells: { row: number; col: number }[] = [];
-    for (let r = 0; r < this.board.rows; r++) {
-      for (let c = 0; c < this.board.columns; c++) {
-        cells.push({ row: r, col: c });
-      }
-    }
-    return cells;
+    return this.boardLayoutSvc.gridCells(this.board);
   }
 
   getCellData(row: number, col: number): BoardCell | null {
-    return (
-      this.board?.cells.find((c) => c.row === row && c.col === col) ?? null
-    );
+    return this.boardLayoutSvc.getCellData(this.board, row, col);
   }
 
   getCellPict(row: number, col: number): CellPictogram | null {
-    return this.getCellData(row, col)?.pictogram ?? null;
+    return this.boardLayoutSvc.getCellPict(this.board, row, col);
   }
 
   isSelected(row: number, col: number): boolean {
@@ -1872,29 +1864,14 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     return Array.from({ length: n }, (_, i) => i);
   }
 
-  /**
-   * Posición CSS para ranura circular exterior i de N.
-   * R=44% → el centro del slot coincide con la línea del anillo (::before inset 6%).
-   */
+  /** Posición CSS (left/top %) para ranura circular exterior i (delegado a BoardLayoutService). */
   getCircleSlotStyle(i: number): { left: string; top: string } {
-    const n = this.board?.circleSlots ?? this.cfgCircleSlots ?? 8;
-    const angleDeg = (i / n) * 360 - 90;
-    const angleRad = (angleDeg * Math.PI) / 180;
-    const R = 44; // % desde el centro del canvas
-    const left = 50 + R * Math.cos(angleRad);
-    const top = 50 + R * Math.sin(angleRad);
-    return { left: `${left}%`, top: `${top}%` };
+    return this.boardLayoutSvc.circleSlotStyle(i, this.board?.circleSlots ?? this.cfgCircleSlots ?? 8);
   }
 
-  /**
-   * Tamaño de cada slot exterior en px según N.
-   * Cuerda a R=44% (ref. 400px canvas) = 2·176·sin(π/N). Límite 34–72 px.
-   */
+  /** Tamaño en px de cada slot exterior (delegado a BoardLayoutService). */
   get circleSlotSizePx(): string {
-    const N = this.board?.circleSlots ?? this.cfgCircleSlots ?? 8;
-    const chord = 2 * 176 * Math.sin(Math.PI / N);
-    const size = Math.max(34, Math.min(72, Math.floor(chord * 0.78)));
-    return `${size}px`;
+    return this.boardLayoutSvc.circleSlotSize(this.board?.circleSlots ?? this.cfgCircleSlots ?? 8);
   }
 
   /** Pictograma del slot central (row=0, col=-1) */
