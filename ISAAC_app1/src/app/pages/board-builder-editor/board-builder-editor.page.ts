@@ -35,6 +35,7 @@ import { LoadingErrorStateComponent } from '../../components/loading-error-state
 import { PictCellContentComponent } from '../../components/pict-cell-content/pict-cell-content.component';
 import { BoardGridComponent } from '../../components/board-grid/board-grid.component';
 import { BoardCircularComponent } from '../../components/board-circular/board-circular.component';
+import { PhraseBandComponent } from '../../components/phrase-band/phrase-band.component';
 
 // ─── Resultado de búsqueda ARASAAC ───────────────────────────────────────────
 interface ArasaacResult {
@@ -68,7 +69,7 @@ interface ActionForm {
   templateUrl: './board-builder-editor.page.html',
   styleUrls: ['./board-builder-editor.page.scss'],
   standalone: true,
-  imports: [IonicModule, FormsModule, LoadingErrorStateComponent, PictCellContentComponent, BoardGridComponent, BoardCircularComponent],
+  imports: [IonicModule, FormsModule, LoadingErrorStateComponent, PictCellContentComponent, BoardGridComponent, BoardCircularComponent, PhraseBandComponent],
 })
 export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   // ── Routing ─────────────────────────────────────────────────────────────────

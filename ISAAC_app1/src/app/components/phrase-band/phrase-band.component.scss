@@ -1,0 +1,81 @@
+// ── CSS custom properties (tematización) ─────────────────────────────────────
+// Fallback = tema editor (gris claro).
+// Para comunicador, la página sobreescribe en el elemento host, p.ej.:
+//   style="--pb-strip-bg:#faf0f8; --pb-strip-border:#f4d0e4; ..."
+
+:host {
+  // Tema por defecto (editor)
+  --pb-strip-bg:          #f2f2f2;
+  --pb-strip-border:      #cccccc;
+  --pb-item-bg:           #ffffff;
+  --pb-item-border:       #dddddd;
+  --pb-img-size:          32px;
+  --pb-label-size:        9px;
+  --pb-label-transform:   uppercase;
+  --pb-label-spacing:     0.5px;
+  --pb-placeholder-color: #aaaaaa;
+
+  // Host se comporta como bloque flex que llena su celda
+  display:    flex;
+  min-width:  0;
+  min-height: inherit;
+}
+
+// ── Strip ─────────────────────────────────────────────────────────────────────
+.pb-strip {
+  display:         flex;
+  align-items:     center;
+  gap:             6px;
+  padding:         4px 10px;
+  flex:            1;           // ocupa todo el espacio del host
+  min-height:      52px;
+  background:      var(--pb-strip-bg);
+  border:          1.5px solid var(--pb-strip-border);
+  border-radius:   10px;
+  overflow-x:      auto;
+  box-sizing:      border-box;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar { display: none; }
+}
+
+// ── Item ──────────────────────────────────────────────────────────────────────
+.pb-item {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            2px;
+  flex:           0 0 auto;
+  background:     var(--pb-item-bg);
+  border:         1px solid var(--pb-item-border);
+  border-radius:  8px;
+  padding:        4px 8px;
+}
+
+// ── Image ─────────────────────────────────────────────────────────────────────
+.pb-img {
+  width:        var(--pb-img-size);
+  height:       var(--pb-img-size);
+  object-fit:   contain;
+  border-radius: 4px;
+}
+
+// ── Label ─────────────────────────────────────────────────────────────────────
+.pb-label {
+  font-size:      var(--pb-label-size);
+  color:          #333;
+  font-weight:    700;
+  white-space:    nowrap;
+  text-transform: var(--pb-label-transform);
+  letter-spacing: var(--pb-label-spacing);
+  line-height:    1.2;
+}
+
+// ── Placeholder ───────────────────────────────────────────────────────────────
+.pb-placeholder {
+  font-size:  12px;
+  color:      var(--pb-placeholder-color);
+  white-space: nowrap;
+  font-style: italic;
+  padding:    0 4px;
+}

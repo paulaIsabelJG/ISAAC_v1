@@ -1,23 +1,22 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { IonicModule } from '@ionic/angular';
-import { CommonModule } from '@angular/common';
+import { IonicModule }   from '@ionic/angular';
+import { CommonModule }  from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription, firstValueFrom } from 'rxjs';
-import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { AacRuntimeService, AacPhraseItem } from '../../services/aac-runtime.service';
 import { BoardService, Board, BoardCell } from '../../services/board.service';
 import { UserService, FullBackendUser } from '../../services/user.service';
 import { BoardLayoutService } from '../../services/board-layout.service';
-import { buildSafeUrl as buildSafeUrlUtil } from '../../shared/utils/image.utils';
 import { BoardGridComponent } from '../../components/board-grid/board-grid.component';
 import { BoardCircularComponent } from '../../components/board-circular/board-circular.component';
+import { PhraseBandComponent } from '../../components/phrase-band/phrase-band.component';
 
 @Component({
   selector: 'app-communicator',
   templateUrl: './communicator.page.html',
   styleUrls:  ['./communicator.page.scss'],
   standalone: true,
-  imports: [IonicModule, CommonModule, BoardGridComponent, BoardCircularComponent],
+  imports: [IonicModule, CommonModule, BoardGridComponent, BoardCircularComponent, PhraseBandComponent],
 })
 export class CommunicatorPage implements OnInit, OnDestroy {
   userId     = '';
@@ -39,7 +38,6 @@ export class CommunicatorPage implements OnInit, OnDestroy {
     private aac:            AacRuntimeService,
     private boardSvc:       BoardService,
     private userSvc:        UserService,
-    private sanitizer:      DomSanitizer,
     private boardLayoutSvc: BoardLayoutService,
   ) {}
 
@@ -109,10 +107,6 @@ export class CommunicatorPage implements OnInit, OnDestroy {
 
   private getCellData(row: number, col: number): BoardCell | null {
     return this.boardLayoutSvc.getCellData(this.board, row, col);
-  }
-
-  buildImageUrl(url?: string | null): SafeUrl | string {
-    return buildSafeUrlUtil(url, this.sanitizer);
   }
 
   // ── Cell press (recibe CellCoord desde BoardGridComponent.cellClick) ──────

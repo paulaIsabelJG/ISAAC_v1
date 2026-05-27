@@ -93,19 +93,11 @@
         </svg>
       </button>
 
-      <div class="aac-phrase">
-        @for (p of aacPhrase; track $index) {
-          <div class="aac-phrase-item">
-            @if (p.imageUrl) {
-              <img [src]="buildSafeUrl(p.imageUrl)" class="aac-phrase-img" [alt]="p.label"/>
-            }
-            <span class="aac-phrase-label">{{ p.label }}</span>
-          </div>
-        }
-        @if (aacPhrase.length === 0) {
-          <span class="aac-phrase-hint">Pulsa los pictogramas para construir la frase…</span>
-        }
-      </div>
+      <app-phrase-band
+        [items]="aacPhrase"
+        placeholder="Pulsa los pictogramas para construir la frase…"
+        class="aac-phrase-band">
+      </app-phrase-band>
 
       <button class="aac-btn aac-btn--del" (click)="aacDeleteLast()" title="Borrar último">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

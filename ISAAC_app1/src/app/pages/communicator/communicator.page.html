@@ -4,20 +4,12 @@
   <div class="comm-header">
 
     <!-- Phrase strip -->
-    <div class="comm-phrase-strip">
-      @if (phrase.length === 0) {
-        <span class="comm-phrase-placeholder">Pulsa un pictograma…</span>
-      } @else {
-        @for (item of phrase; track $index) {
-          <div class="comm-phrase-item">
-            @if (item.imageUrl) {
-              <img [src]="buildImageUrl(item.imageUrl)" [alt]="item.label" class="comm-phrase-img"/>
-            }
-            <span class="comm-phrase-label">{{ item.label }}</span>
-          </div>
-        }
-      }
-    </div>
+    <app-phrase-band
+      [items]="phrase"
+      placeholder="Pulsa un pictograma…"
+      class="comm-phrase-strip"
+      style="--pb-strip-bg:#faf0f8; --pb-strip-border:#f4d0e4; --pb-item-border:#f4d0e4; --pb-img-size:44px; --pb-label-size:10px; --pb-label-transform:none; --pb-label-spacing:0; --pb-placeholder-color:#6b5462;">
+    </app-phrase-band>
 
     <!-- Controls -->
     <div class="comm-controls">

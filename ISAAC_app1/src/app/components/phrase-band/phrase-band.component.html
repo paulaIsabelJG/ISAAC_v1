@@ -1,0 +1,18 @@
+<div class="pb-strip">
+
+  @if (items.length === 0) {
+    <span class="pb-placeholder">{{ placeholder }}</span>
+  } @else {
+    @for (item of items; track $index) {
+      <div class="pb-item">
+        @if (item.imageUrl) {
+          <img [src]="buildUrl(item.imageUrl)"
+               [alt]="item.label"
+               class="pb-img" />
+        }
+        <span class="pb-label">{{ item.label }}</span>
+      </div>
+    }
+  }
+
+</div>
