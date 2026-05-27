@@ -143,213 +143,18 @@
   } @else {
     <div class="bbe-layout">
 
-      <!-- ── COLUMNA IZQUIERDA ─────────────────────────────────────────── -->
-      <div class="bbe-col-left">
-
-        <!-- Preconfiguración -->
-        <div class="bbe-panel">
-          <div class="bbe-panel-header">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M19.07 4.93a10 10 0 0 0-14.14 0M4.93 19.07a10 10 0 0 0 14.14 0"/>
-            </svg>
-            CONFIGURACIÓN
-          </div>
-
-          <!-- Nombre -->
-          <label class="bbe-lbl">Nombre</label>
-          <input class="bbe-inp" [(ngModel)]="cfgName" type="text" placeholder="Nombre del tablero"/>
-
-          <!-- Imagen de portada -->
-          <label class="bbe-lbl">Imagen <span class="bbe-lbl-opt">(opcional)</span></label>
-          <div class="bbe-cfg-img-picker" (click)="pickBoardImage()">
-            @if (cfgImageB64) {
-              <img [src]="buildSafeUrl(cfgImageB64)" class="bbe-cfg-img-preview" alt="Portada"/>
-              <div class="bbe-cfg-img-overlay">Cambiar</div>
-            } @else {
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <rect x="3" y="3" width="18" height="18" rx="3"/>
-                <circle cx="8.5" cy="8.5" r="1.5"/>
-                <polyline points="21 15 16 10 5 21"/>
-              </svg>
-              <span>Subir foto</span>
-            }
-          </div>
-          @if (cfgImageB64) {
-            <button type="button" class="bbe-cfg-img-remove" (click)="removeBoardImage()">Eliminar imagen</button>
-          }
-
-          <!-- Usuario(s) asignado(s) -->
-          <label class="bbe-lbl">
-            Usuario(s) asignado(s)
-            @if (isSharedBoard) {
-              <span class="bbe-shared-badge">Compartido</span>
-            }
-          </label>
-          <ion-select class="bbe-select"
-                      [multiple]="true"
-                      [value]="cfgAssignedUserIds"
-                      (ionChange)="onUserSelect($event)"
-                      interface="alert"
-                      placeholder="Selecciona usuario(s)"
-                      cancelText="Cancelar"
-                      okText="Aceptar">
-            @for (u of centerUsers; track u._id) {
-              <ion-select-option [value]="u._id">{{ u.name }}</ion-select-option>
-            }
-          </ion-select>
-          <button type="button" class="bbe-all-users-btn" (click)="selectAllUsers()">
-            Seleccionar todos
-          </button>
-
-          <!-- Filas / Columnas (sólo grid) -->
-          @if (!isCircular) {
-            <div class="bbe-cfg-row">
-              <div class="bbe-cfg-field">
-                <label class="bbe-lbl">Filas</label>
-                <input class="bbe-inp bbe-inp--num" type="number" min="1" max="10" [(ngModel)]="cfgRows"/>
-              </div>
-              <div class="bbe-cfg-field">
-                <label class="bbe-lbl">Columnas</label>
-                <input class="bbe-inp bbe-inp--num" type="number" min="1" max="10" [(ngModel)]="cfgCols"/>
-              </div>
-            </div>
-          }
-
-          <!-- Ranuras circulares (sólo circular) -->
-          @if (isCircular) {
-            <label class="bbe-lbl">Ranuras exteriores</label>
-            <input class="bbe-inp bbe-inp--num" type="number" min="3" max="20" [(ngModel)]="cfgCircleSlots"/>
-
-            <div class="bbe-toggle-row" (click)="cfgLocationEnabled = !cfgLocationEnabled">
-              <span class="bbe-toggle-lbl">Columna ubicación</span>
-              <div class="bbe-toggle" [class.bbe-toggle--on]="cfgLocationEnabled">
-                <div class="bbe-toggle-thumb"></div>
-              </div>
-            </div>
-            @if (cfgLocationEnabled) {
-              <label class="bbe-lbl">Ranuras ubicación</label>
-              <input class="bbe-inp bbe-inp--num" type="number" min="1" max="20" [(ngModel)]="cfgLocationSlots"/>
-            }
-          }
-
-          <!-- Tipo de tablero -->
-          <label class="bbe-lbl" style="margin-top:10px">Tipo de tablero</label>
-          <div class="bbe-role-selector">
-            <button type="button"
-                    class="bbe-role-btn"
-                    [class.bbe-role-btn--active]="cfgBoardRole === 'main'"
-                    (click)="cfgBoardRole = 'main'">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                <polyline points="9 22 9 12 15 12 15 22"/>
-              </svg>
-              Principal
-            </button>
-            <button type="button"
-                    class="bbe-role-btn"
-                    [class.bbe-role-btn--active]="cfgBoardRole === 'secondary'"
-                    (click)="cfgBoardRole = 'secondary'">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="15 3 21 3 21 9"/>
-                <polyline points="9 21 3 21 3 15"/>
-                <line x1="21" y1="3" x2="14" y2="10"/>
-                <line x1="3" y1="21" x2="10" y2="14"/>
-              </svg>
-              Secundario
-            </button>
-          </div>
-
-          <!-- Toggles -->
-          <div class="bbe-toggle-row" (click)="cfgPredictor = !cfgPredictor">
-            <span class="bbe-toggle-lbl">Predictor IA</span>
-            <div class="bbe-toggle" [class.bbe-toggle--on]="cfgPredictor">
-              <div class="bbe-toggle-thumb"></div>
-            </div>
-          </div>
-
-          <!-- Tamaño columna IA (solo visible cuando predictor activo) -->
-          @if (cfgPredictor) {
-            <div class="bbe-ia-size-panel">
-              <div class="bbe-cfg-row">
-                <div class="bbe-cfg-field">
-                  <label class="bbe-lbl">Filas IA</label>
-                  <input class="bbe-inp bbe-inp--num" type="number" min="1" max="20" [(ngModel)]="cfgIaRows"/>
-                </div>
-                <div class="bbe-cfg-field">
-                  <label class="bbe-lbl">Columnas IA</label>
-                  <input class="bbe-inp bbe-inp--num" type="number" min="1" max="5" [(ngModel)]="cfgIaCols"/>
-                </div>
-              </div>
-            </div>
-          }
-
-          <div class="bbe-toggle-row" (click)="cfgAiRewrite = !cfgAiRewrite">
-            <span class="bbe-toggle-lbl">Corrector IA</span>
-            <div class="bbe-toggle" [class.bbe-toggle--on]="cfgAiRewrite">
-              <div class="bbe-toggle-thumb"></div>
-            </div>
-          </div>
-
-          <button class="bbe-save-cfg" (click)="saveConfig()" [disabled]="cfgSaving">
-            @if (cfgSaving) { <ion-spinner name="crescent" style="width:16px;height:16px"></ion-spinner> }
-            Guardar configuración
-          </button>
-        </div>
-
-        <!-- Tableros del usuario -->
-        <div class="bbe-panel bbe-panel--boards">
-          <div class="bbe-panel-header">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="3" width="7" height="7" rx="1"/>
-              <rect x="14" y="3" width="7" height="7" rx="1"/>
-              <rect x="3" y="14" width="7" height="7" rx="1"/>
-              <rect x="14" y="14" width="7" height="7" rx="1"/>
-            </svg>
-            TABLEROS DEL USUARIO
-          </div>
-
-          @if (userBoardsLoading) {
-            <ion-spinner name="crescent" color="secondary" style="margin:8px auto;display:block"></ion-spinner>
-          } @else if (userBoards.length === 0) {
-            <span class="bbe-empty-msg">Sin otros tableros.</span>
-          } @else {
-            <!-- Sección grid -->
-            @if (gridBoards.length > 0) {
-              <span class="bbe-boards-sub">Cuadrícula</span>
-              @for (b of gridBoards; track b._id) {
-                <div class="bbe-board-item"
-                     [class.bbe-board-item--new]="b._id === highlightedBoardId"
-                     [id]="'board-item-' + b._id"
-                     (click)="openBoard(b._id)">
-                  <span class="bbe-board-item-name">{{ b.name }}</span>
-                  <span class="bbe-board-item-meta">{{ b.rows }}×{{ b.columns }}</span>
-                  @if (b._id === highlightedBoardId) {
-                    <span class="bbe-board-item-new-badge">Nuevo</span>
-                  }
-                </div>
-              }
-            }
-            <!-- Sección circular -->
-            @if (circularBoards.length > 0) {
-              <span class="bbe-boards-sub">Circular</span>
-              @for (b of circularBoards; track b._id) {
-                <div class="bbe-board-item"
-                     [class.bbe-board-item--new]="b._id === highlightedBoardId"
-                     [id]="'board-item-' + b._id"
-                     (click)="openBoard(b._id)">
-                  <span class="bbe-board-item-name">{{ b.name }}</span>
-                  <span class="bbe-board-item-meta">⊙ {{ b.circleSlots || 8 }}</span>
-                  @if (b._id === highlightedBoardId) {
-                    <span class="bbe-board-item-new-badge">Nuevo</span>
-                  }
-                </div>
-              }
-            }
-          }
-        </div>
-
-      </div><!-- /col-left -->
+      <!-- ── COLUMNA IZQUIERDA → BoardSidebarLeftComponent ──────────────── -->
+      <app-board-sidebar-left
+        [config]="sidebarConfig"
+        [isCircular]="isCircular"
+        [centerUsers]="centerUsers"
+        [userBoards]="userBoards"
+        [userBoardsLoading]="userBoardsLoading"
+        [highlightedBoardId]="highlightedBoardId"
+        [isSaving]="sidebarSaving"
+        (saveConfig)="onSaveConfigRequest($event)"
+        (openBoard)="openBoard($event)">
+      </app-board-sidebar-left>
 
       <!-- ── COLUMNA CENTRAL ────────────────────────────────────────────── -->
       <div class="bbe-col-center">
@@ -518,8 +323,6 @@
           <!-- Tab Nuevo -->
           @if (rightMode === 'new') {
             <div class="bbe-new-form">
-
-              <!-- Imagen -->
               <div class="bbe-new-img-row">
                 <div class="bbe-new-img-wrap" (click)="pickImage()">
                   @if (newImgUrl) {
@@ -535,11 +338,10 @@
                 </div>
                 <div class="bbe-new-img-hint">Pulsa para subir imagen (máx. 2 MB)</div>
               </div>
-
             </div>
           }
 
-          <!-- Separador: campos comunes tras selección -->
+          <!-- Campos comunes -->
           <div class="bbe-common-fields">
             <label class="bbe-lbl">Etiqueta *</label>
             <input class="bbe-inp" [(ngModel)]="pictForm.label" type="text" placeholder="Nombre del pictograma"/>
@@ -625,7 +427,6 @@
 
           <!-- Acciones especiales para tablero circular -->
           @if (isCircular) {
-            <!-- "Tablero creado por IA" — en cualquier slot exterior -->
             <div class="bbe-toggle-row" style="margin-top:8px"
                  (click)="actionFormAiTarget = !actionFormAiTarget">
               <span class="bbe-toggle-lbl">Tablero creado por IA</span>
@@ -637,7 +438,6 @@
               <span class="bbe-hint-sm">Preview: pulsar este picto lo mueve al centro (simulación IA).</span>
             }
 
-            <!-- "Último pictograma pulsado" — solo celda central (row=0, col=-1) -->
             @if (isCenterSelected) {
               <div class="bbe-toggle-row" style="margin-top:6px"
                    (click)="actionFormShowLastPhrase = !actionFormShowLastPhrase">

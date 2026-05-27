@@ -1,0 +1,391 @@
+// ── Variables ─────────────────────────────────────────────────────────────────
+// Deben coincidir con las de board-builder-editor.page.scss para coherencia visual.
+$pink:         #ff69b4;
+$pink-dark:    #e91e8c;
+$pink-light:   #fff0f7;
+$violet:       #7c4dff;
+$violet-light: #f0ebff;
+$mint:         #20c997;
+$border:       #ffb6c1;
+$bg:           #fdf5f9;
+$text-dark:    #222222;
+$text-muted:   #6b5462;
+$card-bg:      #ffffff;
+$panel-bg:     #faf5f8;
+
+// ── Host: reemplaza .bbe-col-left del layout padre ────────────────────────────
+:host {
+  display:         block;
+  width:           240px;
+  flex:            0 0 240px;
+  border-right:    1.5px solid $border;
+  background:      $panel-bg;
+  overflow-y:      auto;
+  padding:         12px 12px 40px;
+  box-sizing:      border-box;
+  scrollbar-width: thin;
+  scrollbar-color: $border transparent;
+}
+
+// ── Paneles ────────────────────────────────────────────────────────────────────
+.bbe-panel {
+  background:    $card-bg;
+  border:        1.5px solid $border;
+  border-radius: 14px;
+  padding:       12px;
+  margin-bottom: 12px;
+
+  &--boards { padding-bottom: 8px; }
+}
+
+.bbe-panel-header {
+  display:        flex;
+  align-items:    center;
+  gap:            6px;
+  font-size:      10px;
+  font-weight:    800;
+  color:          $text-muted;
+  letter-spacing: 1.5px;
+  margin-bottom:  10px;
+  text-transform: uppercase;
+
+  svg { width: 14px; height: 14px; stroke: $text-muted; flex: 0 0 auto; }
+}
+
+// ── Controles de formulario ────────────────────────────────────────────────────
+// (Duplicados desde page SCSS porque Angular encapsula los estilos por componente.)
+
+.bbe-lbl {
+  display:        block;
+  font-size:      10px;
+  font-weight:    700;
+  color:          $text-muted;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin:         8px 0 4px;
+
+  &:first-child { margin-top: 0; }
+}
+
+.bbe-lbl-opt {
+  font-weight:    400;
+  text-transform: none;
+  font-size:      9px;
+  color:          #bbb;
+  margin-left:    3px;
+}
+
+.bbe-inp {
+  width:         100%;
+  height:        34px;
+  padding:       0 10px;
+  border:        1.5px solid $border;
+  border-radius: 8px;
+  background:    #faf6f8;
+  font-size:     13px;
+  font-family:   inherit;
+  color:         $text-dark;
+  outline:       none;
+  box-sizing:    border-box;
+  transition:    border-color 0.15s;
+
+  &:focus  { border-color: $violet; background: #fff; }
+  &--num   { width: 60px; text-align: center; }
+}
+
+.bbe-select {
+  --background:    #faf6f8;
+  --border-radius: 8px;
+  --padding-start: 10px;
+  border:          1.5px solid $border;
+  border-radius:   8px;
+  font-size:       13px;
+  width:           100%;
+  height:          34px;
+}
+
+.bbe-cfg-row {
+  display:     flex;
+  gap:         10px;
+  align-items: flex-start;
+}
+.bbe-cfg-field {
+  display:        flex;
+  flex-direction: column;
+  gap:            4px;
+}
+
+// ── Toggle ────────────────────────────────────────────────────────────────────
+.bbe-toggle-row {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  margin:          8px 0;
+  cursor:          pointer;
+  user-select:     none;
+}
+.bbe-toggle-lbl { font-size: 12px; font-weight: 600; color: $text-dark; }
+
+.bbe-toggle {
+  width:         36px;
+  height:        20px;
+  border-radius: 10px;
+  background:    #ddd;
+  position:      relative;
+  transition:    background 0.2s;
+  flex:          0 0 auto;
+
+  &--on {
+    background: $violet;
+    .bbe-toggle-thumb { left: calc(100% - 18px); }
+  }
+}
+.bbe-toggle-thumb {
+  position:      absolute;
+  top:           2px;
+  left:          2px;
+  width:         16px;
+  height:        16px;
+  border-radius: 50%;
+  background:    #fff;
+  box-shadow:    0 1px 3px rgba(0,0,0,0.2);
+  transition:    left 0.2s;
+}
+
+// ── Imagen de portada ─────────────────────────────────────────────────────────
+.bbe-cfg-img-picker {
+  width:           100%;
+  height:          72px;
+  border:          2px dashed $border;
+  border-radius:   10px;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  gap:             6px;
+  cursor:          pointer;
+  overflow:        hidden;
+  position:        relative;
+  background:      #faf6f8;
+  transition:      border-color 0.15s;
+  margin-bottom:   4px;
+
+  svg  { width: 22px; height: 22px; stroke: #ccc; }
+  span { font-size: 10px; color: $text-muted; font-weight: 600; }
+
+  &:hover { border-color: $violet; }
+}
+
+.bbe-cfg-img-preview {
+  width:      100%;
+  height:     100%;
+  object-fit: cover;
+}
+
+.bbe-cfg-img-overlay {
+  position:        absolute;
+  inset:           0;
+  background:      rgba(0,0,0,0.45);
+  color:           #fff;
+  font-size:       11px;
+  font-weight:     700;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  opacity:         0;
+  transition:      opacity 0.15s;
+
+  .bbe-cfg-img-picker:hover & { opacity: 1; }
+}
+
+.bbe-cfg-img-remove {
+  display:       block;
+  width:         100%;
+  height:        26px;
+  background:    transparent;
+  border:        1px solid #f8c4cf;
+  border-radius: 7px;
+  color:         #c0392b;
+  font-size:     10px;
+  font-weight:   700;
+  font-family:   inherit;
+  cursor:        pointer;
+  margin-bottom: 6px;
+  transition:    background 0.15s;
+
+  &:hover { background: #fff0f0; }
+}
+
+// ── Shared / multiusuario ─────────────────────────────────────────────────────
+.bbe-shared-badge {
+  display:        inline-block;
+  background:     $violet-light;
+  color:          $violet;
+  font-size:      9px;
+  font-weight:    700;
+  letter-spacing: 0.4px;
+  border-radius:  6px;
+  padding:        1px 6px;
+  margin-left:    6px;
+  vertical-align: middle;
+  text-transform: uppercase;
+}
+
+.bbe-all-users-btn {
+  display:       block;
+  width:         100%;
+  height:        26px;
+  background:    transparent;
+  border:        1px solid $border;
+  border-radius: 7px;
+  color:         $text-muted;
+  font-size:     10px;
+  font-weight:   700;
+  font-family:   inherit;
+  cursor:        pointer;
+  margin-top:    4px;
+  margin-bottom: 6px;
+  transition:    background 0.15s, border-color 0.15s;
+
+  &:hover { background: $pink-light; border-color: $pink; color: $pink-dark; }
+}
+
+// ── Tipo de tablero ───────────────────────────────────────────────────────────
+.bbe-role-selector {
+  display: flex;
+  gap:     8px;
+  margin:  4px 0 10px;
+}
+
+.bbe-role-btn {
+  flex:            1;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  gap:             6px;
+  padding:         8px 10px;
+  border:          1.5px solid #e0d0e8;
+  border-radius:   10px;
+  background:      #fafafa;
+  color:           $text-muted;
+  font-size:       12px;
+  font-weight:     600;
+  font-family:     inherit;
+  cursor:          pointer;
+  transition:      border-color 0.15s, background 0.15s, color 0.15s;
+
+  svg { width: 14px; height: 14px; flex: 0 0 auto; }
+
+  &:hover { border-color: $violet; color: $violet; }
+
+  &--active {
+    border-color: $violet;
+    background:   $violet-light;
+    color:        $violet;
+    font-weight:  700;
+  }
+}
+
+// ── Panel tamaño columna IA ───────────────────────────────────────────────────
+.bbe-ia-size-panel {
+  background:    color-mix(in srgb, #20c997 8%, white);
+  border:        1.5px solid $mint;
+  border-radius: 10px;
+  padding:       8px 10px 4px;
+  margin:        4px 0 8px;
+}
+
+// ── Botón guardar config ──────────────────────────────────────────────────────
+.bbe-save-cfg {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  gap:             6px;
+  width:           100%;
+  height:          34px;
+  margin-top:      10px;
+  border:          none;
+  border-radius:   8px;
+  background:      $violet;
+  color:           #fff;
+  font-size:       12px;
+  font-weight:     700;
+  font-family:     inherit;
+  cursor:          pointer;
+  transition:      opacity 0.15s;
+
+  &:hover:not(:disabled) { opacity: 0.88; }
+  &:disabled             { opacity: 0.5; cursor: not-allowed; }
+}
+
+// ── Lista de tableros ─────────────────────────────────────────────────────────
+.bbe-empty-msg {
+  font-size: 12px;
+  color:     $text-muted;
+  display:   block;
+  padding:   6px 0;
+}
+
+.bbe-boards-sub {
+  display:        block;
+  font-size:      9px;
+  font-weight:    800;
+  color:          $text-muted;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding:        8px 0 4px;
+  margin-top:     2px;
+  border-top:     1px solid #f4e8ee;
+
+  &:first-of-type { border-top: none; margin-top: 0; padding-top: 2px; }
+}
+
+.bbe-board-item {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  padding:         8px 4px;
+  border-bottom:   1px solid #f4e8ee;
+  border-radius:   6px;
+  cursor:          pointer;
+  transition:      color 0.15s, background 0.15s, border-color 0.15s;
+
+  &:last-child { border-bottom: none; }
+  &:hover      { .bbe-board-item-name { color: $violet; } }
+
+  &--new {
+    border-color: $violet !important;
+    background:   rgba(124, 77, 255, 0.08);
+    animation:    bbeNewBoardPulse 1.2s ease-in-out 3;
+
+    .bbe-board-item-name { color: $violet; font-weight: 700; }
+  }
+}
+
+.bbe-board-item-name { font-size: 12px; font-weight: 600; color: $text-dark; }
+.bbe-board-item-meta { font-size: 10px; color: $text-muted; }
+
+.bbe-board-item-new-badge {
+  flex:           0 0 auto;
+  font-size:      9px;
+  font-weight:    800;
+  color:          #fff;
+  background:     $violet;
+  border-radius:  6px;
+  padding:        2px 6px;
+  letter-spacing: 0.3px;
+  margin-left:    6px;
+}
+
+@keyframes bbeNewBoardPulse {
+  0%,  100% { transform: scale(1);    box-shadow: none; }
+  50%       { transform: scale(1.02); box-shadow: 0 0 0 4px rgba(124, 77, 255, 0.14); }
+}
+
+// ── Responsive ────────────────────────────────────────────────────────────────
+@media (max-width: 900px) {
+  :host { width: 200px; flex: 0 0 200px; }
+}
+
+@media (max-width: 680px) {
+  :host { display: none; }
+}

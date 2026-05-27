@@ -158,43 +158,16 @@ $panel-bg:     #faf5f8;
 // La barra OBF no debe comprimirse nunca
 .bbe-obf-bar { flex: 0 0 auto; }
 
-// ── Columna izquierda ─────────────────────────────────────────────────────────
-.bbe-col-left {
-  width:      240px;
-  flex:       0 0 240px;
-  border-right: 1.5px solid $border;
-  background: $panel-bg;
-  overflow-y: auto;
-  padding:    12px 12px 40px;
-  box-sizing: border-box;
-  scrollbar-width: thin;
-  scrollbar-color: $border transparent;
-}
+// ── Columna izquierda → BoardSidebarLeftComponent ────────────────────────────
+// Los estilos del panel (.bbe-panel, .bbe-lbl, .bbe-inp, etc.) y la lista de
+// tableros están encapsulados en board-sidebar-left.component.scss.
+// Solo los estilos de layout del host (width, flex, border) están en :host
+// del propio componente, con sus @media queries correspondientes.
 
-.bbe-panel {
-  background:    $card-bg;
-  border:        1.5px solid $border;
-  border-radius: 14px;
-  padding:       12px;
-  margin-bottom: 12px;
+// Las clases .bbe-lbl, .bbe-inp, .bbe-toggle* que también usa la columna
+// derecha (que sí vive en este componente) se mantienen abajo.
 
-  &--boards { padding-bottom: 8px; }
-}
-
-.bbe-panel-header {
-  display:        flex;
-  align-items:    center;
-  gap:            6px;
-  font-size:      10px;
-  font-weight:    800;
-  color:          $text-muted;
-  letter-spacing: 1.5px;
-  margin-bottom:  10px;
-  text-transform: uppercase;
-
-  svg { width: 14px; height: 14px; stroke: $text-muted; flex: 0 0 auto; }
-}
-
+// ── Controles compartidos: usados en columna derecha ─────────────────────────
 .bbe-lbl {
   display:        block;
   font-size:      10px;
@@ -221,30 +194,7 @@ $panel-bg:     #faf5f8;
   box-sizing:    border-box;
   transition:    border-color 0.15s;
 
-  &:focus    { border-color: $violet; background: #fff; }
-  &--num     { width: 60px; text-align: center; }
-}
-
-.bbe-select {
-  --background:    #faf6f8;
-  --border-radius: 8px;
-  --padding-start: 10px;
-  border:          1.5px solid $border;
-  border-radius:   8px;
-  font-size:       13px;
-  width:           100%;
-  height:          34px;
-}
-
-.bbe-cfg-row {
-  display:     flex;
-  gap:         10px;
-  align-items: flex-start;
-}
-.bbe-cfg-field {
-  display:        flex;
-  flex-direction: column;
-  gap:            4px;
+  &:focus { border-color: $violet; background: #fff; }
 }
 
 .bbe-toggle-row {
@@ -281,72 +231,6 @@ $panel-bg:     #faf5f8;
   background:    #fff;
   box-shadow:    0 1px 3px rgba(0,0,0,0.2);
   transition:    left 0.2s;
-}
-
-.bbe-save-cfg {
-  display:         flex;
-  align-items:     center;
-  justify-content: center;
-  gap:             6px;
-  width:           100%;
-  height:          34px;
-  margin-top:      10px;
-  border:          none;
-  border-radius:   8px;
-  background:      $violet;
-  color:           #fff;
-  font-size:       12px;
-  font-weight:     700;
-  font-family:     inherit;
-  cursor:          pointer;
-  transition:      opacity 0.15s;
-
-  &:hover:not(:disabled) { opacity: 0.88; }
-  &:disabled             { opacity: 0.5; cursor: not-allowed; }
-}
-
-.bbe-board-item {
-  display:         flex;
-  align-items:     center;
-  justify-content: space-between;
-  padding:         8px 4px;
-  border-bottom:   1px solid #f4e8ee;
-  border-radius:   6px;
-  cursor:          pointer;
-  transition:      color 0.15s, background 0.15s, border-color 0.15s;
-
-  &:last-child { border-bottom: none; }
-  &:hover      { .bbe-board-item-name { color: $violet; } }
-
-  // ── Resaltado tablero recién creado ──────────────────────────────────────
-  &--new {
-    border-color: $violet !important;
-    background:   rgba(124, 77, 255, 0.08);
-    animation:    bbeNewBoardPulse 1.2s ease-in-out 3;
-
-    .bbe-board-item-name { color: $violet; font-weight: 700; }
-  }
-}
-
-.bbe-board-item-name { font-size: 12px; font-weight: 600; color: $text-dark; }
-.bbe-board-item-meta { font-size: 10px; color: $text-muted; }
-
-// Badge "Nuevo" dentro del item resaltado
-.bbe-board-item-new-badge {
-  flex:          0 0 auto;
-  font-size:     9px;
-  font-weight:   800;
-  color:         #fff;
-  background:    $violet;
-  border-radius: 6px;
-  padding:       2px 6px;
-  letter-spacing: 0.3px;
-  margin-left:   6px;
-}
-
-@keyframes bbeNewBoardPulse {
-  0%,  100% { transform: scale(1);    box-shadow: none; }
-  50%       { transform: scale(1.02); box-shadow: 0 0 0 4px rgba(124, 77, 255, 0.14); }
 }
 
 .bbe-empty-msg { font-size: 12px; color: $text-muted; display: block; padding: 6px 0; }
@@ -1468,13 +1352,12 @@ $panel-bg:     #faf5f8;
 //  RESPONSIVE — pantallas pequeñas
 // ─────────────────────────────────────────────────────────────────────────────
 @media (max-width: 900px) {
-  // Solo reducir paneles laterales; las celdas escalan dinámicamente con cqi
-  .bbe-col-left  { width: 200px; flex: 0 0 200px; }
+  // Solo reducir panel lateral derecho; el izquierdo lo gestiona su propio :host
   .bbe-col-right { width: 240px; flex: 0 0 240px; }
 }
 
 @media (max-width: 680px) {
-  .bbe-col-left { display: none; }
+  // La columna izquierda (BoardSidebarLeftComponent) se oculta via :host en su propio SCSS
 
   .bbe-layout {
     flex-direction: column;

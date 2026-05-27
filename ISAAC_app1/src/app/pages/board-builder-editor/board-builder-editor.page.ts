@@ -36,6 +36,10 @@ import { PictCellContentComponent } from '../../components/pict-cell-content/pic
 import { BoardGridComponent } from '../../components/board-grid/board-grid.component';
 import { BoardCircularComponent } from '../../components/board-circular/board-circular.component';
 import { PhraseBandComponent } from '../../components/phrase-band/phrase-band.component';
+import {
+  BoardSidebarLeftComponent,
+  BoardSidebarConfig,
+} from '../../components/board-sidebar-left/board-sidebar-left.component';
 
 // ─── Resultado de búsqueda ARASAAC ───────────────────────────────────────────
 interface ArasaacResult {
@@ -69,7 +73,16 @@ interface ActionForm {
   templateUrl: './board-builder-editor.page.html',
   styleUrls: ['./board-builder-editor.page.scss'],
   standalone: true,
-  imports: [IonicModule, FormsModule, LoadingErrorStateComponent, PictCellContentComponent, BoardGridComponent, BoardCircularComponent, PhraseBandComponent],
+  imports: [
+    IonicModule,
+    FormsModule,
+    LoadingErrorStateComponent,
+    PictCellContentComponent,
+    BoardGridComponent,
+    BoardCircularComponent,
+    PhraseBandComponent,
+    BoardSidebarLeftComponent,
+  ],
 })
 export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   // ── Routing ─────────────────────────────────────────────────────────────────
@@ -84,8 +97,6 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   private routeSub?: Subscription;
 
   // ── Pending link (vuelta desde "Crear nuevo tablero") ────────────────────────
-  // Se leen en ionViewWillEnter para poder capturarlos aunque el componente
-  // esté cacheado (Ionic reutiliza la instancia, ngOnInit no vuelve a disparar).
   private pendingLinkBoardId    = '';
   private pendingLinkRow        = -1;
   private pendingLinkCol        = -1;
@@ -96,6 +107,19 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   isLoading = true;
   isSaving = false;
   loadError = '';
+
+  // ── Configuración: modelo para BoardSidebarLeftComponent ────────────────────
+  // La page es la fuente de verdad (board); el sidebar tiene copias locales.
+  // Cada vez que se guarda con éxito, syncConfigFromBoard() crea un nuevo
+  // objeto (referencia nueva) para disparar ngOnChanges en el sidebar.
+  sidebarConfig: BoardSidebarConfig = {
+    name: '', imageB64: null, rows: 3, cols: 4,
+    predictor: false, aiRewrite: false, iaRows: 5, iaCols: 1,
+    boardRole: 'main', circleSlots: 8, locationEnabled: false,
+    locationSlots: 6, assignedUserIds: [],
+  };
+  /** true mientras se procesa el guardado de configuración del tablero. */
+  sidebarSaving = false;
 
   // ── Vista previa ─────────────────────────────────────────────────────────────
   previewMode = false;
@@ -109,47 +133,19 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   draggedCell:  { row: number; col: number } | null = null;
   dragOverCell: { row: number; col: number } | null = null;
 
-  // ── Modo mover táctil (alternativa al DnD para tablet/touch) ─────────────────
-  // Flujo: doble toque en celda rellena → moveSrcCell se establece
-  //        siguiente toque en destino   → se ejecuta el movimiento / intercambio
+  // ── Modo mover táctil ─────────────────────────────────────────────────────────
   moveSrcCell: { row: number; col: number } | null = null;
 
-  // ── Columna izquierda: config en vivo ─────────────────────────────────────────
-  cfgName = '';
-  cfgImageB64: string | null = null;
-  cfgRows = 3;
-  cfgCols = 4;
-  cfgPredictor = false;
-  cfgAiRewrite = false;
-  cfgIaRows = 5;
-  cfgIaCols = 1;
-  cfgUserId = '';
-  cfgSaving = false;
-
-  // Circular config
-  cfgCircleSlots = 8;
-  cfgLocationEnabled = false;
-  cfgLocationSlots = 6;
-
-  // Rol y perfil
-  cfgBoardRole: 'main' | 'secondary' = 'main';
-
-  // Simulación circular en preview
-  circularSimMode = false; // true cuando se activó AI navigation
+  // ── Simulación circular en preview ───────────────────────────────────────────
+  circularSimMode = false;
   circularSimCenter: CellPictogram | null = null;
 
-  // Tableros del usuario asignado (panel izquierdo)
+  // ── Datos del sidebar (lista de tableros y usuarios del centro) ──────────────
   userBoards: Board[] = [];
   userBoardsLoading = false;
-  boardsReady = false; // true cuando userBoards ha cargado (evita bug ion-select timing)
-  /** ID del tablero recién creado (resaltado ~5 s en la lista lateral). */
+  boardsReady = false; // evita bug ion-select en el selector de acción derecho
   highlightedBoardId = '';
 
-  // Usuarios asignados al tablero (nuevo campo multi-usuario)
-  // cfgUserId se mantiene como campo legacy (= primer elemento de cfgAssignedUserIds)
-  cfgAssignedUserIds: string[] = [];
-
-  // Usuarios del centro (para cambiar userId en config)
   centerUsers: BackendUser[] = [];
 
   // ── Columna derecha: modo ────────────────────────────────────────────────────
@@ -176,26 +172,21 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   newImgUrl: SafeUrl | null = null;
 
   // ── Constantes expuestas al template ─────────────────────────────────────────
-  readonly FITZGERALD = FITZGERALD; // expuesto para el template
+  readonly FITZGERALD = FITZGERALD;
   readonly wordTypeLabels = WORD_TYPE_LABELS;
   readonly wordTypes: WordType[] = [
-    'verb',
-    'pronoun',
-    'noun',
-    'descriptor',
-    'social',
-    'misc',
+    'verb', 'pronoun', 'noun', 'descriptor', 'social', 'misc',
   ];
   readonly actionTypes: { value: ActionType; label: string }[] = [
-    { value: 'voice', label: 'Voz' },
-    { value: 'navigate', label: 'Navegar a otro tablero' },
+    { value: 'voice',          label: 'Voz' },
+    { value: 'navigate',       label: 'Navegar a otro tablero' },
     { value: 'voice+navigate', label: 'Voz + Navegar a otro tablero' },
-    { value: 'disabled', label: 'Desactivado' },
+    { value: 'disabled',       label: 'Desactivado' },
   ];
 
   // Acciones especiales para tablero circular
   actionFormAiTarget = false;
-  actionFormShowLastPhrase = false; // "Último pictograma pulsado" (solo celda central)
+  actionFormShowLastPhrase = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -213,23 +204,14 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    // ── boardId desde paramMap observable (NO snapshot) ───────────────────────
-    // route.snapshot.paramMap NO se actualiza cuando Ionic reutiliza el componente
-    // cacheado al navegar entre boards. El observable sí emite con el valor nuevo.
-    // Emite inmediatamente con el valor actual → boardId queda listo antes de
-    // ionViewWillEnter (que es quien llama a loadBoard).
     this.routeSub = this.route.paramMap.subscribe(params => {
       const freshId = params.get('boardId') ?? '';
-      if (freshId) {
-        this.boardId = freshId;
-      }
+      if (freshId) { this.boardId = freshId; }
     });
 
-    // QueryParams: snapshot es suficiente — son estables durante la sesión del editor
     const rt = this.route.snapshot.queryParamMap.get('returnTo');
     if (rt) { this.returnTo = rt; }
 
-    // Contexto del builder — se propaga al volver para que la lista filtre bien
     const qCreatorId   = this.route.snapshot.queryParamMap.get('creatorId');
     const qCreatorName = this.route.snapshot.queryParamMap.get('creatorName');
     if (qCreatorId)   { this.contextCreatorId   = qCreatorId; }
@@ -241,8 +223,6 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   }
 
   ionViewWillEnter() {
-    // Leer params de link-back cada vez que la página vuelve a primer plano.
-    // (Ionic puede reutilizar el componente cacheado: ngOnInit no vuelve a correr.)
     const linkFlag = this.route.snapshot.queryParamMap.get('linkCreatedBoard');
     if (linkFlag === 'true') {
       this.pendingLinkBoardId    = this.route.snapshot.queryParamMap.get('newlyCreatedTargetBoardId') ?? '';
@@ -263,14 +243,12 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     this.isLoading = true;
     this.loadError = '';
     try {
-      const res = await firstValueFrom(
-        this.boardSvc.getBoardById(this.boardId),
-      );
+      const res = await firstValueFrom(this.boardSvc.getBoardById(this.boardId));
       this.board = res.board;
       this.syncConfigFromBoard();
-      // Usar la lista multi-usuario ya sincronizada para cargar tableros y pictos
-      this.loadUserBoards(this.cfgAssignedUserIds);
-      this.loadPersonalPicts(this.cfgAssignedUserIds[0] || this.board.userId);
+      const assignedIds = this.board.assignedUserIds ?? [];
+      this.loadUserBoards(assignedIds);
+      this.loadPersonalPicts(assignedIds[0] || this.board.userId);
     } catch {
       this.loadError = 'Error al cargar el tablero.';
     } finally {
@@ -278,25 +256,34 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Construye y asigna un nuevo objeto sidebarConfig desde el board guardado.
+   * Al crear una referencia nueva, ngOnChanges del sidebar resetea el formulario.
+   */
   private syncConfigFromBoard(): void {
     if (!this.board) return;
-    this.cfgName = this.board.name;
-    this.cfgImageB64 = this.board.imageUrl || null;
-    this.cfgRows = this.board.rows;
-    this.cfgCols = this.board.columns;
-    this.cfgPredictor = this.board.predictorEnabled;
-    this.cfgAiRewrite = this.board.aiRewriteEnabled;
-    this.cfgIaRows = this.board.iaRows ?? 5;
-    this.cfgIaCols = this.board.iaCols ?? 1;
-    this.cfgUserId = this.board.userId;
-    // Sincronizar lista multi-usuario: nuevo campo o fallback a userId legacy
-    this.cfgAssignedUserIds = (this.board.assignedUserIds?.length)
-      ? [...this.board.assignedUserIds]
-      : (this.board.userId ? [this.board.userId] : []);
-    this.cfgCircleSlots = this.board.circleSlots ?? 8;
-    this.cfgLocationEnabled = this.board.locationColumnEnabled ?? false;
-    this.cfgLocationSlots = this.board.locationColumnSlots ?? 6;
-    this.cfgBoardRole = this.board.boardRole ?? 'main';
+    this.sidebarConfig = this.buildSidebarConfig();
+  }
+
+  private buildSidebarConfig(): BoardSidebarConfig {
+    const b = this.board!;
+    return {
+      name:            b.name,
+      imageB64:        b.imageUrl || null,
+      rows:            b.rows,
+      cols:            b.columns,
+      predictor:       b.predictorEnabled,
+      aiRewrite:       b.aiRewriteEnabled,
+      iaRows:          b.iaRows ?? 5,
+      iaCols:          b.iaCols ?? 1,
+      boardRole:       b.boardRole ?? 'main',
+      circleSlots:     b.circleSlots ?? 8,
+      locationEnabled: b.locationColumnEnabled ?? false,
+      locationSlots:   b.locationColumnSlots ?? 6,
+      assignedUserIds: b.assignedUserIds?.length
+        ? [...b.assignedUserIds]
+        : (b.userId ? [b.userId] : []),
+    };
   }
 
   private async loadUserBoards(assignedUserIds: string[]): Promise<void> {
@@ -320,7 +307,6 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   }
 
   private async loadPersonalPicts(userId: string): Promise<void> {
-    // Tableros compartidos (varios usuarios) no tienen pictogramas personales
     if (this.isSharedBoard) {
       this.personalPicts = [];
       this.personalLoading = false;
@@ -328,9 +314,7 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     }
     this.personalLoading = true;
     try {
-      const res = await firstValueFrom(
-        this.userSvc.getPictogramsByUserId(userId),
-      );
+      const res = await firstValueFrom(this.userSvc.getPictogramsByUserId(userId));
       this.personalPicts = res.pictograms;
     } catch {
       /* silencioso */
@@ -343,9 +327,7 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     const org = this.authSvc.getCurrentUser();
     if (!org?.centro) return;
     try {
-      const res = await firstValueFrom(
-        this.userSvc.getUsersByCenter(org.centro),
-      );
+      const res = await firstValueFrom(this.userSvc.getUsersByCenter(org.centro));
       this.centerUsers = res.users.filter((u) => u.type === 'user');
     } catch {
       /* silencioso */
@@ -380,19 +362,15 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     return this.dragOverCell?.row === row && this.dragOverCell?.col === col;
   }
 
-  /** true cuando la celda es el ORIGEN seleccionado para el modo mover táctil */
   isMoveSrc(row: number, col: number): boolean {
     return this.moveSrcCell?.row === row && this.moveSrcCell?.col === col;
   }
 
-  /** true cuando hay una celda origen pendiente de destino (modo mover activo) */
   get isMoveMode(): boolean {
     return !!this.moveSrcCell;
   }
 
   onCellDragStart(event: DragEvent, row: number, col: number): void {
-    // Necesario para las celdas circulares (divs nativos sin PictogramCellComponent).
-    // Para el grid, PictogramCellComponent ya lo hizo; llamarlo de nuevo es idempotente.
     event.dataTransfer?.setData('text/plain', '');
     if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
     this.draggedCell = { row, col };
@@ -401,19 +379,12 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   onCellDragOver(event: DragEvent, row: number, col: number): void {
     if (!this.draggedCell) return;
     if (this.isDragging(row, col)) return;
-    // Necesario para celdas circulares (divs nativos).
-    // Para el grid, PictogramCellComponent ya lo hizo; llamarlo de nuevo es idempotente.
     event.preventDefault();
     if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
     this.dragOverCell = { row, col };
   }
 
   onCellDragLeave(event: DragEvent, row: number, col: number): void {
-    // Guardia: ignorar si el puntero se movió a un hijo (imagen, etiqueta).
-    // Necesaria para celdas circulares (divs nativos).
-    // Para el grid, PictogramCellComponent ya aplica la guardia antes de emitir,
-    // por lo que este handler solo llega aquí cuando el arrastre sí salió de la celda.
-    // null-safe: para el path de grid, currentTarget puede ser null en este punto.
     const target  = event.currentTarget as HTMLElement | null;
     const related = event.relatedTarget  as Node | null;
     if (target && related && target.contains(related)) return;
@@ -423,8 +394,6 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   }
 
   onCellDrop(event: DragEvent, row: number, col: number): void {
-    // Necesario para celdas circulares (divs nativos).
-    // Para el grid, PictogramCellComponent ya lo hizo; llamarlo de nuevo es idempotente.
     event.preventDefault();
     if (!this.draggedCell) return;
     const src = { ...this.draggedCell };
@@ -439,12 +408,11 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     this.dragOverCell = null;
   }
 
-  // ── Modo mover táctil: doble toque activa origen ──────────────────────────
+  // ── Modo mover táctil ─────────────────────────────────────────────────────────
 
   async onCellDblClick(row: number, col: number): Promise<void> {
     if (this.previewMode) return;
 
-    // Si ya había un origen: doble toque en la misma = cancelar; en otra rellena = nuevo origen
     if (this.moveSrcCell) {
       if (this.moveSrcCell.row === row && this.moveSrcCell.col === col) {
         this.moveSrcCell = null;
@@ -454,25 +422,20 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
         const pict = this.getCellPict(row, col)!;
         this.moveSrcCell = { row, col };
         (await this.toastCtrl.create({
-          message: `Toca destino para mover "${pict.label}". Doble toque aquí para cancelar.`,
-          duration: 3000,
-          color: 'dark',
-          position: 'bottom',
+          message:  `Toca destino para mover "${pict.label}". Doble toque aquí para cancelar.`,
+          duration: 3000, color: 'dark', position: 'bottom',
         })).present();
       }
       return;
     }
 
-    // Activar modo mover si la celda tiene pictograma
     const pict = this.getCellPict(row, col);
     if (!pict) return;
     this.moveSrcCell  = { row, col };
-    this.selectedCell = null; // quitar el foco del panel derecho
+    this.selectedCell = null;
     (await this.toastCtrl.create({
-      message: `Toca una celda destino para mover "${pict.label}". Doble toque para cancelar.`,
-      duration: 3000,
-      color: 'dark',
-      position: 'bottom',
+      message:  `Toca una celda destino para mover "${pict.label}". Doble toque para cancelar.`,
+      duration: 3000, color: 'dark', position: 'bottom',
     })).present();
   }
 
@@ -491,16 +454,11 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     const dstPict   = dstCellData?.pictogram ?? null;
     const dstAction = dstCellData?.action   ?? { type: 'voice' as ActionType, targetBoardId: null };
 
-    // Swap: build new cells list without src/dst, then add them swapped
     const newCells: BoardCell[] = this.board.cells.filter(
       (c) => !(c.row === srcRow && c.col === srcCol) &&
              !(c.row === dstRow && c.col === dstCol),
     );
-
-    // dst ← src's pict+action
     newCells.push({ row: dstRow, col: dstCol, pictogram: srcPict, action: srcAction });
-
-    // src ← dst's pict+action (only if dst was filled; else src becomes empty → omit)
     if (dstPict) {
       newCells.push({ row: srcRow, col: srcCol, pictogram: dstPict, action: dstAction });
     }
@@ -514,64 +472,14 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
         ? `✓ "${srcPict.label}" ⇆ "${dstPict.label}"`
         : `✓ "${srcPict.label}" movido`;
       (await this.toastCtrl.create({
-        message: msg,
-        duration: 1600,
-        color: 'success',
-        position: 'top',
+        message: msg, duration: 1600, color: 'success', position: 'top',
       })).present();
     } catch {
       (await this.toastCtrl.create({
-        message: 'Error al mover el pictograma.',
-        duration: 2200,
-        color: 'danger',
-        position: 'top',
+        message: 'Error al mover el pictograma.', duration: 2200, color: 'danger', position: 'top',
       })).present();
-      await this.loadBoard(); // revert local state
+      await this.loadBoard();
     }
-  }
-
-  /** Color base (Fitzgerald o manual) de la celda */
-  private getCellBaseColor(row: number, col: number): string | null {
-    const p = this.getCellPict(row, col);
-    if (!p) return null;
-    return p.fitzgeraldEnabled
-      ? (FITZGERALD[p.wordType as WordType] ?? '#f5f5f5')
-      : p.color || '#f5f5f5';
-  }
-
-  /** Fondo: tinte muy claro del color base (color-mix con blanco); gris si desactivado */
-  getCellBgColor(row: number, col: number): string {
-    if (this.getCellIsDisabled(row, col)) return '#eeeeee';
-    const base = this.getCellBaseColor(row, col);
-    if (!base) return '#ffffff';
-    return `color-mix(in srgb, ${base} 20%, white)`;
-  }
- /* getCellBgColor(row: number, col: number): string {
-    if (this.getCellIsDisabled(row, col)) return '#eeeeee';
-
-    const p = this.getCellPict(row, col);
-    if (!p) return '#ffffff';
-
-    if (!p.fitzgeraldEnabled && p.color) {
-      return p.color;
-    }
-
-    const base = this.getCellBaseColor(row, col);
-    if (!base) return '#ffffff';
-    return `color-mix(in srgb, ${base} 20%, white)`;
-  }*/
-
-  /** Borde: versión algo más saturada del mismo color base; gris si desactivado */
-  getCellBorderColor(row: number, col: number): string {
-    if (this.getCellIsDisabled(row, col)) return '#bdbdbd';
-    const base = this.getCellBaseColor(row, col);
-    if (!base) return '#ffb6c1';  // borde rosa por defecto (celda vacía)
-    if (base === '#ffffff') return '#cccccc'; // reborde gris visible en fallback blanco
-    return `color-mix(in srgb, ${base} 55%, white)`;
-  }
-
-  getCellIsDisabled(row: number, col: number): boolean {
-    return this.getCellData(row, col)?.action?.type === 'disabled';
   }
 
   // ── Selección de celda ───────────────────────────────────────────────────────
@@ -579,8 +487,6 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   onCellClick(row: number, col: number): void {
     if (this.previewMode) {
       if (this.isCircular) {
-        // Tap en el centro durante sim → reset (equivalente al binding previo
-        // `circularSimMode ? circularSimReset() : onCellClick(0,-1)` en template).
         if (this.circularSimMode && row === 0 && col === -1) {
           this.circularSimReset();
           return;
@@ -592,16 +498,14 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
       return;
     }
 
-    // ── Modo mover táctil: este toque es el destino ──────────────────────────
     if (this.moveSrcCell) {
       const src = { ...this.moveSrcCell };
       this.moveSrcCell = null;
-      if (src.row === row && src.col === col) return; // misma celda → cancelar
+      if (src.row === row && src.col === col) return;
       void this.executeCellMove(src.row, src.col, row, col);
       return;
     }
 
-    // ── Selección normal para edición ────────────────────────────────────────
     this.selectedCell = { row, col };
     const existing = this.getCellData(row, col);
     this.isEditingCell = !!existing?.pictogram;
@@ -652,35 +556,23 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   async saveCell(): Promise<void> {
     if (!this.selectedCell || !this.board) return;
     if (!this.pictForm.label.trim()) {
-      (
-        await this.toastCtrl.create({
-          message: 'Introduce una etiqueta para el pictograma.',
-          duration: 2200,
-          color: 'warning',
-          position: 'top',
-        })
-      ).present();
+      (await this.toastCtrl.create({
+        message: 'Introduce una etiqueta para el pictograma.',
+        duration: 2200, color: 'warning', position: 'top',
+      })).present();
       return;
     }
 
-    // Validación: tableros de distinto tipo no pueden enlazarse
     if (
-      (this.actionForm.type === 'navigate' ||
-        this.actionForm.type === 'voice+navigate') &&
+      (this.actionForm.type === 'navigate' || this.actionForm.type === 'voice+navigate') &&
       this.actionForm.targetBoardId
     ) {
-      const target = this.userBoards.find(
-        (b) => b._id === this.actionForm.targetBoardId,
-      );
+      const target = this.userBoards.find((b) => b._id === this.actionForm.targetBoardId);
       if (target && (target.shape ?? 'grid') !== (this.board.shape ?? 'grid')) {
-        (
-          await this.toastCtrl.create({
-            message: 'No se pueden enlazar tableros de distinto tipo.',
-            duration: 2800,
-            color: 'danger',
-            position: 'top',
-          })
-        ).present();
+        (await this.toastCtrl.create({
+          message: 'No se pueden enlazar tableros de distinto tipo.',
+          duration: 2800, color: 'danger', position: 'top',
+        })).present();
         return;
       }
     }
@@ -691,10 +583,7 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
       label: this.pictForm.label.trim(),
       imageUrl: this.pictForm.imageUrl,
       sound: this.pictForm.sound || this.pictForm.label.trim(),
-      tags: this.pictForm.tags
-        .split(',')
-        .map((t) => t.trim())
-        .filter(Boolean),
+      tags: this.pictForm.tags.split(',').map((t) => t.trim()).filter(Boolean),
       description: this.pictForm.description,
       wordType: this.pictForm.wordType,
       fitzgeraldEnabled: this.pictForm.fitzgeraldEnabled,
@@ -703,18 +592,14 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
         : this.pictForm.color,
     };
 
-    const isCenterCell =
-      this.selectedCell.row === 0 && this.selectedCell.col === -1;
+    const isCenterCell = this.selectedCell.row === 0 && this.selectedCell.col === -1;
     const action: CellAction = {
       type: this.actionForm.type,
       targetBoardId: this.actionForm.targetBoardId || null,
       aiGeneratedBoardTarget: this.isCircular ? this.actionFormAiTarget : false,
-      showLastPhrase:
-        this.isCircular && isCenterCell ? this.actionFormShowLastPhrase : false,
+      showLastPhrase: this.isCircular && isCenterCell ? this.actionFormShowLastPhrase : false,
     };
 
-    // Si es pictograma nuevo, guardarlo también en pictogramas del usuario
-    // (no aplicable en tableros compartidos entre varios usuarios)
     if (this.pictForm.source === 'new' && !this.isSharedBoard) {
       try {
         const payload: AddPictogramPayload = {
@@ -724,10 +609,7 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
           wordType: pict.wordType,
           description: pict.description,
         };
-        await firstValueFrom(
-          this.userSvc.addPictogramToUser(this.board.userId, payload),
-        );
-        // Refrescar lista personal
+        await firstValueFrom(this.userSvc.addPictogramToUser(this.board.userId, payload));
         this.loadPersonalPicts(this.board.userId);
       } catch {
         /* no crítico */
@@ -746,25 +628,14 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
       );
       this.board = res.board;
       this.isEditingCell = true;
-      (
-        await this.toastCtrl.create({
-          message: this.isEditingCell
-            ? '✓ Pictograma actualizado'
-            : '✓ Pictograma añadido',
-          duration: 1800,
-          color: 'success',
-          position: 'top',
-        })
-      ).present();
+      (await this.toastCtrl.create({
+        message: this.isEditingCell ? '✓ Pictograma actualizado' : '✓ Pictograma añadido',
+        duration: 1800, color: 'success', position: 'top',
+      })).present();
     } catch {
-      (
-        await this.toastCtrl.create({
-          message: 'Error al guardar el pictograma.',
-          duration: 2500,
-          color: 'danger',
-          position: 'top',
-        })
-      ).present();
+      (await this.toastCtrl.create({
+        message: 'Error al guardar el pictograma.', duration: 2500, color: 'danger', position: 'top',
+      })).present();
     } finally {
       this.isSaving = false;
     }
@@ -793,14 +664,9 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
               this.isEditingCell = false;
               this.pictForm = this.emptyPictForm();
             } catch {
-              (
-                await this.toastCtrl.create({
-                  message: 'Error al eliminar.',
-                  duration: 2000,
-                  color: 'danger',
-                  position: 'top',
-                })
-              ).present();
+              (await this.toastCtrl.create({
+                message: 'Error al eliminar.', duration: 2000, color: 'danger', position: 'top',
+              })).present();
             }
           },
         },
@@ -809,93 +675,79 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     await alert.present();
   }
 
-  // ── Guardar configuración (columna izquierda) ─────────────────────────────────
+  // ── Guardar configuración (delegado desde BoardSidebarLeftComponent) ───────────
 
-  async saveConfig(): Promise<void> {
+  /**
+   * Recibe el payload del sidebar cuando el usuario pulsa "Guardar configuración".
+   * Comprueba si hay pérdida de celdas (solo para grid), pide confirmación si es
+   * el caso, y luego delega en doSaveConfig().
+   */
+  async onSaveConfigRequest(payload: BoardSidebarConfig): Promise<void> {
     if (!this.board) return;
 
-    // Verificar si reducir filas/cols elimina pictogramas (solo para grid)
     const willLoseCells =
       !this.isCircular &&
       this.board.cells.some(
-        (c) => c.pictogram && (c.row >= this.cfgRows || c.col >= this.cfgCols),
+        (c) => c.pictogram && (c.row >= payload.rows || c.col >= payload.cols),
       );
 
     if (willLoseCells) {
       const alert = await this.alertCtrl.create({
         header: 'Perderás pictogramas',
-        message:
-          'Reducir el tamaño del tablero eliminará algunos pictogramas. ¿Continuar?',
+        message: 'Reducir el tamaño del tablero eliminará algunos pictogramas. ¿Continuar?',
         buttons: [
           { text: 'Cancelar', role: 'cancel' },
-          {
-            text: 'Continuar',
-            handler: () => {
-              this.doSaveConfig();
-            },
-          },
+          { text: 'Continuar', handler: () => { this.doSaveConfig(payload); } },
         ],
       });
       await alert.present();
     } else {
-      this.doSaveConfig();
+      this.doSaveConfig(payload);
     }
   }
 
-  private async doSaveConfig(): Promise<void> {
+  private async doSaveConfig(payload: BoardSidebarConfig): Promise<void> {
     if (!this.board) return;
-    this.cfgSaving = true;
+    this.sidebarSaving = true;
     try {
-      // Filtrar celdas que quedan fuera del nuevo tamaño (sólo grid)
       const remainingCells = this.isCircular
-        ? this.board.cells // circular: todas las celdas son válidas (coords especiales)
-        : this.board.cells.filter(
-            (c) => c.row < this.cfgRows && c.col < this.cfgCols,
-          );
+        ? this.board.cells
+        : this.board.cells.filter((c) => c.row < payload.rows && c.col < payload.cols);
 
       const res = await firstValueFrom(
         this.boardSvc.updateBoard(this.boardId, {
-          name: this.cfgName,
-          imageUrl: this.cfgImageB64 ?? '',
-          userId: this.cfgAssignedUserIds[0] || this.cfgUserId,
-          assignedUserIds: this.cfgAssignedUserIds,
-          rows: this.cfgRows,
-          columns: this.cfgCols,
-          circleSlots: this.cfgCircleSlots,
-          locationColumnEnabled: this.cfgLocationEnabled,
-          locationColumnSlots: this.cfgLocationSlots,
-          predictorEnabled: this.cfgPredictor,
-          aiRewriteEnabled: this.cfgAiRewrite,
-          iaRows: this.cfgIaRows,
-          iaCols: this.cfgIaCols,
-          boardRole: this.cfgBoardRole,
-          cells: remainingCells,
+          name:                  payload.name,
+          imageUrl:              payload.imageB64 ?? '',
+          userId:                payload.assignedUserIds[0] || '',
+          assignedUserIds:       payload.assignedUserIds,
+          rows:                  payload.rows,
+          columns:               payload.cols,
+          circleSlots:           payload.circleSlots,
+          locationColumnEnabled: payload.locationEnabled,
+          locationColumnSlots:   payload.locationSlots,
+          predictorEnabled:      payload.predictor,
+          aiRewriteEnabled:      payload.aiRewrite,
+          iaRows:                payload.iaRows,
+          iaCols:                payload.iaCols,
+          boardRole:             payload.boardRole,
+          cells:                 remainingCells,
         }),
       );
       this.board = res.board;
+      // Nuevo objeto → ngOnChanges en el sidebar resetea el formulario
       this.syncConfigFromBoard();
-      // Recargar tableros disponibles y pictogramas del usuario asignado
-      this.loadUserBoards(this.cfgAssignedUserIds);
-      this.loadPersonalPicts(this.cfgAssignedUserIds[0] || this.cfgUserId);
-      (
-        await this.toastCtrl.create({
-          message: '✓ Configuración guardada',
-          duration: 1800,
-          color: 'success',
-          position: 'top',
-        })
-      ).present();
+      const assignedIds = this.board.assignedUserIds ?? [];
+      this.loadUserBoards(assignedIds);
+      this.loadPersonalPicts(assignedIds[0] || this.board.userId);
+      (await this.toastCtrl.create({
+        message: '✓ Configuración guardada', duration: 1800, color: 'success', position: 'top',
+      })).present();
     } catch {
-      (
-        await this.toastCtrl.create({
-          message: 'Error al guardar la configuración.',
-          duration: 2500,
-          color: 'danger',
-          position: 'top',
-        })
-      ).present();
+      (await this.toastCtrl.create({
+        message: 'Error al guardar la configuración.', duration: 2500, color: 'danger', position: 'top',
+      })).present();
     } finally {
-      this.cfgSaving = false;
+      this.sidebarSaving = false;
     }
   }
 
@@ -906,7 +758,7 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     if (this.previewMode) {
       this.aacPhrase = [];
       this.selectedCell = null;
-      this.moveSrcCell  = null; // cancelar modo mover táctil al entrar en preview
+      this.moveSrcCell  = null;
       this.circularSimMode = false;
       this.circularSimCenter = null;
       void this.aacRuntime.startSession('', this.boardId, 'preview');
@@ -920,19 +772,15 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     if (!cell?.pictogram) return;
     if (cell.action?.type === 'disabled') return;
 
-    // Delegate voice + OBL logging to the runtime service
     this.aacRuntime.handlePictogramPress(cell, this.boardId);
-    // Keep local copy in sync for the template (map AacPhraseItem → CellPictogram)
     this.aacPhrase = this.aacRuntime.phrase.map(p => this.phraseItemToCellPict(p));
 
-    // Board navigation: load the target board inside the editor (preview stays active)
-    // La frase NO se borra al navegar (sigue acumulando pictogramas entre tableros)
     const type = cell.action?.type ?? 'voice';
     if (type === 'navigate' || type === 'voice+navigate') {
       const targetId = cell.action.targetBoardId;
       if (targetId) {
         this.boardId = targetId;
-        this.loadBoard(); // previewMode sigue siendo true
+        this.loadBoard();
       }
     }
   }
@@ -951,19 +799,11 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     this.aacRuntime.speakPhrase();
   }
 
-  /** Maps an AacPhraseItem back to the minimal CellPictogram shape used by the editor template. */
   private phraseItemToCellPict(p: import('../../services/aac-runtime.service').AacPhraseItem): CellPictogram {
     return {
-      source:            'arasaac',
-      id:                p.id,
-      label:             p.label,
-      imageUrl:          p.imageUrl,
-      sound:             p.sound,
-      tags:              [],
-      description:       '',
-      wordType:          'misc',
-      fitzgeraldEnabled: false,
-      color:             '',
+      source: 'arasaac', id: p.id, label: p.label, imageUrl: p.imageUrl,
+      sound: p.sound, tags: [], description: '', wordType: 'misc',
+      fitzgeraldEnabled: false, color: '',
     };
   }
 
@@ -983,7 +823,6 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   private async searchArasaac(q: string): Promise<void> {
     this.arasaacSearching = true;
     try {
-      // Reutilizamos el endpoint backend que ya existe
       const res = await fetch(
         `http://localhost:4000/api/arasaac/search?query=${encodeURIComponent(q)}&lang=es`,
         { headers: { Authorization: `Bearer ${this.authSvc.getToken()}` } },
@@ -1016,16 +855,11 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   }
 
   private inferWordType(keywords: string[]): WordType {
-    // Inferencia básica por keywords — puede mejorarse
     const kw = keywords.join(' ').toLowerCase();
-    if (/\b(yo|tú|él|ella|nosotros|ellos|vosotros|usted)\b/.test(kw))
-      return 'pronoun';
-    if (/\b(comer|beber|dormir|jugar|ir|quiero|necesito|hacer)\b/.test(kw))
-      return 'verb';
-    if (/\b(grande|pequeño|rojo|azul|caliente|frío|bonito|feliz)\b/.test(kw))
-      return 'descriptor';
-    if (/\b(hola|gracias|por favor|sí|no|adiós|perdona)\b/.test(kw))
-      return 'social';
+    if (/\b(yo|tú|él|ella|nosotros|ellos|vosotros|usted)\b/.test(kw)) return 'pronoun';
+    if (/\b(comer|beber|dormir|jugar|ir|quiero|necesito|hacer)\b/.test(kw)) return 'verb';
+    if (/\b(grande|pequeño|rojo|azul|caliente|frío|bonito|feliz)\b/.test(kw)) return 'descriptor';
+    if (/\b(hola|gracias|por favor|sí|no|adiós|perdona)\b/.test(kw)) return 'social';
     return 'misc';
   }
 
@@ -1053,7 +887,7 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     }
   }
 
-  // ── Imagen nueva ──────────────────────────────────────────────────────────────
+  // ── Imagen nueva (celda) ──────────────────────────────────────────────────────
 
   pickImage(): void {
     const input = document.createElement('input');
@@ -1063,14 +897,9 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
       if (file.size > 2 * 1024 * 1024) {
-        (
-          await this.toastCtrl.create({
-            message: 'La imagen supera 2 MB',
-            duration: 2500,
-            color: 'warning',
-            position: 'top',
-          })
-        ).present();
+        (await this.toastCtrl.create({
+          message: 'La imagen supera 2 MB', duration: 2500, color: 'warning', position: 'top',
+        })).present();
         return;
       }
       const reader = new FileReader();
@@ -1086,47 +915,12 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     input.click();
   }
 
-  // ── Imagen del tablero (config) ───────────────────────────────────────────────
-
-  pickBoardImage(): void {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/jpeg,image/png,image/gif,image/webp';
-    input.onchange = async (e: Event) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return;
-      if (file.size > 2 * 1024 * 1024) {
-        (
-          await this.toastCtrl.create({
-            message: 'La imagen supera 2 MB',
-            duration: 2500,
-            color: 'warning',
-            position: 'top',
-          })
-        ).present();
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        this.cfgImageB64 = ev.target!.result as string;
-      };
-      reader.readAsDataURL(file);
-    };
-    input.click();
-  }
-
-  removeBoardImage(): void {
-    this.cfgImageB64 = null;
-  }
-
   // ── OBF / OBZ ────────────────────────────────────────────────────────────────
 
-  /** Exporta el tablero actual y sus tableros enlazados como paquete .obz */
   async exportOBZ(): Promise<void> {
     if (!this.board) {
       (await this.toastCtrl.create({
-        message: 'No hay tablero cargado para exportar.',
-        duration: 2500, color: 'danger', position: 'top',
+        message: 'No hay tablero cargado para exportar.', duration: 2500, color: 'danger', position: 'top',
       })).present();
       return;
     }
@@ -1135,7 +929,6 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
       const { boards, warnings } = await this.obfExportSvc.collectLinkedBoards(this.board);
       const { blob, boardCount } = await this.obfExportSvc.buildOBZPackage(this.board, boards);
 
-      // Descargar
       const safeName = this.obfExportSvc.makeSafeName(this.board.name);
       const blobUrl  = URL.createObjectURL(blob);
       const anchor   = document.createElement('a');
@@ -1144,33 +937,29 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
       anchor.click();
       URL.revokeObjectURL(blobUrl);
 
-      // Toast + alerta de avisos
       (await this.toastCtrl.create({
-        message:  `✓ Exportado como ${safeName}.obz · ${boardCount} tablero(s)`
+        message: `✓ Exportado como ${safeName}.obz · ${boardCount} tablero(s)`
           + (warnings.length ? ` · ${warnings.length} aviso(s)` : ''),
         duration: 3000, color: 'success', position: 'top',
       })).present();
 
       if (warnings.length > 0) {
-        const alert = await this.alertCtrl.create({
+        (await this.alertCtrl.create({
           header:  'Avisos de exportación OBZ',
           message: warnings.map((w) => `• ${w}`).join('\n'),
           buttons: ['Cerrar'],
-        });
-        await alert.present();
+        })).present();
       }
     } catch (err) {
       console.error('exportOBZ:', err);
       (await this.toastCtrl.create({
-        message: 'Error al generar el paquete OBZ.',
-        duration: 2500, color: 'danger', position: 'top',
+        message: 'Error al generar el paquete OBZ.', duration: 2500, color: 'danger', position: 'top',
       })).present();
     } finally {
       this.isSaving = false;
     }
   }
 
-  /** Abre selector de archivo y lanza la importación OBF */
   async importOBF(): Promise<void> {
     const input = document.createElement('input');
     input.type = 'file';
@@ -1184,174 +973,106 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
         try {
           parsed = JSON.parse(text);
         } catch {
-          (
-            await this.toastCtrl.create({
-              message: 'El archivo no contiene JSON válido.',
-              duration: 2500,
-              color: 'danger',
-              position: 'top',
-            })
-          ).present();
+          (await this.toastCtrl.create({
+            message: 'El archivo no contiene JSON válido.', duration: 2500, color: 'danger', position: 'top',
+          })).present();
           return;
         }
         await this.processOBFImport(parsed as ObfDocumentOBZ);
       } catch (err) {
         console.error('importOBF error:', err);
-        (
-          await this.toastCtrl.create({
-            message: 'Error al leer el archivo OBF.',
-            duration: 2500,
-            color: 'danger',
-            position: 'top',
-          })
-        ).present();
+        (await this.toastCtrl.create({
+          message: 'Error al leer el archivo OBF.', duration: 2500, color: 'danger', position: 'top',
+        })).present();
       }
     };
     input.click();
   }
 
-  /** Valida, parsea y aplica el OBF al tablero activo */
   private async processOBFImport(doc: ObfDocumentOBZ): Promise<void> {
-    // ── 1. Validación de estructura básica ─────────────────────────────────
     if (doc.format && doc.format !== 'open-board-0.1') {
-      (
-        await this.toastCtrl.create({
-          message: `Formato no reconocido: "${doc.format}". Solo se soporta open-board-0.1.`,
-          duration: 3000,
-          color: 'danger',
-          position: 'top',
-        })
-      ).present();
+      (await this.toastCtrl.create({
+        message: `Formato no reconocido: "${doc.format}". Solo se soporta open-board-0.1.`,
+        duration: 3000, color: 'danger', position: 'top',
+      })).present();
       return;
     }
     if (!Array.isArray(doc.buttons)) {
-      (
-        await this.toastCtrl.create({
-          message: 'El OBF no contiene un array buttons[] válido.',
-          duration: 2500,
-          color: 'danger',
-          position: 'top',
-        })
-      ).present();
+      (await this.toastCtrl.create({
+        message: 'El OBF no contiene un array buttons[] válido.',
+        duration: 2500, color: 'danger', position: 'top',
+      })).present();
       return;
     }
     const grid = doc.grid;
-    if (
-      !grid ||
-      typeof grid.rows !== 'number' ||
-      typeof grid.columns !== 'number' ||
-      !Array.isArray(grid.order)
-    ) {
-      (
-        await this.toastCtrl.create({
-          message:
-            'El OBF no tiene grid válido (rows, columns, order son obligatorios).',
-          duration: 2500,
-          color: 'danger',
-          position: 'top',
-        })
-      ).present();
+    if (!grid || typeof grid.rows !== 'number' || typeof grid.columns !== 'number' || !Array.isArray(grid.order)) {
+      (await this.toastCtrl.create({
+        message: 'El OBF no tiene grid válido (rows, columns, order son obligatorios).',
+        duration: 2500, color: 'danger', position: 'top',
+      })).present();
       return;
     }
 
-    // ── 2. Detectar layout circular → no soportado en Fase 2 ──────────────
     const isCircularOBF =
       doc.ext_isaac_layout === 'circular' ||
-      doc.buttons.some(
-        (b) => b.ext_isaac_role === 'center' || b.ext_isaac_role === 'outer',
-      );
+      doc.buttons.some((b) => b.ext_isaac_role === 'center' || b.ext_isaac_role === 'outer');
 
     if (isCircularOBF) {
-      (
-        await this.toastCtrl.create({
-          message:
-            'La importación OBF circular aún no está disponible. Solo se importan tableros de cuadrícula.',
-          duration: 4000,
-          color: 'warning',
-          position: 'top',
-        })
-      ).present();
+      (await this.toastCtrl.create({
+        message: 'La importación OBF circular aún no está disponible. Solo se importan tableros de cuadrícula.',
+        duration: 4000, color: 'warning', position: 'top',
+      })).present();
       return;
     }
 
-    // ── 3. Verificar tablero destino ───────────────────────────────────────
     if (!this.board) {
-      (
-        await this.toastCtrl.create({
-          message:
-            'No hay tablero activo. Abre un tablero en el editor antes de importar.',
-          duration: 2500,
-          color: 'warning',
-          position: 'top',
-        })
-      ).present();
+      (await this.toastCtrl.create({
+        message: 'No hay tablero activo. Abre un tablero en el editor antes de importar.',
+        duration: 2500, color: 'warning', position: 'top',
+      })).present();
       return;
     }
     if (this.board.shape === 'circular') {
-      (
-        await this.toastCtrl.create({
-          message:
-            'El tablero actual es circular. La importación OBF solo está disponible en tableros de cuadrícula.',
-          duration: 3500,
-          color: 'warning',
-          position: 'top',
-        })
-      ).present();
+      (await this.toastCtrl.create({
+        message: 'El tablero actual es circular. La importación OBF solo está disponible en tableros de cuadrícula.',
+        duration: 3500, color: 'warning', position: 'top',
+      })).present();
       return;
     }
 
-    // ── 4. Recopilar advertencias informativas ────────────────────────────
     const warnings: string[] = [];
     const images: ObfImageOBZ[] = doc.images ?? [];
 
     if (images.some((img) => img.path && !img.data && !img.url)) {
-      warnings.push(
-        'Algunas imágenes usan rutas de ZIP (.obz) y se importarán sin imagen.',
-      );
+      warnings.push('Algunas imágenes usan rutas de ZIP (.obz) y se importarán sin imagen.');
     }
     if (doc.buttons.some((b) => b.load_board)) {
-      warnings.push(
-        'Hay enlaces a otros tableros (load_board) que no se resolverán en OBF individual.',
-      );
+      warnings.push('Hay enlaces a otros tableros (load_board) que no se resolverán en OBF individual.');
     }
     const specialActions = [
       ...new Set(
         doc.buttons
           .map((b) => b.action)
-          .filter(
-            (a): a is string =>
-              !!a && a !== ':ext_isaac_disabled' && a.startsWith(':'),
-          ),
+          .filter((a): a is string => !!a && a !== ':ext_isaac_disabled' && a.startsWith(':')),
       ),
     ];
     if (specialActions.length > 0) {
-      warnings.push(
-        `Acciones especiales ignoradas: ${specialActions.join(', ')}`,
-      );
+      warnings.push(`Acciones especiales ignoradas: ${specialActions.join(', ')}`);
     }
 
-    // ── 5. Mapa de imágenes: id → URL resuelta ─────────────────────────────
-    // Prioridad OBF: data > path (no resoluble sin ZIP) > url
     const imgMap = new Map<string, string>();
     for (const img of images) {
       const imgId = String(img.id);
-      if (img.data) {
-        imgMap.set(imgId, img.data);
-      } else if (img.url) {
-        imgMap.set(imgId, img.url);
-      } else if (img.path) {
-        imgMap.set(imgId, '');
-      } // path sin ZIP → vacío
-      // symbol: sin soporte en ISAAC → ignorado
+      if (img.data) { imgMap.set(imgId, img.data); }
+      else if (img.url) { imgMap.set(imgId, img.url); }
+      else if (img.path) { imgMap.set(imgId, ''); }
     }
 
-    // ── 6. Mapa de botones: id → ObfButtonOBZ ───────────────────────────────
     const btnMap = new Map<string, ObfButtonOBZ>();
     for (const btn of doc.buttons) {
       btnMap.set(String(btn.id), btn);
     }
 
-    // ── 6b. Pre-cargar metadata ARASAAC para botones sin color explícito ────
     const metaByBtnId = new Map<string, Record<string, unknown> | null>();
     const metaFetches = doc.buttons
       .filter((btn) => !btn.background_color && btn.image_id !== undefined && btn.image_id !== null)
@@ -1366,7 +1087,6 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
       });
     await Promise.all(metaFetches);
 
-    // ── 7. Convertir grid.order a cells[] ────────────────────────────────
     const rows = grid.rows;
     const columns = grid.columns;
     const cells: BoardCell[] = [];
@@ -1382,20 +1102,13 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
 
         const btnId = String(rawId);
         const btn = btnMap.get(btnId);
-        if (!btn) {
-          missingBtns.push(btnId);
-          continue;
-        }
+        if (!btn) { missingBtns.push(btnId); continue; }
 
-        // Resolver imagen
         let imageUrl = '';
         if (btn.image_id !== undefined && btn.image_id !== null) {
           const imgId = String(btn.image_id);
-          if (imgMap.has(imgId)) {
-            imageUrl = imgMap.get(imgId) ?? '';
-          } else {
-            missingImgs.push(imgId);
-          }
+          if (imgMap.has(imgId)) { imageUrl = imgMap.get(imgId) ?? ''; }
+          else { missingImgs.push(imgId); }
         }
 
         const label = btn.label?.trim() || `Pictograma ${btnId}`;
@@ -1406,11 +1119,11 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
         let fitzgeraldEnabled: boolean;
 
         if (btn.background_color) {
-          color              = this.obzImportSvc.normalizeCssColorToHex(btn.background_color);
-          wordType           = 'misc';
-          fitzgeraldEnabled  = false;
+          color             = this.obzImportSvc.normalizeCssColorToHex(btn.background_color);
+          wordType          = 'misc';
+          fitzgeraldEnabled = false;
         } else {
-          const meta     = metaByBtnId.get(btnId) ?? null;
+          const meta    = metaByBtnId.get(btnId) ?? null;
           const inferred = meta
             ? this.obzImportSvc.inferWordTypeFromLocalArasaacMetadata(meta, label)
             : null;
@@ -1426,42 +1139,27 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
         }
 
         const pict: CellPictogram = {
-          source: 'custom',
-          id: btnId,
-          label,
-          imageUrl,
-          sound,
-          tags: [],
-          description: '',
-          wordType,
-          fitzgeraldEnabled,
-          color,
+          source: 'custom', id: btnId, label, imageUrl, sound,
+          tags: [], description: '', wordType, fitzgeraldEnabled, color,
         };
         const action: CellAction = {
           type: this.obzImportSvc.resolveObzActionType(btn),
-          targetBoardId: null, // load_board no se resuelve en OBF individual
+          targetBoardId: null,
         };
-
         cells.push({ row: r, col: c, pictogram: pict, action });
       }
     }
 
     if (missingBtns.length > 0) {
-      warnings.push(
-        `${missingBtns.length} celda(s) con button ID desconocido → importadas vacías.`,
-      );
+      warnings.push(`${missingBtns.length} celda(s) con button ID desconocido → importadas vacías.`);
     }
     if (missingImgs.length > 0) {
-      warnings.push(
-        `${missingImgs.length} referencia(s) image_id sin imagen → importadas sin imagen.`,
-      );
+      warnings.push(`${missingImgs.length} referencia(s) image_id sin imagen → importadas sin imagen.`);
     }
 
-    // ── 8. Diálogo de confirmación ────────────────────────────────────────
     const importedName = doc.name?.trim() || 'Tablero importado';
-    let confirmMsg =
-      `Se reemplazará "${this.board.name}" por "${importedName}" ` +
-      `(${rows}×${columns}, ${cells.length} celda(s) con pictograma).`;
+    let confirmMsg = `Se reemplazará "${this.board.name}" por "${importedName}" `
+      + `(${rows}×${columns}, ${cells.length} celda(s) con pictograma).`;
     if (warnings.length > 0) {
       confirmMsg += '\n\nAvisos:\n' + warnings.map((w) => `• ${w}`).join('\n');
     }
@@ -1471,23 +1169,14 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
       message: confirmMsg,
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
-        {
-          text: 'Importar',
-          handler: () => {
-            void this.applyOBFImport(importedName, rows, columns, cells);
-          },
-        },
+        { text: 'Importar', handler: () => { void this.applyOBFImport(importedName, rows, columns, cells); } },
       ],
     });
     await alert.present();
   }
 
-  /** Guarda el tablero importado en backend y refresca el editor */
   private async applyOBFImport(
-    name: string,
-    rows: number,
-    columns: number,
-    cells: BoardCell[],
+    name: string, rows: number, columns: number, cells: BoardCell[],
   ): Promise<void> {
     if (!this.board) return;
     this.isLoading = true;
@@ -1501,23 +1190,15 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
       this.isEditingCell = false;
       this.pictForm = this.emptyPictForm();
       this.actionForm = { type: 'voice', targetBoardId: '' };
-      (
-        await this.toastCtrl.create({
-          message: `✓ OBF importado: "${name}" · ${cells.length} celda(s)`,
-          duration: 2500,
-          color: 'success',
-          position: 'top',
-        })
-      ).present();
+      (await this.toastCtrl.create({
+        message: `✓ OBF importado: "${name}" · ${cells.length} celda(s)`,
+        duration: 2500, color: 'success', position: 'top',
+      })).present();
     } catch {
-      (
-        await this.toastCtrl.create({
-          message: 'Error al guardar el tablero importado en el servidor.',
-          duration: 2500,
-          color: 'danger',
-          position: 'top',
-        })
-      ).present();
+      (await this.toastCtrl.create({
+        message: 'Error al guardar el tablero importado en el servidor.',
+        duration: 2500, color: 'danger', position: 'top',
+      })).present();
     } finally {
       this.isLoading = false;
     }
@@ -1525,11 +1206,6 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
 
   // ── OBZ Import ───────────────────────────────────────────────────────────────
 
-  /**
-   * Importa un paquete .obz usando el servicio compartido.
-   * El tablero raíz del OBZ actualiza el tablero activo (existingRootBoardId).
-   * Los tableros enlazados se crean como secundarios con los mismos usuarios asignados.
-   */
   async importOBZ(): Promise<void> {
     const input  = document.createElement('input');
     input.type   = 'file';
@@ -1548,17 +1224,13 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
         return;
       }
 
-      // Resolver userId/assignedUserIds desde el estado actual del editor
-      const effectiveAssignedUserIds =
-        this.cfgAssignedUserIds?.length
-          ? this.cfgAssignedUserIds.map(String)
-          : this.board?.assignedUserIds?.length
-            ? this.board.assignedUserIds.map(String)
-            : this.board?.userId
-              ? [String(this.board.userId)]
-              : this.cfgUserId
-                ? [String(this.cfgUserId)]
-                : [];
+      // Usar el board guardado como fuente de verdad para usuarios asignados
+      const effectiveAssignedUserIds: string[] =
+        (this.board?.assignedUserIds ?? []).length
+          ? (this.board!.assignedUserIds ?? []).map(String)
+          : this.board?.userId
+            ? [String(this.board.userId)]
+            : [];
       const effectiveUserId = effectiveAssignedUserIds[0] ?? '';
 
       if (!effectiveUserId) {
@@ -1578,7 +1250,6 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
           contextCreatorId:    this.contextCreatorId || undefined,
         });
 
-        // Recargar el tablero activo y resetear selección
         await this.loadBoard();
         this.selectedCell  = null;
         this.isEditingCell = false;
@@ -1601,8 +1272,7 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
       } catch (err) {
         console.error('importOBZ error:', err);
         (await this.toastCtrl.create({
-          message: 'Error durante la importación OBZ.',
-          duration: 3000, color: 'danger', position: 'top',
+          message: 'Error durante la importación OBZ.', duration: 3000, color: 'danger', position: 'top',
         })).present();
       } finally {
         this.isLoading = false;
@@ -1611,13 +1281,10 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     input.click();
   }
 
-
-  /** Exporta el tablero actual como archivo .obf (Open Board Format 0.1) */
   async exportOBF(): Promise<void> {
     if (!this.board) {
       (await this.toastCtrl.create({
-        message: 'No hay tablero cargado para exportar.',
-        duration: 2500, color: 'danger', position: 'top',
+        message: 'No hay tablero cargado para exportar.', duration: 2500, color: 'danger', position: 'top',
       })).present();
       return;
     }
@@ -1626,8 +1293,7 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
       const error = this.obfExportSvc.validateOBF(obf);
       if (error) {
         (await this.toastCtrl.create({
-          message: `OBF inválido: ${error}`,
-          duration: 3000, color: 'danger', position: 'top',
+          message: `OBF inválido: ${error}`, duration: 3000, color: 'danger', position: 'top',
         })).present();
         return;
       }
@@ -1641,14 +1307,12 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
       anchor.click();
       URL.revokeObjectURL(blobUrl);
       (await this.toastCtrl.create({
-        message: `✓ Exportado como ${safeName}.obf`,
-        duration: 2500, color: 'success', position: 'top',
+        message: `✓ Exportado como ${safeName}.obf`, duration: 2500, color: 'success', position: 'top',
       })).present();
     } catch (err) {
       console.error('exportOBF:', err);
       (await this.toastCtrl.create({
-        message: 'Error al generar el archivo OBF.',
-        duration: 2500, color: 'danger', position: 'top',
+        message: 'Error al generar el archivo OBF.', duration: 2500, color: 'danger', position: 'top',
       })).present();
     }
   }
@@ -1658,7 +1322,6 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   async addToProfile(): Promise<void> {
     if (!this.board) return;
 
-    // Nombre por defecto
     const defName  = this.board.profileName  || this.board.name;
     const defDesc  = this.board.profileDescription || '';
     const defImage = this.board.profileImage || this.board.imageUrl || '';
@@ -1668,18 +1331,12 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
       message: 'Este tablero aparecerá en el perfil del usuario asignado.',
       inputs: [
         {
-          name:        'profileName',
-          type:        'text',
-          value:       defName,
-          placeholder: 'Nombre visible',
-          attributes:  { maxlength: 60 },
+          name: 'profileName', type: 'text', value: defName,
+          placeholder: 'Nombre visible', attributes: { maxlength: 60 },
         },
         {
-          name:        'profileDescription',
-          type:        'textarea',
-          value:       defDesc,
-          placeholder: 'Descripción breve (opcional)',
-          attributes:  { maxlength: 200, rows: 2 },
+          name: 'profileDescription', type: 'textarea', value: defDesc,
+          placeholder: 'Descripción breve (opcional)', attributes: { maxlength: 200, rows: 2 },
         },
       ],
       buttons: [
@@ -1698,13 +1355,12 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
               );
               this.board = res.board;
               (await this.toastCtrl.create({
-                message:  '✓ Tablero añadido al perfil del usuario',
+                message: '✓ Tablero añadido al perfil del usuario',
                 duration: 2500, color: 'success', position: 'top',
               })).present();
             } catch {
               (await this.toastCtrl.create({
-                message:  'Error al actualizar el perfil.',
-                duration: 2500, color: 'danger', position: 'top',
+                message: 'Error al actualizar el perfil.', duration: 2500, color: 'danger', position: 'top',
               })).present();
             }
           },
@@ -1722,34 +1378,68 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
       );
       this.board = res.board;
       (await this.toastCtrl.create({
-        message:  'Tablero eliminado del perfil',
-        duration: 2000, color: 'medium', position: 'top',
+        message: 'Tablero eliminado del perfil', duration: 2000, color: 'medium', position: 'top',
       })).present();
     } catch {
       (await this.toastCtrl.create({
-        message:  'Error al actualizar el perfil.',
-        duration: 2000, color: 'danger', position: 'top',
+        message: 'Error al actualizar el perfil.', duration: 2000, color: 'danger', position: 'top',
       })).present();
     }
   }
 
-  /** true cuando el tablero está asignado a más de un usuario.
-   *  En ese caso los pictogramas personales no están disponibles. */
+  // ── Getters de estado ─────────────────────────────────────────────────────────
+
+  /** true cuando el tablero está asignado a más de un usuario. */
   get isSharedBoard(): boolean {
-    return this.cfgAssignedUserIds.length > 1;
+    return (this.board?.assignedUserIds?.length ?? 1) > 1;
   }
 
-  /** Getter: mostrar botón "Añadir al perfil" solo en tableros principales con usuario */
   get canAddToProfile(): boolean {
     return (this.board?.boardRole ?? 'main') === 'main' && !!this.board?.userId;
   }
 
-  /** Getter: el tablero ya está visible en el perfil */
   get isInProfile(): boolean {
     return !!this.board?.visibleInProfile;
   }
 
-  // ── Navegación a otro tablero del panel izquierdo ─────────────────────────────
+  get isCircular(): boolean {
+    return this.board?.shape === 'circular';
+  }
+
+  get hasSelectedCell(): boolean {
+    return !!this.selectedCell;
+  }
+
+  get previewBoardName(): string {
+    return this.board?.name ?? '';
+  }
+
+  /** Solo tableros del mismo shape que el actual (para el selector de navegación). */
+  get sameShapeBoards(): Board[] {
+    const shape = this.board?.shape ?? 'grid';
+    return this.userBoards.filter((b) => (b.shape ?? 'grid') === shape);
+  }
+
+  // ── Helpers de formulario ─────────────────────────────────────────────────────
+
+  get fitzgeraldColor(): string {
+    if (!this.pictForm.fitzgeraldEnabled) return this.pictForm.color || '#f5f5f5';
+    return FITZGERALD[this.pictForm.wordType] ?? '#f5f5f5';
+  }
+
+  get fitzgeraldBgColor(): string {
+    return `color-mix(in srgb, ${this.fitzgeraldColor} 20%, white)`;
+  }
+
+  get fitzgeraldBorderColor(): string {
+    return `color-mix(in srgb, ${this.fitzgeraldColor} 55%, white)`;
+  }
+
+  buildSafeUrl(url?: string | null): SafeUrl | string {
+    return buildSafeUrlUtil(url, this.sanitizer);
+  }
+
+  // ── Navegación ────────────────────────────────────────────────────────────────
 
   openBoard(boardId: string): void {
     if (!boardId) return;
@@ -1762,10 +1452,7 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     });
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────────
-
   goBack(): void {
-    // Volver al builder propagando el contexto para que filtre por el creador correcto
     this.router.navigate([this.returnTo], {
       queryParams: {
         creatorId:   this.contextCreatorId   || undefined,
@@ -1774,207 +1461,6 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     });
   }
 
-  buildSafeUrl(url?: string | null): SafeUrl | string {
-    return buildSafeUrlUtil(url, this.sanitizer);
-  }
-
-  /** Color base del formulario (Fitzgerald o manual) */
-  get fitzgeraldColor(): string {
-    if (!this.pictForm.fitzgeraldEnabled)
-      return this.pictForm.color || '#f5f5f5';
-    return FITZGERALD[this.pictForm.wordType] ?? '#f5f5f5';
-  }
-
-  /** Fondo claro para la preview del pictograma en el formulario (mismo tinte que las celdas) */
-  get fitzgeraldBgColor(): string {
-    return `color-mix(in srgb, ${this.fitzgeraldColor} 20%, white)`;
-  }
-
-  /** Borde semisaturado para la preview del pictograma en el formulario */
-  get fitzgeraldBorderColor(): string {
-    return `color-mix(in srgb, ${this.fitzgeraldColor} 55%, white)`;
-  }
-
-  /** Muestra la columna IA cuando el predictor está activado */
-  get iaColumnVisible(): boolean {
-    return !!this.board?.predictorEnabled;
-  }
-
-  /** Índices para los pictogramas de la columna IA (filas × columnas) */
-  get iaCells(): number[] {
-    const count =
-      (this.board?.iaRows ?? this.cfgIaRows ?? 5) *
-      (this.board?.iaCols ?? this.cfgIaCols ?? 1);
-    return Array.from({ length: count }, (_, i) => i);
-  }
-
-  get hasSelectedCell(): boolean {
-    return !!this.selectedCell;
-  }
-
-  get previewBoardName(): string {
-    return this.board?.name ?? '';
-  }
-
-  // ── Circular helpers ──────────────────────────────────────────────────────────
-
-  /** true cuando el tablero cargado es circular */
-  get isCircular(): boolean {
-    return this.board?.shape === 'circular';
-  }
-
-  /** Slots exteriores: índices 0..(circleSlots-1), col=0 */
-  get outerSlots(): number[] {
-    const n = this.board?.circleSlots ?? this.cfgCircleSlots ?? 8;
-    return Array.from({ length: n }, (_, i) => i);
-  }
-
-  /** Slots de columna de ubicación: índices 0..(locationSlots-1), col=-2 */
-  get locationSlots(): number[] {
-    if (!this.board?.locationColumnEnabled) return [];
-    const n = this.board?.locationColumnSlots ?? this.cfgLocationSlots ?? 6;
-    return Array.from({ length: n }, (_, i) => i);
-  }
-
-  /** Posición CSS (left/top %) para ranura circular exterior i (delegado a BoardLayoutService). */
-  getCircleSlotStyle(i: number): { left: string; top: string } {
-    return this.boardLayoutSvc.circleSlotStyle(i, this.board?.circleSlots ?? this.cfgCircleSlots ?? 8);
-  }
-
-  /** Tamaño en px de cada slot exterior (delegado a BoardLayoutService). */
-  get circleSlotSizePx(): string {
-    return this.boardLayoutSvc.circleSlotSize(this.board?.circleSlots ?? this.cfgCircleSlots ?? 8);
-  }
-
-  /** Pictograma del slot central (row=0, col=-1) */
-  get circularCenterPict(): CellPictogram | null {
-    return this.getCellPict(0, -1);
-  }
-
-  /** true si la celda central tiene showLastPhrase activado */
-  get isCenterShowingLastPhrase(): boolean {
-    return !!this.getCellData(0, -1)?.action?.showLastPhrase;
-  }
-
-  /** true si la celda seleccionada es el centro circular */
-  get isCenterSelected(): boolean {
-    return this.selectedCell?.row === 0 && this.selectedCell?.col === -1;
-  }
-
-  /**
-   * En preview: si sim activo → simCenter.
-   * Si showLastPhrase → último picto de la frase.
-   * Sino → pictograma guardado.
-   */
-  get previewCenterPict(): CellPictogram | null {
-    if (this.circularSimMode) return this.circularSimCenter;
-    const centerCell = this.getCellData(0, -1);
-    if (centerCell?.action?.showLastPhrase) {
-      return this.aacPhrase.length > 0
-        ? this.aacPhrase[this.aacPhrase.length - 1]
-        : null;
-    }
-    return this.circularCenterPict;
-  }
-
-  /** Gestión de click en slot circular en preview */
-  handleCircularPreviewClick(row: number, col: number): void {
-    const cell = this.getCellData(row, col);
-    if (!cell?.pictogram) return;
-    if (cell.action?.type === 'disabled') return;
-
-    const type = cell.action?.type ?? 'voice';
-
-    // Añadir a frase (voz)
-    if (type === 'voice' || type === 'voice+navigate') {
-      this.aacPhrase.push({ ...cell.pictogram });
-    }
-
-    // Si la acción tiene aiGeneratedBoardTarget → modo simulación IA (circular)
-    if (cell.action?.aiGeneratedBoardTarget) {
-      this.circularSimCenter = { ...cell.pictogram };
-      this.circularSimMode = true;
-      return; // no navegar, solo simular
-    }
-
-    // Navegar a otro tablero (la frase NO se borra)
-    if (type === 'navigate' || type === 'voice+navigate') {
-      const targetId = cell.action.targetBoardId;
-      if (targetId) {
-        this.boardId = targetId;
-        this.circularSimMode = false;
-        this.circularSimCenter = null;
-        this.loadBoard(); // previewMode sigue siendo true
-      }
-    }
-  }
-
-  /** Resetear simulación circular */
-  circularSimReset(): void {
-    this.circularSimMode = false;
-    this.circularSimCenter = null;
-  }
-
-  /** ¿Tiene pictograma la acción aiGeneratedBoardTarget? */
-  isAiTargetAction(row: number, col: number): boolean {
-    return !!this.getCellData(row, col)?.action?.aiGeneratedBoardTarget;
-  }
-
-  private emptyPictForm(): PictForm {
-    return {
-      source: 'new',
-      id: '',
-      label: '',
-      sound: '',
-      imageUrl: '',
-      tags: '',
-      description: '',
-      wordType: 'misc',
-      fitzgeraldEnabled: true,
-      color: '#f5f5f5',
-    };
-  }
-
-  // ── Board list helpers ────────────────────────────────────────────────────────
-
-  /** Tableros grid del usuario (para la lista izquierda) */
-  get gridBoards(): Board[] {
-    return this.userBoards.filter((b) => (b.shape ?? 'grid') === 'grid');
-  }
-
-  /** Tableros circulares del usuario (para la lista izquierda) */
-  get circularBoards(): Board[] {
-    return this.userBoards.filter((b) => b.shape === 'circular');
-  }
-
-  /** Solo tableros del mismo shape que el actual (para selector de navegación) */
-  get sameShapeBoards(): Board[] {
-    const shape = this.board?.shape ?? 'grid';
-    return this.userBoards.filter((b) => (b.shape ?? 'grid') === shape);
-  }
-
-  /** Meta-texto de un tablero para la lista izquierda */
-  boardShapeMeta(b: Board): string {
-    if (b.shape === 'circular') return `⊙ ${b.circleSlots || 8} ranuras`;
-    return `${b.rows}×${b.columns}`;
-  }
-
-  onUserSelect(event: Event): void {
-    const values: string[] =
-      (event as CustomEvent<{ value: string[] }>).detail.value ?? [];
-    this.cfgAssignedUserIds = values;
-    this.cfgUserId = values[0] ?? '';
-  }
-
-  /** Selecciona todos los usuarios del centro como asignados al tablero. */
-  selectAllUsers(): void {
-    this.cfgAssignedUserIds = this.centerUsers.map((u) => u._id);
-    this.cfgUserId = this.cfgAssignedUserIds[0] ?? '';
-  }
-
-  /** Navega al formulario de creación de tablero.
-   *  Pasa SOLO contexto heredado (usuarios, rol, forma) y el contexto de la celda
-   *  para el link-back. NO pasa datos del tablero origen (nombre, imagen, config). */
   async navigateToCreateBoard(): Promise<void> {
     if (!this.selectedCell) {
       const t = await this.toastCtrl.create({
@@ -1987,19 +1473,15 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
 
     this.router.navigate(['/board-builder-create'], {
       queryParams: {
-        // Navegación de retorno (URL exacta del editor para preservar su contexto)
         returnTo:          this.router.url,
-        // ID del tablero origen (para extraer sourceBoardId en create page)
         sourceBoardId:     this.boardId,
-        // Contexto heredado — NO incluir datos del tablero (name, imageUrl, rows, cols…)
-        assignedUserIds:   this.cfgAssignedUserIds.join(','),
+        assignedUserIds:   (this.board?.assignedUserIds ?? []).join(','),
         lockAssignedUsers: 'true',
         boardRole:         'secondary',
         lockBoardRole:     'true',
         shape:             this.board?.shape ?? 'grid',
         creatorId:         this.contextCreatorId   || undefined,
         creatorName:       this.contextCreatorName || undefined,
-        // Celda origen y link-back
         linkBack:          'true',
         sourceCellRow:     this.selectedCell.row,
         sourceCellCol:     this.selectedCell.col,
@@ -2009,20 +1491,15 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   }
 
   onActionTypeSelect(event: Event): void {
-    this.actionForm.type = (
-      event as CustomEvent<{ value: ActionType }>
-    ).detail.value;
+    this.actionForm.type = (event as CustomEvent<{ value: ActionType }>).detail.value;
   }
 
   onTargetBoardSelect(event: Event): void {
-    this.actionForm.targetBoardId =
-      (event as CustomEvent<{ value: string }>).detail.value ?? '';
+    this.actionForm.targetBoardId = (event as CustomEvent<{ value: string }>).detail.value ?? '';
   }
 
-  // ── Link-back: enlazar tablero recién creado a la celda origen ───────────────
+  // ── Link-back ────────────────────────────────────────────────────────────────
 
-  /** Aplica el enlace pendiente (nuevo tablero → celda origen) después de que
-   *  loadBoard() haya terminado. Es idempotente: si no hay pending no hace nada. */
   private async applyLinkedBoard(): Promise<void> {
     if (!this.pendingLinkBoardId || this.pendingLinkRow < 0 || this.pendingLinkCol < 0) return;
     if (!this.board) return;
@@ -2032,49 +1509,38 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     const newTargetBoardId = this.pendingLinkBoardId;
     const actionType       = (this.pendingLinkActionType as ActionType) || 'navigate';
 
-    // Limpiar estado pending de inmediato (evita reentrada si el método se llama dos veces)
     this.pendingLinkBoardId    = '';
     this.pendingLinkRow        = -1;
     this.pendingLinkCol        = -1;
     this.pendingLinkActionType = '';
 
-    // Preservar el pictograma que ya existía en la celda (si lo había)
     const existingPict = this.getCellData(row, col)?.pictogram ?? null;
 
     try {
       const res = await firstValueFrom(
         this.boardSvc.updateCell(this.boardId, {
-          row,
-          col,
+          row, col,
           pictogram: existingPict,
           action: { type: actionType, targetBoardId: newTargetBoardId },
         }),
       );
       this.board = res.board;
-      // Refrescar la lista de tableros disponibles para que el nuevo aparezca en el selector
-      this.loadUserBoards(this.cfgAssignedUserIds);
-      // Resaltar el tablero recién creado en la lista lateral
+      this.loadUserBoards(this.board.assignedUserIds ?? []);
       this.highlightedBoardId = newTargetBoardId;
-      // Scroll suave hasta el item (pequeño delay para que el DOM se actualice)
       setTimeout(() => {
         document.getElementById('board-item-' + newTargetBoardId)
           ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }, 250);
-      // Quitar el resaltado después de 5 s (3 pulsos × 1,2 s/pulso + margen)
       setTimeout(() => {
-        if (this.highlightedBoardId === newTargetBoardId) {
-          this.highlightedBoardId = '';
-        }
+        if (this.highlightedBoardId === newTargetBoardId) { this.highlightedBoardId = ''; }
       }, 5000);
       const t = await this.toastCtrl.create({
-        message:  '✓ Tablero creado y enlazado a la celda',
-        duration: 2200, color: 'success', position: 'top',
+        message: '✓ Tablero creado y enlazado a la celda', duration: 2200, color: 'success', position: 'top',
       });
       t.present();
     } catch {
       const t = await this.toastCtrl.create({
-        message:  'Error al enlazar el nuevo tablero a la celda.',
-        duration: 3000, color: 'danger', position: 'top',
+        message: 'Error al enlazar el nuevo tablero a la celda.', duration: 3000, color: 'danger', position: 'top',
       });
       t.present();
     } finally {
@@ -2082,7 +1548,6 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     }
   }
 
-  /** Limpia los query-params del link-back de la URL sin re-renderizar la página. */
   private clearLinkParams(): void {
     this.router.navigate([], {
       relativeTo:          this.route,
@@ -2096,5 +1561,72 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
       },
       replaceUrl: true,
     });
+  }
+
+  // ── Circular preview helpers ─────────────────────────────────────────────────
+
+  get circularCenterPict(): CellPictogram | null {
+    return this.getCellPict(0, -1);
+  }
+
+  get isCenterShowingLastPhrase(): boolean {
+    return !!this.getCellData(0, -1)?.action?.showLastPhrase;
+  }
+
+  get isCenterSelected(): boolean {
+    return this.selectedCell?.row === 0 && this.selectedCell?.col === -1;
+  }
+
+  get previewCenterPict(): CellPictogram | null {
+    if (this.circularSimMode) return this.circularSimCenter;
+    const centerCell = this.getCellData(0, -1);
+    if (centerCell?.action?.showLastPhrase) {
+      return this.aacPhrase.length > 0
+        ? this.aacPhrase[this.aacPhrase.length - 1]
+        : null;
+    }
+    return this.circularCenterPict;
+  }
+
+  handleCircularPreviewClick(row: number, col: number): void {
+    const cell = this.getCellData(row, col);
+    if (!cell?.pictogram) return;
+    if (cell.action?.type === 'disabled') return;
+
+    const type = cell.action?.type ?? 'voice';
+    if (type === 'voice' || type === 'voice+navigate') {
+      this.aacPhrase.push({ ...cell.pictogram });
+    }
+
+    if (cell.action?.aiGeneratedBoardTarget) {
+      this.circularSimCenter = { ...cell.pictogram };
+      this.circularSimMode = true;
+      return;
+    }
+
+    if (type === 'navigate' || type === 'voice+navigate') {
+      const targetId = cell.action.targetBoardId;
+      if (targetId) {
+        this.boardId = targetId;
+        this.circularSimMode = false;
+        this.circularSimCenter = null;
+        this.loadBoard();
+      }
+    }
+  }
+
+  circularSimReset(): void {
+    this.circularSimMode = false;
+    this.circularSimCenter = null;
+  }
+
+  // ── Helpers internos ─────────────────────────────────────────────────────────
+
+  private emptyPictForm(): PictForm {
+    return {
+      source: 'new', id: '', label: '', sound: '', imageUrl: '',
+      tags: '', description: '', wordType: 'misc',
+      fitzgeraldEnabled: true, color: '#f5f5f5',
+    };
   }
 }
