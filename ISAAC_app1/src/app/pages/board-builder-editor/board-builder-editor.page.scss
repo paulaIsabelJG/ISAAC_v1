@@ -127,81 +127,10 @@ $panel-bg:     #faf5f8;
 .bbe-obf-bar { flex: 0 0 auto; }
 
 // ── Columna izquierda → BoardSidebarLeftComponent ────────────────────────────
-// Los estilos del panel (.bbe-panel, .bbe-lbl, .bbe-inp, etc.) y la lista de
-// tableros están encapsulados en board-sidebar-left.component.scss.
-// Solo los estilos de layout del host (width, flex, border) están en :host
-// del propio componente, con sus @media queries correspondientes.
-
-// Las clases .bbe-lbl, .bbe-inp, .bbe-toggle* que también usa la columna
-// derecha (que sí vive en este componente) se mantienen abajo.
-
-// ── Controles compartidos: usados en columna derecha ─────────────────────────
-.bbe-lbl {
-  display:        block;
-  font-size:      10px;
-  font-weight:    700;
-  color:          $text-muted;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  margin:         8px 0 4px;
-
-  &:first-child { margin-top: 0; }
-}
-
-.bbe-inp {
-  width:         100%;
-  height:        34px;
-  padding:       0 10px;
-  border:        1.5px solid $border;
-  border-radius: 8px;
-  background:    #faf6f8;
-  font-size:     13px;
-  font-family:   inherit;
-  color:         $text-dark;
-  outline:       none;
-  box-sizing:    border-box;
-  transition:    border-color 0.15s;
-
-  &:focus { border-color: $violet; background: #fff; }
-}
-
-.bbe-toggle-row {
-  display:         flex;
-  align-items:     center;
-  justify-content: space-between;
-  margin:          8px 0;
-  cursor:          pointer;
-  user-select:     none;
-}
-.bbe-toggle-lbl { font-size: 12px; font-weight: 600; color: $text-dark; }
-
-.bbe-toggle {
-  width:         36px;
-  height:        20px;
-  border-radius: 10px;
-  background:    #ddd;
-  position:      relative;
-  transition:    background 0.2s;
-  flex:          0 0 auto;
-
-  &--on {
-    background: $violet;
-    .bbe-toggle-thumb { left: calc(100% - 18px); }
-  }
-}
-.bbe-toggle-thumb {
-  position:      absolute;
-  top:           2px;
-  left:          2px;
-  width:         16px;
-  height:        16px;
-  border-radius: 50%;
-  background:    #fff;
-  box-shadow:    0 1px 3px rgba(0,0,0,0.2);
-  transition:    left 0.2s;
-}
-
-.bbe-empty-msg { font-size: 12px; color: $text-muted; display: block; padding: 6px 0; }
+// Layout del host en board-sidebar-left.component.scss (:host).
+// Shared utilities (bbe-lbl, bbe-inp, bbe-toggle*) ya no están aquí:
+//   - Sidebar izquierdo → board-sidebar-left.component.scss
+//   - Panel derecho     → board-cell-panel.component.scss
 
 // ── Columna central ───────────────────────────────────────────────────────────
 .bbe-col-center {
@@ -567,276 +496,9 @@ $panel-bg:     #faf5f8;
   height: 100%;
 }
 
-// ── Columna derecha ───────────────────────────────────────────────────────────
-.bbe-col-right {
-  width:      280px;
-  flex:       0 0 280px;
-  border-left: 1.5px solid $border;
-  background:  $panel-bg;
-  overflow-y:  auto;
-  padding:     12px 12px 40px;
-  box-sizing:  border-box;
-  scrollbar-width: thin;
-  scrollbar-color: $border transparent;
-}
-
-.bbe-right-hint {
-  display:         flex;
-  flex-direction:  column;
-  align-items:     center;
-  justify-content: center;
-  gap:             12px;
-  padding:         40px 16px;
-  text-align:      center;
-
-  svg { width: 36px; height: 36px; stroke: $border; }
-  p   { font-size: 13px; color: $text-muted; margin: 0; line-height: 1.5; }
-}
-
-// ── Vista previa del pictograma ───────────────────────────────────────────────
-.bbe-pict-preview {
-  display:         flex;
-  flex-direction:  column;
-  align-items:     center;
-  gap:             6px;
-  padding:         14px 10px 10px;
-  border-radius:   14px;
-  border:          1.5px solid $border;
-  margin-bottom:   12px;
-  min-height:      110px;
-}
-.bbe-pict-preview-img   { width: 72px; height: 72px; object-fit: contain; border-radius: 8px; }
-.bbe-pict-preview-empty {
-  width:           72px;
-  height:          72px;
-  display:         flex;
-  align-items:     center;
-  justify-content: center;
-  svg { width: 36px; height: 36px; stroke: rgba(0,0,0,0.2); }
-}
-.bbe-pict-preview-label { font-size: 12px; font-weight: 700; color: $text-dark; text-align: center; }
-
-// ── Título de sección ─────────────────────────────────────────────────────────
-.bbe-section-title {
-  font-size:      10px;
-  font-weight:    800;
-  color:          $text-muted;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  margin:         4px 0 8px;
-}
-
-// ── Tabs ─────────────────────────────────────────────────────────────────────
-.bbe-tabs {
-  display:       flex;
-  gap:           4px;
-  margin-bottom: 10px;
-}
-
-.bbe-tab {
-  flex:          1;
-  height:        30px;
-  border:        1.5px solid $border;
-  border-radius: 8px;
-  background:    $card-bg;
-  font-size:     10px;
-  font-weight:   700;
-  color:         $text-muted;
-  font-family:   inherit;
-  cursor:        pointer;
-  transition:    background 0.15s, color 0.15s, border-color 0.15s;
-
-  &--active {
-    background:   $violet-light;
-    border-color: $violet;
-    color:        $violet;
-  }
-}
-
-// ── ARASAAC search ─────────────────────────────────────────────────────────
-.bbe-search-wrap {
-  position:     relative;
-  margin-bottom: 8px;
-}
-
-.bbe-search-inp {
-  width:         100%;
-  height:        34px;
-  padding:       0 10px;
-  border:        1.5px solid $border;
-  border-radius: 8px;
-  background:    $card-bg;
-  font-size:     12px;
-  font-family:   inherit;
-  color:         $text-dark;
-  outline:       none;
-  box-sizing:    border-box;
-  &:focus { border-color: $violet; }
-}
-
-.bbe-search-spin {
-  position:  absolute;
-  right:     8px;
-  top:       50%;
-  transform: translateY(-50%);
-  width:     18px;
-  height:    18px;
-}
-
-.bbe-arasaac-grid {
-  display:               grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap:                   6px;
-  max-height:            220px;
-  overflow-y:            auto;
-  scrollbar-width:       thin;
-  scrollbar-color:       $border transparent;
-  margin-bottom:         8px;
-}
-
-.bbe-arasaac-item {
-  display:        flex;
-  flex-direction: column;
-  align-items:    center;
-  gap:            3px;
-  padding:        6px 4px;
-  border:         1.5px solid transparent;
-  border-radius:  8px;
-  background:     $card-bg;
-  cursor:         pointer;
-  transition:     border-color 0.12s;
-
-  &:hover { border-color: $violet; }
-}
-
-.bbe-arasaac-img   { width: 44px; height: 44px; object-fit: contain; }
-.bbe-arasaac-label { font-size: 9px; font-weight: 600; color: $text-dark; text-align: center; line-height: 1.2; }
-
-// ── Formulario nuevo ──────────────────────────────────────────────────────────
-.bbe-new-form { margin-bottom: 8px; }
-
-.bbe-new-img-row {
-  display:     flex;
-  align-items: center;
-  gap:         10px;
-  margin-bottom: 8px;
-}
-
-.bbe-new-img-wrap {
-  width:           72px;
-  height:          72px;
-  border:          2px dashed $border;
-  border-radius:   12px;
-  display:         flex;
-  flex-direction:  column;
-  align-items:     center;
-  justify-content: center;
-  gap:             4px;
-  cursor:          pointer;
-  flex:            0 0 auto;
-  overflow:        hidden;
-  transition:      border-color 0.15s;
-
-  svg  { width: 28px; height: 28px; stroke: #ccc; }
-  span { font-size: 10px; color: $text-muted; }
-
-  &:hover { border-color: $violet; }
-}
-
-.bbe-new-img     { width: 100%; height: 100%; object-fit: cover; }
-.bbe-new-img-hint { font-size: 11px; color: $text-muted; line-height: 1.4; }
-
-// ── Campos comunes ────────────────────────────────────────────────────────────
-.bbe-common-fields { margin-top: 4px; }
-
-// ── Tipos de palabra ──────────────────────────────────────────────────────────
-.bbe-word-types {
-  display:   flex;
-  flex-wrap: wrap;
-  gap:       4px;
-  margin-bottom: 8px;
-}
-
-.bbe-wt-btn {
-  padding:       4px 8px;
-  border:        1.5px solid $border;
-  border-radius: 6px;
-  font-size:     10px;
-  font-weight:   600;
-  color:         $text-dark;
-  font-family:   inherit;
-  cursor:        pointer;
-  transition:    border-color 0.12s, opacity 0.12s;
-
-  &--active { border-color: $text-dark; font-weight: 800; }
-}
-
-// ── Fitzgerald toggle row ─────────────────────────────────────────────────────
-.bbe-fitz-row {
-  display:         flex;
-  align-items:     center;
-  justify-content: space-between;
-  margin:          8px 0 4px;
-  cursor:          pointer;
-  user-select:     none;
-}
-
-// ── Select pequeño ────────────────────────────────────────────────────────────
-.bbe-select-sm {
-  --background:    #faf6f8;
-  --border-radius: 8px;
-  --padding-start: 10px;
-  border:          1.5px solid $border;
-  border-radius:   8px;
-  font-size:       12px;
-  width:           100%;
-  height:          32px;
-}
-
-// ── Botones celda ─────────────────────────────────────────────────────────────
-.bbe-cell-btns {
-  display:        flex;
-  flex-direction: column;
-  gap:            8px;
-  margin-top:     14px;
-}
-
-.bbe-btn-add {
-  display:         flex;
-  align-items:     center;
-  justify-content: center;
-  gap:             6px;
-  width:           100%;
-  height:          40px;
-  border:          none;
-  border-radius:   10px;
-  background:      $violet;
-  color:           #fff;
-  font-size:       13px;
-  font-weight:     700;
-  font-family:     inherit;
-  cursor:          pointer;
-  transition:      opacity 0.15s;
-
-  &:hover:not(:disabled) { opacity: 0.88; }
-  &:disabled             { opacity: 0.5; cursor: not-allowed; }
-}
-
-.bbe-btn-del {
-  width:         100%;
-  height:        36px;
-  border:        1.5px solid #f8c4cf;
-  border-radius: 10px;
-  background:    transparent;
-  color:         #c0392b;
-  font-size:     12px;
-  font-weight:   700;
-  font-family:   inherit;
-  cursor:        pointer;
-  transition:    background 0.15s;
-
-  &:hover { background: #fff0f0; }
-}
+// ── Columna derecha → BoardCellPanelComponent ─────────────────────────────────
+// Layout del host en board-cell-panel.component.scss (:host).
+// Todos los estilos del panel (bcp-*) viven en el propio componente.
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  EDITOR — canvas que rellena la columna central
@@ -1320,12 +982,12 @@ $panel-bg:     #faf5f8;
 //  RESPONSIVE — pantallas pequeñas
 // ─────────────────────────────────────────────────────────────────────────────
 @media (max-width: 900px) {
-  // Solo reducir panel lateral derecho; el izquierdo lo gestiona su propio :host
-  .bbe-col-right { width: 240px; flex: 0 0 240px; }
+  // Paneles laterales gestionan su propia anchura en sus :host media queries
 }
 
 @media (max-width: 680px) {
-  // La columna izquierda (BoardSidebarLeftComponent) se oculta via :host en su propio SCSS
+  // La columna izquierda (BoardSidebarLeftComponent) y el panel derecho
+  // (BoardCellPanelComponent) gestionan su layout responsive en sus propios SCSS.
 
   .bbe-layout {
     flex-direction: column;
@@ -1333,13 +995,6 @@ $panel-bg:     #faf5f8;
   }
 
   .bbe-col-center { overflow: visible; }
-
-  .bbe-col-right {
-    width:       100%;
-    flex:        0 0 auto;
-    border-left: none;
-    border-top:  1.5px solid $border;
-  }
 
   // En móvil vertical el layout scrollea, celdas base tienen tamaño mínimo razonable
   .bbe-cell { width: 72px; min-height: 72px; }

@@ -1,7 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { IonicModule, ToastController, AlertController } from '@ionic/angular';
-import { FormsModule } from '@angular/forms';
-import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom, Subscription } from 'rxjs';
 import JSZip from 'jszip';
@@ -20,8 +18,7 @@ import {
   CellAction,
   ActionType,
 } from '../../services/board.service';
-import { WordType, FITZGERALD, WORD_TYPE_LABELS } from '../../shared/constants/fitzgerald';
-import { buildSafeUrl as buildSafeUrlUtil } from '../../shared/utils/image.utils';
+import { WordType, FITZGERALD } from '../../shared/constants/fitzgerald';
 import { AacRuntimeService } from '../../services/aac-runtime.service';
 import { ObfExportService } from '../../services/obf-export.service';
 import {
@@ -32,7 +29,6 @@ import {
 } from '../../services/obz-import.service';
 import { BoardLayoutService } from '../../services/board-layout.service';
 import { LoadingErrorStateComponent } from '../../components/loading-error-state/loading-error-state.component';
-import { PictCellContentComponent } from '../../components/pict-cell-content/pict-cell-content.component';
 import { BoardGridComponent } from '../../components/board-grid/board-grid.component';
 import { BoardCircularComponent } from '../../components/board-circular/board-circular.component';
 import { PhraseBandComponent } from '../../components/phrase-band/phrase-band.component';
@@ -41,33 +37,11 @@ import {
   BoardSidebarConfig,
 } from '../../components/board-sidebar-left/board-sidebar-left.component';
 import { BoardEditorToolbarComponent } from '../../components/board-editor-toolbar/board-editor-toolbar.component';
-
-// ─── Resultado de búsqueda ARASAAC ───────────────────────────────────────────
-interface ArasaacResult {
-  id: string | number;
-  label: string;
-  imageUrl: string;
-  keywords: string[];
-}
-
-// ─── Forma de la columna derecha ──────────────────────────────────────────────
-interface PictForm {
-  source: 'arasaac' | 'custom' | 'new';
-  id: string;
-  label: string;
-  sound: string;
-  imageUrl: string;
-  tags: string; // coma-separado en UI, array al guardar
-  description: string;
-  wordType: WordType;
-  fitzgeraldEnabled: boolean;
-  color: string;
-}
-
-interface ActionForm {
-  type: ActionType;
-  targetBoardId: string;
-}
+import {
+  BoardCellPanelComponent,
+  CellPanelSavePayload,
+  CellPanelCreateBoardPayload,
+} from '../../components/board-cell-panel/board-cell-panel.component';
 
 @Component({
   selector: 'app-board-builder-editor',
@@ -76,14 +50,13 @@ interface ActionForm {
   standalone: true,
   imports: [
     IonicModule,
-    FormsModule,
     LoadingErrorStateComponent,
-    PictCellContentComponent,
     BoardGridComponent,
     BoardCircularComponent,
     PhraseBandComponent,
     BoardSidebarLeftComponent,
     BoardEditorToolbarComponent,
+    BoardCellPanelComponent,
   ],
 })
 export class BoardBuilderEditorPage implements OnInit, OnDestroy {
@@ -128,8 +101,11 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   aacPhrase: CellPictogram[] = [];
 
   // ── Celda seleccionada ───────────────────────────────────────────────────────
+  /** Posición de la celda activa. Siempre nuevo objeto → ngOnChanges en el panel. */
   selectedCell: { row: number; col: number } | null = null;
-  isEditingCell = false; // true cuando la celda seleccionada ya tiene pictograma
+  /** Datos actuales de la celda (pictograma + acción), pasados al panel. */
+  cellData:     BoardCell | null = null;
+  isEditingCell = false;
 
   // ── Drag and drop ────────────────────────────────────────────────────────────
   draggedCell:  { row: number; col: number } | null = null;
@@ -142,53 +118,17 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   circularSimMode = false;
   circularSimCenter: CellPictogram | null = null;
 
-  // ── Datos del sidebar (lista de tableros y usuarios del centro) ──────────────
+  // ── Datos del sidebar y panel de celda ───────────────────────────────────────
   userBoards: Board[] = [];
   userBoardsLoading = false;
-  boardsReady = false; // evita bug ion-select en el selector de acción derecho
+  boardsReady = false;
   highlightedBoardId = '';
 
   centerUsers: BackendUser[] = [];
 
-  // ── Columna derecha: modo ────────────────────────────────────────────────────
-  rightMode: 'arasaac' | 'personal' | 'new' = 'arasaac';
-
-  // ARASAAC
-  arasaacQuery = '';
-  arasaacResults: ArasaacResult[] = [];
-  arasaacSearching = false;
-  private _arasaacDeb: ReturnType<typeof setTimeout> | null = null;
-
-  // Pictogramas personales del usuario asignado al tablero
+  // Pictogramas personales (cargados aquí, pasados como @Input al panel)
   personalPicts: BackendPictogram[] = [];
   personalLoading = false;
-
-  // Formulario de pictograma (columna derecha)
-  pictForm: PictForm = this.emptyPictForm();
-
-  // Formulario de acción
-  actionForm: ActionForm = { type: 'voice', targetBoardId: '' };
-
-  // Imagen nueva (modo 'new')
-  newImgB64: string | null = null;
-  newImgUrl: SafeUrl | null = null;
-
-  // ── Constantes expuestas al template ─────────────────────────────────────────
-  readonly FITZGERALD = FITZGERALD;
-  readonly wordTypeLabels = WORD_TYPE_LABELS;
-  readonly wordTypes: WordType[] = [
-    'verb', 'pronoun', 'noun', 'descriptor', 'social', 'misc',
-  ];
-  readonly actionTypes: { value: ActionType; label: string }[] = [
-    { value: 'voice',          label: 'Voz' },
-    { value: 'navigate',       label: 'Navegar a otro tablero' },
-    { value: 'voice+navigate', label: 'Voz + Navegar a otro tablero' },
-    { value: 'disabled',       label: 'Desactivado' },
-  ];
-
-  // Acciones especiales para tablero circular
-  actionFormAiTarget = false;
-  actionFormShowLastPhrase = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -198,7 +138,6 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     private boardSvc: BoardService,
     private toastCtrl: ToastController,
     private alertCtrl: AlertController,
-    private sanitizer: DomSanitizer,
     private aacRuntime: AacRuntimeService,
     private obfExportSvc: ObfExportService,
     private obzImportSvc: ObzImportService,
@@ -508,145 +447,89 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
       return;
     }
 
+    // Siempre nuevo objeto → ngOnChanges del panel detecta el cambio
     this.selectedCell = { row, col };
-    const existing = this.getCellData(row, col);
+    const existing    = this.getCellData(row, col);
+    this.cellData     = existing;
     this.isEditingCell = !!existing?.pictogram;
-
-    if (existing?.pictogram) {
-      this.loadCellIntoForm(existing);
-    } else {
-      this.pictForm = this.emptyPictForm();
-      this.actionForm = { type: 'voice', targetBoardId: '' };
-      this.actionFormAiTarget = false;
-      this.actionFormShowLastPhrase = false;
-      this.newImgB64 = null;
-      this.newImgUrl = null;
-    }
   }
 
-  private loadCellIntoForm(cell: BoardCell): void {
-    const p = cell.pictogram!;
-    this.pictForm = {
-      source: p.source,
-      id: p.id,
-      label: p.label,
-      sound: p.sound,
-      imageUrl: p.imageUrl,
-      tags: (p.tags ?? []).join(', '),
-      description: p.description,
-      wordType: p.wordType as WordType,
-      fitzgeraldEnabled: p.fitzgeraldEnabled,
-      color: p.color,
-    };
-    this.actionForm = {
-      type: cell.action?.type ?? 'voice',
-      targetBoardId: cell.action?.targetBoardId ?? '',
-    };
-    this.actionFormAiTarget = !!cell.action?.aiGeneratedBoardTarget;
-    this.actionFormShowLastPhrase = !!cell.action?.showLastPhrase;
-    if (p.imageUrl?.startsWith('data:')) {
-      this.newImgB64 = p.imageUrl;
-      this.newImgUrl = this.sanitizer.bypassSecurityTrustUrl(p.imageUrl);
-    } else {
-      this.newImgB64 = null;
-      this.newImgUrl = null;
-    }
-  }
+  // ── Guardar/eliminar celda (delegado desde BoardCellPanelComponent) ───────────
 
-  // ── Guardar/eliminar celda ────────────────────────────────────────────────────
-
-  async saveCell(): Promise<void> {
+  /**
+   * El panel construye el payload (CellPictogram + CellAction) y lo emite.
+   * La page valida la coherencia de shapes, ejecuta el side-effect de librería
+   * personal si corresponde, y llama a boardSvc.updateCell().
+   */
+  async onSaveCellRequest(payload: CellPanelSavePayload): Promise<void> {
     if (!this.selectedCell || !this.board) return;
-    if (!this.pictForm.label.trim()) {
-      (await this.toastCtrl.create({
-        message: 'Introduce una etiqueta para el pictograma.',
-        duration: 2200, color: 'warning', position: 'top',
-      })).present();
-      return;
-    }
 
+    // Validar coherencia de shapes para acciones de navegación
     if (
-      (this.actionForm.type === 'navigate' || this.actionForm.type === 'voice+navigate') &&
-      this.actionForm.targetBoardId
+      (payload.action.type === 'navigate' || payload.action.type === 'voice+navigate') &&
+      payload.action.targetBoardId
     ) {
-      const target = this.userBoards.find((b) => b._id === this.actionForm.targetBoardId);
+      const target = this.userBoards.find(b => b._id === payload.action.targetBoardId);
       if (target && (target.shape ?? 'grid') !== (this.board.shape ?? 'grid')) {
         (await this.toastCtrl.create({
-          message: 'No se pueden enlazar tableros de distinto tipo.',
+          message:  'No se pueden enlazar tableros de distinto tipo.',
           duration: 2800, color: 'danger', position: 'top',
         })).present();
         return;
       }
     }
 
-    const pict: CellPictogram = {
-      source: this.pictForm.source,
-      id: this.pictForm.id,
-      label: this.pictForm.label.trim(),
-      imageUrl: this.pictForm.imageUrl,
-      sound: this.pictForm.sound || this.pictForm.label.trim(),
-      tags: this.pictForm.tags.split(',').map((t) => t.trim()).filter(Boolean),
-      description: this.pictForm.description,
-      wordType: this.pictForm.wordType,
-      fitzgeraldEnabled: this.pictForm.fitzgeraldEnabled,
-      color: this.pictForm.fitzgeraldEnabled
-        ? (FITZGERALD[this.pictForm.wordType] ?? '#f5f5f5')
-        : this.pictForm.color,
-    };
-
-    const isCenterCell = this.selectedCell.row === 0 && this.selectedCell.col === -1;
-    const action: CellAction = {
-      type: this.actionForm.type,
-      targetBoardId: this.actionForm.targetBoardId || null,
-      aiGeneratedBoardTarget: this.isCircular ? this.actionFormAiTarget : false,
-      showLastPhrase: this.isCircular && isCenterCell ? this.actionFormShowLastPhrase : false,
-    };
-
-    if (this.pictForm.source === 'new' && !this.isSharedBoard) {
+    // Side-effect: guardar imagen nueva en la librería personal del usuario
+    if (payload.pictogram.source === 'new' && !this.isSharedBoard) {
       try {
-        const payload: AddPictogramPayload = {
-          id: 'bb-' + Date.now(),
-          label: pict.label,
-          imageUrl: pict.imageUrl,
-          wordType: pict.wordType,
-          description: pict.description,
+        const addPayload: AddPictogramPayload = {
+          id:          'bb-' + Date.now(),
+          label:       payload.pictogram.label,
+          imageUrl:    payload.pictogram.imageUrl,
+          wordType:    payload.pictogram.wordType,
+          description: payload.pictogram.description,
         };
-        await firstValueFrom(this.userSvc.addPictogramToUser(this.board.userId, payload));
+        await firstValueFrom(this.userSvc.addPictogramToUser(this.board.userId, addPayload));
         this.loadPersonalPicts(this.board.userId);
       } catch {
         /* no crítico */
       }
     }
 
+    const wasEditing = this.isEditingCell;
     this.isSaving = true;
     try {
       const res = await firstValueFrom(
         this.boardSvc.updateCell(this.boardId, {
-          row: this.selectedCell.row,
-          col: this.selectedCell.col,
-          pictogram: pict,
-          action,
+          row:       this.selectedCell.row,
+          col:       this.selectedCell.col,
+          pictogram: payload.pictogram,
+          action:    payload.action,
         }),
       );
-      this.board = res.board;
+      this.board        = res.board;
       this.isEditingCell = true;
+      // Actualizar cellData para que el panel refleje los datos guardados
+      this.cellData = this.getCellData(this.selectedCell.row, this.selectedCell.col);
       (await this.toastCtrl.create({
-        message: this.isEditingCell ? '✓ Pictograma actualizado' : '✓ Pictograma añadido',
+        message:  wasEditing ? '✓ Pictograma actualizado' : '✓ Pictograma añadido',
         duration: 1800, color: 'success', position: 'top',
       })).present();
     } catch {
       (await this.toastCtrl.create({
-        message: 'Error al guardar el pictograma.', duration: 2500, color: 'danger', position: 'top',
+        message:  'Error al guardar el pictograma.',
+        duration: 2500, color: 'danger', position: 'top',
       })).present();
     } finally {
       this.isSaving = false;
     }
   }
 
-  async removeCell(): Promise<void> {
+  /** Recibe el evento del panel, lanza alert de confirmación y llama a la API. */
+  async onRemoveCellRequest(): Promise<void> {
     if (!this.selectedCell || !this.board) return;
     const alert = await this.alertCtrl.create({
-      header: 'Eliminar pictograma',
+      header:  'Eliminar pictograma',
       message: '¿Quieres vaciar esta celda?',
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
@@ -657,17 +540,18 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
             try {
               const res = await firstValueFrom(
                 this.boardSvc.updateCell(this.boardId, {
-                  row: this.selectedCell!.row,
-                  col: this.selectedCell!.col,
+                  row:       this.selectedCell!.row,
+                  col:       this.selectedCell!.col,
                   pictogram: null,
                 }),
               );
-              this.board = res.board;
+              this.board         = res.board;
               this.isEditingCell = false;
-              this.pictForm = this.emptyPictForm();
+              this.cellData      = null;
             } catch {
               (await this.toastCtrl.create({
-                message: 'Error al eliminar.', duration: 2000, color: 'danger', position: 'top',
+                message:  'Error al eliminar.',
+                duration: 2000, color: 'danger', position: 'top',
               })).present();
             }
           },
@@ -807,114 +691,6 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
       sound: p.sound, tags: [], description: '', wordType: 'misc',
       fitzgeraldEnabled: false, color: '',
     };
-  }
-
-  // ── ARASAAC search ────────────────────────────────────────────────────────────
-
-  onArasaacInput(event: Event): void {
-    const val = (event.target as HTMLInputElement).value;
-    this.arasaacQuery = val;
-    if (this._arasaacDeb) clearTimeout(this._arasaacDeb);
-    if (!val.trim() || val.length < 2) {
-      this.arasaacResults = [];
-      return;
-    }
-    this._arasaacDeb = setTimeout(() => this.searchArasaac(val.trim()), 400);
-  }
-
-  private async searchArasaac(q: string): Promise<void> {
-    this.arasaacSearching = true;
-    try {
-      const res = await fetch(
-        `http://localhost:4000/api/arasaac/search?query=${encodeURIComponent(q)}&lang=es`,
-        { headers: { Authorization: `Bearer ${this.authSvc.getToken()}` } },
-      );
-      const data: ArasaacResult[] = await res.json();
-      this.arasaacResults = Array.isArray(data) ? data.slice(0, 24) : [];
-    } catch {
-      this.arasaacResults = [];
-    } finally {
-      this.arasaacSearching = false;
-    }
-  }
-
-  selectArasaacResult(r: ArasaacResult): void {
-    const wordType = this.inferWordType(r.keywords);
-    this.pictForm = {
-      source: 'arasaac',
-      id: r.id?.toString() ?? '',
-      label: r.label,
-      sound: r.label,
-      imageUrl: r.imageUrl,
-      tags: r.keywords.join(', '),
-      description: '',
-      wordType,
-      fitzgeraldEnabled: true,
-      color: FITZGERALD[wordType],
-    };
-    this.newImgB64 = null;
-    this.newImgUrl = null;
-  }
-
-  private inferWordType(keywords: string[]): WordType {
-    const kw = keywords.join(' ').toLowerCase();
-    if (/\b(yo|tú|él|ella|nosotros|ellos|vosotros|usted)\b/.test(kw)) return 'pronoun';
-    if (/\b(comer|beber|dormir|jugar|ir|quiero|necesito|hacer)\b/.test(kw)) return 'verb';
-    if (/\b(grande|pequeño|rojo|azul|caliente|frío|bonito|feliz)\b/.test(kw)) return 'descriptor';
-    if (/\b(hola|gracias|por favor|sí|no|adiós|perdona)\b/.test(kw)) return 'social';
-    return 'misc';
-  }
-
-  // ── Pictogramas personales ────────────────────────────────────────────────────
-
-  selectPersonalPict(p: BackendPictogram): void {
-    this.pictForm = {
-      source: 'custom',
-      id: p.id,
-      label: p.label,
-      sound: p.label,
-      imageUrl: p.imageUrl,
-      tags: '',
-      description: p.description ?? '',
-      wordType: (p.wordType ?? 'misc') as WordType,
-      fitzgeraldEnabled: true,
-      color: FITZGERALD[(p.wordType ?? 'misc') as WordType] ?? '#f5f5f5',
-    };
-    if (p.imageUrl?.startsWith('data:')) {
-      this.newImgB64 = p.imageUrl;
-      this.newImgUrl = this.sanitizer.bypassSecurityTrustUrl(p.imageUrl);
-    } else {
-      this.newImgB64 = null;
-      this.newImgUrl = null;
-    }
-  }
-
-  // ── Imagen nueva (celda) ──────────────────────────────────────────────────────
-
-  pickImage(): void {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/jpeg,image/png,image/gif,image/webp';
-    input.onchange = async (e: Event) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return;
-      if (file.size > 2 * 1024 * 1024) {
-        (await this.toastCtrl.create({
-          message: 'La imagen supera 2 MB', duration: 2500, color: 'warning', position: 'top',
-        })).present();
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const b64 = ev.target!.result as string;
-        this.newImgB64 = b64;
-        this.newImgUrl = this.sanitizer.bypassSecurityTrustUrl(b64);
-        this.pictForm.imageUrl = b64;
-        this.pictForm.source = 'new';
-      };
-      reader.readAsDataURL(file);
-    };
-    input.click();
   }
 
   // ── OBF / OBZ ────────────────────────────────────────────────────────────────
@@ -1188,10 +964,9 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
       );
       this.board = res.board;
       this.syncConfigFromBoard();
-      this.selectedCell = null;
+      this.selectedCell  = null;
+      this.cellData      = null;
       this.isEditingCell = false;
-      this.pictForm = this.emptyPictForm();
-      this.actionForm = { type: 'voice', targetBoardId: '' };
       (await this.toastCtrl.create({
         message: `✓ OBF importado: "${name}" · ${cells.length} celda(s)`,
         duration: 2500, color: 'success', position: 'top',
@@ -1254,9 +1029,8 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
 
         await this.loadBoard();
         this.selectedCell  = null;
+        this.cellData      = null;
         this.isEditingCell = false;
-        this.pictForm      = this.emptyPictForm();
-        this.actionForm    = { type: 'voice', targetBoardId: '' };
 
         (await this.toastCtrl.create({
           message: `✓ OBZ importado · ${result.entries.length} tablero(s)`
@@ -1422,25 +1196,6 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     return this.userBoards.filter((b) => (b.shape ?? 'grid') === shape);
   }
 
-  // ── Helpers de formulario ─────────────────────────────────────────────────────
-
-  get fitzgeraldColor(): string {
-    if (!this.pictForm.fitzgeraldEnabled) return this.pictForm.color || '#f5f5f5';
-    return FITZGERALD[this.pictForm.wordType] ?? '#f5f5f5';
-  }
-
-  get fitzgeraldBgColor(): string {
-    return `color-mix(in srgb, ${this.fitzgeraldColor} 20%, white)`;
-  }
-
-  get fitzgeraldBorderColor(): string {
-    return `color-mix(in srgb, ${this.fitzgeraldColor} 55%, white)`;
-  }
-
-  buildSafeUrl(url?: string | null): SafeUrl | string {
-    return buildSafeUrlUtil(url, this.sanitizer);
-  }
-
   // ── Navegación ────────────────────────────────────────────────────────────────
 
   openBoard(boardId: string): void {
@@ -1463,15 +1218,12 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     });
   }
 
-  async navigateToCreateBoard(): Promise<void> {
-    if (!this.selectedCell) {
-      const t = await this.toastCtrl.create({
-        message:  'Selecciona primero la celda que tendrá la acción de navegación.',
-        duration: 2500, color: 'warning', position: 'top',
-      });
-      t.present();
-      return;
-    }
+  /**
+   * Recibe el payload del panel (actionType elegido) y navega a /board-builder-create.
+   * La page añade todos los queryParams de contexto que solo ella conoce.
+   */
+  navigateToCreateBoard(payload: CellPanelCreateBoardPayload): void {
+    if (!this.selectedCell) return; // el botón solo es visible con celda seleccionada
 
     this.router.navigate(['/board-builder-create'], {
       queryParams: {
@@ -1482,22 +1234,14 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
         boardRole:         'secondary',
         lockBoardRole:     'true',
         shape:             this.board?.shape ?? 'grid',
-        creatorId:         this.contextCreatorId   || undefined,
+        creatorId:         this.contextCreatorId  || undefined,
         creatorName:       this.contextCreatorName || undefined,
         linkBack:          'true',
         sourceCellRow:     this.selectedCell.row,
         sourceCellCol:     this.selectedCell.col,
-        sourceActionType:  this.actionForm.type,
+        sourceActionType:  payload.actionType,
       },
     });
-  }
-
-  onActionTypeSelect(event: Event): void {
-    this.actionForm.type = (event as CustomEvent<{ value: ActionType }>).detail.value;
-  }
-
-  onTargetBoardSelect(event: Event): void {
-    this.actionForm.targetBoardId = (event as CustomEvent<{ value: string }>).detail.value ?? '';
   }
 
   // ── Link-back ────────────────────────────────────────────────────────────────
@@ -1622,13 +1366,4 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     this.circularSimCenter = null;
   }
 
-  // ── Helpers internos ─────────────────────────────────────────────────────────
-
-  private emptyPictForm(): PictForm {
-    return {
-      source: 'new', id: '', label: '', sound: '', imageUrl: '',
-      tags: '', description: '', wordType: 'misc',
-      fitzgeraldEnabled: true, color: '#f5f5f5',
-    };
-  }
 }
