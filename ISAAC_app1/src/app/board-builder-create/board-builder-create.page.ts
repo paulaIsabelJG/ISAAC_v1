@@ -197,11 +197,6 @@ export class BoardBuilderCreatePage implements OnInit {
       iaCols:                1,
     });
 
-    console.log('[create page boardRole]', this.cfgBoardRole,
-                '| lockBoardRole:', this.lockBoardRole,
-                '| lockAssignedUsers:', this.lockAssignedUsers,
-                '| linkBack:', this.linkBack,
-                '| sourceBoardId:', this.sourceBoardId);
   }
 
   // ── Carga ────────────────────────────────────────────────────────────────────
@@ -288,14 +283,6 @@ export class BoardBuilderCreatePage implements OnInit {
     const userId = this.cfgAssignedUserIds[0];
 
     this.isSaving = true;
-    console.log('[createBoard payload]', {
-      name,
-      boardRole:       this.cfgBoardRole,
-      assignedUserIds: this.cfgAssignedUserIds,
-      userId,
-      creatorId:       this.contextCreatorId,
-      lockBoardRole:   this.lockBoardRole,
-    });
     try {
       const res = await firstValueFrom(
         this.boardSvc.createBoard({

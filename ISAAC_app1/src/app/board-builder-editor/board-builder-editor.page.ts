@@ -216,7 +216,6 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     this.routeSub = this.route.paramMap.subscribe(params => {
       const freshId = params.get('boardId') ?? '';
       if (freshId) {
-        console.log('[paramMap boardId]', this.boardId, '→', freshId);
         this.boardId = freshId;
       }
     });
@@ -256,19 +255,12 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   // ── Carga ────────────────────────────────────────────────────────────────────
 
   private async loadBoard(): Promise<void> {
-    console.log('[loadBoard]', this.boardId);
     this.isLoading = true;
     this.loadError = '';
     try {
       const res = await firstValueFrom(
         this.boardSvc.getBoardById(this.boardId),
       );
-      console.log('[loadBoard response]', {
-        requestedId:  this.boardId,
-        receivedId:   res.board?._id,
-        receivedName: res.board?.name,
-        match:        this.boardId === res.board?._id,
-      });
       this.board = res.board;
       this.syncConfigFromBoard();
       // Usar la lista multi-usuario ya sincronizada para cargar tableros y pictos
@@ -314,10 +306,6 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     try {
       const res = await firstValueFrom(this.boardSvc.getAvailableTargets(assignedUserIds));
       this.userBoards = res.boards.filter((b) => b._id !== this.boardId);
-      for (const b of this.userBoards) {
-        console.log('[userBoards item]', { name: b.name, id: b._id, shape: b.shape,
-          assignedUserIds: b.assignedUserIds, userId: b.userId });
-      }
     } catch {
       /* silencioso */
     } finally {
@@ -403,7 +391,6 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     this.draggedCell = { row, col };
     event.dataTransfer?.setData('text/plain', `${row},${col}`);
     event.dataTransfer!.effectAllowed = 'move';
-    console.log('[DND start]', row, col, event);
   }
 
   onCellDragOver(event: DragEvent, row: number, col: number): void {
@@ -412,7 +399,6 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     event.preventDefault();
     event.dataTransfer!.dropEffect = 'move';
     this.dragOverCell = { row, col };
-    console.log('[DND over]', row, col);
   }
 
   onCellDragLeave(event: DragEvent, row: number, col: number): void {
@@ -426,7 +412,6 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
 
   onCellDrop(event: DragEvent, row: number, col: number): void {
     event.preventDefault();
-    console.log('[DND drop]', this.draggedCell, '→', row, col);
     if (!this.draggedCell) return;
     const src = { ...this.draggedCell };
     this.draggedCell  = null;
@@ -436,7 +421,6 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   }
 
   onCellDragEnd(): void {
-    console.log('[DND end]');
     this.draggedCell  = null;
     this.dragOverCell = null;
   }
@@ -647,12 +631,6 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
 
   async saveCell(): Promise<void> {
     if (!this.selectedCell || !this.board) return;
-    console.log('[saveCell target]', {
-      label:         this.pictForm.label,
-      actionType:    this.actionForm.type,
-      targetBoardId: this.actionForm.targetBoardId,
-      targetName:    this.userBoards.find((b) => b._id === this.actionForm.targetBoardId)?.name,
-    });
     if (!this.pictForm.label.trim()) {
       (
         await this.toastCtrl.create({
@@ -930,12 +908,6 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     // Board navigation: load the target board inside the editor (preview stays active)
     // La frase NO se borra al navegar (sigue acumulando pictogramas entre tableros)
     const type = cell.action?.type ?? 'voice';
-    console.log('[NAV DEBUG]', {
-      label:         cell.pictogram?.label,
-      type:          cell.action?.type,
-      targetBoardId: cell.action?.targetBoardId,
-      fullAction:    cell.action,
-    });
     if (type === 'navigate' || type === 'voice+navigate') {
       const targetId = cell.action.targetBoardId;
       if (targetId) {
@@ -1220,7 +1192,6 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
 
   /** Valida, parsea y aplica el OBF al tablero activo */
   private async processOBFImport(doc: ObfDocumentOBZ): Promise<void> {
-    console.log('IMPORT OBZ ENTRY');
     // ── 1. Validación de estructura básica ─────────────────────────────────
     if (doc.format && doc.format !== 'open-board-0.1') {
       (
@@ -1371,8 +1342,6 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
         const arasaacId = this.obzImportSvc.extractArasaacIdFromUrl(imgUrl);
         if (!arasaacId) return;
         const meta = await this.obzImportSvc.getLocalArasaacMetadata(arasaacId);
-        console.log('[ARASAAC meta]', btn.label?.trim() || String(btn.id), arasaacId,
-          (meta as Record<string, unknown> | null)?.['keywords']);
         metaByBtnId.set(String(btn.id), meta);
       });
     await Promise.all(metaFetches);
@@ -1380,7 +1349,6 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     // ── 7. Convertir grid.order a cells[] ────────────────────────────────
     const rows = grid.rows;
     const columns = grid.columns;
-    console.log('🔥 USING OLD CELL BUILDER (processOBFImport)', { rows, columns });
     const cells: BoardCell[] = [];
     const missingBtns: string[] = [];
     const missingImgs: string[] = [];
@@ -1417,13 +1385,10 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
         let wordType: WordType;
         let fitzgeraldEnabled: boolean;
 
-        const arasaacId = this.obzImportSvc.extractArasaacIdFromUrl(imageUrl);
-
         if (btn.background_color) {
           color              = this.obzImportSvc.normalizeCssColorToHex(btn.background_color);
           wordType           = 'misc';
           fitzgeraldEnabled  = false;
-          console.log('[OBF color]', label, btn.background_color, '→', color);
         } else {
           const meta     = metaByBtnId.get(btnId) ?? null;
           const inferred = meta
@@ -1438,19 +1403,7 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
             color             = '#ffffff';
             fitzgeraldEnabled = false;
           }
-          // [inferWordType] se loguea dentro de inferWordTypeFromLocalArasaacMetadata
         }
-
-        console.log('[import color final]', {
-          label,
-          imageUrl,
-          arasaacId,
-          hasBackgroundColor: !!btn.background_color,
-          backgroundColor:    btn.background_color,
-          wordType,
-          fitzgeraldEnabled,
-          color,
-        });
 
         const pict: CellPictogram = {
           source: 'custom',
@@ -1779,8 +1732,7 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   // ── Navegación a otro tablero del panel izquierdo ─────────────────────────────
 
   openBoard(boardId: string): void {
-    console.log('[openBoard called]', boardId);
-    if (!boardId) { console.warn('[openBoard] boardId vacío, ignorado'); return; }
+    if (!boardId) return;
     this.router.navigate(['/board-builder-editor', boardId], {
       queryParams: {
         returnTo:    this.returnTo,

@@ -42,7 +42,6 @@ export class CommunicatorPage implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    const boardId = this.route.snapshot.paramMap.get('boardId') ?? '';
     this.userId   = this.route.snapshot.queryParamMap.get('userId') ?? '';
     this.returnTo = this.route.snapshot.queryParamMap.get('returnTo') ?? '/user-session/' + this.userId;
   }

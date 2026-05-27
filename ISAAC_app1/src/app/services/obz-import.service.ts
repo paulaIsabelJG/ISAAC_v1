@@ -265,8 +265,6 @@ export class ObzImportService {
             const arasaacId = this.extractArasaacIdFromUrl(imgUrl);
             if (!arasaacId) return;
             const meta = await this.getLocalArasaacMetadata(arasaacId);
-            console.log('[ARASAAC meta]', btn.label?.trim() || String(btn.id), arasaacId,
-              (meta as Record<string, unknown> | null)?.['keywords']);
             metaMap.set(String(btn.id), meta);
           }),
       );
@@ -655,8 +653,7 @@ export class ObzImportService {
     const imageUrl  = btn.image_id !== undefined
       ? (imgMap.get(String(btn.image_id)) ?? '')
       : '';
-    const arasaacId = this.extractArasaacIdFromUrl(imageUrl);
-    const sound     = btn.vocalization?.trim() || label;
+    const sound = btn.vocalization?.trim() || label;
 
     let color: string;
     let wordType: WordType;
@@ -666,7 +663,6 @@ export class ObzImportService {
       color             = this.normalizeCssColorToHex(btn.background_color);
       wordType          = 'misc';
       fitzgeraldEnabled = false;
-      console.log('[OBF color]', label, btn.background_color, '→', color);
     } else {
       const meta     = metaMap.get(String(btn.id)) ?? null;
       const inferred = meta
@@ -682,17 +678,6 @@ export class ObzImportService {
         fitzgeraldEnabled = false;
       }
     }
-
-    console.log('[import color final]', {
-      label,
-      imageUrl,
-      arasaacId,
-      hasBackgroundColor: !!btn.background_color,
-      backgroundColor:    btn.background_color,
-      wordType,
-      fitzgeraldEnabled,
-      color,
-    });
 
     const pictogram: CellPictogram = {
       source:            'custom',
@@ -745,21 +730,11 @@ export class ObzImportService {
     const clean = String(url);
 
     const apiMatch = clean.match(/\/api\/pictograms\/(\d+)/);
-    if (apiMatch?.[1]) {
-      console.log('[extractArasaacIdFromUrl]', clean, '→', apiMatch[1]);
-      return apiMatch[1];
-    }
+    if (apiMatch?.[1]) return apiMatch[1];
     const staticMatch = clean.match(/\/pictograms\/(\d+)(?:\/|$)/);
-    if (staticMatch?.[1]) {
-      console.log('[extractArasaacIdFromUrl]', clean, '→', staticMatch[1]);
-      return staticMatch[1];
-    }
+    if (staticMatch?.[1]) return staticMatch[1];
     const genericMatch = clean.match(/pictograms\/(\d+)/);
-    if (genericMatch?.[1]) {
-      console.log('[extractArasaacIdFromUrl]', clean, '→', genericMatch[1]);
-      return genericMatch[1];
-    }
-    console.log('[extractArasaacIdFromUrl]', clean, '→', null);
+    if (genericMatch?.[1]) return genericMatch[1];
     return null;
   }
 
@@ -773,7 +748,6 @@ export class ObzImportService {
     if (this._metaCache.has(arasaacId)) {
       return this._metaCache.get(arasaacId) ?? null;
     }
-    console.log('[getLocalArasaacMetadata] request id:', arasaacId);
     try {
       const res = await fetch(
         `${environment.apiUrl}/arasaac/local/${arasaacId}`,
@@ -782,16 +756,6 @@ export class ObzImportService {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const data = res.ok ? (await res.json()) as Record<string, unknown> : null;
       this._metaCache.set(arasaacId, data);
-      console.log('[getLocalArasaacMetadata] response:', {
-        id:         arasaacId,
-        found:      !!data,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        arasaacId:  (data as any)?.arasaacId,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        label:      (data as any)?.label,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        keywords:   (data as any)?.keywords,
-      });
       return data;
     } catch {
       this._metaCache.set(arasaacId, null);
@@ -823,17 +787,7 @@ export class ObzImportService {
       }
     }
 
-    if (matchType === null) {
-      console.log('[inferWordType]', {
-        fallbackLabel,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        metaLabel:    (meta as any)?.label,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        keywords:     (meta as any)?.keywords?.map((k: any) => k.keyword),
-        result:       null,
-      });
-      return null;
-    }
+    if (matchType === null) return null;
 
     let wordType: WordType;
     if      (matchType === 3) wordType = 'verb';
@@ -842,12 +796,6 @@ export class ObzImportService {
     else if (matchType === 1) wordType = 'noun';
     else                      wordType = 'misc';
 
-    console.log('[inferWordType]', {
-      fallbackLabel,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      metaLabel: (meta as any)?.label,
-      result:    wordType,
-    });
     return wordType;
   }
 
