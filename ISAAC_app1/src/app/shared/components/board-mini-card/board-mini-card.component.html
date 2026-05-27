@@ -1,0 +1,19 @@
+<div class="bmc-card" (click)="cardClick.emit(board)">
+
+  <div class="bmc-img-wrap">
+    @if (board?.imageUrl) {
+      <img [src]="safeImageUrl" class="bmc-img" [alt]="board.name"/>
+    } @else {
+      <svg class="bmc-icon" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="1.5">
+        <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+        <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+        <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+        <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+      </svg>
+    }
+  </div>
+
+  <span class="bmc-label">{{ board?.name }}</span>
+
+</div>

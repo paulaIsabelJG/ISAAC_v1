@@ -319,66 +319,7 @@ $board-rows:  2;
 }
 
 // ── Tarjeta de tablero ────────────────────────────────────────────────────────
-.us-board-card {
-  height:         $board-h;
-  background:     $card-bg;
-  border:         1.5px solid $border;
-  border-radius:  16px;
-  display:        flex;
-  flex-direction: column;
-  align-items:    center;
-  justify-content: center;
-  gap:            8px;
-  padding:        10px 8px;
-  box-sizing:     border-box;
-  cursor:         pointer;
-  transition:     transform 0.15s, border-color 0.15s;
-
-  &:hover {
-    transform:    scale(1.04);
-    border-color: $pink;
-  }
-}
-
-.us-board-img-wrap {
-  flex:           0 0 auto;
-  width:          72px;
-  height:         72px;
-  border-radius:  12px;
-  overflow:       hidden;
-  background:     $pink-light;
-  display:        flex;
-  align-items:    center;
-  justify-content: center;
-}
-
-.us-board-img {
-  width:      100%;
-  height:     100%;
-  object-fit: cover;
-  display:    block;
-}
-
-// Icono SVG cuando el tablero no tiene imagen de portada
-.us-board-icon {
-  width:   36px;
-  height:  36px;
-  stroke:  $pink-dark;
-  opacity: 0.4;
-  display: block;
-}
-
-.us-board-label {
-  font-size:     10px;
-  font-weight:   700;
-  color:         $text-dark;
-  text-align:    center;
-  line-height:   1.3;
-  max-width:     100%;
-  overflow:      hidden;
-  text-overflow: ellipsis;
-  white-space:   nowrap;
-}
+// Estilos movidos a BoardMiniCardComponent (board-mini-card.component.scss)
 
 // ── Responsive ────────────────────────────────────────────────────────────────
 @media (max-width: 480px) {

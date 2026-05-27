@@ -127,22 +127,8 @@
         } @else {
           <div class="us-boards-grid">
             @for (board of assignedBoards; track board._id) {
-              <div class="us-board-card" (click)="openBoard(board)">
-                <div class="us-board-img-wrap">
-                  @if (board.imageUrl) {
-                    <img [src]="buildSafeUrl(board.imageUrl)" class="us-board-img" [alt]="board.name"/>
-                  } @else {
-                    <svg class="us-board-icon" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="1.5">
-                      <rect x="3" y="3" width="7" height="7" rx="1.5"/>
-                      <rect x="14" y="3" width="7" height="7" rx="1.5"/>
-                      <rect x="3" y="14" width="7" height="7" rx="1.5"/>
-                      <rect x="14" y="14" width="7" height="7" rx="1.5"/>
-                    </svg>
-                  }
-                </div>
-                <span class="us-board-label">{{ board.name }}</span>
-              </div>
+              <app-board-mini-card [board]="board" (cardClick)="openBoard($event)">
+              </app-board-mini-card>
             }
           </div>
         }
