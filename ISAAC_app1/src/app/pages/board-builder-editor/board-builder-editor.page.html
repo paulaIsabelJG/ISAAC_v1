@@ -1,67 +1,14 @@
-<ion-header class="ion-no-border">
-  <ion-toolbar class="bbe-toolbar">
-
-    <!-- Botón volver -->
-    <ion-buttons slot="start">
-      @if (previewMode) {
-        <ion-button fill="clear" class="bbe-preview-back" (click)="togglePreview()">
-          <svg slot="start" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-            <polyline points="15 18 9 12 15 6"/>
-          </svg>
-          Editar
-        </ion-button>
-      } @else {
-        <ion-back-button defaultHref="/board-builder" text="Volver"
-                         (click)="$event.stopImmediatePropagation(); goBack()">
-        </ion-back-button>
-      }
-    </ion-buttons>
-
-    <!-- Título -->
-    <ion-title class="bbe-title">
-      @if (previewMode) { VISTA PREVIA }
-      @else { {{ board?.name ?? 'EDITOR' }} }
-    </ion-title>
-
-    <!-- Botones derecha -->
-    @if (!previewMode) {
-      <ion-buttons slot="end">
-        @if (canAddToProfile) {
-          <ion-button fill="clear"
-                      class="bbe-hdr-btn"
-                      [class.bbe-hdr-btn--in-profile]="isInProfile"
-                      (click)="isInProfile ? removeFromProfile() : addToProfile()"
-                      [title]="isInProfile ? 'En perfil (pulsa para quitar)' : 'Añadir al perfil'">
-            <svg slot="icon-only" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
-              @if (!isInProfile) {
-                <line x1="19" y1="8" x2="19" y2="14"/>
-                <line x1="16" y1="11" x2="22" y2="11"/>
-              } @else {
-                <polyline points="17 11 19 13 23 9"/>
-              }
-            </svg>
-          </ion-button>
-        }
-        <ion-button fill="clear" class="bbe-hdr-btn" (click)="exportOBZ()">
-          <svg slot="icon-only" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="7 10 12 15 17 10"/>
-            <line x1="12" y1="15" x2="12" y2="3"/>
-          </svg>
-        </ion-button>
-        <ion-button fill="clear" class="bbe-hdr-btn bbe-hdr-btn--preview" (click)="togglePreview()">
-          <svg slot="icon-only" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-            <circle cx="12" cy="12" r="3"/>
-          </svg>
-        </ion-button>
-      </ion-buttons>
-    }
-
-  </ion-toolbar>
-</ion-header>
+<app-board-editor-toolbar
+  [previewMode]="previewMode"
+  [boardName]="board?.name ?? ''"
+  [canAddToProfile]="canAddToProfile"
+  [isInProfile]="isInProfile"
+  (togglePreview)="togglePreview()"
+  (goBack)="goBack()"
+  (exportOBZ)="exportOBZ()"
+  (addToProfile)="addToProfile()"
+  (removeFromProfile)="removeFromProfile()">
+</app-board-editor-toolbar>
 
 <ion-content class="bbe-content">
 

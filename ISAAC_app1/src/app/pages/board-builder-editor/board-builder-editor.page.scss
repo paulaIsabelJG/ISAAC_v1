@@ -14,38 +14,6 @@ $text-muted:   #6b5462;
 $card-bg:      #ffffff;
 $panel-bg:     #faf5f8;
 
-// ── Header ───────────────────────────────────────────────────────────────────
-.bbe-toolbar {
-  --background:   #{$bg};
-  --border-color: #{$border};
-}
-.bbe-title {
-  font-size:      14px;
-  font-weight:    800;
-  color:          $violet;
-  letter-spacing: 1.5px;
-  text-align:     center;
-  white-space:    nowrap;
-  overflow:       hidden;
-  text-overflow:  ellipsis;
-}
-.bbe-hdr-btn {
-  --color: #{$text-muted};
-  --padding-start: 8px;
-  --padding-end:   8px;
-
-  svg { width: 20px; height: 20px; stroke: $text-muted; }
-
-  &--preview    svg { stroke: $violet; }
-  &--in-profile svg { stroke: #2ecc71; }
-}
-.bbe-preview-back {
-  --color: #{$violet};
-  font-size:   14px;
-  font-weight: 700;
-  svg { width: 20px; height: 20px; stroke: $violet; }
-}
-
 // ── Content ──────────────────────────────────────────────────────────────────
 .bbe-content { --background: #{$bg}; }
 

@@ -40,6 +40,7 @@ import {
   BoardSidebarLeftComponent,
   BoardSidebarConfig,
 } from '../../components/board-sidebar-left/board-sidebar-left.component';
+import { BoardEditorToolbarComponent } from '../../components/board-editor-toolbar/board-editor-toolbar.component';
 
 // ─── Resultado de búsqueda ARASAAC ───────────────────────────────────────────
 interface ArasaacResult {
@@ -82,6 +83,7 @@ interface ActionForm {
     BoardCircularComponent,
     PhraseBandComponent,
     BoardSidebarLeftComponent,
+    BoardEditorToolbarComponent,
   ],
 })
 export class BoardBuilderEditorPage implements OnInit, OnDestroy {
