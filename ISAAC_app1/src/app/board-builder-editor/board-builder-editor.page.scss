@@ -733,17 +733,7 @@ $panel-bg:     #faf5f8;
   line-height: 1;
 }
 
-.bbe-cell-disabled-badge {
-  position:      absolute;
-  top:           4px;
-  right:         4px;
-  background:    rgba(0,0,0,0.35);
-  color:         #fff;
-  font-size:     8px;
-  font-weight:   800;
-  border-radius: 4px;
-  padding:       1px 4px;
-}
+// .bbe-cell-disabled-badge → eliminado: migrado a pcc-disabled-badge en PictCellContentComponent
 
 .bbe-cell-empty-preview {
   width:  100%;
@@ -1086,40 +1076,10 @@ $panel-bg:     #faf5f8;
   max-height:            none;
 }
 
-// Plus (celda vacía) ocupa ambas filas centrado
-.bbe-col-center .bbe-cell .bbe-cell-plus {
-  grid-row:     1 / -1;
-  align-self:   center;
-  justify-self: center;
-}
-
-// Imagen ocupa la fila 1fr; object-fit mantiene proporciones
-.bbe-col-center .bbe-cell-img {
-  width:      100%;
-  height:     100%;
-  object-fit: contain;
-  max-width:  none;
-  flex:       unset;
-  aspect-ratio: unset;
-}
-
-// Placeholder igual que imagen
-.bbe-col-center .bbe-cell-img-placeholder {
-  width:           100%;
-  height:          100%;
-  display:         flex;
-  align-items:     center;
-  justify-content: center;
-  max-width:       none;
-  aspect-ratio:    unset;
-  svg { width: min(75%, 56px); height: auto; stroke: #ccc; }
-}
-
-// Label siempre en fila auto → siempre visible (2 líneas máx.)
-.bbe-col-center .bbe-cell-label {
-  font-size: clamp(8px, 11cqi, 14px);
-  max-width: 100%;
-}
+// .bbe-col-center .bbe-cell .bbe-cell-plus     → muerto (Locs 1-4 migradas a PictCellContentComponent)
+// .bbe-col-center .bbe-cell-img                → muerto
+// .bbe-col-center .bbe-cell-img-placeholder    → muerto
+// .bbe-col-center .bbe-cell-label              → muerto
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  VISTA PREVIA — layout dinámico (ocupa todo el espacio disponible)
