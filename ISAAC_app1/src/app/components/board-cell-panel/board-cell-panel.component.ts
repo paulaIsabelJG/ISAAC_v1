@@ -361,7 +361,18 @@ export class BoardCellPanelComponent implements OnChanges {
 
   // ── Emits hacia la page ────────────────────────────────────────────────────
 
-  onSaveCell(): void {
+  async onSaveCell(): Promise<void> {
+    if (!this.pictForm.label.trim()) {
+      const toast = await this.toastCtrl.create({
+        message:  'La etiqueta del pictograma no puede estar vacía',
+        duration: 2500,
+        color:    'warning',
+        position: 'top',
+      });
+      await toast.present();
+      return;
+    }
+
     const pict: CellPictogram = {
       source:            this.pictForm.source,
       id:                this.pictForm.id,
