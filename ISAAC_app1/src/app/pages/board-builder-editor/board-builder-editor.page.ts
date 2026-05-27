@@ -31,7 +31,7 @@ import { BoardLayoutService } from '../../services/board-layout.service';
 import { LoadingErrorStateComponent } from '../../components/loading-error-state/loading-error-state.component';
 import { BoardGridComponent } from '../../components/board-grid/board-grid.component';
 import { BoardCircularComponent } from '../../components/board-circular/board-circular.component';
-import { PhraseBandComponent } from '../../components/phrase-band/phrase-band.component';
+import { BoardPreviewContainerComponent } from '../../components/board-preview-container/board-preview-container.component';
 import {
   BoardSidebarLeftComponent,
   BoardSidebarConfig,
@@ -53,7 +53,7 @@ import {
     LoadingErrorStateComponent,
     BoardGridComponent,
     BoardCircularComponent,
-    PhraseBandComponent,
+    BoardPreviewContainerComponent,
     BoardSidebarLeftComponent,
     BoardEditorToolbarComponent,
     BoardCellPanelComponent,

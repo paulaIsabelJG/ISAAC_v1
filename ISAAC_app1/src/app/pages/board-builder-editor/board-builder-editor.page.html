@@ -21,70 +21,20 @@
     </app-loading-error-state>
 
   <!-- ══════════════════════ MODO VISTA PREVIA ══════════════════════════ -->
+  <!-- → BoardPreviewContainerComponent                                    -->
   } @else if (previewMode) {
-    <div class="bbe-preview-container">
-
-    <!-- Barra AAC -->
-    <div class="aac-bar">
-      <button class="aac-btn aac-btn--home" (click)="aacClearPhrase()" title="Inicio">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-          <polyline points="9 22 9 12 15 12 15 22"/>
-        </svg>
-      </button>
-      <button class="aac-btn aac-btn--speaker" (click)="aacSpeak()" title="Leer frase">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-          <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
-          <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
-        </svg>
-      </button>
-
-      <app-phrase-band
-        [items]="aacPhrase"
-        placeholder="Pulsa los pictogramas para construir la frase…"
-        class="aac-phrase-band">
-      </app-phrase-band>
-
-      <button class="aac-btn aac-btn--del" (click)="aacDeleteLast()" title="Borrar último">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/>
-          <line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/>
-        </svg>
-      </button>
-      <button class="aac-btn aac-btn--trash" (click)="aacClearPhrase()" title="Limpiar frase">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="3 6 5 6 21 6"/>
-          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-          <path d="M10 11v6M14 11v6M9 6V4h6v2"/>
-        </svg>
-      </button>
-    </div>
-
-    <!-- ── GRID vista previa ──────────────────────────────────────────── -->
-    @if (!isCircular) {
-      <div class="bbe-preview-board">
-        <app-board-grid
-          [board]="board"
-          mode="preview"
-          (cellClick)="onCellClick($event.row, $event.col)">
-        </app-board-grid>
-      </div>
-    }
-
-    <!-- ── CIRCULAR vista previa ───────────────────────────────────────── -->
-    @if (isCircular) {
-      <app-board-circular
-        [board]="board"
-        mode="preview"
-        [centerPict]="previewCenterPict"
-        [simMode]="circularSimMode"
-        [isCenterWaiting]="isCenterShowingLastPhrase"
-        (cellClick)="onCellClick($event.row, $event.col)">
-      </app-board-circular>
-    }
-
-    </div><!-- /bbe-preview-container -->
+    <app-board-preview-container
+      [board]="board"
+      [aacPhrase]="aacPhrase"
+      [isCircular]="isCircular"
+      [previewCenterPict]="previewCenterPict"
+      [circularSimMode]="circularSimMode"
+      [isCenterShowingLastPhrase]="isCenterShowingLastPhrase"
+      (cellClick)="onCellClick($event.row, $event.col)"
+      (speakRequest)="aacSpeak()"
+      (deleteLastRequest)="aacDeleteLast()"
+      (clearPhraseRequest)="aacClearPhrase()">
+    </app-board-preview-container>
 
   <!-- ══════════════════════ MODO EDITOR NORMAL ═════════════════════════ -->
   } @else {
