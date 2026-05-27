@@ -135,94 +135,14 @@
 
     <!-- ── CIRCULAR vista previa ───────────────────────────────────────── -->
     @if (isCircular) {
-      <div class="bbe-preview-board bbe-preview-board--circular">
-
-        <!-- Columna de ubicación -->
-        @if (board?.locationColumnEnabled) {
-          <div class="bbe-loc-col bbe-loc-col--preview">
-            @for (i of locationSlots; track i) {
-              <div class="bbe-loc-cell bbe-cell--preview"
-                   [class.bbe-cell--disabled]="getCellIsDisabled(i, -2)"
-                   [style.background]="getCellBgColor(i, -2)"
-                   [style.border-color]="getCellBorderColor(i, -2)"
-                   (click)="onCellClick(i, -2)">
-                <app-pict-cell-content
-                  [pict]="getCellPict(i, -2)"
-                  emptyType="empty-div">
-                </app-pict-cell-content>
-              </div>
-            }
-          </div>
-        }
-
-        <!-- Canvas circular preview -->
-        <div class="bbe-circle-canvas bbe-circle-canvas--preview">
-
-          <!-- Ranuras exteriores -->
-          @for (i of outerSlots; track i) {
-            <div class="bbe-circ-slot bbe-cell--preview"
-                 [class.bbe-cell--disabled]="getCellIsDisabled(i, 0)"
-                 [style.width]="circleSlotSizePx"
-                 [style.height]="circleSlotSizePx"
-                 [style.left]="getCircleSlotStyle(i).left"
-                 [style.top]="getCircleSlotStyle(i).top"
-                 [style.background]="getCellBgColor(i, 0)"
-                 [style.border-color]="getCellBorderColor(i, 0)"
-                 (click)="onCellClick(i, 0)">
-              @if (circularSimMode) {
-                <!-- En modo sim: slots vacíos — lógica de simulación AAC queda en el padre -->
-                <div class="bbe-cell-empty-preview"></div>
-              } @else {
-                <app-pict-cell-content
-                  [pict]="getCellPict(i, 0)"
-                  emptyType="empty-div">
-                </app-pict-cell-content>
-              }
-            </div>
-          }
-
-          <!-- Centro -->
-          <div class="bbe-circ-center bbe-cell--preview"
-               [style.background]="circularSimMode ? '#f0ebff' : getCellBgColor(0, -1)"
-               [style.border-color]="circularSimMode ? '#7c4dff' : getCellBorderColor(0, -1)"
-               (click)="circularSimMode ? circularSimReset() : onCellClick(0, -1)">
-            @if (previewCenterPict; as p) {
-              <div class="bbe-cell-img-wrap">
-                @if (p.imageUrl) {
-                  <img [src]="buildSafeUrl(p.imageUrl)" class="bbe-cell-img" [alt]="p.label" draggable="false"/>
-                } @else {
-                  <div class="bbe-cell-img-placeholder">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                      <rect x="3" y="3" width="18" height="18" rx="3"/>
-                      <circle cx="8.5" cy="8.5" r="1.5"/>
-                      <polyline points="21 15 16 10 5 21"/>
-                    </svg>
-                  </div>
-                }
-              </div>
-              <span class="bbe-cell-label">{{ p.label }}</span>
-            } @else {
-              <div class="bbe-circ-center-hint">
-                @if (circularSimMode) {
-                  <img src="assets/board-builder/resume.png" class="bbe-resume-img" alt="Resume"/>
-                } @else if (isCenterShowingLastPhrase) {
-                  <!-- muestra un punto de espera: el centro está esperando que se pulse un picto -->
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="bbe-center-wait-icon">
-                    <circle cx="12" cy="12" r="9"/>
-                    <circle cx="12" cy="12" r="3" fill="currentColor"/>
-                  </svg>
-                } @else {
-                  <span class="bbe-cell-plus">+</span>
-                }
-              </div>
-            }
-            @if (circularSimMode) {
-              <span class="bbe-circ-sim-badge">IA</span>
-            }
-          </div>
-
-        </div><!-- /circle-canvas preview -->
-      </div><!-- /preview-board circular -->
+      <app-board-circular
+        [board]="board"
+        mode="preview"
+        [centerPict]="previewCenterPict"
+        [simMode]="circularSimMode"
+        [isCenterWaiting]="isCenterShowingLastPhrase"
+        (cellClick)="onCellClick($event.row, $event.col)">
+      </app-board-circular>
     }
 
     </div><!-- /bbe-preview-container -->
@@ -492,91 +412,21 @@
 
         <!-- ── CIRCULAR editor ───────────────────────────────────────────── -->
         @if (isCircular) {
-          <div class="bbe-circle-area">
-
-            <!-- Columna de ubicación (izquierda del canvas) -->
-            @if (board?.locationColumnEnabled) {
-              <div class="bbe-loc-col">
-                @for (i of locationSlots; track i) {
-                  <div class="bbe-loc-cell"
-                       [class.bbe-cell--selected]="isSelected(i, -2)"
-                       [class.bbe-cell--dragging]="isDragging(i, -2)"
-                       [class.bbe-cell--dragover]="isDragOver(i, -2)"
-                       [class.bbe-cell--move-src]="isMoveSrc(i, -2)"
-                       [class.bbe-cell--move-dst]="isMoveMode && !isMoveSrc(i, -2)"
-                       [attr.draggable]="!previewMode && !!getCellPict(i, -2) ? 'true' : null"
-                       [style.background]="getCellBgColor(i, -2)"
-                       [style.border-color]="getCellBorderColor(i, -2)"
-                       (click)="onCellClick(i, -2)"
-                       (dblclick)="onCellDblClick(i, -2)"
-                       (dragstart)="onCellDragStart($event, i, -2)"
-                       (dragover)="onCellDragOver($event, i, -2)"
-                       (dragleave)="onCellDragLeave($event, i, -2)"
-                       (drop)="onCellDrop($event, i, -2)"
-                       (dragend)="onCellDragEnd()">
-                    <app-pict-cell-content
-                      [pict]="getCellPict(i, -2)">
-                    </app-pict-cell-content>
-                  </div>
-                }
-              </div>
-            }
-
-            <!-- Canvas circular -->
-            <div class="bbe-circle-canvas">
-
-              <!-- Ranuras exteriores (posición absoluta) -->
-              @for (i of outerSlots; track i) {
-                <div class="bbe-circ-slot"
-                     [class.bbe-cell--selected]="isSelected(i, 0)"
-                     [class.bbe-cell--dragging]="isDragging(i, 0)"
-                     [class.bbe-cell--dragover]="isDragOver(i, 0)"
-                     [class.bbe-cell--move-src]="isMoveSrc(i, 0)"
-                     [class.bbe-cell--move-dst]="isMoveMode && !isMoveSrc(i, 0)"
-                     [attr.draggable]="!previewMode && !!getCellPict(i, 0) ? 'true' : null"
-                     [style.width]="circleSlotSizePx"
-                     [style.height]="circleSlotSizePx"
-                     [style.left]="getCircleSlotStyle(i).left"
-                     [style.top]="getCircleSlotStyle(i).top"
-                     [style.background]="getCellBgColor(i, 0)"
-                     [style.border-color]="getCellBorderColor(i, 0)"
-                     (click)="onCellClick(i, 0)"
-                     (dblclick)="onCellDblClick(i, 0)"
-                     (dragstart)="onCellDragStart($event, i, 0)"
-                     (dragover)="onCellDragOver($event, i, 0)"
-                     (dragleave)="onCellDragLeave($event, i, 0)"
-                     (drop)="onCellDrop($event, i, 0)"
-                     (dragend)="onCellDragEnd()">
-                  <app-pict-cell-content
-                    [pict]="getCellPict(i, 0)">
-                  </app-pict-cell-content>
-                </div>
-              }
-
-              <!-- Celda central (row=0, col=-1) -->
-              <div class="bbe-circ-center"
-                   [class.bbe-cell--selected]="isSelected(0, -1)"
-                   [class.bbe-cell--dragging]="isDragging(0, -1)"
-                   [class.bbe-cell--dragover]="isDragOver(0, -1)"
-                   [class.bbe-cell--move-src]="isMoveSrc(0, -1)"
-                   [class.bbe-cell--move-dst]="isMoveMode && !isMoveSrc(0, -1)"
-                   [attr.draggable]="!previewMode && !!getCellPict(0, -1) ? 'true' : null"
-                   [style.background]="getCellBgColor(0, -1)"
-                   [style.border-color]="getCellBorderColor(0, -1)"
-                   (click)="onCellClick(0, -1)"
-                   (dblclick)="onCellDblClick(0, -1)"
-                   (dragstart)="onCellDragStart($event, 0, -1)"
-                   (dragover)="onCellDragOver($event, 0, -1)"
-                   (dragleave)="onCellDragLeave($event, 0, -1)"
-                   (drop)="onCellDrop($event, 0, -1)"
-                   (dragend)="onCellDragEnd()">
-                <app-pict-cell-content
-                  [pict]="circularCenterPict">
-                </app-pict-cell-content>
-              </div>
-
-            </div><!-- /circle-canvas -->
-          </div><!-- /circle-area -->
+          <app-board-circular
+            [board]="board"
+            mode="edit"
+            [selectedCell]="selectedCell"
+            [draggedCell]="draggedCell"
+            [dragOverCell]="dragOverCell"
+            [moveSrcCell]="moveSrcCell"
+            (cellClick)="onCellClick($event.row, $event.col)"
+            (cellDblClick)="onCellDblClick($event.row, $event.col)"
+            (cellDragStart)="onCellDragStart($event.event, $event.row, $event.col)"
+            (cellDragOver)="onCellDragOver($event.event, $event.row, $event.col)"
+            (cellDragLeave)="onCellDragLeave($event.event, $event.row, $event.col)"
+            (cellDrop)="onCellDrop($event.event, $event.row, $event.col)"
+            (cellDragEnd)="onCellDragEnd()">
+          </app-board-circular>
         }
 
       </div><!-- /col-center -->

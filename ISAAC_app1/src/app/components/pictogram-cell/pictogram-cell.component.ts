@@ -117,7 +117,6 @@ export class PictogramCellComponent {
 
   @HostListener('dragstart', ['$event'])
   _onDragStart(event: DragEvent): void {
-    console.log('[DND cell dragstart] isDraggable:', this.isDraggable, '| mode:', this.mode, '| pict:', this.pict?.label ?? 'null');
     if (!this.isDraggable) return;
     event.dataTransfer?.setData('text/plain', '');
     event.dataTransfer!.effectAllowed = 'move';
@@ -126,7 +125,6 @@ export class PictogramCellComponent {
 
   @HostListener('dragover', ['$event'])
   _onDragOver(event: DragEvent): void {
-    console.log('[DND cell dragover] mode:', this.mode);
     if (this.mode !== 'edit') return;
     event.preventDefault();
     event.dataTransfer!.dropEffect = 'move';
@@ -145,7 +143,6 @@ export class PictogramCellComponent {
 
   @HostListener('drop', ['$event'])
   _onDrop(event: DragEvent): void {
-    console.log('[DND cell drop] mode:', this.mode);
     event.preventDefault();
     if (this.mode !== 'edit') return;
     this.pgcDrop.emit(event);

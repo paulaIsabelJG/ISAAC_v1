@@ -34,6 +34,7 @@ import { BoardLayoutService } from '../../services/board-layout.service';
 import { LoadingErrorStateComponent } from '../../components/loading-error-state/loading-error-state.component';
 import { PictCellContentComponent } from '../../components/pict-cell-content/pict-cell-content.component';
 import { BoardGridComponent } from '../../components/board-grid/board-grid.component';
+import { BoardCircularComponent } from '../../components/board-circular/board-circular.component';
 
 // ─── Resultado de búsqueda ARASAAC ───────────────────────────────────────────
 interface ArasaacResult {
@@ -67,7 +68,7 @@ interface ActionForm {
   templateUrl: './board-builder-editor.page.html',
   styleUrls: ['./board-builder-editor.page.scss'],
   standalone: true,
-  imports: [IonicModule, FormsModule, LoadingErrorStateComponent, PictCellContentComponent, BoardGridComponent],
+  imports: [IonicModule, FormsModule, LoadingErrorStateComponent, PictCellContentComponent, BoardGridComponent, BoardCircularComponent],
 })
 export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   // ── Routing ─────────────────────────────────────────────────────────────────
@@ -388,31 +389,42 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     return !!this.moveSrcCell;
   }
 
-  onCellDragStart(_event: DragEvent, row: number, col: number): void {
-    console.log('[DND page onCellDragStart]', row, col);
-    // event.dataTransfer y effectAllowed ya los gestiona PictogramCellComponent.
-    // Guardias (previewMode, celda vacía) ya las gestiona isDraggable del componente.
+  onCellDragStart(event: DragEvent, row: number, col: number): void {
+    // Necesario para las celdas circulares (divs nativos sin PictogramCellComponent).
+    // Para el grid, PictogramCellComponent ya lo hizo; llamarlo de nuevo es idempotente.
+    event.dataTransfer?.setData('text/plain', '');
+    if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
     this.draggedCell = { row, col };
   }
 
-  onCellDragOver(_event: DragEvent, row: number, col: number): void {
-    // event.preventDefault() ya lo hace PictogramCellComponent._onDragOver.
+  onCellDragOver(event: DragEvent, row: number, col: number): void {
     if (!this.draggedCell) return;
     if (this.isDragging(row, col)) return;
+    // Necesario para celdas circulares (divs nativos).
+    // Para el grid, PictogramCellComponent ya lo hizo; llamarlo de nuevo es idempotente.
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
     this.dragOverCell = { row, col };
   }
 
-  onCellDragLeave(_event: DragEvent, row: number, col: number): void {
-    // La guardia contains(relatedTarget) ya se aplica en PictogramCellComponent._onDragLeave:
-    // este handler solo recibe el evento cuando el arrastre ha salido realmente de la celda.
+  onCellDragLeave(event: DragEvent, row: number, col: number): void {
+    // Guardia: ignorar si el puntero se movió a un hijo (imagen, etiqueta).
+    // Necesaria para celdas circulares (divs nativos).
+    // Para el grid, PictogramCellComponent ya aplica la guardia antes de emitir,
+    // por lo que este handler solo llega aquí cuando el arrastre sí salió de la celda.
+    // null-safe: para el path de grid, currentTarget puede ser null en este punto.
+    const target  = event.currentTarget as HTMLElement | null;
+    const related = event.relatedTarget  as Node | null;
+    if (target && related && target.contains(related)) return;
     if (this.dragOverCell?.row === row && this.dragOverCell?.col === col) {
       this.dragOverCell = null;
     }
   }
 
-  onCellDrop(_event: DragEvent, row: number, col: number): void {
-    console.log('[DND page onCellDrop] draggedCell:', JSON.stringify(this.draggedCell), '→ target:', row, col);
-    // event.preventDefault() ya lo hace PictogramCellComponent._onDrop.
+  onCellDrop(event: DragEvent, row: number, col: number): void {
+    // Necesario para celdas circulares (divs nativos).
+    // Para el grid, PictogramCellComponent ya lo hizo; llamarlo de nuevo es idempotente.
+    event.preventDefault();
     if (!this.draggedCell) return;
     const src = { ...this.draggedCell };
     this.draggedCell  = null;
@@ -566,6 +578,12 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   onCellClick(row: number, col: number): void {
     if (this.previewMode) {
       if (this.isCircular) {
+        // Tap en el centro durante sim → reset (equivalente al binding previo
+        // `circularSimMode ? circularSimReset() : onCellClick(0,-1)` en template).
+        if (this.circularSimMode && row === 0 && col === -1) {
+          this.circularSimReset();
+          return;
+        }
         this.handleCircularPreviewClick(row, col);
       } else {
         this.handlePreviewCellClick(row, col);

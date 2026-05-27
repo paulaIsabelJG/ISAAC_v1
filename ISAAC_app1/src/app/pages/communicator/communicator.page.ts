@@ -10,13 +10,14 @@ import { UserService, FullBackendUser } from '../../services/user.service';
 import { BoardLayoutService } from '../../services/board-layout.service';
 import { buildSafeUrl as buildSafeUrlUtil } from '../../shared/utils/image.utils';
 import { BoardGridComponent } from '../../components/board-grid/board-grid.component';
+import { BoardCircularComponent } from '../../components/board-circular/board-circular.component';
 
 @Component({
   selector: 'app-communicator',
   templateUrl: './communicator.page.html',
   styleUrls:  ['./communicator.page.scss'],
   standalone: true,
-  imports: [IonicModule, CommonModule, BoardGridComponent],
+  imports: [IonicModule, CommonModule, BoardGridComponent, BoardCircularComponent],
 })
 export class CommunicatorPage implements OnInit, OnDestroy {
   userId     = '';

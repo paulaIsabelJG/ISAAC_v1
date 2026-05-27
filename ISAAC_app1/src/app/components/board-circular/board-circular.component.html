@@ -1,0 +1,134 @@
+<!-- ══════════════════════════════════════════════════════════════════════
+     BoardCircularComponent — renderizado de tablero tipo "circular"
+
+     Estructura:
+       :host  (flex row, = bcc--edit / bcc--preview / bcc--communicator)
+         ├── .bcc-loc-col   (columna de ubicación, opcional)
+         └── .bcc-canvas    (canvas circular con slots absolutos)
+               ├── .bcc-slot × N  (slots exteriores, posición absoluta)
+               └── .bcc-center    (celda central, posición absoluta)
+     ══════════════════════════════════════════════════════════════════════ -->
+
+<!-- ── Columna de ubicación ─────────────────────────────────────────────── -->
+@if (locationColumnVisible) {
+  <div class="bcc-loc-col">
+    @for (i of locationSlots; track i) {
+      <div class="bcc-loc-cell"
+           [class.bcc--selected]="isSelected(i, -2)"
+           [class.bcc--dragging]="isDragging(i, -2)"
+           [class.bcc--dragover]="isDragOver(i, -2)"
+           [class.bcc--move-src]="isMoveSrc(i, -2)"
+           [class.bcc--move-dst]="isMoveMode && !isMoveSrc(i, -2)"
+           [class.bcc--disabled]="isDisabled(i, -2)"
+           [attr.draggable]="mode === 'edit' && !!getCellPict(i, -2) ? 'true' : null"
+           [style.background]="getCellBg(i, -2)"
+           [style.border-color]="getCellBorder(i, -2)"
+           (click)="onSlotClick(i, -2)"
+           (dblclick)="onSlotDblClick(i, -2)"
+           (dragstart)="onSlotDragStart($event, i, -2)"
+           (dragover)="onSlotDragOver($event, i, -2)"
+           (dragleave)="onSlotDragLeave($event, i, -2)"
+           (drop)="onSlotDrop($event, i, -2)"
+           (dragend)="onSlotDragEnd()">
+        <app-pict-cell-content
+          [pict]="getCellPict(i, -2)"
+          [emptyType]="emptyType">
+        </app-pict-cell-content>
+      </div>
+    }
+  </div>
+}
+
+<!-- ── Canvas circular ──────────────────────────────────────────────────── -->
+<div class="bcc-canvas" [style.width]="canvasWidth">
+
+  <!-- Slots exteriores (posición absoluta sobre el anillo) -->
+  @for (i of outerSlots; track i) {
+    <div class="bcc-slot"
+         [class.bcc--selected]="isSelected(i, 0)"
+         [class.bcc--dragging]="isDragging(i, 0)"
+         [class.bcc--dragover]="isDragOver(i, 0)"
+         [class.bcc--move-src]="isMoveSrc(i, 0)"
+         [class.bcc--move-dst]="isMoveMode && !isMoveSrc(i, 0)"
+         [class.bcc--disabled]="isDisabled(i, 0)"
+         [attr.draggable]="mode === 'edit' && !!getCellPict(i, 0) ? 'true' : null"
+         [style.width]="slotSizePx"
+         [style.height]="slotSizePx"
+         [style.left]="getSlotStyle(i).left"
+         [style.top]="getSlotStyle(i).top"
+         [style.background]="getCellBg(i, 0)"
+         [style.border-color]="getCellBorder(i, 0)"
+         (click)="onSlotClick(i, 0)"
+         (dblclick)="onSlotDblClick(i, 0)"
+         (dragstart)="onSlotDragStart($event, i, 0)"
+         (dragover)="onSlotDragOver($event, i, 0)"
+         (dragleave)="onSlotDragLeave($event, i, 0)"
+         (drop)="onSlotDrop($event, i, 0)"
+         (dragend)="onSlotDragEnd()">
+      @if (mode === 'preview' && simMode) {
+        <!-- En simulación IA, los slots exteriores se vacían visualmente -->
+        <div class="bcc-slot-empty"></div>
+      } @else {
+        <app-pict-cell-content
+          [pict]="getCellPict(i, 0)"
+          [emptyType]="emptyType">
+        </app-pict-cell-content>
+      }
+    </div>
+  }
+
+  <!-- Celda central (row=0, col=-1) -->
+  <div class="bcc-center"
+       [class.bcc--selected]="isSelected(0, -1)"
+       [class.bcc--dragging]="isDragging(0, -1)"
+       [class.bcc--dragover]="isDragOver(0, -1)"
+       [class.bcc--move-src]="isMoveSrc(0, -1)"
+       [class.bcc--move-dst]="isMoveMode && !isMoveSrc(0, -1)"
+       [attr.draggable]="mode === 'edit' && !!getCellPict(0, -1) ? 'true' : null"
+       [style.background]="(mode === 'preview' && simMode) ? '#f0ebff' : getCellBg(0, -1)"
+       [style.border-color]="(mode === 'preview' && simMode) ? '#7c4dff' : getCellBorder(0, -1)"
+       (click)="onSlotClick(0, -1)"
+       (dblclick)="onSlotDblClick(0, -1)"
+       (dragstart)="onSlotDragStart($event, 0, -1)"
+       (dragover)="onSlotDragOver($event, 0, -1)"
+       (dragleave)="onSlotDragLeave($event, 0, -1)"
+       (drop)="onSlotDrop($event, 0, -1)"
+       (dragend)="onSlotDragEnd()">
+
+    @if (mode === 'edit' || mode === 'communicator') {
+      <!-- Edit / communicator: render estándar via PictCellContent -->
+      <app-pict-cell-content
+        [pict]="getCellPict(0, -1)"
+        [emptyType]="emptyType">
+      </app-pict-cell-content>
+
+    } @else {
+      <!-- Preview: centro complejo con simMode, waiting y plus -->
+      @if (effectiveCenterPict; as p) {
+        <app-pict-cell-content [pict]="p" emptyType="empty-div">
+        </app-pict-cell-content>
+      } @else {
+        <div class="bcc-center-hint">
+          @if (simMode) {
+            <img src="assets/board-builder/resume.png"
+                 class="bcc-resume-img"
+                 alt="Resume"/>
+          } @else if (isCenterWaiting) {
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.5" class="bcc-center-wait-icon">
+              <circle cx="12" cy="12" r="9"/>
+              <circle cx="12" cy="12" r="3" fill="currentColor"/>
+            </svg>
+          } @else {
+            <span class="bcc-cell-plus">+</span>
+          }
+        </div>
+      }
+      @if (simMode) {
+        <span class="bcc-sim-badge">IA</span>
+      }
+    }
+
+  </div><!-- /bcc-center -->
+
+</div><!-- /bcc-canvas -->

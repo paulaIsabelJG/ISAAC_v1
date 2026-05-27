@@ -1,0 +1,269 @@
+// ── Variables ──────────────────────────────────────────────────────────────────
+$violet:       #7c4dff;
+$violet-light: #f0ebff;
+$border:       #ffb6c1;
+$bg:           #fdf5f9;
+$card-bg:      #ffffff;
+$mint:         #20c997;
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  HOST — flex row: columna de ubicación (opcional) + canvas circular
+// ══════════════════════════════════════════════════════════════════════════════
+
+:host {
+  display:         flex;
+  flex-direction:  row;
+  align-items:     center;
+  justify-content: center;
+  gap:             12px;
+  padding:         8px;
+  min-height:      0;
+  overflow:        visible; // slots del canvas salen del borde
+  box-sizing:      border-box;
+}
+
+// ── Columna de ubicación ───────────────────────────────────────────────────────
+
+.bcc-loc-col {
+  flex:            0 0 auto;
+  display:         flex;
+  flex-direction:  column;
+  gap:             6px;
+  width:           76px;
+  align-self:      stretch;
+  overflow-y:      auto;
+  scrollbar-width: none;
+}
+
+// En preview/communicator la columna es un poco más estrecha
+:host(.bcc--preview) .bcc-loc-col,
+:host(.bcc--communicator) .bcc-loc-col {
+  width: 72px;
+}
+
+// Celda de ubicación
+.bcc-loc-cell {
+  flex:                  1;
+  min-height:            52px;
+  border:                1.5px solid $border;
+  border-radius:         10px;
+  background:            $card-bg;
+  display:               grid;
+  grid-template-rows:    1fr auto;
+  grid-template-columns: 1fr;
+  align-items:           stretch;
+  justify-items:         stretch;
+  gap:                   2px;
+  padding:               clamp(3px, 4cqi, 7px);
+  box-sizing:            border-box;
+  cursor:                pointer;
+  container-type:        inline-size;
+  transition:            border-color 0.15s, transform 0.12s;
+  overflow:              hidden;
+
+  &:hover           { border-color: $violet; transform: scale(1.04); }
+  &.bcc--selected   { border-color: $violet; box-shadow: 0 0 0 2.5px $violet; }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  CANVAS CIRCULAR
+//  Contenedor cuadrado; el anillo visual es el ::before.
+//  Los slots sobresalen del borde del canvas (overflow: visible).
+//  El width se inyecta dinámicamente desde el template via [style.width].
+// ══════════════════════════════════════════════════════════════════════════════
+
+.bcc-canvas {
+  position:     relative;
+  flex:         0 0 auto;
+  overflow:     visible;
+  align-self:   center;
+  aspect-ratio: 1;
+
+  // Anillo decorativo dibujado con ::before
+  // inset: 6% → outer-edge del anillo a 44% del centro → coincide con R=44%
+  &::before {
+    content:        '';
+    position:       absolute;
+    inset:          6%;
+    border-radius:  50%;
+    background:     color-mix(in srgb, #{$violet} 5%, #{$bg});
+    border:         2px solid $border;
+    box-shadow:     0 2px 12px rgba(0, 0, 0, 0.06);
+    pointer-events: none;
+    z-index:        0;
+  }
+}
+
+// ── Slot exterior — REDONDO ────────────────────────────────────────────────────
+// width/height se aplican desde el template mediante [style.width]/[style.height]
+.bcc-slot {
+  position:              absolute;
+  transform:             translate(-50%, -50%);
+  border:                2px solid $border;
+  border-radius:         50%;
+  background:            $card-bg;
+  display:               grid;
+  grid-template-rows:    1fr auto;
+  grid-template-columns: 1fr;
+  align-items:           stretch;
+  justify-items:         stretch;
+  gap:                   1px;
+  padding:               clamp(3px, 9%, 8px);
+  box-sizing:            border-box;
+  cursor:                pointer;
+  container-type:        inline-size;
+  z-index:               2;
+  overflow:              hidden;
+  transition:            border-color 0.15s, transform 0.12s, box-shadow 0.12s;
+
+  &:hover {
+    border-color: $violet;
+    transform:    translate(-50%, -50%) scale(1.1);
+    z-index:      4;
+  }
+
+  &.bcc--selected {
+    border-color: $violet;
+    box-shadow:   0 0 0 3px $violet;
+    z-index:      4;
+  }
+
+  &.bcc--disabled { opacity: 0.4; cursor: default; }
+}
+
+// ── Celda central — también redonda pero mayor y distintiva ───────────────────
+.bcc-center {
+  position:              absolute;
+  left:                  50%;
+  top:                   50%;
+  transform:             translate(-50%, -50%);
+  width:                 clamp(64px, 18%, 104px);
+  height:                clamp(64px, 18%, 104px);
+  border:                2.5px solid $violet;
+  border-radius:         50%;
+  background:            $violet-light;
+  display:               grid;
+  grid-template-rows:    1fr auto;
+  grid-template-columns: 1fr;
+  align-items:           stretch;
+  justify-items:         stretch;
+  gap:                   2px;
+  padding:               clamp(4px, 10%, 10px);
+  box-sizing:            border-box;
+  cursor:                pointer;
+  container-type:        inline-size;
+  z-index:               3;
+  overflow:              hidden;
+  box-shadow:            0 0 0 4px rgba($violet, 0.15);
+  transition:            border-color 0.15s, box-shadow 0.15s, transform 0.12s;
+
+  &:hover           { transform: translate(-50%, -50%) scale(1.08); }
+  &.bcc--selected   { box-shadow: 0 0 0 5px $violet; }
+}
+
+// Plus (celda vacía) en celdas con grid 1fr-auto — centrar en ambas filas
+.bcc-loc-cell .bcc-cell-plus,
+.bcc-slot .bcc-cell-plus,
+.bcc-center .bcc-cell-plus {
+  grid-row:     1 / -1;
+  align-self:   center;
+  justify-self: center;
+}
+
+// Hint del centro en modo preview
+.bcc-center-hint {
+  grid-row:        1 / -1;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  color:           $violet;
+}
+
+// Icono de espera (isCenterWaiting)
+.bcc-center-wait-icon {
+  width:   clamp(20px, 50cqi, 36px);
+  height:  auto;
+  stroke:  $violet;
+  opacity: 0.6;
+}
+
+// Imagen resume (simMode activo, centro vacío)
+.bcc-resume-img {
+  width:        clamp(28px, 52cqi, 56px);
+  height:       auto;
+  aspect-ratio: 1;
+  object-fit:   contain;
+}
+
+// Badge "IA" superpuesto sobre el centro en simMode
+.bcc-sim-badge {
+  position:       absolute;
+  top:            3px;
+  right:          4px;
+  background:     $violet;
+  color:          #fff;
+  font-size:      7px;
+  font-weight:    800;
+  border-radius:  3px;
+  padding:        1px 3px;
+  letter-spacing: 0.5px;
+  pointer-events: none;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  DRAG AND DROP  +  MODO MOVER TÁCTIL
+// ══════════════════════════════════════════════════════════════════════════════
+
+// touch-action: manipulation → previene el zoom al doble-tap en tableta
+.bcc-loc-cell,
+.bcc-slot,
+.bcc-center {
+  touch-action: manipulation;
+}
+
+// ── Drag and drop ──────────────────────────────────────────────────────────────
+
+// Celda siendo arrastrada: semitransparente
+.bcc--dragging { opacity: 0.35; }
+
+// Celda destino mientras hover de arrastre (loc-cell)
+.bcc--dragover {
+  border-color: $violet !important;
+  box-shadow:   0 0 0 3px rgba($violet, 0.3) !important;
+  transform:    scale(1.05) !important;
+}
+
+// Slots circulares: el transform base es translate(-50%,-50%), hay que conservarlo
+.bcc-slot.bcc--dragover {
+  transform: translate(-50%, -50%) scale(1.12) !important;
+  z-index:   5;
+}
+
+// Centro circular: misma corrección de transform
+.bcc-center.bcc--dragover {
+  transform: translate(-50%, -50%) scale(1.1) !important;
+}
+
+// ── Modo mover táctil ──────────────────────────────────────────────────────────
+
+// Celda ORIGEN seleccionada con doble toque: borde verde pulsante
+.bcc--move-src {
+  border-color: $mint !important;
+  box-shadow:   0 0 0 3px rgba($mint, 0.35) !important;
+  animation:    bcc-move-pulse 1.2s ease-in-out infinite;
+}
+
+// Z-index elevado para las circulares en modo move-src
+.bcc-slot.bcc--move-src   { z-index: 5; }
+.bcc-center.bcc--move-src { z-index: 5; }
+
+// Celdas DESTINO disponibles: borde verde suave
+.bcc--move-dst {
+  border-color: $mint !important;
+  opacity:      0.85;
+}
+
+@keyframes bcc-move-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba($mint, 0.35); }
+  50%       { box-shadow: 0 0 0 6px rgba($mint, 0.15); }
+}

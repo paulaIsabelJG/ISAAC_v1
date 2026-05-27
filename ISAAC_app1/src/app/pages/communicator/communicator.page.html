@@ -98,8 +98,12 @@
           mode="communicator"
           (cellClick)="onCellPress($event.row, $event.col)">
         </app-board-grid>
-      } @else {
-        <p class="comm-unsupported">Tablero circular en comunicador — próximamente.</p>
+      } @else if (board.shape === 'circular') {
+        <app-board-circular
+          [board]="board"
+          mode="communicator"
+          (cellClick)="onCellPress($event.row, $event.col)">
+        </app-board-circular>
       }
 
     }
