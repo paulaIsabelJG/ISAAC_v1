@@ -1,0 +1,28 @@
+// ── Host: layout centrado, idéntico al patrón repetido en las 7 páginas ────────
+:host {
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  gap:             12px;
+  font-size:       14px;
+  color:           var(--ion-color-medium);
+  text-align:      center;
+}
+
+// ── Icono SVG de error (36×36, mismo tamaño que todas las páginas) ──────────────
+.les-icon {
+  width:  36px;
+  height: 36px;
+  stroke: var(--ion-color-medium);
+  flex:   0 0 auto;
+}
+
+.les-icon--error {
+  stroke: #c0392b;
+}
+
+// ── Texto ────────────────────────────────────────────────────────────────────────
+.les-text--error {
+  color: #c0392b;
+}

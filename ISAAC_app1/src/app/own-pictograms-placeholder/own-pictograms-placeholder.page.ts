@@ -19,6 +19,7 @@ import {
   FITZGERALD_COLORS,
 } from '../shared/constants/fitzgerald';
 import { UserService, BackendPictogram } from '../services/user.service';
+import { LoadingErrorStateComponent } from '../shared/components/loading-error-state/loading-error-state.component';
 
 const MAX_IMG = 2 * 1024 * 1024; // 2 MB
 const VALID_WORD_TYPES: WordType[] = [
@@ -35,7 +36,7 @@ const VALID_WORD_TYPES: WordType[] = [
   templateUrl: './own-pictograms-placeholder.page.html',
   styleUrls: ['./own-pictograms-placeholder.page.scss'],
   standalone: true,
-  imports: [IonicModule, FormsModule],
+  imports: [IonicModule, FormsModule, LoadingErrorStateComponent],
 })
 export class OwnPictogramsPlaceholderPage {
   // Expuesta con el mismo nombre para que el template no cambie

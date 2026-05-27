@@ -28,23 +28,14 @@
         }
       </div>
 
-      <!-- Estado: cargando -->
-      @if (isLoading) {
-        <div class="album-state">
-          <ion-spinner name="crescent" color="primary"></ion-spinner>
-          <span>Cargando pictogramas…</span>
-        </div>
-
-      <!-- Estado: error -->
-      } @else if (loadError) {
-        <div class="album-state album-state--error">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="8" x2="12" y2="12"/>
-            <line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
-          <span>{{ loadError }}</span>
-        </div>
+      <!-- Estado: cargando / error -->
+      @if (isLoading || loadError) {
+        <app-loading-error-state
+          [loading]="isLoading"
+          [error]="loadError"
+          loadingText="Cargando pictogramas…"
+          [padding]="'32px 0 20px'">
+        </app-loading-error-state>
 
       <!-- Estado: sin pictogramas -->
       } @else if (pictograms.length === 0) {

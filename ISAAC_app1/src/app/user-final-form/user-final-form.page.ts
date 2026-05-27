@@ -15,6 +15,7 @@ import { firstValueFrom } from 'rxjs';
 import { AuthService, AddressSuggestion } from '../services/auth.service';
 import { UserService, UpdateUserPayload, SelfPermissions } from '../services/user.service';
 import { PictogramStateService } from '../services/pictogram-state.service';
+import { LoadingErrorStateComponent } from '../shared/components/loading-error-state/loading-error-state.component';
 
 const MAX_IMG = 2 * 1024 * 1024; // 2 MB
 
@@ -31,7 +32,7 @@ const passwordOptional: ValidatorFn = (c: AbstractControl) => {
   // Reutiliza los estilos visuales de add-user + override mínimo propio
   styleUrls: ['../add-user/add-user.page.scss', './user-final-form.page.scss'],
   standalone: true,
-  imports: [ReactiveFormsModule, IonicModule],
+  imports: [ReactiveFormsModule, IonicModule, LoadingErrorStateComponent],
 })
 export class UserFinalFormPage implements OnInit {
 

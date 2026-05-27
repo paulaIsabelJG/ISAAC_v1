@@ -31,6 +31,7 @@ import {
   ObfImageOBZ,
 } from '../services/obz-import.service';
 import { BoardLayoutService } from '../services/board-layout.service';
+import { LoadingErrorStateComponent } from '../shared/components/loading-error-state/loading-error-state.component';
 
 // ─── Resultado de búsqueda ARASAAC ───────────────────────────────────────────
 interface ArasaacResult {
@@ -64,7 +65,7 @@ interface ActionForm {
   templateUrl: './board-builder-editor.page.html',
   styleUrls: ['./board-builder-editor.page.scss'],
   standalone: true,
-  imports: [IonicModule, FormsModule],
+  imports: [IonicModule, FormsModule, LoadingErrorStateComponent],
 })
 export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   // ── Routing ─────────────────────────────────────────────────────────────────

@@ -81,19 +81,13 @@
       </div>
     }
 
-    @if (isLoading) {
-      <div class="bb-state">
-        <ion-spinner name="crescent" color="secondary"></ion-spinner>
-      </div>
-    } @else if (loadError) {
-      <div class="bb-state bb-state--error">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="12" y1="8" x2="12" y2="12"/>
-          <line x1="12" y1="16" x2="12.01" y2="16"/>
-        </svg>
-        <span>{{ loadError }}</span>
-      </div>
+    @if (isLoading || loadError) {
+      <app-loading-error-state
+        [loading]="isLoading"
+        [error]="loadError"
+        spinnerColor="secondary"
+        [padding]="'40px 20px'">
+      </app-loading-error-state>
     } @else if (boards.length === 0) {
       <div class="bb-empty">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
