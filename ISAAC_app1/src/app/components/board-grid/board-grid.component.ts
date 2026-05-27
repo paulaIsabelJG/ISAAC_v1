@@ -163,10 +163,12 @@ export class BoardGridComponent {
   }
 
   onCellDragStart(event: DragEvent, row: number, col: number): void {
+    console.log('[DND grid dragstart]', row, col);
     this.cellDragStart.emit({ event, row, col });
   }
 
   onCellDragOver(event: DragEvent, row: number, col: number): void {
+    console.log('[DND grid dragover]', row, col);
     this.cellDragOver.emit({ event, row, col });
   }
 
@@ -175,6 +177,7 @@ export class BoardGridComponent {
   }
 
   onCellDrop(event: DragEvent, row: number, col: number): void {
+    console.log('[DND grid drop]', row, col);
     this.cellDrop.emit({ event, row, col });
   }
 

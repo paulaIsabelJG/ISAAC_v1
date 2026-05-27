@@ -75,7 +75,10 @@ export class PictogramCellComponent {
   @Output() dragStart    = new EventEmitter<DragEvent>();
   @Output() dragOver     = new EventEmitter<DragEvent>();
   @Output() dragLeave    = new EventEmitter<DragEvent>();
-  @Output() drop         = new EventEmitter<DragEvent>();
+  /** Renombrado de 'drop' a 'pgcDrop' para evitar conflicto con el native DOM
+   *  event 'drop' (mismo nombre, todo minúsculas), que provocaba recursión
+   *  infinita: Angular suscribía el @HostListener('drop') al EventEmitter. */
+  @Output() pgcDrop      = new EventEmitter<DragEvent>();
   @Output() dragEnd      = new EventEmitter<void>();
 
   /** La celda es arrastrable solo en edit con pictograma. */
@@ -114,6 +117,7 @@ export class PictogramCellComponent {
 
   @HostListener('dragstart', ['$event'])
   _onDragStart(event: DragEvent): void {
+    console.log('[DND cell dragstart] isDraggable:', this.isDraggable, '| mode:', this.mode, '| pict:', this.pict?.label ?? 'null');
     if (!this.isDraggable) return;
     event.dataTransfer?.setData('text/plain', '');
     event.dataTransfer!.effectAllowed = 'move';
@@ -122,6 +126,7 @@ export class PictogramCellComponent {
 
   @HostListener('dragover', ['$event'])
   _onDragOver(event: DragEvent): void {
+    console.log('[DND cell dragover] mode:', this.mode);
     if (this.mode !== 'edit') return;
     event.preventDefault();
     event.dataTransfer!.dropEffect = 'move';
@@ -140,9 +145,10 @@ export class PictogramCellComponent {
 
   @HostListener('drop', ['$event'])
   _onDrop(event: DragEvent): void {
+    console.log('[DND cell drop] mode:', this.mode);
     event.preventDefault();
     if (this.mode !== 'edit') return;
-    this.drop.emit(event);
+    this.pgcDrop.emit(event);
   }
 
   @HostListener('dragend')

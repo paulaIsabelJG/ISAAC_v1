@@ -389,6 +389,7 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   }
 
   onCellDragStart(_event: DragEvent, row: number, col: number): void {
+    console.log('[DND page onCellDragStart]', row, col);
     // event.dataTransfer y effectAllowed ya los gestiona PictogramCellComponent.
     // Guardias (previewMode, celda vacía) ya las gestiona isDraggable del componente.
     this.draggedCell = { row, col };
@@ -410,6 +411,7 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   }
 
   onCellDrop(_event: DragEvent, row: number, col: number): void {
+    console.log('[DND page onCellDrop] draggedCell:', JSON.stringify(this.draggedCell), '→ target:', row, col);
     // event.preventDefault() ya lo hace PictogramCellComponent._onDrop.
     if (!this.draggedCell) return;
     const src = { ...this.draggedCell };
