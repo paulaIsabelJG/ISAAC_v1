@@ -93,23 +93,11 @@
     } @else if (board) {
 
       @if (board.shape === 'grid' || !board.shape) {
-        <div class="comm-grid"
-             [style.grid-template-columns]="'repeat(' + board.columns + ', 1fr)'"
-             [style.grid-template-rows]="'repeat(' + board.rows + ', 1fr)'">
-          @for (cell of gridCells; track cell.row + '_' + cell.col) {
-            <div class="comm-cell"
-                 [class.comm-cell--filled]="!!getCellPict(cell.row, cell.col)"
-                 [class.comm-cell--disabled]="getCellData(cell.row, cell.col)?.action?.type === 'disabled'"
-                 (click)="onCellPress(cell.row, cell.col)">
-              @if (getCellPict(cell.row, cell.col); as p) {
-                <img [src]="buildImageUrl(p.imageUrl)"
-                     [alt]="p.label"
-                     class="comm-cell-img"/>
-                <span class="comm-cell-label">{{ p.label }}</span>
-              }
-            </div>
-          }
-        </div>
+        <app-board-grid
+          [board]="board"
+          mode="communicator"
+          (cellClick)="onCellPress($event.row, $event.col)">
+        </app-board-grid>
       } @else {
         <p class="comm-unsupported">Tablero circular en comunicador — próximamente.</p>
       }

@@ -1016,7 +1016,9 @@ $panel-bg:     #faf5f8;
 // ─────────────────────────────────────────────────────────────────────────────
 
 // IA col y canvas igualan altura
-.bbe-col-center .bbe-grid-area {
+// .bbe-grid-area → migrado a app-board-grid (BoardGridComponent)
+.bbe-col-center .bbe-grid-area,
+.bbe-col-center app-board-grid {
   align-items: stretch;
 }
 
@@ -1111,7 +1113,9 @@ $panel-bg:     #faf5f8;
 }
 
 // Área IA + grid: hereda el alto de preview-board por stretch
-.bbe-preview-board .bbe-grid-area {
+// .bbe-grid-area → migrado a app-board-grid (BoardGridComponent)
+.bbe-preview-board .bbe-grid-area,
+.bbe-preview-board app-board-grid {
   flex:        1;
   display:     flex;
   gap:         8px;

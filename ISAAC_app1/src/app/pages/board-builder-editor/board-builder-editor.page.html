@@ -125,39 +125,12 @@
     <!-- ── GRID vista previa ──────────────────────────────────────────── -->
     @if (!isCircular) {
       <div class="bbe-preview-board">
-        <div class="bbe-grid-area">
-
-          <!-- Columna IA en preview -->
-          @if (iaColumnVisible) {
-            <div class="bbe-ia-col"
-                 [style.grid-template-columns]="'repeat(' + (board?.iaCols ?? 1) + ', 1fr)'">
-              @for (i of iaCells; track i) {
-                <div class="bbe-ia-cell">
-                  <img src="assets/board-builder/logo-IA.png" class="bbe-ia-logo" alt="IA"/>
-                  <span class="bbe-ia-label">PICTO IA</span>
-                </div>
-              }
-            </div>
-          }
-
-          <div class="bbe-grid bbe-grid--preview"
-               [style.grid-template-columns]="'repeat(' + (board?.columns ?? 4) + ', 1fr)'"
-               [style.grid-template-rows]="'repeat(' + (board?.rows ?? 3) + ', 1fr)'">
-            @for (cell of gridCells; track $index) {
-              <div class="bbe-cell bbe-cell--preview"
-                   [class.bbe-cell--disabled]="getCellIsDisabled(cell.row, cell.col)"
-                   [style.background]="getCellBgColor(cell.row, cell.col)"
-                   [style.border-color]="getCellBorderColor(cell.row, cell.col)"
-                   (click)="onCellClick(cell.row, cell.col)">
-                <app-pict-cell-content
-                  [pict]="getCellPict(cell.row, cell.col)"
-                  emptyType="empty-div">
-                </app-pict-cell-content>
-              </div>
-            }
-          </div>
-        </div>
-      </div><!-- /bbe-preview-board -->
+        <app-board-grid
+          [board]="board"
+          mode="preview"
+          (cellClick)="onCellClick($event.row, $event.col)">
+        </app-board-grid>
+      </div>
     }
 
     <!-- ── CIRCULAR vista previa ───────────────────────────────────────── -->
@@ -500,52 +473,21 @@
 
         <!-- ── GRID editor ──────────────────────────────────────────────── -->
         @if (!isCircular) {
-          <div class="bbe-grid-area">
-
-            <!-- Columna Predictor IA (solo si está activado) -->
-            @if (iaColumnVisible) {
-              <div class="bbe-ia-col"
-                   [style.grid-template-columns]="'repeat(' + (board?.iaCols ?? 1) + ', 1fr)'">
-                @for (i of iaCells; track i) {
-                  <div class="bbe-ia-cell">
-                    <img src="assets/board-builder/logo-IA.png" class="bbe-ia-logo" alt="IA"/>
-                    <span class="bbe-ia-label">PICTO IA</span>
-                  </div>
-                }
-              </div>
-            }
-
-            <div class="bbe-grid-wrap">
-              <div class="bbe-grid"
-                   [style.grid-template-columns]="'repeat(' + (board?.columns ?? 4) + ', 1fr)'"
-                   [style.grid-template-rows]="'repeat(' + (board?.rows ?? 3) + ', 1fr)'">
-                @for (cell of gridCells; track $index) {
-                  <div class="bbe-cell"
-                       [class.bbe-cell--selected]="isSelected(cell.row, cell.col)"
-                       [class.bbe-cell--filled]="!!getCellPict(cell.row, cell.col)"
-                       [class.bbe-cell--dragging]="isDragging(cell.row, cell.col)"
-                       [class.bbe-cell--dragover]="isDragOver(cell.row, cell.col)"
-                       [class.bbe-cell--move-src]="isMoveSrc(cell.row, cell.col)"
-                       [class.bbe-cell--move-dst]="isMoveMode && !isMoveSrc(cell.row, cell.col)"
-                       [attr.draggable]="!previewMode && !!getCellPict(cell.row, cell.col) ? 'true' : null"
-                       [style.background]="getCellBgColor(cell.row, cell.col)"
-                       [style.border-color]="getCellBorderColor(cell.row, cell.col)"
-                       (click)="onCellClick(cell.row, cell.col)"
-                       (dblclick)="onCellDblClick(cell.row, cell.col)"
-                       (dragstart)="onCellDragStart($event, cell.row, cell.col)"
-                       (dragover)="onCellDragOver($event, cell.row, cell.col)"
-                       (dragleave)="onCellDragLeave($event, cell.row, cell.col)"
-                       (drop)="onCellDrop($event, cell.row, cell.col)"
-                       (dragend)="onCellDragEnd()">
-                    <app-pict-cell-content
-                      [pict]="getCellPict(cell.row, cell.col)"
-                      [showDisabledBadge]="getCellIsDisabled(cell.row, cell.col)">
-                    </app-pict-cell-content>
-                  </div>
-                }
-              </div>
-            </div><!-- /grid-wrap -->
-          </div><!-- /grid-area -->
+          <app-board-grid
+            [board]="board"
+            mode="edit"
+            [selectedCell]="selectedCell"
+            [draggedCell]="draggedCell"
+            [dragOverCell]="dragOverCell"
+            [moveSrcCell]="moveSrcCell"
+            (cellClick)="onCellClick($event.row, $event.col)"
+            (cellDblClick)="onCellDblClick($event.row, $event.col)"
+            (cellDragStart)="onCellDragStart($event.event, $event.row, $event.col)"
+            (cellDragOver)="onCellDragOver($event.event, $event.row, $event.col)"
+            (cellDragLeave)="onCellDragLeave($event.event, $event.row, $event.col)"
+            (cellDrop)="onCellDrop($event.event, $event.row, $event.col)"
+            (cellDragEnd)="onCellDragEnd()">
+          </app-board-grid>
         }
 
         <!-- ── CIRCULAR editor ───────────────────────────────────────────── -->

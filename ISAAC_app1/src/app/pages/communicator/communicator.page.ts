@@ -5,17 +5,18 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription, firstValueFrom } from 'rxjs';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { AacRuntimeService, AacPhraseItem } from '../../services/aac-runtime.service';
-import { BoardService, Board, BoardCell, CellPictogram } from '../../services/board.service';
+import { BoardService, Board, BoardCell } from '../../services/board.service';
 import { UserService, FullBackendUser } from '../../services/user.service';
 import { BoardLayoutService } from '../../services/board-layout.service';
 import { buildSafeUrl as buildSafeUrlUtil } from '../../shared/utils/image.utils';
+import { BoardGridComponent } from '../../components/board-grid/board-grid.component';
 
 @Component({
   selector: 'app-communicator',
   templateUrl: './communicator.page.html',
   styleUrls:  ['./communicator.page.scss'],
   standalone: true,
-  imports: [IonicModule, CommonModule],
+  imports: [IonicModule, CommonModule, BoardGridComponent],
 })
 export class CommunicatorPage implements OnInit, OnDestroy {
   userId     = '';
@@ -101,25 +102,19 @@ export class CommunicatorPage implements OnInit, OnDestroy {
     }
   }
 
-  // ── Grid helpers (delegados a BoardLayoutService) ────────────────────────────
+  // ── Grid helpers ────────────────────────────────────────────────────────────
+  // gridCells, getCellPict → ahora internos de BoardGridComponent.
+  // getCellData se mantiene solo para onCellPress.
 
-  get gridCells(): { row: number; col: number }[] {
-    return this.boardLayoutSvc.gridCells(this.board);
-  }
-
-  getCellData(row: number, col: number): BoardCell | null {
+  private getCellData(row: number, col: number): BoardCell | null {
     return this.boardLayoutSvc.getCellData(this.board, row, col);
-  }
-
-  getCellPict(row: number, col: number): CellPictogram | null {
-    return this.boardLayoutSvc.getCellPict(this.board, row, col);
   }
 
   buildImageUrl(url?: string | null): SafeUrl | string {
     return buildSafeUrlUtil(url, this.sanitizer);
   }
 
-  // ── Cell press ────────────────────────────────────────────────────────────
+  // ── Cell press (recibe CellCoord desde BoardGridComponent.cellClick) ──────
 
   onCellPress(row: number, col: number): void {
     const cell = this.getCellData(row, col);

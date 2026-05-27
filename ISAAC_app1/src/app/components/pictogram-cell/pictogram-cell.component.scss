@@ -1,0 +1,113 @@
+// ── Variables locales ──────────────────────────────────────────────────────────
+$violet:  #7c4dff;
+$mint:    #20c997;
+$border:  #ffb6c1;
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  HOST = la celda visual
+//
+//  CSS Grid 1fr/auto: imagen (1fr) ocupa el espacio disponible,
+//  label (auto) siempre visible al fondo.
+//  PictCellContentComponent usa display:contents → sus hijos son
+//  grid-items directos de este host. ✓
+// ══════════════════════════════════════════════════════════════════════════════
+
+:host {
+  // ── Layout CSS Grid ────────────────────────────────────────────────────────
+  display:               grid;
+  grid-template-rows:    1fr auto;
+  grid-template-columns: 1fr;
+  align-items:           stretch;
+  justify-items:         stretch;
+  gap:                   3px;
+  padding:               clamp(4px, 5cqi, 8px);
+
+  // ── Visual base ────────────────────────────────────────────────────────────
+  border:        1.5px solid $border;  // overridden via [style.border-color]
+  border-radius: 12px;
+  background:    #ffffff;              // overridden via [style.background]
+  cursor:        pointer;
+  position:      relative;  // containing block para badge OFF (position:absolute)
+  overflow:      hidden;
+  min-height:    60px;
+
+  // ── Container queries (cqi para PictCellContent) ───────────────────────────
+  container-type: inline-size;
+  container-name: cell;
+
+  // ── Interacción ────────────────────────────────────────────────────────────
+  touch-action:  manipulation;
+  user-select:   none;
+  -webkit-tap-highlight-color: transparent;
+  transition:    border-color 0.15s, transform 0.12s, box-shadow 0.12s;
+}
+
+// ── Hover: solo en edit (preview y communicator no escalan al hover) ───────────
+:host(.pgc--edit):hover {
+  border-color: $violet;
+  transform:    scale(1.03);
+}
+
+// ── Feedback táctil en communicator (active en lugar de hover) ─────────────────
+:host(.pgc--comm).pgc--filled:active {
+  transform:    scale(0.95);
+  background:   #f0ebff !important;
+  border-color: $violet  !important;
+}
+
+// ── Celda con pictograma: borde ligeramente más oscuro ────────────────────────
+:host(.pgc--filled) {
+  border-color: #f0a8c0;  // darken(#ffb6c1 ~5%)
+}
+
+// ── Celda deshabilitada ───────────────────────────────────────────────────────
+:host(.pgc--disabled) {
+  opacity: 0.45;
+  cursor:  default;
+
+  &:hover { transform: none; }
+
+  // En communicator no escalar al active
+  &:active { transform: none !important; }
+}
+
+// ── Estado seleccionado (editor) ──────────────────────────────────────────────
+:host(.pgc--selected) {
+  border-color: $violet !important;
+  box-shadow:   0 0 0 2.5px $violet;
+}
+
+// ── Drag and Drop ─────────────────────────────────────────────────────────────
+
+// Celda siendo arrastrada: semitransparente
+// (pointer-events se mantienen para que el navegador genere drag events)
+:host(.pgc--dragging) {
+  opacity: 0.35;
+}
+
+// Celda destino durante hover de arrastre
+:host(.pgc--dragover) {
+  border-color: $violet                       !important;
+  box-shadow:   0 0 0 3px rgba($violet, 0.3)  !important;
+  transform:    scale(1.05)                   !important;
+}
+
+// ── Modo mover táctil ─────────────────────────────────────────────────────────
+
+// Celda ORIGEN (doble toque): borde verde pulsante
+:host(.pgc--move-src) {
+  border-color: $mint                      !important;
+  box-shadow:   0 0 0 3px rgba($mint, 0.35) !important;
+  animation:    pgc-move-pulse 1.2s ease-in-out infinite;
+}
+
+// Celdas DESTINO disponibles: borde verde suave
+:host(.pgc--move-dst) {
+  border-color: $mint !important;
+  opacity:      0.85;
+}
+
+@keyframes pgc-move-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba($mint, 0.35); }
+  50%       { box-shadow: 0 0 0 6px rgba($mint, 0.15); }
+}

@@ -33,6 +33,7 @@ import {
 import { BoardLayoutService } from '../../services/board-layout.service';
 import { LoadingErrorStateComponent } from '../../components/loading-error-state/loading-error-state.component';
 import { PictCellContentComponent } from '../../components/pict-cell-content/pict-cell-content.component';
+import { BoardGridComponent } from '../../components/board-grid/board-grid.component';
 
 // ─── Resultado de búsqueda ARASAAC ───────────────────────────────────────────
 interface ArasaacResult {
@@ -66,7 +67,7 @@ interface ActionForm {
   templateUrl: './board-builder-editor.page.html',
   styleUrls: ['./board-builder-editor.page.scss'],
   standalone: true,
-  imports: [IonicModule, FormsModule, LoadingErrorStateComponent, PictCellContentComponent],
+  imports: [IonicModule, FormsModule, LoadingErrorStateComponent, PictCellContentComponent, BoardGridComponent],
 })
 export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   // ── Routing ─────────────────────────────────────────────────────────────────
@@ -387,33 +388,29 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     return !!this.moveSrcCell;
   }
 
-  onCellDragStart(event: DragEvent, row: number, col: number): void {
-    // Guardia: no arrastrar en preview ni celdas vacías (sin preventDefault para no bloquear)
-    if (this.previewMode || !this.getCellPict(row, col)) return;
+  onCellDragStart(_event: DragEvent, row: number, col: number): void {
+    // event.dataTransfer y effectAllowed ya los gestiona PictogramCellComponent.
+    // Guardias (previewMode, celda vacía) ya las gestiona isDraggable del componente.
     this.draggedCell = { row, col };
-    event.dataTransfer?.setData('text/plain', `${row},${col}`);
-    event.dataTransfer!.effectAllowed = 'move';
   }
 
-  onCellDragOver(event: DragEvent, row: number, col: number): void {
+  onCellDragOver(_event: DragEvent, row: number, col: number): void {
+    // event.preventDefault() ya lo hace PictogramCellComponent._onDragOver.
     if (!this.draggedCell) return;
     if (this.isDragging(row, col)) return;
-    event.preventDefault();
-    event.dataTransfer!.dropEffect = 'move';
     this.dragOverCell = { row, col };
   }
 
-  onCellDragLeave(event: DragEvent, row: number, col: number): void {
-    const target  = event.currentTarget as HTMLElement;
-    const related = event.relatedTarget as Node | null;
-    if (related && target.contains(related)) return;
+  onCellDragLeave(_event: DragEvent, row: number, col: number): void {
+    // La guardia contains(relatedTarget) ya se aplica en PictogramCellComponent._onDragLeave:
+    // este handler solo recibe el evento cuando el arrastre ha salido realmente de la celda.
     if (this.dragOverCell?.row === row && this.dragOverCell?.col === col) {
       this.dragOverCell = null;
     }
   }
 
-  onCellDrop(event: DragEvent, row: number, col: number): void {
-    event.preventDefault();
+  onCellDrop(_event: DragEvent, row: number, col: number): void {
+    // event.preventDefault() ya lo hace PictogramCellComponent._onDrop.
     if (!this.draggedCell) return;
     const src = { ...this.draggedCell };
     this.draggedCell  = null;

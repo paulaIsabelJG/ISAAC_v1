@@ -1,0 +1,106 @@
+// ── Variables ─────────────────────────────────────────────────────────────────
+$border:  #ffb6c1;
+$mint:    #20c997;
+$card-bg: #ffffff;
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  HOST — equivale a .bbe-grid-area
+//  Flex row: columna IA (opcional) + grid canvas (flex:1)
+// ══════════════════════════════════════════════════════════════════════════════
+
+:host {
+  display:     flex;
+  gap:         10px;
+  align-items: stretch;
+  flex:        1;
+  min-height:  0;
+  overflow:    hidden;
+}
+
+// ── Columna Predictor IA ──────────────────────────────────────────────────────
+
+.bgc-ia-col {
+  flex:          0 0 auto;
+  display:       grid;
+  gap:           6px;
+  border:        2px solid $mint;
+  border-radius: 16px;
+  padding:       8px 6px;
+  background:    color-mix(in srgb, #{$mint} 8%, white);
+  align-content: stretch;
+  // grid-template-columns: puesto dinámicamente desde el template
+}
+
+.bgc-ia-cell {
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  width:           auto;
+  min-width:       100px;  // garantiza cqi estable en container-query
+  min-height:      80px;
+  gap:             4px;
+}
+
+.bgc-ia-logo {
+  width:      40px;
+  height:     auto;
+  display:    block;
+}
+
+.bgc-ia-label {
+  font-size:      9px;
+  font-weight:    700;
+  color:          $mint;
+  text-align:     center;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  GRID WRAPPER
+//  En edit/preview: card con borde, sombra y fondo blanco.
+//  En communicator: solo flex sin decoración (se adapta al contenedor padre).
+// ══════════════════════════════════════════════════════════════════════════════
+
+.bgc-grid-wrap {
+  display:        flex;
+  flex-direction: column;
+  flex:           1;
+  min-height:     0;
+  overflow:       hidden;
+}
+
+// Card wrapper solo en edit y preview
+:host(.bgc--edit) .bgc-grid-wrap,
+:host(.bgc--preview) .bgc-grid-wrap {
+  background:    $card-bg;
+  border-radius: 14px;
+  border:        1.5px solid $border;
+  box-shadow:    0 2px 16px rgba(0, 0, 0, 0.06);
+  padding:       8px;
+  box-sizing:    border-box;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  CSS GRID
+//  Filas y columnas puestas dinámicamente desde el template.
+//  align-items/justify-items: stretch → cada app-pictogram-cell rellena su celda.
+// ══════════════════════════════════════════════════════════════════════════════
+
+.bgc-grid {
+  flex:          1;
+  display:       grid;
+  gap:           6px;
+  min-height:    0;
+  min-width:     0;
+  width:         100%;
+  align-items:   stretch;
+  justify-items: stretch;
+}
+
+// Communicator: gap ligeramente mayor y altura 100% del contenedor
+:host(.bgc--communicator) .bgc-grid {
+  gap:    8px;
+  height: 100%;
+}
