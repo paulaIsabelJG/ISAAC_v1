@@ -5,18 +5,18 @@ export const routes: Routes = [
   // ── Rutas públicas ──────────────────────────────────────────────────────────
   {
     path: 'login',
-    loadComponent: () => import('./login/login.page').then((m) => m.LoginPage),
+    loadComponent: () => import('./pages/login/login.page').then((m) => m.LoginPage),
   },
   {
     path: 'register',
-    loadComponent: () => import('./register/register.page').then((m) => m.RegisterPage),
+    loadComponent: () => import('./pages/register/register.page').then((m) => m.RegisterPage),
   },
 
   // ── Rutas privadas (requieren sesión) ───────────────────────────────────────
   {
     path: 'organization-dashboard',
     loadComponent: () =>
-      import('./organization-dashboard/organization-dashboard.page').then(
+      import('./pages/organization-dashboard/organization-dashboard.page').then(
         (m) => m.OrganizationDashboardPage
       ),
     canActivate: [authGuard],
@@ -24,7 +24,7 @@ export const routes: Routes = [
   {
     path: 'organization-profile',
     loadComponent: () =>
-      import('./organization-profile/organization-profile.page').then(
+      import('./pages/organization-profile/organization-profile.page').then(
         (m) => m.OrganizationProfilePage
       ),
     canActivate: [authGuard],
@@ -32,19 +32,19 @@ export const routes: Routes = [
   {
     path: 'add-user',
     loadComponent: () =>
-      import('./add-user/add-user.page').then((m) => m.AddUserPage),
+      import('./pages/add-user/add-user.page').then((m) => m.AddUserPage),
     canActivate: [authGuard],
   },
   {
     path: 'board-builder',
     loadComponent: () =>
-      import('./board-builder/board-builder.page').then((m) => m.BoardBuilderPage),
+      import('./pages/board-builder/board-builder.page').then((m) => m.BoardBuilderPage),
     canActivate: [authGuard],
   },
   {
     path: 'board-builder-create',
     loadComponent: () =>
-      import('./board-builder-create/board-builder-create.page').then(
+      import('./pages/board-builder-create/board-builder-create.page').then(
         (m) => m.BoardBuilderCreatePage
       ),
     canActivate: [authGuard],
@@ -52,7 +52,7 @@ export const routes: Routes = [
   {
     path: 'board-builder-editor/:boardId',
     loadComponent: () =>
-      import('./board-builder-editor/board-builder-editor.page').then(
+      import('./pages/board-builder-editor/board-builder-editor.page').then(
         (m) => m.BoardBuilderEditorPage
       ),
     canActivate: [authGuard],
@@ -60,7 +60,7 @@ export const routes: Routes = [
   {
     path: 'user-placeholder',
     loadComponent: () =>
-      import('./user-placeholder/user-placeholder.page').then(
+      import('./pages/user-placeholder/user-placeholder.page').then(
         (m) => m.UserPlaceholderPage
       ),
     canActivate: [authGuard],
@@ -68,7 +68,7 @@ export const routes: Routes = [
   {
     path: 'own-pictograms-placeholder',
     loadComponent: () =>
-      import('./own-pictograms-placeholder/own-pictograms-placeholder.page').then(
+      import('./pages/own-pictograms-placeholder/own-pictograms-placeholder.page').then(
         (m) => m.OwnPictogramsPlaceholderPage
       ),
     canActivate: [authGuard],
@@ -76,7 +76,7 @@ export const routes: Routes = [
   {
     path: 'assigned-professionals-placeholder',
     loadComponent: () =>
-      import('./assigned-professionals-placeholder/assigned-professionals-placeholder.page').then(
+      import('./pages/assigned-professionals-placeholder/assigned-professionals-placeholder.page').then(
         (m) => m.AssignedProfessionalsPlaceholderPage
       ),
     canActivate: [authGuard],
@@ -86,7 +86,7 @@ export const routes: Routes = [
   {
     path: 'user-final-form/:userId',
     loadComponent: () =>
-      import('./user-final-form/user-final-form.page').then(
+      import('./pages/user-final-form/user-final-form.page').then(
         (m) => m.UserFinalFormPage
       ),
     canActivate: [authGuard],
@@ -96,7 +96,7 @@ export const routes: Routes = [
   {
     path: 'user-session/:userId',
     loadComponent: () =>
-      import('./user-session/user-session.page').then((m) => m.UserSessionPage),
+      import('./pages/user-session/user-session.page').then((m) => m.UserSessionPage),
     canActivate: [authGuard],
   },
 
@@ -104,7 +104,7 @@ export const routes: Routes = [
   {
     path: 'user-personal-data/:userId',
     loadComponent: () =>
-      import('./user-personal-data/user-personal-data.page').then(
+      import('./pages/user-personal-data/user-personal-data.page').then(
         (m) => m.UserPersonalDataPage
       ),
     canActivate: [authGuard],
@@ -114,7 +114,7 @@ export const routes: Routes = [
   {
     path: 'statistics-placeholder',
     loadComponent: () =>
-      import('./statistics-placeholder/statistics-placeholder.page').then(
+      import('./pages/statistics-placeholder/statistics-placeholder.page').then(
         (m) => m.StatisticsPlaceholderPage
       ),
     canActivate: [authGuard],
@@ -124,7 +124,7 @@ export const routes: Routes = [
   {
     path: 'communicator/:boardId',
     loadComponent: () =>
-      import('./communicator/communicator.page').then((m) => m.CommunicatorPage),
+      import('./pages/communicator/communicator.page').then((m) => m.CommunicatorPage),
     canActivate: [authGuard],
   },
 
