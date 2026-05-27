@@ -1,0 +1,39 @@
+// ── Defaults: pale-pink group (más común en la app)
+// Cada page que difiera sobreescribe sus variables en su propio SCSS:
+//   app-page-header { --aph-bg: #20c997; ... }
+// CSS custom properties cascadan a través de los límites del componente.
+:host {
+  --aph-bg:           #fdf5f9;
+  --aph-border:       #ffb6c1;
+  --aph-shadow:       none;
+  // --aph-toolbar-color: (sin default → usa el color Ionic heredado)
+  // --aph-back-color:   (sin default → usa el color Ionic del back-button)
+  --aph-title-color:  #222222;
+  --aph-title-size:   16px;
+  --aph-title-weight: 800;
+  --aph-title-ls:     2px;
+}
+
+// ── Toolbar ───────────────────────────────────────────────────────────────────
+.aph-toolbar {
+  --background:   var(--aph-bg);
+  --border-color: var(--aph-border);
+  box-shadow:     var(--aph-shadow);
+
+  // Color global (texto + iconos) cuando la page lo define (ej. temas mint/pink)
+  --color: var(--aph-toolbar-color);
+
+  ion-back-button {
+    // Solo sobreescribe el color si la page define --aph-back-color
+    --color: var(--aph-back-color);
+  }
+}
+
+// ── Título ────────────────────────────────────────────────────────────────────
+.aph-title {
+  --color:        var(--aph-title-color);
+  font-size:      var(--aph-title-size);
+  font-weight:    var(--aph-title-weight);
+  letter-spacing: var(--aph-title-ls);
+  text-align:     center;
+}

@@ -1,8 +1,7 @@
-<ion-header class="ion-no-border">
-  <ion-toolbar class="us-toolbar">
-
-    @if (fromLogin) {
-      <!-- ── CASO 2: usuario final accede desde login ───────────────────────── -->
+@if (fromLogin) {
+  <!-- ── CASO 2: usuario final accede desde login — cabecera ISAAC + Salir ── -->
+  <ion-header class="ion-no-border">
+    <ion-toolbar class="us-toolbar">
       <ion-buttons slot="start">
         <span class="us-brand">ISAAC</span>
       </ion-buttons>
@@ -17,18 +16,16 @@
           </svg>
         </ion-button>
       </ion-buttons>
-    } @else {
-      <!-- ── CASO 1: navegación interna desde dashboard ────────────────────── -->
-      <ion-buttons slot="start">
-        <ion-back-button defaultHref="/organization-dashboard" text="Volver"
-                         (click)="$event.stopImmediatePropagation(); goBack()">
-        </ion-back-button>
-      </ion-buttons>
-      <ion-title class="us-title">PERFIL USUARIO</ion-title>
-    }
-
-  </ion-toolbar>
-</ion-header>
+    </ion-toolbar>
+  </ion-header>
+} @else {
+  <!-- ── CASO 1: navegación interna desde dashboard ────────────────────────── -->
+  <app-page-header
+    title="PERFIL USUARIO"
+    backHref="/organization-dashboard"
+    (backClick)="goBack()">
+  </app-page-header>
+}
 
 <ion-content class="us-content">
 

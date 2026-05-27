@@ -8,6 +8,7 @@ import { AuthService } from '../services/auth.service';
 import { UserService, FullBackendUser } from '../services/user.service';
 import { BoardService, Board } from '../services/board.service';
 import { LoadingErrorStateComponent } from '../shared/components/loading-error-state/loading-error-state.component';
+import { AppPageHeaderComponent } from '../shared/components/app-page-header/app-page-header.component';
 
 // ─── Permisos resueltos para la vista ────────────────────────────────────────
 interface ViewPermissions {
@@ -21,7 +22,7 @@ interface ViewPermissions {
   templateUrl: './user-session.page.html',
   styleUrls:  ['./user-session.page.scss'],
   standalone: true,
-  imports: [IonicModule, LoadingErrorStateComponent],
+  imports: [IonicModule, LoadingErrorStateComponent, AppPageHeaderComponent],
 })
 export class UserSessionPage implements OnInit {
 

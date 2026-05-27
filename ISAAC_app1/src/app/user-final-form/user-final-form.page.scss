@@ -1,5 +1,18 @@
 // Solo overrides/additions sobre add-user.page.scss (que ya está en styleUrls)
 
+// ── Header (AppPageHeaderComponent) — tema rosa intenso igual que add-user ────
+app-page-header {
+  --aph-bg:            #ff69b4;
+  --aph-border:        transparent;
+  --aph-shadow:        0 2px 12px rgba(233, 30, 140, 0.25);
+  --aph-toolbar-color: #ffffff;
+  --aph-back-color:    #ffffff;
+  --aph-title-color:   #ffffff;
+  --aph-title-size:    18px;
+  --aph-title-weight:  700;
+  --aph-title-ls:      0.3px;
+}
+
 // Estado cargando / error centrado
 .uff-state {
   display:         flex;

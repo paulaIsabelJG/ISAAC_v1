@@ -14,6 +14,7 @@ import {
 } from '../services/user.service';
 import { PictogramStateService } from '../services/pictogram-state.service';
 import { LoadingErrorStateComponent } from '../shared/components/loading-error-state/loading-error-state.component';
+import { AppPageHeaderComponent } from '../shared/components/app-page-header/app-page-header.component';
 
 // ─── Fila de la tabla (estado local mutable) ──────────────────────────────────
 export interface ProfRow {
@@ -32,7 +33,7 @@ export interface ProfRow {
   templateUrl: './assigned-professionals-placeholder.page.html',
   styleUrls: ['./assigned-professionals-placeholder.page.scss'],
   standalone: true,
-  imports: [IonicModule, FormsModule, LoadingErrorStateComponent],
+  imports: [IonicModule, FormsModule, LoadingErrorStateComponent, AppPageHeaderComponent],
 })
 export class AssignedProfessionalsPlaceholderPage {
 

@@ -11,21 +11,16 @@ $red:         #ef5350;
 $red-light:   #fff0f0;
 $yellow-light:#fffbeb;
 
-// ── Toolbar ───────────────────────────────────────────────────────────────────
-.ap-toolbar {
-  --background: #{$mint};
-  --color: #ffffff;
-  --border-color: transparent;
-  box-shadow: 0 2px 12px rgba(32, 201, 151, 0.28);
-
-  ion-back-button { --color: #ffffff; }
-}
-
-.ap-title {
-  --color: #ffffff;
-  font-weight: 800;
-  letter-spacing: 0.4px;
-  font-size: 17px;
+// ── Header (AppPageHeaderComponent) — tema mint ───────────────────────────────
+app-page-header {
+  --aph-bg:            #{$mint};
+  --aph-border:        transparent;
+  --aph-shadow:        0 2px 12px rgba(32, 201, 151, 0.28);
+  --aph-toolbar-color: #ffffff;
+  --aph-back-color:    #ffffff;
+  --aph-title-color:   #ffffff;
+  --aph-title-size:    17px;
+  --aph-title-ls:      0.4px;
 }
 
 // ── Contenido ─────────────────────────────────────────────────────────────────

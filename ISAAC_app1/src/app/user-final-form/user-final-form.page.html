@@ -1,14 +1,8 @@
-<ion-header class="ion-no-border">
-  <ion-toolbar class="au-toolbar">
-    <ion-buttons slot="start">
-      <ion-back-button [defaultHref]="'/user-session/' + userId"
-                       text="Volver"
-                       (click)="$event.stopImmediatePropagation(); goBack()">
-      </ion-back-button>
-    </ion-buttons>
-    <ion-title class="au-title">Datos personales</ion-title>
-  </ion-toolbar>
-</ion-header>
+<app-page-header
+  title="Datos personales"
+  [backHref]="'/user-session/' + userId"
+  (backClick)="goBack()">
+</app-page-header>
 
 <ion-content class="au-content">
 

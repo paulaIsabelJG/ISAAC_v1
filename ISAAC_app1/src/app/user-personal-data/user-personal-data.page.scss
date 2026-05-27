@@ -10,17 +10,13 @@ $text-dark:  #222222;
 $text-muted: #6b5462;
 $card-bg:    #ffffff;
 
-// ── Header ────────────────────────────────────────────────────────────────────
-.upd-toolbar {
-  --background: #{$bg};
-  --border-color: #{$border};
-}
-
-.upd-title {
-  font-size:   15px;
-  font-weight: 700;
-  color:       $text-dark;
-  text-align:  center;
+// ── Header (AppPageHeaderComponent) ──────────────────────────────────────────
+// bg/border coinciden con el default del componente (#fdf5f9 / #ffb6c1)
+// Solo se sobreescribe lo que difiere: fuente más pequeña y ligera, sin spacing
+app-page-header {
+  --aph-title-size:   15px;
+  --aph-title-weight: 700;
+  --aph-title-ls:     0;
 }
 
 // ── Content ───────────────────────────────────────────────────────────────────

@@ -1,14 +1,8 @@
-<!-- ── Barra superior ─────────────────────────────────────────────────────── -->
-<ion-header class="ion-no-border">
-  <ion-toolbar class="op-toolbar">
-    <ion-buttons slot="start">
-      <ion-back-button defaultHref="/add-user" text="Volver"
-                       (click)="$event.stopImmediatePropagation(); goBack()">
-      </ion-back-button>
-    </ion-buttons>
-    <ion-title class="op-title">PICTOGRAMAS PROPIOS</ion-title>
-  </ion-toolbar>
-</ion-header>
+<app-page-header
+  title="PICTOGRAMAS PROPIOS"
+  backHref="/add-user"
+  (backClick)="goBack()">
+</app-page-header>
 
 <ion-content class="op-content">
   <div class="op-container">

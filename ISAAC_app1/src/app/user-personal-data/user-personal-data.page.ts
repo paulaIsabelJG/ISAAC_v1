@@ -7,6 +7,7 @@ import { buildSafeUrl as buildSafeUrlUtil } from '../shared/utils/image.utils';
 import { firstValueFrom } from 'rxjs';
 import { UserService, FullBackendUser } from '../services/user.service';
 import { LoadingErrorStateComponent } from '../shared/components/loading-error-state/loading-error-state.component';
+import { AppPageHeaderComponent } from '../shared/components/app-page-header/app-page-header.component';
 
 const MAX_IMG = 2 * 1024 * 1024; // 2 MB
 
@@ -15,7 +16,7 @@ const MAX_IMG = 2 * 1024 * 1024; // 2 MB
   templateUrl: './user-personal-data.page.html',
   styleUrls:  ['./user-personal-data.page.scss'],
   standalone: true,
-  imports: [ReactiveFormsModule, IonicModule, LoadingErrorStateComponent],
+  imports: [ReactiveFormsModule, IonicModule, LoadingErrorStateComponent, AppPageHeaderComponent],
 })
 export class UserPersonalDataPage implements OnInit {
 

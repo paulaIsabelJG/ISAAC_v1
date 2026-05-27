@@ -16,18 +16,17 @@ $text-muted:   #6b5462;
 $card-bg:      #ffffff;
 
 // ── Header ────────────────────────────────────────────────────────────────────
+// .us-toolbar se mantiene para el header @if (fromLogin) que permanece raw
 .us-toolbar {
   --background: #{$bg};
   --border-color: #{$border};
 }
 
-// Header modo navegación (viene del dashboard)
-.us-title {
-  font-size:      16px;
-  font-weight:    800;
-  color:          $pink-dark;
-  letter-spacing: 2px;
-  text-align:     center;
+// Header modo navegación (AppPageHeaderComponent, caso @else)
+// bg/border = default del componente (#fdf5f9 / #ffb6c1)
+// Solo difiere el color del título
+app-page-header {
+  --aph-title-color: #{$pink-dark};
 }
 
 // Header modo home (usuario final desde login)

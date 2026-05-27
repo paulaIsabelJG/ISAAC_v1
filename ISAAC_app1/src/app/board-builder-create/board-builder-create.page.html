@@ -1,13 +1,8 @@
-<ion-header class="ion-no-border">
-  <ion-toolbar class="bbc-toolbar">
-    <ion-buttons slot="start">
-      <ion-back-button defaultHref="/board-builder" text="Volver"
-                       (click)="$event.stopImmediatePropagation(); goBack()">
-      </ion-back-button>
-    </ion-buttons>
-    <ion-title class="bbc-title">NUEVO TABLERO</ion-title>
-  </ion-toolbar>
-</ion-header>
+<app-page-header
+  title="NUEVO TABLERO"
+  backHref="/board-builder"
+  (backClick)="goBack()">
+</app-page-header>
 
 <ion-content class="bbc-content">
   <div class="bbc-container">

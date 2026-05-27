@@ -7,13 +7,14 @@ import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 import { UserService, BackendUser } from '../services/user.service';
 import { BoardService, BoardShape } from '../services/board.service';
+import { AppPageHeaderComponent } from '../shared/components/app-page-header/app-page-header.component';
 
 @Component({
   selector: 'app-board-builder-create',
   templateUrl: './board-builder-create.page.html',
   styleUrls: ['./board-builder-create.page.scss'],
   standalone: true,
-  imports: [IonicModule, ReactiveFormsModule],
+  imports: [IonicModule, ReactiveFormsModule, AppPageHeaderComponent],
 })
 export class BoardBuilderCreatePage implements OnInit {
 

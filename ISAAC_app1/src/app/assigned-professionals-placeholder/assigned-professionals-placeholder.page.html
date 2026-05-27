@@ -1,13 +1,8 @@
-<ion-header class="ion-no-border">
-  <ion-toolbar class="ap-toolbar">
-    <ion-buttons slot="start">
-      <ion-back-button defaultHref="/add-user" text="Volver"
-                       (click)="$event.stopImmediatePropagation(); goBack()">
-      </ion-back-button>
-    </ion-buttons>
-    <ion-title class="ap-title">Profesionales encargados</ion-title>
-  </ion-toolbar>
-</ion-header>
+<app-page-header
+  title="Profesionales encargados"
+  backHref="/add-user"
+  (backClick)="goBack()">
+</app-page-header>
 
 <ion-content class="ap-content">
   <div class="ap-container">

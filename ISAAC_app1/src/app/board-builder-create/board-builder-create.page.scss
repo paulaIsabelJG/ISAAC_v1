@@ -10,17 +10,10 @@ $text-dark:    #222222;
 $text-muted:   #6b5462;
 $card-bg:      #ffffff;
 
-// ── Header ───────────────────────────────────────────────────────────────────
-.bbc-toolbar {
-  --background:   #{$bg};
-  --border-color: #{$border};
-}
-.bbc-title {
-  font-size:      16px;
-  font-weight:    800;
-  color:          $violet;
-  letter-spacing: 2px;
-  text-align:     center;
+// ── Header (AppPageHeaderComponent) ──────────────────────────────────────────
+// bg/border = default del componente (#fdf5f9 / #ffb6c1)
+app-page-header {
+  --aph-title-color: #{$violet};
 }
 
 // ── Content ──────────────────────────────────────────────────────────────────

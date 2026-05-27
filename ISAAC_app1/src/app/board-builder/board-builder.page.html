@@ -1,20 +1,15 @@
-<ion-header class="ion-no-border">
-  <ion-toolbar class="bb-toolbar">
-    <ion-buttons slot="start">
-      <ion-back-button defaultHref="/organization-dashboard" text="Volver"
-                       (click)="$event.stopImmediatePropagation(); goBack()">
-      </ion-back-button>
-    </ion-buttons>
-    <ion-title class="bb-title">BOARD BUILDER</ion-title>
-    <ion-buttons slot="end">
-      <button type="button" class="bb-select-toggle"
-              [class.bb-select-toggle--active]="selectMode"
-              (click)="toggleSelectMode()">
-        @if (selectMode) { Cancelar } @else { Seleccionar }
-      </button>
-    </ion-buttons>
-  </ion-toolbar>
-</ion-header>
+<app-page-header
+  title="BOARD BUILDER"
+  backHref="/organization-dashboard"
+  (backClick)="goBack()">
+  <ion-buttons slot="end">
+    <button type="button" class="bb-select-toggle"
+            [class.bb-select-toggle--active]="selectMode"
+            (click)="toggleSelectMode()">
+      @if (selectMode) { Cancelar } @else { Seleccionar }
+    </button>
+  </ion-buttons>
+</app-page-header>
 
 <ion-content class="bb-content">
   <div class="bb-container">
