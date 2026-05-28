@@ -1,0 +1,59 @@
+<div class="mbe-root" [ngClass]="layoutClass">
+
+  @for (slot of slots; track slot.slotId) {
+    <div class="mbe-slot"
+         [class.mbe-slot--selected]="isSelected(slot.slotId)"
+         [class.mbe-slot--assigned]="!!slot.boardId"
+         (click)="onSlotClick(slot.slotId)">
+
+      <!-- Número de hueco -->
+      <span class="mbe-slot-label">Hueco {{ slot.slotId }}</span>
+
+      @if (slot.boardId) {
+        <!-- Hueco con tablero asignado -->
+        <div class="mbe-slot-assigned">
+          <svg class="mbe-slot-icon" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="1.8">
+            <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+            <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+            <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+            <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+          </svg>
+          <span class="mbe-slot-name">{{ slot.name }}</span>
+        </div>
+
+        <!-- Acciones -->
+        <div class="mbe-slot-actions">
+          <button class="mbe-slot-btn mbe-slot-btn--edit"
+                  (click)="onEditBoard(slot.boardId!, $event)"
+                  title="Editar tablero">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            Editar
+          </button>
+          <button class="mbe-slot-btn mbe-slot-btn--clear"
+                  (click)="onClearSlot(slot.slotId, $event)"
+                  title="Quitar tablero">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+      } @else {
+        <!-- Hueco vacío -->
+        <div class="mbe-slot-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5"  y1="12" x2="19" y2="12"/>
+          </svg>
+          <span>Asignar tablero</span>
+        </div>
+      }
+
+    </div>
+  }
+
+</div>

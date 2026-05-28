@@ -1,0 +1,107 @@
+# ============================================================
+# ISAAC — .gitignore RAÍZ
+# Cubre todo el monorepo (backend + frontend)
+# ============================================================
+
+# ── Secretos y configuración local ──────────────────────────
+**/.env
+**/.env.local
+**/.env.*.local
+**/.env.development
+**/.env.production
+**/.env.test
+
+# ── Node.js ─────────────────────────────────────────────────
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+package-lock 2.json
+
+# ── Logs ────────────────────────────────────────────────────
+**/*.log
+**/logs/
+log.txt
+testem.log
+/libpeerconnection.log
+
+# ── Archivos temporales ──────────────────────────────────────
+**/.tmp/
+**/tmp/
+**/*.tmp
+**/*.tmp.*
+**/*.sw[mnpcod]
+**/*~
+
+# ── Compilados / builds ──────────────────────────────────────
+**/dist/
+**/out-tsc/
+**/bazel-out/
+**/.cache/
+
+# ── Angular ─────────────────────────────────────────────────
+**/.angular/
+**/.sourcemaps/
+**/.versions/
+**/.nx/
+
+# ── Ionic / Capacitor ────────────────────────────────────────
+**/.ionic/
+**/www/
+**/platforms/
+**/plugins/
+**/android/
+**/ios/
+
+# ── Tests y cobertura ────────────────────────────────────────
+**/coverage/
+**/.nyc_output/
+
+# ── macOS ────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.Spotlight-V100
+.Trashes
+*.xcuserstate
+UserInterfaceState.xcuserstate
+
+# ── Windows ──────────────────────────────────────────────────
+Thumbs.db
+ehthumbs.db
+$RECYCLE.BIN/
+Desktop.ini
+
+# ── IDEs y editores ──────────────────────────────────────────
+.idea/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-project
+*.sublime-workspace
+.history/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# ── SASS cache ───────────────────────────────────────────────
+.sass-cache/
+
+# ── Capacitor + Xcode / Android ──────────────────────────────
+*.xcworkspace
+xcuserdata/
+*.xccheckout
+*.moved-aside
+DerivedData/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM

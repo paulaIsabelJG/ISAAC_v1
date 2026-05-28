@@ -1,0 +1,81 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar class="bet-toolbar">
+
+    <!-- ── Botón izquierda ────────────────────────────────────────────────── -->
+    <ion-buttons slot="start">
+      @if (previewMode) {
+        <!-- En preview: "← Editar" que vuelve al modo editor -->
+        <ion-button fill="clear" class="bet-back-preview" (click)="togglePreview.emit()">
+          <svg slot="start" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+          Editar
+        </ion-button>
+      } @else {
+        <!-- En edición: botón volver al builder (con stopImmediatePropagation) -->
+        <ion-back-button
+          defaultHref="/board-builder"
+          text="Volver"
+          (click)="onBackClick($event)">
+        </ion-back-button>
+      }
+    </ion-buttons>
+
+    <!-- ── Título central ────────────────────────────────────────────────── -->
+    <ion-title class="bet-title">
+      @if (previewMode) { VISTA PREVIA }
+      @else { {{ boardName || 'EDITOR' }} }
+    </ion-title>
+
+    <!-- ── Botones derecha (solo en modo edición) ─────────────────────────── -->
+    @if (!previewMode) {
+      <ion-buttons slot="end">
+
+        <!-- Publicar / despublicar (antes: Añadir al perfil) -->
+        @if (canAddToProfile) {
+          <ion-button
+            fill="clear"
+            class="bet-btn bet-btn--publish"
+            [class.bet-btn--in-profile]="isInProfile"
+            (click)="onProfileToggle()"
+            [title]="isInProfile ? 'Publicado (pulsa para despublicar)' : 'Publicar en perfil del usuario'">
+            @if (isInProfile) {
+              <svg slot="start" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="17 11 19 13 23 9"/>
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+              Publicado
+            } @else {
+              <svg slot="start" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              Publicar
+            }
+          </ion-button>
+        }
+
+        <!-- Exportar OBZ -->
+        <ion-button fill="clear" class="bet-btn" title="Exportar OBZ" (click)="exportOBZ.emit()">
+          <svg slot="icon-only" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+        </ion-button>
+
+        <!-- Vista previa -->
+        <ion-button fill="clear" class="bet-btn bet-btn--preview" title="Vista previa" (click)="togglePreview.emit()">
+          <svg slot="icon-only" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </ion-button>
+
+      </ion-buttons>
+    }
+
+  </ion-toolbar>
+</ion-header>

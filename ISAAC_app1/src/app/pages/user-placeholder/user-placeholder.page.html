@@ -1,0 +1,37 @@
+<ion-content class="placeholder-content">
+  <div class="placeholder-container">
+
+    <div class="placeholder-card">
+      <div class="placeholder-logo">ISAAC</div>
+
+      <div class="placeholder-avatar">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="12" cy="8" r="4"/>
+          <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+        </svg>
+      </div>
+
+      <h1 class="placeholder-name">{{ user?.name || 'Usuario' }}</h1>
+      <div class="placeholder-type-badge">{{ typeLabel }}</div>
+      <p class="placeholder-email">{{ user?.email }}</p>
+
+      <div class="placeholder-info">
+        <p>Pantalla de usuario pendiente de implementación</p>
+        <p class="info-sub">
+          El tablero de comunicación, pictogramas y frases
+          estarán disponibles en la siguiente fase.
+        </p>
+      </div>
+
+      <button class="logout-btn" (click)="logout()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+        Cerrar sesión
+      </button>
+    </div>
+
+  </div>
+</ion-content>

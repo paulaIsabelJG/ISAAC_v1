@@ -1,0 +1,36 @@
+@if (pict) {
+
+  <!-- ── Zona de imagen ──────────────────────────────────────────────────── -->
+  <div class="pcc-img-wrap">
+    @if (pict.imageUrl) {
+      <img [src]="safeImageUrl" class="pcc-img" [alt]="pict.label" draggable="false"/>
+    } @else {
+      <div class="pcc-img-placeholder">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="3" y="3" width="18" height="18" rx="3"/>
+          <circle cx="8.5" cy="8.5" r="1.5"/>
+          <polyline points="21 15 16 10 5 21"/>
+        </svg>
+      </div>
+    }
+  </div>
+
+  <!-- ── Etiqueta ───────────────────────────────────────────────────────── -->
+  <span class="pcc-label">{{ pict.label }}</span>
+
+  <!-- ── Badge "OFF" (celda deshabilitada, posición absoluta) ──────────── -->
+  @if (showDisabledBadge) {
+    <div class="pcc-disabled-badge">OFF</div>
+  }
+
+} @else if (emptyType === 'plus') {
+
+  <!-- ── Celda vacía — editor ───────────────────────────────────────────── -->
+  <span class="pcc-plus">+</span>
+
+} @else {
+
+  <!-- ── Celda vacía — vista previa ────────────────────────────────────── -->
+  <div class="pcc-empty"></div>
+
+}

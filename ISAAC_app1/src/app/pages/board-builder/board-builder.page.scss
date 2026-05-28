@@ -1,0 +1,486 @@
+// ── Variables ────────────────────────────────────────────────────────────────
+$pink:         #ff69b4;
+$pink-dark:    #e91e8c;
+$pink-light:   #fff0f7;
+$violet:       #7c4dff;
+$violet-light: #f0ebff;
+$blue:         #4a9eff;
+$blue-light:   #e8f4ff;
+$border:       #ffb6c1;
+$bg:           #fdf5f9;
+$text-dark:    #222222;
+$text-muted:   #6b5462;
+$card-bg:      #ffffff;
+
+// ── Header (AppPageHeaderComponent) ──────────────────────────────────────────
+// bg/border = default del componente (#fdf5f9 / #ffb6c1)
+// Solo difiere el color del título (violeta) y se proyecta el botón Seleccionar
+app-page-header {
+  --aph-title-color: #{$violet};
+}
+
+// ── Content ──────────────────────────────────────────────────────────────────
+.bb-content { --background: #{$bg}; }
+
+.bb-container {
+  max-width:  720px;
+  margin:     0 auto;
+  padding:    24px 20px 48px;
+  box-sizing: border-box;
+}
+
+// ── Etiqueta de sección ───────────────────────────────────────────────────────
+.bb-section-label {
+  font-size:      11px;
+  font-weight:    800;
+  color:          $text-muted;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  margin:         0 0 14px;
+}
+
+.bb-section-header {
+  display:     flex;
+  align-items: center;
+  gap:         10px;
+  margin:      28px 0 14px;
+}
+
+.bb-count {
+  background:    $violet-light;
+  color:         $violet;
+  font-size:     11px;
+  font-weight:   700;
+  border-radius: 10px;
+  padding:       2px 10px;
+}
+
+// ── Botones de acción ─────────────────────────────────────────────────────────
+.bb-actions {
+  display:   flex;
+  gap:       14px;
+  flex-wrap: wrap;
+}
+
+.bb-action-btn {
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  gap:             10px;
+  width:           140px;
+  padding:         20px 12px 16px;
+  border-radius:   20px;
+  border:          1.5px solid transparent;
+  cursor:          pointer;
+  font-family:     inherit;
+  transition:      transform 0.15s, box-shadow 0.15s;
+  box-shadow:      0 2px 8px rgba(0,0,0,0.07);
+
+  &:hover  { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+  &:active { transform: translateY(0);   box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+
+  &--violet {
+    background: $violet-light;
+    border-color: darken($violet-light, 8%);
+  }
+  &--blue {
+    background: $blue-light;
+    border-color: darken($blue-light, 8%);
+  }
+}
+
+.bb-action-icon {
+  width:           52px;
+  height:          52px;
+  border-radius:   14px;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+
+  .bb-action-btn--violet & {
+    background: rgba($violet, 0.15);
+    svg { stroke: $violet; }
+  }
+  .bb-action-btn--blue & {
+    background: rgba($blue, 0.15);
+    svg { stroke: $blue; }
+  }
+
+  svg { width: 28px; height: 28px; }
+}
+
+.bb-action-label {
+  font-size:   11px;
+  font-weight: 700;
+  text-align:  center;
+  line-height: 1.3;
+
+  .bb-action-btn--violet & { color: $violet; }
+  .bb-action-btn--blue   & { color: $blue; }
+}
+
+// ── Estado: cargando / error / vacío ─────────────────────────────────────────
+.bb-state {
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  gap:             12px;
+  padding:         40px 20px;
+  color:           $text-muted;
+  font-size:       14px;
+
+  &--error {
+    color: #c0392b;
+    svg { stroke: #c0392b; }
+  }
+
+  svg { width: 36px; height: 36px; stroke: $text-muted; flex: 0 0 auto; }
+}
+
+.bb-empty {
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  gap:             8px;
+  padding:         40px 20px;
+  text-align:      center;
+
+  svg    { width: 48px; height: 48px; stroke: $border; margin-bottom: 4px; }
+  p      { font-size: 15px; font-weight: 700; color: $text-dark; margin: 0; }
+  span   { font-size: 13px; color: $text-muted; }
+}
+
+// ── Lista de tableros ─────────────────────────────────────────────────────────
+.bb-board-list {
+  display:        flex;
+  flex-direction: column;
+  gap:            10px;
+}
+
+.bb-board-card {
+  display:       flex;
+  align-items:   center;
+  gap:           14px;
+  background:    $card-bg;
+  border:        1.5px solid $border;
+  border-radius: 16px;
+  padding:       14px 16px;
+  cursor:        pointer;
+  transition:    transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+  box-shadow:    0 2px 8px rgba(0,0,0,0.04);
+
+  &:hover {
+    transform:    translateY(-2px);
+    border-color: $violet;
+    box-shadow:   0 6px 18px rgba(0,0,0,0.08);
+  }
+}
+
+.bb-board-icon {
+  flex:            0 0 auto;
+  width:           42px;
+  height:          42px;
+  border-radius:   12px;
+  background:      $violet-light;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  overflow:        hidden;
+
+  svg { width: 22px; height: 22px; stroke: $violet; }
+
+  // cuando tiene imagen propia no se muestra el fondo morado
+  &--img { background: transparent; }
+}
+
+.bb-board-img {
+  width:      100%;
+  height:     100%;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.bb-board-info {
+  flex:           1;
+  display:        flex;
+  flex-direction: column;
+  gap:            2px;
+  min-width:      0;
+}
+
+.bb-board-name {
+  font-size:     14px;
+  font-weight:   700;
+  color:         $text-dark;
+  white-space:   nowrap;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+}
+
+.bb-board-meta {
+  font-size: 12px;
+  color:     $text-muted;
+}
+
+.bb-board-actions {
+  display:     flex;
+  align-items: center;
+  gap:         6px;
+  flex:        0 0 auto;
+}
+
+.bb-dup-btn {
+  width:           30px;
+  height:          30px;
+  border-radius:   8px;
+  background:      transparent;
+  border:          1px solid #b8d8f8;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  cursor:          pointer;
+  transition:      background 0.15s;
+
+  svg { width: 15px; height: 15px; stroke: $blue; }
+
+  &:hover { background: $blue-light; }
+}
+
+.bb-del-btn {
+  width:           30px;
+  height:          30px;
+  border-radius:   8px;
+  background:      transparent;
+  border:          1px solid #f8c4cf;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  cursor:          pointer;
+  transition:      background 0.15s;
+
+  svg { width: 15px; height: 15px; stroke: #d44; }
+
+  &:hover { background: #fff0f0; }
+}
+
+.bb-chevron {
+  width:  18px;
+  height: 18px;
+  stroke: #ccc;
+  flex:   0 0 auto;
+}
+
+// ── Botón "Seleccionar" en el header ──────────────────────────────────────────
+.bb-select-toggle {
+  font-size:     13px;
+  font-weight:   700;
+  color:         $violet;
+  background:    transparent;
+  border:        none;
+  padding:       6px 12px;
+  border-radius: 10px;
+  cursor:        pointer;
+  transition:    background 0.15s;
+  font-family:   inherit;
+
+  &:hover   { background: $violet-light; }
+  &--active { color: #e74c3c; }
+  &--active:hover { background: #fff0ee; }
+}
+
+// ── Buscador ──────────────────────────────────────────────────────────────────
+.bb-search-wrap {
+  position:    relative;
+  display:     flex;
+  align-items: center;
+  margin:      0 0 18px;
+}
+
+.bb-search-icon {
+  position: absolute;
+  left:     12px;
+  width:    18px;
+  height:   18px;
+  stroke:   $text-muted;
+  pointer-events: none;
+}
+
+.bb-search-inp {
+  width:         100%;
+  padding:       10px 40px 10px 38px;
+  border:        1.5px solid $border;
+  border-radius: 12px;
+  font-size:     14px;
+  font-family:   inherit;
+  background:    #fff;
+  color:         $text-dark;
+  outline:       none;
+  box-sizing:    border-box;
+  transition:    border-color 0.15s;
+
+  &:focus { border-color: $violet; }
+  &::placeholder { color: #bbb; }
+}
+
+.bb-search-clear {
+  position:    absolute;
+  right:       10px;
+  width:       24px;
+  height:      24px;
+  border:      none;
+  background:  transparent;
+  cursor:      pointer;
+  display:     flex;
+  align-items: center;
+  justify-content: center;
+
+  svg { width: 16px; height: 16px; stroke: $text-muted; }
+  &:hover svg { stroke: $text-dark; }
+}
+
+// ── Subsecciones ──────────────────────────────────────────────────────────────
+.bb-sub-header {
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+  margin:      0 0 10px;
+}
+
+.bb-sub-label {
+  font-size:      11px;
+  font-weight:    800;
+  color:          $text-muted;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.bb-sub-count {
+  font-size:     11px;
+  font-weight:   700;
+  color:         $violet;
+  background:    $violet-light;
+  border-radius: 8px;
+  padding:       1px 8px;
+}
+
+// ── Tarjeta secundaria ────────────────────────────────────────────────────────
+.bb-board-card--secondary {
+  opacity: 0.82;
+  border-color: #e0d4e8;
+}
+
+.bb-board-icon--secondary {
+  background: #f3ecff;
+  svg { stroke: #9b6dff; }
+}
+
+// ── Tarjeta multitablero ──────────────────────────────────────────────────────
+.bb-board-card--multi {
+  border-color: #b2e8d8;
+}
+
+.bb-board-icon--multi {
+  background: #e0fff6;
+  svg { stroke: #17a682; }
+}
+
+.bb-sub-count--multi {
+  color:      #17a682;
+  background: #e0fff6;
+}
+
+// ── Modo selección ────────────────────────────────────────────────────────────
+.bb-board-card--select-mode {
+  cursor: default;
+  &:hover {
+    transform:    none;
+    border-color: $border;
+    box-shadow:   0 2px 8px rgba(0,0,0,0.04);
+  }
+}
+
+.bb-board-card--selected {
+  border-color: $violet !important;
+  background:   $violet-light;
+  box-shadow:   0 0 0 2px rgba($violet, 0.18);
+}
+
+.bb-checkbox {
+  flex:            0 0 auto;
+  width:           22px;
+  height:          22px;
+  border-radius:   6px;
+  border:          2px solid #ccc;
+  background:      #fff;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  transition:      border-color 0.15s, background 0.15s;
+
+  svg { width: 14px; height: 14px; stroke: #fff; }
+
+  &--checked {
+    background:   $violet;
+    border-color: $violet;
+  }
+}
+
+// ── Badge "En perfil" ─────────────────────────────────────────────────────────
+.bb-profile-badge {
+  display:       inline-block;
+  font-size:     10px;
+  font-weight:   700;
+  color:         #2ecc71;
+  background:    #eafaf1;
+  border:        1px solid #b9f0d0;
+  border-radius: 6px;
+  padding:       1px 6px;
+  margin-top:    2px;
+}
+
+// ── Barra de acciones (modo selección, fija abajo) ────────────────────────────
+.bb-select-bar {
+  position:        fixed;
+  bottom:          0;
+  left:            0;
+  right:           0;
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  gap:             12px;
+  background:      #fff;
+  border-top:      2px solid $border;
+  padding:         12px 20px;
+  padding-bottom:  max(12px, env(safe-area-inset-bottom));
+  z-index:         200;
+  box-shadow:      0 -4px 16px rgba(0,0,0,0.08);
+}
+
+.bb-select-info {
+  font-size:   14px;
+  font-weight: 700;
+  color:       $text-dark;
+}
+
+.bb-select-del {
+  display:         flex;
+  align-items:     center;
+  gap:             7px;
+  background:      #e74c3c;
+  color:           #fff;
+  border:          none;
+  border-radius:   12px;
+  padding:         10px 18px;
+  font-size:       13px;
+  font-weight:     700;
+  font-family:     inherit;
+  cursor:          pointer;
+  transition:      background 0.15s, opacity 0.15s;
+
+  svg { width: 16px; height: 16px; stroke: #fff; }
+
+  &:hover     { background: #c0392b; }
+  &:disabled  { opacity: 0.45; cursor: not-allowed; }
+}

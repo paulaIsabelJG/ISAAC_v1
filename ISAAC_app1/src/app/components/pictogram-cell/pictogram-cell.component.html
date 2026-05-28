@@ -1,0 +1,9 @@
+<!-- El host element ES la celda visual (ver SCSS: :host).
+     PictCellContentComponent usa display:contents → sus hijos
+     (.pcc-img-wrap, .pcc-label) son grid-items directos del host. -->
+
+<app-pict-cell-content
+  [pict]="pict"
+  [showDisabledBadge]="showDisabledBadge"
+  [emptyType]="emptyType">
+</app-pict-cell-content>

@@ -1,0 +1,524 @@
+<app-board-editor-toolbar
+  [previewMode]="previewMode"
+  [boardName]="board?.name ?? ''"
+  [canAddToProfile]="canAddToProfile"
+  [isInProfile]="isInProfile"
+  (togglePreview)="togglePreview()"
+  (goBack)="goBack()"
+  (exportOBZ)="exportOBZ()"
+  (addToProfile)="addToProfile()"
+  (removeFromProfile)="removeFromProfile()">
+</app-board-editor-toolbar>
+
+<ion-content class="bbe-content">
+
+  <!-- ══════════════════════ ESTADO CARGANDO / ERROR ══════════════════════ -->
+  @if (isLoading || loadError) {
+    <app-loading-error-state
+      [loading]="isLoading"
+      [error]="loadError"
+      spinnerColor="secondary">
+    </app-loading-error-state>
+
+  <!-- ══════════════════════ MODO VISTA PREVIA — MULTITABLERO ════════════ -->
+  } @else if (previewMode && isMultiBoard) {
+    <div class="bbe-multi-preview">
+
+      <!-- Barra AAC reutilizable -->
+      <app-aac-controls-bar
+        mode="preview"
+        [canGoBack]="canGoBackInPreview"
+        (homeClick)="onPreviewHome()"
+        (backClick)="onPreviewBack()">
+      </app-aac-controls-bar>
+
+      <!-- Multitablero comunicador -->
+      <app-multiboard-communicator
+        [masterBoard]="board"
+        style="flex:1;display:flex;min-height:0;overflow:hidden">
+      </app-multiboard-communicator>
+
+    </div><!-- /bbe-multi-preview -->
+
+  <!-- ══════════════════════ MODO VISTA PREVIA — TABLERO NORMAL ═══════════ -->
+  } @else if (previewMode) {
+    <app-board-preview-container
+      [board]="board"
+      [isCircular]="isCircular"
+      [previewCenterPict]="previewCenterPict"
+      [circularSimMode]="circularSimMode"
+      [isCenterShowingLastPhrase]="isCenterShowingLastPhrase"
+      [canGoBack]="canGoBackInPreview"
+      (cellClick)="onCellClick($event.row, $event.col)"
+      (homeClick)="onPreviewHome()"
+      (backClick)="onPreviewBack()">
+    </app-board-preview-container>
+
+  <!-- ══════════════════════ MODO EDITOR NORMAL ═════════════════════════ -->
+  } @else {
+    <div class="bbe-layout">
+
+      <!-- ── COLUMNA IZQUIERDA → BoardSidebarLeftComponent ──────────────── -->
+      <app-board-sidebar-left
+        [config]="sidebarConfig"
+        [isCircular]="isCircular"
+        [centerUsers]="centerUsers"
+        [userBoards]="userBoards"
+        [userBoardsLoading]="userBoardsLoading"
+        [highlightedBoardId]="highlightedBoardId"
+        [isSaving]="sidebarSaving"
+        [isMultiBoard]="isMultiBoard"
+        [multiSlots]="sidebarMultiSlots"
+        (saveConfig)="onSaveConfigRequest($event)"
+        (openBoard)="openBoard($event)"
+        (selectSlot)="onSlotSelected($event)"
+        (controlsConfigChange)="onControlsConfigChange($event)">
+      </app-board-sidebar-left>
+
+      <!-- ── COLUMNA CENTRAL ────────────────────────────────────────────── -->
+      <div class="bbe-col-center">
+
+        <!-- Acciones OBF / OBZ -->
+        <div class="bbe-obf-bar">
+          <button class="bbe-obf-btn" (click)="importOBF()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Importar OBF
+          </button>
+          <button class="bbe-obf-btn" (click)="importOBZ()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+              <rect x="3" y="3" width="5" height="5" rx="1"/>
+            </svg>
+            Importar OBZ
+          </button>
+          <button class="bbe-obf-btn" (click)="exportOBF()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            Exportar OBF
+          </button>
+        </div>
+
+        <!-- ── Preview de la barra AAC (solo tableros principales) ────────── -->
+        @if (board?.boardRole === 'main') {
+          <div class="bbe-aac-preview-panel"
+               [class.bbe-aac-preview-panel--collapsed]="controlsBarPreviewCollapsed">
+
+            <div class="bbe-aac-preview-header" (click)="controlsBarPreviewCollapsed = !controlsBarPreviewCollapsed">
+              <span class="bbe-aac-preview-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;vertical-align:middle;margin-right:4px">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                </svg>
+                Vista previa barra AAC
+              </span>
+              <button class="bbe-aac-preview-toggle" title="{{ controlsBarPreviewCollapsed ? 'Expandir' : 'Colapsar' }}">
+                @if (controlsBarPreviewCollapsed) {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                } @else {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                }
+              </button>
+            </div>
+
+            @if (!controlsBarPreviewCollapsed) {
+              <div class="bbe-aac-preview-bar" style="pointer-events:none">
+                <app-aac-controls-bar
+                  mode="preview"
+                  [controlsConfig]="previewControlsConfig ?? currentControlsConfig">
+                </app-aac-controls-bar>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- ── MULTITABLERO editor: boards reales con resize ────────────── -->
+        @if (isMultiBoard) {
+
+          <!-- Grid principal de slots con handles de resize -->
+          <div class="bbe-multi-grids">
+
+            @for (row of slotsByRow; track $index; let rowIdx = $index) {
+
+              <!-- Fila de slots -->
+              <div class="bbe-multi-row" [style.flex]="slotFlexRow(rowIdx)">
+
+                @for (slotId of row; track slotId; let colIdx = $index) {
+
+                  <!-- Slot -->
+                  <div class="bbe-multi-slot"
+                       [style.flex]="slotFlexCol(slotId)"
+                       [class.bbe-multi-slot--active]="activeCellSlotId === slotId">
+
+                    <!-- Cabecera del slot -->
+                    <div class="bbe-multi-slot-header">
+                      <span class="bbe-multi-slot-title">{{ getSlotTitle(slotId) }}</span>
+                      @if (getSlotBoardId(slotId)) {
+                        <button class="bbe-slot-btn bbe-slot-btn--view"
+                                (click)="onEditSlotBoard(getSlotBoardId(slotId)!)"
+                                title="Editar este tablero">
+                          Ver tablero
+                        </button>
+                      }
+                    </div>
+
+                    <!-- Board del slot -->
+                    <div class="bbe-multi-slot-body">
+                      @if (isSlotLoading(slotId)) {
+                        <div class="bbe-multi-slot-state">
+                          <ion-spinner name="crescent" color="secondary"></ion-spinner>
+                        </div>
+                      } @else if (getSlotBoard(slotId)) {
+                        <app-board-grid
+                          [board]="getSlotBoard(slotId)"
+                          mode="edit"
+                          [selectedCell]="selectedCellForSlot(slotId)"
+                          [draggedCell]="activeCellSlotId === slotId ? draggedCell : null"
+                          [dragOverCell]="activeCellSlotId === slotId ? dragOverCell : null"
+                          [moveSrcCell]="activeCellSlotId === slotId ? moveSrcCell : null"
+                          (cellClick)="onMultiSlotCellClick(slotId, $event.row, $event.col)"
+                          (cellDblClick)="onMultiSlotCellDblClick(slotId, $event.row, $event.col)"
+                          (cellDragStart)="onMultiSlotCellDragStart(slotId, $event.event, $event.row, $event.col)"
+                          (cellDragOver)="onMultiSlotCellDragOver(slotId, $event.event, $event.row, $event.col)"
+                          (cellDragLeave)="onMultiSlotCellDragLeave(slotId, $event.event, $event.row, $event.col)"
+                          (cellDrop)="onMultiSlotCellDrop(slotId, $event.event, $event.row, $event.col)"
+                          (cellDragEnd)="onCellDragEnd()">
+                        </app-board-grid>
+                      } @else {
+                        <button class="bbe-multi-slot-add"
+                                (click)="onSlotSelected(slotId)"
+                                title="Asignar tablero a este hueco">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5"  y1="12" x2="19" y2="12"/>
+                          </svg>
+                        </button>
+                      }
+                    </div>
+
+                  </div><!-- /bbe-multi-slot -->
+
+                  <!-- Handle de columna entre slots (no después del último) -->
+                  @if (colIdx < row.length - 1) {
+                    <div class="bbe-resize-handle bbe-resize-handle--col"
+                         (pointerdown)="onColHandleDown($event, colIdx)"
+                         (pointermove)="onColHandleMove($event)"
+                         (pointerup)="onColHandleUp($event)"
+                         title="Arrastrar para redimensionar">
+                      <div class="bbe-resize-handle-inner"></div>
+                    </div>
+                  }
+
+                }
+
+              </div><!-- /bbe-multi-row -->
+
+              <!-- Handle de fila entre filas (solo para 4 huecos, no después de la última) -->
+              @if (rowIdx < slotsByRow.length - 1) {
+                <div class="bbe-resize-handle bbe-resize-handle--row"
+                     (pointerdown)="onRowHandleDown($event)"
+                     (pointermove)="onRowHandleMove($event)"
+                     (pointerup)="onRowHandleUp($event)"
+                     title="Arrastrar para redimensionar altura">
+                  <div class="bbe-resize-handle-inner"></div>
+                </div>
+              }
+
+            }
+
+          </div><!-- /bbe-multi-grids -->
+        }
+
+        <!-- ── GRID editor ──────────────────────────────────────────────── -->
+        @if (!isMultiBoard && !isCircular) {
+          <app-board-grid
+            [board]="board"
+            mode="edit"
+            [selectedCell]="selectedCell"
+            [draggedCell]="draggedCell"
+            [dragOverCell]="dragOverCell"
+            [moveSrcCell]="moveSrcCell"
+            (cellClick)="onCellClick($event.row, $event.col)"
+            (cellDblClick)="onCellDblClick($event.row, $event.col)"
+            (cellDragStart)="onCellDragStart($event.event, $event.row, $event.col)"
+            (cellDragOver)="onCellDragOver($event.event, $event.row, $event.col)"
+            (cellDragLeave)="onCellDragLeave($event.event, $event.row, $event.col)"
+            (cellDrop)="onCellDrop($event.event, $event.row, $event.col)"
+            (cellDragEnd)="onCellDragEnd()">
+          </app-board-grid>
+        }
+
+        <!-- ── CIRCULAR editor ───────────────────────────────────────────── -->
+        @if (!isMultiBoard && isCircular) {
+          <app-board-circular
+            [board]="board"
+            mode="edit"
+            [selectedCell]="selectedCell"
+            [draggedCell]="draggedCell"
+            [dragOverCell]="dragOverCell"
+            [moveSrcCell]="moveSrcCell"
+            (cellClick)="onCellClick($event.row, $event.col)"
+            (cellDblClick)="onCellDblClick($event.row, $event.col)"
+            (cellDragStart)="onCellDragStart($event.event, $event.row, $event.col)"
+            (cellDragOver)="onCellDragOver($event.event, $event.row, $event.col)"
+            (cellDragLeave)="onCellDragLeave($event.event, $event.row, $event.col)"
+            (cellDrop)="onCellDrop($event.event, $event.row, $event.col)"
+            (cellDragEnd)="onCellDragEnd()">
+          </app-board-circular>
+        }
+
+      </div><!-- /col-center -->
+
+      <!-- ── COLUMNA DERECHA ───────────────────────────────────────────────── -->
+      @if (isMultiBoard) {
+
+        <!-- Panel multitablero: dos tabs →  Pictograma | Tablero -->
+        <div class="bbe-multi-panel">
+
+          <ion-segment [value]="multiPanelMode"
+                       (ionChange)="onMultiPanelModeChange($event)"
+                       class="bbe-multi-seg">
+            <ion-segment-button value="pictogram">
+              <ion-label>Pictograma</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="tablero">
+              <ion-label>Tablero</ion-label>
+            </ion-segment-button>
+          </ion-segment>
+
+          <!-- Área de contenido scrollable (ambos tabs comparten el mismo wrapper) -->
+          <div class="bbe-mpanel-body">
+
+          <!-- ── TAB: Configuración del pictograma seleccionado ──────────── -->
+          @if (multiPanelMode === 'pictogram') {
+            <app-board-cell-panel
+              class="bbe-cell-panel-in-multi"
+              [selectedCell]="selectedCell"
+              [cellData]="cellData"
+              [isEditingCell]="isEditingCell"
+              [isSaving]="isSaving"
+              [isSharedBoard]="isSharedBoard"
+              [isCircular]="false"
+              [isCenterSelected]="false"
+              [sameShapeBoards]="sameShapeBoards"
+              [boardsReady]="boardsReady"
+              [personalPicts]="personalPicts"
+              [personalLoading]="personalLoading"
+              (saveCellRequest)="onSaveCellRequest($event)"
+              (removeCellRequest)="onRemoveCellRequest()"
+              (createBoardAndLink)="navigateToCreateBoard($event)">
+            </app-board-cell-panel>
+          }
+
+          <!-- ── TAB: Configuración del tablero (asignación de huecos) ─── -->
+          @if (multiPanelMode === 'tablero') {
+            <div class="bbe-multi-slot-cfg">
+
+              <!-- Sección TAMAÑOS: proporciones + grid del minitablero activo -->
+              <p class="bbe-multi-panel-title">TAMAÑOS</p>
+              <p class="bbe-prop-sublabel">Proporciones de huecos</p>
+              <div class="bbe-proportion-bar">
+                <button class="bbe-proportion-toggle"
+                        [class.bbe-proportion-toggle--active]="editingProportions"
+                        (click)="toggleEditingProportions()"
+                        title="Editar proporciones de los huecos">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="18" rx="1.5"/>
+                    <rect x="14" y="3" width="7" height="18" rx="1.5"/>
+                    <line x1="10" y1="12" x2="14" y2="12"/>
+                  </svg>
+                  Proporciones
+                </button>
+                @if (editingProportions) {
+                  <button class="bbe-proportion-reset" (click)="resetProportions()"
+                          title="Restaurar proporciones iguales">
+                    Restablecer
+                  </button>
+                  <button class="bbe-proportion-save" (click)="saveAndCloseProportions()"
+                          [disabled]="savingLayout">
+                    @if (savingLayout) { <ion-spinner name="crescent" style="width:12px;height:12px"></ion-spinner> }
+                    Guardar
+                  </button>
+                }
+              </div>
+              @if (editingProportions) {
+                <div class="bbe-proportion-panel">
+                  <p class="bbe-prop-label">Ancho de columnas</p>
+                  @for (w of slotWidths; track $index) {
+                    <div class="bbe-prop-row">
+                      <span class="bbe-prop-slot-tag">C{{ $index + 1 }}</span>
+                      <ion-range
+                        class="bbe-prop-range"
+                        [min]="15" [max]="100 - 15 * (slotWidths.length - 1)"
+                        [value]="w"
+                        (ionInput)="onWidthSlider($event, $index)">
+                      </ion-range>
+                      <span class="bbe-prop-pct">{{ w }}%</span>
+                    </div>
+                  }
+                  @if (slotHeights.length === 2) {
+                    <p class="bbe-prop-label" style="margin-top:10px">Alto de filas</p>
+                    @for (h of slotHeights; track $index) {
+                      <div class="bbe-prop-row">
+                        <span class="bbe-prop-slot-tag">F{{ $index + 1 }}</span>
+                        <ion-range
+                          class="bbe-prop-range"
+                          [min]="15" [max]="85"
+                          [value]="h"
+                          (ionInput)="onHeightSlider($event, $index)">
+                        </ion-range>
+                        <span class="bbe-prop-pct">{{ h }}%</span>
+                      </div>
+                    }
+                  }
+                </div>
+              }
+
+              <!-- Editor de filas/columnas del minitablero activo -->
+              @if (activeCellSlotId != null && getSlotBoard(activeCellSlotId)) {
+                <div class="bbe-slot-grid-cfg">
+                  <p class="bbe-prop-sublabel" style="margin-top:14px">
+                    Cuadrícula · {{ getSlotTitle(activeCellSlotId) }}
+                  </p>
+
+                  @if (getSlotBoard(activeCellSlotId)?.shape !== 'circular') {
+                    <div class="bbe-slot-grid-inputs">
+                      <div class="bbe-slot-grid-field">
+                        <label class="bbe-slot-grid-label">Filas</label>
+                        <input class="bbe-slot-grid-input"
+                               type="number" [value]="slotGridRows" min="1" max="10"
+                               (change)="slotGridRows = +$any($event.target).value"/>
+                      </div>
+                      <div class="bbe-slot-grid-field">
+                        <label class="bbe-slot-grid-label">Columnas</label>
+                        <input class="bbe-slot-grid-input"
+                               type="number" [value]="slotGridCols" min="1" max="10"
+                               (change)="slotGridCols = +$any($event.target).value"/>
+                      </div>
+                    </div>
+                  } @else {
+                    <div class="bbe-slot-grid-inputs">
+                      <div class="bbe-slot-grid-field">
+                        <label class="bbe-slot-grid-label">Ranuras ext.</label>
+                        <input class="bbe-slot-grid-input"
+                               type="number" [value]="slotGridCircleSlots" min="3" max="20"
+                               (change)="slotGridCircleSlots = +$any($event.target).value"/>
+                      </div>
+                    </div>
+                  }
+
+                  <button class="bbe-slot-grid-save"
+                          (click)="saveSlotGridSize()"
+                          [disabled]="savingSlotGrid">
+                    @if (savingSlotGrid) {
+                      <ion-spinner name="crescent" style="width:12px;height:12px"></ion-spinner>
+                    }
+                    Guardar tamaño
+                  </button>
+                </div>
+              }
+
+              <p class="bbe-multi-panel-title" style="margin-top:14px">HUECOS DEL MULTITABLERO</p>
+
+              @for (slotId of slotIds; track slotId) {
+                <div class="bbe-slot-row"
+                     [class.bbe-slot-row--active]="selectedSlotId === slotId">
+                  <div class="bbe-slot-row-info">
+                    <span class="bbe-slot-row-label">Hueco {{ slotId }}</span>
+                    <span class="bbe-slot-row-board">{{ getSlotTitle(slotId) }}</span>
+                  </div>
+                  <div class="bbe-slot-row-btns">
+                    <button class="bbe-slot-mini-btn bbe-slot-mini-btn--assign"
+                            (click)="onSlotSelected(slotId)"
+                            title="Asignar tablero">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5"  y1="12" x2="19" y2="12"/>
+                      </svg>
+                    </button>
+                    @if (getSlotBoardId(slotId)) {
+                      <button class="bbe-slot-mini-btn bbe-slot-mini-btn--clear"
+                              (click)="onSlotCleared(slotId)"
+                              title="Quitar tablero">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                          <line x1="18" y1="6" x2="6" y2="18"/>
+                          <line x1="6"  y1="6" x2="18" y2="18"/>
+                        </svg>
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
+
+              <!-- Selector de tablero (visible cuando hay un slot seleccionado) -->
+              @if (selectedSlotId != null) {
+                <div class="bbe-slot-picker">
+                  <p class="bbe-slot-picker-label">
+                    Asignando tablero al hueco {{ selectedSlotId }}:
+                  </p>
+                  @for (b of slotsAvailableBoards; track b._id) {
+                    <div class="bbe-board-item" (click)="onSlotBoardAssign(b._id)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+                        <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+                        <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+                        <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+                      </svg>
+                      <span>{{ b.name }}</span>
+                    </div>
+                  }
+                  @if (slotsAvailableBoards.length === 0) {
+                    <p class="bbe-multi-empty">Sin tableros principales disponibles.</p>
+                  }
+                  <button class="bbe-slot-cancel-btn"
+                          (click)="selectedSlotId = null">
+                    Cancelar
+                  </button>
+                </div>
+              }
+
+            </div><!-- /bbe-multi-slot-cfg -->
+          }
+
+          </div><!-- /bbe-mpanel-body -->
+
+        </div><!-- /bbe-multi-panel -->
+
+      } @else {
+
+        <!-- Panel normal (no multitablero) -->
+        <app-board-cell-panel
+          [selectedCell]="selectedCell"
+          [cellData]="cellData"
+          [isEditingCell]="isEditingCell"
+          [isSaving]="isSaving"
+          [isSharedBoard]="isSharedBoard"
+          [isCircular]="isCircular"
+          [isCenterSelected]="isCenterSelected"
+          [sameShapeBoards]="sameShapeBoards"
+          [boardsReady]="boardsReady"
+          [personalPicts]="personalPicts"
+          [personalLoading]="personalLoading"
+          (saveCellRequest)="onSaveCellRequest($event)"
+          (removeCellRequest)="onRemoveCellRequest()"
+          (createBoardAndLink)="navigateToCreateBoard($event)">
+        </app-board-cell-panel>
+
+      }
+
+    </div><!-- /bbe-layout -->
+  }
+
+</ion-content>

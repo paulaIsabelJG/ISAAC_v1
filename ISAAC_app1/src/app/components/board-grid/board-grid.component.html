@@ -1,0 +1,53 @@
+<!-- ══════════════════════════════════════════════════════════════════════
+     BoardGridComponent — renderizado de tablero tipo "grid"
+
+     Estructura:
+       :host  (flex row, = bbe-grid-area)
+         ├── .bgc-ia-col   (columna Predictor IA, opcional)
+         └── .bgc-grid-wrap
+               └── .bgc-grid  (CSS Grid N×M con app-pictogram-cell)
+     ══════════════════════════════════════════════════════════════════════ -->
+
+<!-- ── Columna Predictor IA (edit/preview, solo si predictorEnabled) ───── -->
+@if (iaColumnVisible) {
+  <div class="bgc-ia-col"
+       [style.grid-template-columns]="iaColsStyle">
+    @for (i of iaCells; track i) {
+      <div class="bgc-ia-cell">
+        <img src="assets/board-builder/logo-IA.png" class="bgc-ia-logo" alt="IA"/>
+        <span class="bgc-ia-label">PICTO IA</span>
+      </div>
+    }
+  </div>
+}
+
+<!-- ── Grid canvas ──────────────────────────────────────────────────────── -->
+<div class="bgc-grid-wrap">
+  <div class="bgc-grid"
+       [style.grid-template-columns]="gridColsStyle"
+       [style.grid-template-rows]="gridRowsStyle">
+
+    @for (cell of gridCells; track $index) {
+      <app-pictogram-cell
+        [pict]="getCellPict(cell.row, cell.col)"
+        [mode]="mode"
+        [isSelected]="isSelected(cell.row, cell.col)"
+        [isDragging]="isDragging(cell.row, cell.col)"
+        [isDragOver]="isDragOver(cell.row, cell.col)"
+        [isMoveSrc]="isMoveSrc(cell.row, cell.col)"
+        [isMoveMode]="isMoveMode"
+        [isDisabled]="getCellIsDisabled(cell.row, cell.col)"
+        [bgColor]="getCellBgColor(cell.row, cell.col)"
+        [borderColor]="getCellBorderColor(cell.row, cell.col)"
+        (cellClick)="onCellClick(cell.row, cell.col)"
+        (cellDblClick)="onCellDblClick(cell.row, cell.col)"
+        (dragStart)="onCellDragStart($event, cell.row, cell.col)"
+        (dragOver)="onCellDragOver($event, cell.row, cell.col)"
+        (dragLeave)="onCellDragLeave($event, cell.row, cell.col)"
+        (pgcDrop)="onCellDrop($event, cell.row, cell.col)"
+        (dragEnd)="onCellDragEnd()">
+      </app-pictogram-cell>
+    }
+
+  </div>
+</div>

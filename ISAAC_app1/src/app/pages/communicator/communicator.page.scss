@@ -1,0 +1,34 @@
+$bg:       #fdf5f9;
+$text-muted: #6b5462;
+
+// ── Root ──────────────────────────────────────────────────────────────────────
+.comm-root {
+  display:        flex;
+  flex-direction: column;
+  height:         100vh;
+  background:     $bg;
+  overflow:       hidden;
+}
+
+// La barra AAC es AacControlsBarComponent — estilos en acb-*.
+
+// ── Área del tablero ──────────────────────────────────────────────────────────
+.comm-board {
+  flex:           1;
+  overflow:       hidden;
+  padding:        10px;
+  display:        flex;
+  flex-direction: column;
+  min-height:     0;
+  box-sizing:     border-box;
+}
+
+.comm-loading,
+.comm-error {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  height:          100%;
+  font-size:       14px;
+  color:           $text-muted;
+}

@@ -1,0 +1,53 @@
+// ── Variables ─────────────────────────────────────────────────────────────────
+// Refleja el design system del editor (board-builder-editor.page.scss).
+$violet:  #7c4dff;
+$border:  #ffb6c1;
+$bg:      #fdf5f9;
+$card-bg: #ffffff;
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  HOST — columna flex que ocupa toda la altura disponible tras la toolbar
+//  (equivale a .bbe-preview-container en el page SCSS anterior)
+// ══════════════════════════════════════════════════════════════════════════════
+
+:host {
+  display:        flex;
+  flex-direction: column;
+  height:         calc(100dvh - 56px);
+  overflow:       hidden;
+}
+
+// La barra AAC usa AacControlsBarComponent con sus propios estilos (acb-*).
+// Este componente no necesita estilos de barra propios.
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  TABLERO GRID EN PREVIEW
+//  Canvas con la misma estética que en el editor (borde, sombra, fondo).
+//  app-board-grid ocupa la totalidad de este wrapper vía su :host { flex: 1 }.
+// ══════════════════════════════════════════════════════════════════════════════
+
+.bpc-preview-board {
+  flex:          1;
+  min-height:    0;
+  display:       flex;
+  align-items:   stretch;
+  padding:       10px 14px 14px;
+  box-sizing:    border-box;
+  overflow:      hidden;
+  background:    $card-bg;
+  border-radius: 14px;
+  border:        1.5px solid $border;
+  box-shadow:    0 2px 16px rgba(0, 0, 0, 0.06);
+  margin:        0 8px 8px;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  TABLERO CIRCULAR EN PREVIEW
+//  app-board-circular gestiona su propio layout vía :host (bcc-*).
+//  Ocupa el espacio sobrante como flex child de :host.
+// ══════════════════════════════════════════════════════════════════════════════
+
+app-board-circular {
+  flex:       1;
+  min-height: 0;
+}

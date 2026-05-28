@@ -1,0 +1,774 @@
+// ── Variables ──────────────────────────────────────────────────────────────────
+$pink:        #ff69b4;
+$pink-dark:   #e91e8c;
+$pink-light:  #fff0f7;
+$mint:        #20c997;
+$mint-dark:   #17a682;
+$mint-light:  #e0fff6;
+$border:      #ffb6c1;
+$text-dark:   #1a1a1a;
+$text-muted:  #7a5163;
+
+// ── Ion-header: barra superior rosa ISAAC ─────────────────────────────────────
+.au-toolbar {
+  --background: #{$pink};
+  --color: #ffffff;
+  --border-color: transparent;
+  box-shadow: 0 2px 12px rgba(233, 30, 140, 0.25);
+
+  ion-back-button {
+    --color: #ffffff;
+    --icon-font-size: 20px;
+  }
+}
+
+.au-title {
+  --color: #ffffff;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 0.3px;
+}
+
+// ── Ion-content: fondo exterior ───────────────────────────────────────────────
+.au-content {
+  --background: #f0e8f4;
+}
+
+// ── Tablet frame: contenedor principal ───────────────────────────────────────
+.tablet-frame {
+  max-width: 740px;
+  margin: 24px auto 48px;
+  background: #ffffff;
+  border: 4px solid #1a1a1a;
+  border-radius: 24px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+  min-height: 480px;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// VISTA: SELECTOR DE TIPO
+// ══════════════════════════════════════════════════════════════════════════════
+
+.view-select {
+  padding: 36px 32px 48px;
+}
+
+.select-hint {
+  text-align: center;
+  font-size: 15px;
+  color: $text-muted;
+  margin: 0 0 32px;
+}
+
+// Tres tarjetas en fila — imagen arriba + label abajo
+.type-grid {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.type-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 160px;
+  padding: 24px 12px 20px;
+  background: $mint-light;
+  border: 2px solid darken($mint-light, 10%);
+  border-radius: 20px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+
+  &:hover  { transform: translateY(-4px); box-shadow: 0 10px 24px rgba(32,201,151,0.22); }
+  &:active { transform: translateY(0); }
+}
+
+.type-img {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  display: block;
+}
+
+.type-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: $mint-dark;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  text-align: center;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// VISTA: FORMULARIOS (compartido)
+// ══════════════════════════════════════════════════════════════════════════════
+
+.view-form {
+  padding: 28px 32px 40px;
+
+  @media (max-width: 520px) { padding: 20px 16px 32px; }
+}
+
+// ── Botón "Volver a tipos" ────────────────────────────────────────────────────
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1.5px solid $border;
+  border-radius: 20px;
+  color: $text-muted;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  padding: 5px 14px;
+  cursor: pointer;
+  margin-bottom: 24px;
+  transition: all 0.2s;
+
+  svg { width: 14px; height: 14px; }
+  &:hover { background: $pink-light; border-color: $pink; color: $pink-dark; }
+}
+
+// ── Avatar ────────────────────────────────────────────────────────────────────
+.avatar-wrap {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  margin: 0 auto 8px;
+  cursor: pointer;
+
+  &:hover .avatar-overlay { opacity: 1; }
+}
+
+.avatar-img {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: 3px solid $pink;
+  object-fit: cover;
+  display: block;
+}
+
+.avatar-placeholder {
+  border-color: $border;
+  object-fit: contain;
+  padding: 4px;
+  background: $pink-light;
+}
+
+.avatar-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.42);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+
+  svg { width: 26px; height: 26px; stroke: #fff; }
+}
+
+.avatar-hint {
+  text-align: center;
+  font-size: 11px;
+  color: #bbb;
+  margin: 0 0 24px;
+}
+
+// ── Grid de campos 2 columnas ─────────────────────────────────────────────────
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 20px;
+  margin-bottom: 18px;
+
+  @media (max-width: 520px) { grid-template-columns: 1fr; }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+
+  &--full { grid-column: 1 / -1; }
+}
+
+.field-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: $text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+// Input nativo con estilo rosa ISAAC
+.field-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: $pink-light;
+  border: 1.5px solid #ffccd9;
+  border-radius: 12px;
+  padding: 11px 14px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #42283a;
+  outline: none;
+  transition: border-color 0.2s;
+
+  &:focus        { border-color: $pink; }
+  &::placeholder { color: #ccc; }
+}
+
+// Select nativo con flecha personalizada
+.field-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23e91e8c' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+  cursor: pointer;
+}
+
+.field-error {
+  font-size: 11px;
+  color: #d32f2f;
+  margin-top: 2px;
+}
+
+// ── Campo contraseña con ojo ──────────────────────────────────────────────────
+.pwd-wrap {
+  display: flex;
+  align-items: center;
+  background: $pink-light;
+  border: 1.5px solid #ffccd9;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+
+  &:focus-within { border-color: $pink; }
+}
+
+.pwd-input {
+  flex: 1;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding-right: 4px;
+}
+
+.eye-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 12px;
+  color: $text-muted;
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  transition: color 0.15s;
+
+  svg { width: 18px; height: 18px; }
+  &:hover { color: $pink-dark; }
+}
+
+// ── Autocompletado de dirección ───────────────────────────────────────────────
+.autocomplete-wrap {
+  position: relative;
+  z-index: 10;
+}
+
+.suggestions-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1.5px solid $border;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(255, 105, 180, 0.14);
+  overflow: hidden;
+  z-index: 20;
+}
+
+.suggestion-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: $text-dark;
+  cursor: pointer;
+  line-height: 1.4;
+  transition: background 0.12s;
+
+  &:not(:last-child) { border-bottom: 1px solid #fce8f1; }
+  &:hover { background: $pink-light; color: $pink-dark; .suggestion-pin { stroke: $pink-dark; } }
+}
+
+.suggestion-pin {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 15px;
+  margin-top: 2px;
+  stroke: $text-muted;
+  transition: stroke 0.12s;
+}
+
+// ── Sección sonido ────────────────────────────────────────────────────────────
+.section-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 18px 0 16px;
+}
+
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: $text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  flex: 0 0 auto;
+}
+
+.sound-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: none;
+  border: 1.5px solid $border;
+  border-radius: 20px;
+  padding: 6px 16px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+
+  &:hover { background: $pink-light; border-color: $pink; }
+}
+
+.sound-img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.sound-state {
+  font-size: 13px;
+  font-weight: 600;
+
+  &--on  { color: $mint-dark; }
+  &--off { color: #aaa; }
+}
+
+// ── Permisos ─────────────────────────────────────────────────────────────────
+.perms-section {
+  margin: 4px 0 20px;
+}
+
+.perms-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.perm-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.perm-check {
+  width: 18px;
+  height: 18px;
+  accent-color: $pink;
+  flex: 0 0 18px;
+  cursor: pointer;
+}
+
+.perm-text {
+  font-size: 14px;
+  color: $text-dark;
+}
+
+// ── Accesos rápidos (Pictogramas / Profesionales) ─────────────────────────────
+.extra-btns {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 0 0 28px;
+}
+
+.extra-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 120px;
+  padding: 14px 10px;
+  background: $mint-light;
+  border: 2px solid darken($mint-light, 8%);
+  border-radius: 16px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: $mint-dark;
+  text-align: center;
+  transition: transform 0.15s, box-shadow 0.15s;
+
+  &:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(32,201,151,0.18); }
+}
+
+.extra-img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+// ── Tabla familiar: usuarios a cargo y permisos ───────────────────────────────
+.charge-section {
+  margin: 18px 0 24px;
+}
+
+.charge-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.charge-count {
+  background: $mint-light;
+  color: $mint-dark;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 10px;
+  border: 1px solid darken($mint-light, 6%);
+}
+
+// ── Estados loading / error ────────────────────────────────────────────────────
+.fam-state {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 12px;
+  font-size: 13px;
+  color: #9e9e9e;
+  background: #f9f9f9;
+  border-radius: 12px;
+  border: 1.5px dashed #e0e0e0;
+
+  ion-spinner { --color: #{$pink}; width: 20px; height: 20px; }
+
+  &--error { color: #e53935; }
+}
+
+// ── Tabla ─────────────────────────────────────────────────────────────────────
+.fam-table-wrap {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1.5px solid #f0d4e2;
+
+  scrollbar-width: thin;
+  scrollbar-color: #f0d4e2 transparent;
+  &::-webkit-scrollbar       { height: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: #f0d4e2; border-radius: 4px; }
+}
+
+.fam-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 520px;
+  background: #fff;
+}
+
+.fam-table thead tr {
+  background: $pink-light;
+  border-bottom: 2px solid #ffccd9;
+}
+
+.fth-user,
+.fth-info,
+.fth-perm,
+.fth-del {
+  padding: 9px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: $pink-dark;
+  white-space: nowrap;
+}
+
+.fth-user  { text-align: left; width: 32%; }
+.fth-info  { text-align: left; width: 18%; }
+.fth-perm  { text-align: center; }
+.fth-del   { width: 36px; }
+
+.fam-row {
+  border-bottom: 1px solid #fce8f1;
+  transition: background 0.1s;
+
+  &:hover { background: #fff8fc; }
+  &:last-child { border-bottom: none; }
+}
+
+.ftd-user { padding: 10px 10px; vertical-align: middle; }
+.ftd-info { padding: 10px 10px; vertical-align: middle; }
+.ftd-perm { padding: 10px 6px;  vertical-align: middle; text-align: center; }
+.ftd-del  { padding: 10px 6px;  vertical-align: middle; text-align: center; width: 36px; }
+
+// ── Celda usuario (avatar + nombre) ──────────────────────────────────────────
+.fam-user-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fam-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: $pink-light;
+  border: 2px solid $pink;
+  overflow: hidden;
+  flex: 0 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &--ghost {
+    background: #f5f5f5;
+    border-color: #e0e0e0;
+  }
+}
+
+.fam-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fam-avatar-initial {
+  font-size: 13px;
+  font-weight: 800;
+  color: $pink-dark;
+}
+
+.fam-user-meta { display: flex; flex-direction: column; min-width: 0; }
+
+.fam-user-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: #42283a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// ── Fila de ejemplo (no persistente) ─────────────────────────────────────────
+.fam-help-row {
+  opacity: 0.33;
+  pointer-events: none;
+  user-select: none;
+}
+
+.fam-ghost-text { font-style: italic; }
+
+// ── Celda info básica ─────────────────────────────────────────────────────────
+.fam-info-tag {
+  font-size: 11px;
+  color: #9e7a8e;
+  white-space: nowrap;
+}
+
+// ── Chips de permiso (toggle) ─────────────────────────────────────────────────
+.fam-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: 1.5px solid #e0d0d8;
+  background: #ffffff;
+  color: #b0a0a8;
+  transition: background 0.18s, border-color 0.18s, color 0.18s, box-shadow 0.18s;
+  white-space: nowrap;
+
+  svg { width: 11px; height: 11px; flex: 0 0 11px; }
+
+  &:hover {
+    border-color: $mint;
+    color: $mint-dark;
+    background: $mint-light;
+  }
+
+  // Activo → verde agua (mint)
+  &--on {
+    background: $mint;
+    border-color: $mint-dark;
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(32, 201, 151, 0.28);
+
+    &:hover {
+      background: $mint-dark;
+      color: #ffffff;
+    }
+  }
+}
+
+// ── Botón eliminar fila ───────────────────────────────────────────────────────
+.fam-del-btn {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1.5px solid #f0d0d8;
+  border-radius: 50%;
+  cursor: pointer;
+  color: #d0a0b0;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+
+  svg { width: 13px; height: 13px; }
+
+  &:hover {
+    background: #fff0f0;
+    border-color: #ef5350;
+    color: #ef5350;
+  }
+}
+
+// ── Fila "añadir usuario" ─────────────────────────────────────────────────────
+.fam-add-row {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1.5px dashed #ffccd9;
+}
+
+.fam-add-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+// ion-select dentro del formulario familiar
+.fam-select {
+  flex: 1;
+  min-width: 180px;
+  --placeholder-color: #c0a0b0;
+  --color: #42283a;
+  --border-radius: 12px;
+  --border-color: #ffccd9;
+  --border-width: 1.5px;
+  --padding-start: 12px;
+  --padding-end: 12px;
+  --padding-top: 9px;
+  --padding-bottom: 9px;
+  --highlight-color-focused: #{$pink};
+  background: $pink-light;
+  border: 1.5px solid #ffccd9;
+  border-radius: 12px;
+  font-size: 13px;
+  font-family: inherit;
+  min-height: 40px;
+}
+
+.fam-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: $pink;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s, transform 0.15s;
+
+  svg { width: 14px; height: 14px; }
+
+  &:hover:not(:disabled) {
+    background: $pink-dark;
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    background: #e0a0c0;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+.fam-msg {
+  font-size: 12px;
+  color: #b0a0a8;
+  font-style: italic;
+  margin: 4px 0 0;
+
+  &--done { color: $mint-dark; font-style: normal; font-weight: 600; }
+}
+
+// ── Botón principal ───────────────────────────────────────────────────────────
+.submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 15px;
+  background: $pink;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: inherit;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background 0.2s, transform 0.1s;
+
+  &:hover:not(:disabled)  { background: $pink-dark; transform: translateY(-1px); }
+  &:active:not(:disabled) { transform: translateY(0); }
+  &:disabled { background: #e0a0c0; cursor: not-allowed; }
+}
+
+.btn-spinner {
+  --color: #ffffff;
+  width: 18px;
+  height: 18px;
+}
+
+// ── Responsive ────────────────────────────────────────────────────────────────
+@media (max-width: 600px) {
+  .tablet-frame { margin: 12px 8px 32px; border-radius: 16px; }
+  .view-select  { padding: 24px 16px 32px; }
+  .type-card    { width: 130px; padding: 18px 10px 16px; }
+  .type-img     { width: 64px; height: 64px; }
+  .extra-btns   { gap: 10px; }
+}

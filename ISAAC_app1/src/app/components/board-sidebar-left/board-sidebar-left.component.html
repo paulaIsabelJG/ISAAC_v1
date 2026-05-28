@@ -1,0 +1,341 @@
+<!-- ══════════════════════════════════════════════════════════════════════════
+  BoardSidebarLeftComponent
+  Columna izquierda del editor: configuración del tablero + lista de tableros.
+════════════════════════════════════════════════════════════════════════════ -->
+
+<!-- ── Panel CONFIGURACIÓN ─────────────────────────────────────────────────── -->
+<div class="bbe-panel">
+  <div class="bbe-panel-header">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.07 4.93a10 10 0 0 0-14.14 0M4.93 19.07a10 10 0 0 0 14.14 0"/>
+    </svg>
+    CONFIGURACIÓN
+  </div>
+
+  <!-- Nombre -->
+  <label class="bbe-lbl">Nombre</label>
+  <input class="bbe-inp" [(ngModel)]="localName" type="text" placeholder="Nombre del tablero"/>
+
+  <!-- Imagen de portada -->
+  <label class="bbe-lbl">Imagen <span class="bbe-lbl-opt">(opcional)</span></label>
+  <div class="bbe-cfg-img-picker" (click)="pickBoardImage()">
+    @if (localImageB64) {
+      <img [src]="safeImageUrl" class="bbe-cfg-img-preview" alt="Portada"/>
+      <div class="bbe-cfg-img-overlay">Cambiar</div>
+    } @else {
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="3" y="3" width="18" height="18" rx="3"/>
+        <circle cx="8.5" cy="8.5" r="1.5"/>
+        <polyline points="21 15 16 10 5 21"/>
+      </svg>
+      <span>Subir foto</span>
+    }
+  </div>
+  @if (localImageB64) {
+    <button type="button" class="bbe-cfg-img-remove" (click)="removeBoardImage()">
+      Eliminar imagen
+    </button>
+  }
+
+  <!-- Usuario(s) asignado(s) -->
+  <label class="bbe-lbl">
+    Usuario(s) asignado(s)
+    @if (isSharedBoard) {
+      <span class="bbe-shared-badge">Compartido</span>
+    }
+  </label>
+  <ion-select class="bbe-select"
+              [multiple]="true"
+              [value]="localAssignedUserIds"
+              (ionChange)="onUserSelect($event)"
+              interface="alert"
+              placeholder="Selecciona usuario(s)"
+              cancelText="Cancelar"
+              okText="Aceptar">
+    @for (u of centerUsers; track u._id) {
+      <ion-select-option [value]="u._id">{{ u.name }}</ion-select-option>
+    }
+  </ion-select>
+  <button type="button" class="bbe-all-users-btn" (click)="selectAllUsers()">
+    Seleccionar todos
+  </button>
+
+  <!-- Filas / Columnas (solo grid) -->
+  @if (!isCircular) {
+    <div class="bbe-cfg-row">
+      <div class="bbe-cfg-field">
+        <label class="bbe-lbl">Filas</label>
+        <input class="bbe-inp bbe-inp--num" type="number" min="1" max="10" [(ngModel)]="localRows"/>
+      </div>
+      <div class="bbe-cfg-field">
+        <label class="bbe-lbl">Columnas</label>
+        <input class="bbe-inp bbe-inp--num" type="number" min="1" max="10" [(ngModel)]="localCols"/>
+      </div>
+    </div>
+  }
+
+  <!-- Ranuras circulares (solo circular) -->
+  @if (isCircular) {
+    <label class="bbe-lbl">Ranuras exteriores</label>
+    <input class="bbe-inp bbe-inp--num" type="number" min="3" max="20" [(ngModel)]="localCircleSlots"/>
+
+    <div class="bbe-toggle-row" (click)="localLocationEnabled = !localLocationEnabled">
+      <span class="bbe-toggle-lbl">Columna ubicación</span>
+      <div class="bbe-toggle" [class.bbe-toggle--on]="localLocationEnabled">
+        <div class="bbe-toggle-thumb"></div>
+      </div>
+    </div>
+    @if (localLocationEnabled) {
+      <label class="bbe-lbl">Ranuras ubicación</label>
+      <input class="bbe-inp bbe-inp--num" type="number" min="1" max="20" [(ngModel)]="localLocationSlots"/>
+    }
+  }
+
+  <!-- Tipo de tablero -->
+  <label class="bbe-lbl" style="margin-top:10px">Tipo de tablero</label>
+  <div class="bbe-role-selector">
+    <button type="button"
+            class="bbe-role-btn"
+            [class.bbe-role-btn--active]="localBoardRole === 'main'"
+            (click)="localBoardRole = 'main'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+      Principal
+    </button>
+    <button type="button"
+            class="bbe-role-btn"
+            [class.bbe-role-btn--active]="localBoardRole === 'secondary'"
+            (click)="localBoardRole = 'secondary'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="15 3 21 3 21 9"/>
+        <polyline points="9 21 3 21 3 15"/>
+        <line x1="21" y1="3" x2="14" y2="10"/>
+        <line x1="3" y1="21" x2="10" y2="14"/>
+      </svg>
+      Secundario
+    </button>
+  </div>
+
+  <!-- Toggle Predictor IA -->
+  <div class="bbe-toggle-row" (click)="localPredictor = !localPredictor">
+    <span class="bbe-toggle-lbl">Predictor IA</span>
+    <div class="bbe-toggle" [class.bbe-toggle--on]="localPredictor">
+      <div class="bbe-toggle-thumb"></div>
+    </div>
+  </div>
+
+  <!-- Tamaño columna IA (solo cuando predictor activo) -->
+  @if (localPredictor) {
+    <div class="bbe-ia-size-panel">
+      <div class="bbe-cfg-row">
+        <div class="bbe-cfg-field">
+          <label class="bbe-lbl">Filas IA</label>
+          <input class="bbe-inp bbe-inp--num" type="number" min="1" max="20" [(ngModel)]="localIaRows"/>
+        </div>
+        <div class="bbe-cfg-field">
+          <label class="bbe-lbl">Columnas IA</label>
+          <input class="bbe-inp bbe-inp--num" type="number" min="1" max="5" [(ngModel)]="localIaCols"/>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Toggle Corrector IA -->
+  <div class="bbe-toggle-row" (click)="localAiRewrite = !localAiRewrite">
+    <span class="bbe-toggle-lbl">Corrector IA</span>
+    <div class="bbe-toggle" [class.bbe-toggle--on]="localAiRewrite">
+      <div class="bbe-toggle-thumb"></div>
+    </div>
+  </div>
+
+  <!-- Botón guardar -->
+  <button class="bbe-save-cfg" (click)="onSaveClick()" [disabled]="isSaving">
+    @if (isSaving) {
+      <ion-spinner name="crescent" style="width:16px;height:16px"></ion-spinner>
+    }
+    Guardar configuración
+  </button>
+</div>
+
+<!-- ── Panel TABLEROS DEL USUARIO ──────────────────────────────────────────── -->
+<div class="bbe-panel bbe-panel--boards">
+  <div class="bbe-panel-header">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="3" y="3" width="7" height="7" rx="1"/>
+      <rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="3" y="14" width="7" height="7" rx="1"/>
+      <rect x="14" y="14" width="7" height="7" rx="1"/>
+    </svg>
+    TABLEROS DEL USUARIO
+  </div>
+
+  @if (userBoardsLoading) {
+    <ion-spinner name="crescent" color="secondary" style="margin:8px auto;display:block"></ion-spinner>
+  } @else if (userBoards.length === 0) {
+    <span class="bbe-empty-msg">Sin otros tableros.</span>
+  } @else {
+    <!-- Sección grid -->
+    @if (gridBoards.length > 0) {
+      <span class="bbe-boards-sub">Cuadrícula</span>
+      @for (b of gridBoards; track b._id) {
+        <div class="bbe-board-item"
+             [class.bbe-board-item--new]="b._id === highlightedBoardId"
+             [id]="'board-item-' + b._id"
+             (click)="onOpenBoard(b._id)">
+          <span class="bbe-board-item-name">{{ b.name }}</span>
+          <span class="bbe-board-item-meta">{{ b.rows }}×{{ b.columns }}</span>
+          @if (b._id === highlightedBoardId) {
+            <span class="bbe-board-item-new-badge">Nuevo</span>
+          }
+        </div>
+      }
+    }
+    <!-- Sección circular -->
+    @if (circularBoards.length > 0) {
+      <span class="bbe-boards-sub">Circular</span>
+      @for (b of circularBoards; track b._id) {
+        <div class="bbe-board-item"
+             [class.bbe-board-item--new]="b._id === highlightedBoardId"
+             [id]="'board-item-' + b._id"
+             (click)="onOpenBoard(b._id)">
+          <span class="bbe-board-item-name">{{ b.name }}</span>
+          <span class="bbe-board-item-meta">⊙ {{ b.circleSlots || 8 }}</span>
+          @if (b._id === highlightedBoardId) {
+            <span class="bbe-board-item-new-badge">Nuevo</span>
+          }
+        </div>
+      }
+    }
+  }
+</div>
+
+<!-- ── Panel CONFIGURACIÓN MULTITABLERO (solo si boardRole=multi) ────────── -->
+@if (isMultiBoard) {
+  <div class="bbe-panel bbe-panel--multi">
+    <div class="bbe-panel-header">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="2" y="3" width="9" height="18" rx="2"/>
+        <rect x="13" y="3" width="9" height="18" rx="2"/>
+      </svg>
+      CONFIGURACIÓN MULTITABLERO
+    </div>
+
+    <p class="bbe-multi-desc">
+      Asigna un tablero a cada hueco. Pulsa un hueco para seleccionarlo y
+      elige el tablero desde el panel derecho.
+    </p>
+
+    @for (slot of multiSlots; track slot.slotId) {
+      <div class="bbe-multi-slot-row">
+        <div class="bbe-multi-slot-info">
+          <span class="bbe-multi-slot-num">H{{ slot.slotId }}</span>
+          <span class="bbe-multi-slot-name">
+            {{ slot.boardId ? slot.name : 'Sin tablero' }}
+          </span>
+        </div>
+        <button class="bbe-multi-slot-pick"
+                (click)="selectSlot.emit(slot.slotId)"
+                title="Asignar tablero a este hueco">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            @if (slot.boardId) {
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            } @else {
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            }
+          </svg>
+        </button>
+      </div>
+    }
+
+  </div>
+}
+
+<!-- ── Panel BARRA AAC (solo tableros principales) ──────────────────────── -->
+@if (localBoardRole === 'main') {
+  <div class="bbe-panel">
+    <div class="bbe-panel-header">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+        <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+        <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+      </svg>
+      BARRA AAC
+    </div>
+
+    <p class="bbe-hint" style="margin-bottom:8px">
+      Arrastra para reordenar · Toca el ojo para ocultar/mostrar
+    </p>
+
+    <!-- Lista unificada: orden + visibilidad en una sola experiencia -->
+    <ion-list class="bbe-ctrl-list">
+      <ion-reorder-group [disabled]="false" (ionItemReorder)="onControlsReorder($event)">
+
+        @for (item of orderedItemsMeta; track item.id) {
+          <ion-item class="bbe-ctrl-item"
+                    [class.bbe-ctrl-item--hidden]="!item.visible"
+                    [class.bbe-ctrl-item--phrase]="item.id === 'phraseBar'"
+                    lines="none">
+
+            <div class="bbe-ctrl-icon-wrap" slot="start">
+              <ion-icon [name]="item.icon" class="bbe-ctrl-icon"></ion-icon>
+            </div>
+
+            <ion-label class="bbe-ctrl-label-wrap">
+              <span class="bbe-ctrl-name">{{ item.label }}</span>
+              @if (!item.visible) {
+                <span class="bbe-ctrl-badge">Oculto</span>
+              }
+            </ion-label>
+
+            @if (item.canHide) {
+              <button class="bbe-ctrl-eye"
+                      slot="end"
+                      (click)="toggleItemVisibility($any(item.id))">
+                <ion-icon [name]="item.visible ? 'eye-outline' : 'eye-off-outline'"></ion-icon>
+              </button>
+            }
+
+            <ion-reorder slot="end"></ion-reorder>
+          </ion-item>
+        }
+
+      </ion-reorder-group>
+    </ion-list>
+  </div>
+}
+
+<!-- ── Panel TABLEROS ASIGNADOS (publicados) ─────────────────────────────── -->
+<div class="bbe-panel">
+  <div class="bbe-panel-header">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+      <polyline points="9 22 9 12 15 12 15 22"/>
+    </svg>
+    TABLEROS PUBLICADOS
+  </div>
+
+  @if (userBoardsLoading) {
+    <div class="bbe-boards-loading">
+      <ion-spinner name="crescent" color="secondary"></ion-spinner>
+    </div>
+  } @else if (publishedBoards.length === 0) {
+    <p class="bbe-boards-empty-msg">
+      Ningún tablero publicado todavía.<br/>
+      Usa el botón <strong>Publicar</strong> de la barra superior para publicar este tablero.
+    </p>
+  } @else {
+    @for (b of publishedBoards; track b._id) {
+      <div class="bbe-board-item"
+           [id]="'board-item-pub-' + b._id"
+           (click)="onOpenBoard(b._id)">
+        <span class="bbe-board-item-name">{{ b.profileName || b.name }}</span>
+        <span class="bbe-board-item-meta bbe-board-item-pub">✓ Publicado</span>
+      </div>
+    }
+  }
+</div>

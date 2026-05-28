@@ -1,0 +1,183 @@
+<ion-content class="register-content">
+  <div class="register-wrapper">
+
+    <div class="register-logo">
+      <span class="logo-text">ISAAC</span>
+    </div>
+
+    <div class="register-card">
+      <h1 class="register-title">Crear cuenta</h1>
+
+      <!-- ── Selector de tipo de cuenta ───────────────────────────────────── -->
+      <div class="type-selector">
+        <button type="button" class="type-opt"
+                [class.active]="accountType === 'teacher'"
+                (click)="selectType('teacher')">
+          <div class="type-opt-icon org-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+          </div>
+          <div class="type-opt-content">
+            <span class="type-opt-title">Organización / Centro</span>
+            <span class="type-opt-desc">Centros educativos, clínicas, asociaciones...</span>
+          </div>
+          <div class="type-check" [class.visible]="accountType === 'teacher'">✓</div>
+        </button>
+
+        <button type="button" class="type-opt"
+                [class.active]="accountType === 'user'"
+                (click)="selectType('user')">
+          <div class="type-opt-icon user-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <circle cx="12" cy="8" r="4"/>
+              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+            </svg>
+          </div>
+          <div class="type-opt-content">
+            <span class="type-opt-title">Usuario independiente</span>
+            <span class="type-opt-desc">Uso personal sin vinculación a una organización</span>
+          </div>
+          <div class="type-check" [class.visible]="accountType === 'user'">✓</div>
+        </button>
+      </div>
+
+      <!-- ── Formulario ────────────────────────────────────────────────────── -->
+      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+
+        <!-- Nombre de la organización (solo teacher) -->
+        @if (accountType === 'teacher') {
+          <div class="field-label">Nombre de la organización</div>
+          <ion-item class="form-item">
+            <ion-input formControlName="orgName" type="text"
+                       placeholder="Ej. CEIP Montserrat, Centro ASPACE..."></ion-input>
+          </ion-item>
+          @if (registerForm.get('orgName')?.invalid && registerForm.get('orgName')?.touched) {
+            <div class="error-message">
+              @if (registerForm.get('orgName')?.errors?.['required'])  { <span>Este campo es obligatorio</span> }
+              @if (registerForm.get('orgName')?.errors?.['minlength']) { <span>Mínimo 2 caracteres</span> }
+            </div>
+          }
+        }
+
+        <!-- Nombre + Apellidos (solo user independiente) -->
+        @if (accountType === 'user') {
+          <div class="name-row">
+            <div class="name-col">
+              <div class="field-label">Nombre</div>
+              <ion-item class="form-item">
+                <ion-input formControlName="firstName" type="text" placeholder="Nombre"></ion-input>
+              </ion-item>
+              @if (registerForm.get('firstName')?.invalid && registerForm.get('firstName')?.touched) {
+                <div class="error-message">
+                  @if (registerForm.get('firstName')?.errors?.['required'])  { <span>Obligatorio</span> }
+                  @if (registerForm.get('firstName')?.errors?.['minlength']) { <span>Mín. 2 car.</span> }
+                </div>
+              }
+            </div>
+            <div class="name-col">
+              <div class="field-label">Apellidos</div>
+              <ion-item class="form-item">
+                <ion-input formControlName="lastName" type="text" placeholder="Apellidos"></ion-input>
+              </ion-item>
+              @if (registerForm.get('lastName')?.invalid && registerForm.get('lastName')?.touched) {
+                <div class="error-message">
+                  @if (registerForm.get('lastName')?.errors?.['required'])  { <span>Obligatorio</span> }
+                  @if (registerForm.get('lastName')?.errors?.['minlength']) { <span>Mín. 2 car.</span> }
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Email -->
+        <div class="field-label">Email</div>
+        <ion-item class="form-item">
+          <ion-input formControlName="email" type="email"
+                     autocomplete="email" placeholder="correo@ejemplo.com"></ion-input>
+        </ion-item>
+        @if (registerForm.get('email')?.invalid && registerForm.get('email')?.touched) {
+          <div class="error-message">
+            @if (registerForm.get('email')?.errors?.['required']) { <span>El email es obligatorio</span> }
+            @if (registerForm.get('email')?.errors?.['email'])    { <span>Formato inválido</span> }
+          </div>
+        }
+
+        <!-- Contraseña -->
+        <div class="field-label">Contraseña</div>
+        <ion-item class="form-item password-item">
+          <ion-input
+            formControlName="password"
+            [type]="showPassword ? 'text' : 'password'"
+            autocomplete="new-password"
+            placeholder="Mínimo 6 caracteres">
+          </ion-input>
+          <button type="button" class="eye-btn" slot="end" (click)="togglePassword()">
+            @if (showPassword) {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
+              </svg>
+            } @else {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            }
+          </button>
+        </ion-item>
+        @if (registerForm.get('password')?.invalid && registerForm.get('password')?.touched) {
+          <div class="error-message">
+            @if (registerForm.get('password')?.errors?.['required'])  { <span>La contraseña es obligatoria</span> }
+            @if (registerForm.get('password')?.errors?.['minlength']) { <span>Mínimo 6 caracteres</span> }
+          </div>
+        }
+
+        <!-- Repetir contraseña -->
+        <div class="field-label">Repetir contraseña</div>
+        <ion-item class="form-item password-item">
+          <ion-input
+            formControlName="confirmPassword"
+            [type]="showConfirmPassword ? 'text' : 'password'"
+            autocomplete="new-password"
+            placeholder="Repite la contraseña">
+          </ion-input>
+          <button type="button" class="eye-btn" slot="end" (click)="toggleConfirmPassword()">
+            @if (showConfirmPassword) {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
+              </svg>
+            } @else {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            }
+          </button>
+        </ion-item>
+        @if (passwordMismatch) {
+          <div class="error-message"><span>Las contraseñas no coinciden</span></div>
+        }
+
+        <ion-button expand="block" type="submit" class="register-btn"
+                    [disabled]="!registerForm.valid || isLoading">
+          @if (isLoading) { <ion-spinner name="crescent" slot="start"></ion-spinner> }
+          {{ isLoading ? 'Registrando...' : 'Crear cuenta' }}
+        </ion-button>
+
+      </form>
+
+      <div class="register-footer">
+        <span>¿Ya tienes cuenta?</span>
+        <a routerLink="/login" class="login-link">Inicia sesión</a>
+      </div>
+    </div>
+
+  </div>
+</ion-content>

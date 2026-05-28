@@ -1,0 +1,195 @@
+// ── Variables ─────────────────────────────────────────────────────────────────
+$pink:       #ff69b4;
+$pink-dark:  #e91e8c;
+$pink-light: #fff0f7;
+$blue:       #4a9eff;
+$blue-light: #e8f4ff;
+$border:     #ffb6c1;
+$bg:         #fdf5f9;
+$text-dark:  #222222;
+$text-muted: #6b5462;
+$card-bg:    #ffffff;
+
+// ── Header (AppPageHeaderComponent) ──────────────────────────────────────────
+// bg/border coinciden con el default del componente (#fdf5f9 / #ffb6c1)
+// Solo se sobreescribe lo que difiere: fuente más pequeña y ligera, sin spacing
+app-page-header {
+  --aph-title-size:   15px;
+  --aph-title-weight: 700;
+  --aph-title-ls:     0;
+}
+
+// ── Content ───────────────────────────────────────────────────────────────────
+.upd-content {
+  --background: #{$bg};
+}
+
+// ── Estados ───────────────────────────────────────────────────────────────────
+.upd-state-block {
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  gap:             12px;
+  padding:         60px 20px;
+  color:           $text-muted;
+  font-size:       14px;
+
+  svg { width: 36px; height: 36px; stroke: $text-muted; }
+
+  &--error { color: #c0392b; svg { stroke: #c0392b; } }
+}
+
+// ── Contenedor ────────────────────────────────────────────────────────────────
+.upd-container {
+  max-width:  480px;
+  margin:     0 auto;
+  padding:    28px 20px 48px;
+  box-sizing: border-box;
+}
+
+// ── Avatar ────────────────────────────────────────────────────────────────────
+.upd-avatar-wrap {
+  position:    relative;
+  width:       90px;
+  height:      90px;
+  margin:      0 auto 28px;
+  cursor:      pointer;
+  border-radius: 50%;
+  overflow:    hidden;
+  border:      2.5px solid $border;
+  box-shadow:  0 2px 8px rgba(0,0,0,0.08);
+  transition:  transform 0.15s;
+
+  &:hover { transform: scale(1.05); }
+}
+
+.upd-avatar-img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+
+.upd-avatar-placeholder {
+  width:           100%;
+  height:          100%;
+  background:      $blue-light;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  font-size:       32px;
+  font-weight:     800;
+  color:           $blue;
+}
+
+.upd-avatar-overlay {
+  position: absolute;
+  inset:    0;
+  background: rgba(0, 0, 0, 0.35);
+  display:    flex;
+  align-items: center;
+  justify-content: center;
+  opacity:    0;
+  transition: opacity 0.15s;
+
+  svg {
+    width:  26px;
+    height: 26px;
+    stroke: #fff;
+  }
+}
+
+.upd-avatar-wrap:hover .upd-avatar-overlay { opacity: 1; }
+
+// ── Campos ────────────────────────────────────────────────────────────────────
+.upd-field {
+  display:       flex;
+  flex-direction: column;
+  gap:           6px;
+  margin-bottom: 18px;
+}
+
+.upd-label {
+  font-size:   12px;
+  font-weight: 700;
+  color:       $text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.upd-input,
+.upd-select {
+  width:        100%;
+  padding:      12px 14px;
+  box-sizing:   border-box;
+  background:   $card-bg;
+  border:       1.5px solid $border;
+  border-radius: 12px;
+  font-size:    14px;
+  color:        $text-dark;
+  font-family:  inherit;
+  outline:      none;
+  transition:   border-color 0.15s;
+
+  &:focus { border-color: $pink; }
+}
+
+.upd-input--readonly {
+  background: darken($card-bg, 3%);
+  color:      $text-muted;
+  cursor:     not-allowed;
+}
+
+.upd-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b5462' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:   no-repeat;
+  background-position: right 14px center;
+  padding-right:       36px;
+}
+
+.upd-error {
+  font-size: 11px;
+  color:     #c0392b;
+  margin-top: 2px;
+}
+
+// ── Botón guardar ─────────────────────────────────────────────────────────────
+.upd-save-btn {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  gap:             10px;
+  width:           100%;
+  padding:         14px 20px;
+  margin-top:      8px;
+  box-sizing:      border-box;
+
+  background:    $pink;
+  color:         #fff;
+  border:        none;
+  border-radius: 14px;
+  font-size:     14px;
+  font-weight:   700;
+  font-family:   inherit;
+  cursor:        pointer;
+  box-shadow:    0 4px 14px rgba($pink-dark, 0.25);
+  transition:    transform 0.15s, box-shadow 0.15s;
+
+  svg { width: 18px; height: 18px; }
+
+  &:hover:not(:disabled) {
+    transform:  translateY(-2px);
+    box-shadow: 0 8px 20px rgba($pink-dark, 0.3);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor:  not-allowed;
+    transform: none;
+  }
+}
+
+.btn-spinner {
+  width:  18px;
+  height: 18px;
+  --color: #fff;
+}

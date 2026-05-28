@@ -1,0 +1,607 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar class="au-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/organization-dashboard"
+                       text="Volver"
+                       (click)="$event.stopImmediatePropagation(); goBack()">
+      </ion-back-button>
+    </ion-buttons>
+    <ion-title class="au-title">{{ headerTitle }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="au-content">
+  <div class="tablet-frame">
+
+    <!-- ══════════════════════════════════════════════════════════════
+         VISTA: SELECTOR DE TIPO
+    ══════════════════════════════════════════════════════════════════ -->
+    @if (view === 'select') {
+      <div class="view-select">
+        <p class="select-hint">Selecciona el tipo de usuario que quieres añadir</p>
+
+        <div class="type-grid">
+
+          <button class="type-card" (click)="setView('professional')">
+            <img src="assets/pictograms/professionals.png" class="type-img" alt="Profesional"/>
+            <span class="type-label">Profesional</span>
+          </button>
+
+          <button class="type-card" (click)="setView('final-user')">
+            <img src="assets/pictograms/final-user.png" class="type-img" alt="Usuario final"/>
+            <span class="type-label">Usuario final</span>
+          </button>
+
+          <button class="type-card" (click)="setView('family')">
+            <img src="assets/pictograms/family.png" class="type-img" alt="Familiar"/>
+            <span class="type-label">Familiar</span>
+          </button>
+
+        </div>
+      </div>
+    }
+
+    <!-- ══════════════════════════════════════════════════════════════
+         VISTA: FORMULARIO PROFESIONAL
+    ══════════════════════════════════════════════════════════════════ -->
+    @if (view === 'professional') {
+      <div class="view-form">
+
+        <button class="back-link" (click)="setView('select')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          Volver a tipos
+        </button>
+
+        <!-- Avatar -->
+        <div class="avatar-wrap" (click)="pickImage('prof')" title="Toca para cambiar imagen">
+          @if (profImgUrl) {
+            <img [src]="profImgUrl" class="avatar-img" alt="Foto"/>
+          } @else {
+            <img src="assets/pictograms/profile-placeholder.png" class="avatar-img avatar-placeholder" alt="Foto"/>
+          }
+          <div class="avatar-overlay">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+          </div>
+        </div>
+        <p class="avatar-hint">Toca para cambiar · Máx. 2 MB</p>
+
+        <form [formGroup]="profForm" (ngSubmit)="saveProfessional()">
+
+          <div class="form-grid">
+
+            <!-- Email -->
+            <div class="field">
+              <label class="field-label">Email *</label>
+              <input formControlName="email" type="email" class="field-input"
+                     placeholder="email@ejemplo.com" autocomplete="off"/>
+              @if (profForm.get('email')?.invalid && profForm.get('email')?.touched) {
+                <span class="field-error">Email inválido</span>
+              }
+            </div>
+
+            <!-- Contraseña -->
+            <div class="field">
+              <label class="field-label">Contraseña *</label>
+              <div class="pwd-wrap">
+                <input formControlName="password" [type]="showProfPwd ? 'text' : 'password'"
+                       class="field-input pwd-input" placeholder="Mín. 6 caracteres"
+                       autocomplete="new-password"/>
+                <button type="button" class="eye-btn" (click)="showProfPwd = !showProfPwd" tabindex="-1">
+                  @if (showProfPwd) {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                      <line x1="1" y1="1" x2="23" y2="23"/>
+                    </svg>
+                  } @else {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  }
+                </button>
+              </div>
+              @if (profForm.get('password')?.invalid && profForm.get('password')?.touched) {
+                <span class="field-error">Mínimo 6 caracteres</span>
+              }
+            </div>
+
+            <!-- Nombre -->
+            <div class="field">
+              <label class="field-label">Nombre *</label>
+              <input formControlName="name" type="text" class="field-input" placeholder="Nombre"/>
+              @if (profForm.get('name')?.invalid && profForm.get('name')?.touched) {
+                <span class="field-error">Nombre obligatorio</span>
+              }
+            </div>
+
+            <!-- Apellidos -->
+            <div class="field">
+              <label class="field-label">Apellidos *</label>
+              <input formControlName="surname" type="text" class="field-input" placeholder="Apellidos"/>
+              @if (profForm.get('surname')?.invalid && profForm.get('surname')?.touched) {
+                <span class="field-error">Apellidos obligatorios</span>
+              }
+            </div>
+
+            <!-- Teléfono -->
+            <div class="field">
+              <label class="field-label">Teléfono</label>
+              <input formControlName="phone" type="tel" class="field-input" placeholder="+34 600 000 000"/>
+            </div>
+
+            <!-- Tipo profesional -->
+            <div class="field">
+              <label class="field-label">Tipo de profesional</label>
+              <select formControlName="professionalType" class="field-input field-select">
+                <option value="Terapeuta">Terapeuta</option>
+                <option value="Educador">Educador/a</option>
+                <option value="Psicólogo">Psicólogo/a</option>
+                <option value="Logopeda">Logopeda</option>
+                <option value="Médico">Médico/a</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </div>
+
+          </div><!-- /form-grid -->
+
+          <button type="submit" class="submit-btn" [disabled]="!profForm.valid || isSaving">
+            @if (isSaving) { <ion-spinner name="crescent" class="btn-spinner"></ion-spinner> }
+            Añadir profesional
+          </button>
+
+        </form>
+      </div>
+    }
+
+    <!-- ══════════════════════════════════════════════════════════════
+         VISTA: FORMULARIO USUARIO FINAL
+    ══════════════════════════════════════════════════════════════════ -->
+    @if (view === 'final-user') {
+      <div class="view-form">
+
+        <button class="back-link" (click)="setView('select')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          Volver a tipos
+        </button>
+
+        <!-- Avatar -->
+        <div class="avatar-wrap" (click)="pickImage('final')" title="Toca para cambiar imagen">
+          @if (finalImgUrl) {
+            <img [src]="finalImgUrl" class="avatar-img" alt="Foto"/>
+          } @else {
+            <img src="assets/pictograms/profile-placeholder.png" class="avatar-img avatar-placeholder" alt="Foto"/>
+          }
+          <div class="avatar-overlay">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+          </div>
+        </div>
+        <p class="avatar-hint">Toca para cambiar · Máx. 2 MB</p>
+
+        <form [formGroup]="finalForm" (ngSubmit)="saveFinalUser()">
+
+          <div class="form-grid">
+
+            <!-- Email -->
+            <div class="field">
+              <label class="field-label">Email *</label>
+              <input formControlName="email" type="email" class="field-input"
+                     placeholder="email@ejemplo.com" autocomplete="off"/>
+              @if (finalForm.get('email')?.invalid && finalForm.get('email')?.touched) {
+                <span class="field-error">Email inválido</span>
+              }
+            </div>
+
+            <!-- Contraseña -->
+            <div class="field">
+              <label class="field-label">Contraseña *</label>
+              <div class="pwd-wrap">
+                <input formControlName="password" [type]="showFinalPwd ? 'text' : 'password'"
+                       class="field-input pwd-input" placeholder="Mín. 6 caracteres"
+                       autocomplete="new-password"/>
+                <button type="button" class="eye-btn" (click)="showFinalPwd = !showFinalPwd" tabindex="-1">
+                  @if (showFinalPwd) {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                      <line x1="1" y1="1" x2="23" y2="23"/>
+                    </svg>
+                  } @else {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  }
+                </button>
+              </div>
+              @if (finalForm.get('password')?.invalid && finalForm.get('password')?.touched) {
+                <span class="field-error">Mínimo 6 caracteres</span>
+              }
+            </div>
+
+            <!-- Nombre -->
+            <div class="field">
+              <label class="field-label">Nombre *</label>
+              <input formControlName="name" type="text" class="field-input" placeholder="Nombre"/>
+              @if (finalForm.get('name')?.invalid && finalForm.get('name')?.touched) {
+                <span class="field-error">Nombre obligatorio</span>
+              }
+            </div>
+
+            <!-- Apellidos -->
+            <div class="field">
+              <label class="field-label">Apellidos *</label>
+              <input formControlName="surname" type="text" class="field-input" placeholder="Apellidos"/>
+              @if (finalForm.get('surname')?.invalid && finalForm.get('surname')?.touched) {
+                <span class="field-error">Apellidos obligatorios</span>
+              }
+            </div>
+
+            <!-- Edad -->
+            <div class="field">
+              <label class="field-label">Edad</label>
+              <input formControlName="age" type="number" class="field-input"
+                     placeholder="Años" min="0" max="120"/>
+            </div>
+
+            <!-- Género -->
+            <div class="field">
+              <label class="field-label">Género</label>
+              <select formControlName="gender" class="field-input field-select">
+                <option value="prefer_not_to_say">No especificado</option>
+                <option value="male">Masculino</option>
+                <option value="female">Femenino</option>
+                <option value="other">Otro</option>
+              </select>
+            </div>
+
+          </div><!-- /form-grid -->
+
+          <!-- Dirección con autocompletado — ancho completo -->
+          <div class="field field--full">
+            <label class="field-label">Dirección / Centro</label>
+            <div class="autocomplete-wrap">
+              <input formControlName="address" type="text" class="field-input"
+                     placeholder="Empieza a escribir para ver sugerencias..."
+                     autocomplete="off"
+                     (input)="onAddressInput($event)"
+                     (blur)="closeSuggestions()"/>
+              @if (showSuggestions && suggestions.length > 0) {
+                <div class="suggestions-dropdown">
+                  @for (s of suggestions; track s.formattedAddress) {
+                    <div class="suggestion-item" (mousedown)="selectSuggestion(s)">
+                      <svg class="suggestion-pin" viewBox="0 0 24 24" fill="none"
+                           stroke="currentColor" stroke-width="2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                        <circle cx="12" cy="10" r="3"/>
+                      </svg>
+                      <span>{{ s.formattedAddress }}</span>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Sonido -->
+          <div class="section-row">
+            <span class="section-label">Sonido</span>
+            <button type="button" class="sound-btn" (click)="toggleSound()">
+              @if (soundEnabled) {
+                <img src="assets/pictograms/sound-on.png" class="sound-img" alt="Sonido activado"/>
+                <span class="sound-state sound-state--on">Activado</span>
+              } @else {
+                <img src="assets/pictograms/sound-off.png" class="sound-img" alt="Sonido desactivado"/>
+                <span class="sound-state sound-state--off">Desactivado</span>
+              }
+            </button>
+          </div>
+
+          <!-- Permisos -->
+          <div class="perms-section">
+            <span class="section-label">Permisos</span>
+            <div class="perms-grid">
+              <label class="perm-item">
+                <input type="checkbox" class="perm-check" [checked]="perms.editData"
+                       (change)="perms.editData = $any($event.target).checked"/>
+                <span class="perm-text">Editar datos personales</span>
+              </label>
+              <label class="perm-item">
+                <input type="checkbox" class="perm-check" [checked]="perms.editBoards"
+                       (change)="perms.editBoards = $any($event.target).checked"/>
+                <span class="perm-text">Editar tableros</span>
+              </label>
+              <label class="perm-item">
+                <input type="checkbox" class="perm-check" [checked]="perms.editStats"
+                       (change)="perms.editStats = $any($event.target).checked"/>
+                <span class="perm-text">Editar estadísticas</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Accesos rápidos -->
+          <div class="extra-btns">
+            <button type="button" class="extra-btn" (click)="goOwnPictograms()">
+              <img src="assets/pictograms/custom-pictograms.png" class="extra-img" alt="Pictogramas"/>
+              <span>Pictogramas propios</span>
+            </button>
+            <button type="button" class="extra-btn" (click)="goAssignedProfessionals()">
+              <img src="assets/pictograms/assigned-professionals.png" class="extra-img" alt="Profesionales"/>
+              <span>Profesionales encargados</span>
+            </button>
+          </div>
+
+          <button type="submit" class="submit-btn" [disabled]="!finalForm.valid || isSaving">
+            @if (isSaving) { <ion-spinner name="crescent" class="btn-spinner"></ion-spinner> }
+            Añadir usuario
+          </button>
+
+        </form>
+      </div>
+    }
+
+    <!-- ══════════════════════════════════════════════════════════════
+         VISTA: FORMULARIO FAMILIAR
+    ══════════════════════════════════════════════════════════════════ -->
+    @if (view === 'family') {
+      <div class="view-form">
+
+        <button class="back-link" (click)="setView('select')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          Volver a tipos
+        </button>
+
+        <!-- Avatar -->
+        <div class="avatar-wrap" (click)="pickImage('fam')" title="Toca para cambiar imagen">
+          @if (famImgUrl) {
+            <img [src]="famImgUrl" class="avatar-img" alt="Foto"/>
+          } @else {
+            <img src="assets/pictograms/profile-placeholder.png" class="avatar-img avatar-placeholder" alt="Foto"/>
+          }
+          <div class="avatar-overlay">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+          </div>
+        </div>
+        <p class="avatar-hint">Toca para cambiar · Máx. 2 MB</p>
+
+        <form [formGroup]="famForm" (ngSubmit)="saveFamily()">
+
+          <div class="form-grid">
+
+            <!-- Email -->
+            <div class="field">
+              <label class="field-label">Email *</label>
+              <input formControlName="email" type="email" class="field-input"
+                     placeholder="email@ejemplo.com" autocomplete="off"/>
+              @if (famForm.get('email')?.invalid && famForm.get('email')?.touched) {
+                <span class="field-error">Email inválido</span>
+              }
+            </div>
+
+            <!-- Contraseña -->
+            <div class="field">
+              <label class="field-label">Contraseña *</label>
+              <div class="pwd-wrap">
+                <input formControlName="password" [type]="showFamPwd ? 'text' : 'password'"
+                       class="field-input pwd-input" placeholder="Mín. 6 caracteres"
+                       autocomplete="new-password"/>
+                <button type="button" class="eye-btn" (click)="showFamPwd = !showFamPwd" tabindex="-1">
+                  @if (showFamPwd) {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                      <line x1="1" y1="1" x2="23" y2="23"/>
+                    </svg>
+                  } @else {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  }
+                </button>
+              </div>
+              @if (famForm.get('password')?.invalid && famForm.get('password')?.touched) {
+                <span class="field-error">Mínimo 6 caracteres</span>
+              }
+            </div>
+
+          </div><!-- /form-grid -->
+
+          <!-- ── Tabla de usuarios a cargo y permisos ─────────────────── -->
+          <div class="charge-section">
+
+            <!-- Cabecera -->
+            <div class="charge-header">
+              <span class="section-label">Usuarios a cargo y permisos</span>
+              @if (famRows.length > 0) {
+                <span class="charge-count">{{ famRows.length }}</span>
+              }
+            </div>
+
+            <!-- Cargando -->
+            @if (famUsersLoading) {
+              <div class="fam-state">
+                <ion-spinner name="crescent"></ion-spinner>
+                <span>Cargando usuarios finales…</span>
+              </div>
+
+            } @else if (famUsersError) {
+              <div class="fam-state fam-state--error">{{ famUsersError }}</div>
+
+            } @else {
+
+              <!-- Tabla -->
+              <div class="fam-table-wrap">
+                <table class="fam-table">
+
+                  <thead>
+                    <tr>
+                      <th class="fth-user">Usuario final</th>
+                      <th class="fth-info">Info</th>
+                      <th class="fth-perm">Estadísticas</th>
+                      <th class="fth-perm">Tableros</th>
+                      <th class="fth-perm">Datos pers.</th>
+                      <th class="fth-del"></th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+
+                    <!-- Filas reales -->
+                    @for (row of famRows; track row.childId; let i = $index) {
+                      <tr class="fam-row">
+
+                        <!-- Columna: usuario -->
+                        <td class="ftd-user">
+                          <div class="fam-user-cell">
+                            <div class="fam-avatar">
+                              @if (row.image) {
+                                <img [src]="buildSafeUrl(row.image)" [alt]="row.name" class="fam-avatar-img"/>
+                              } @else {
+                                <span class="fam-avatar-initial">{{ row.name.charAt(0).toUpperCase() }}</span>
+                              }
+                            </div>
+                            <div class="fam-user-meta">
+                              <span class="fam-user-name">{{ row.name }} {{ row.surname }}</span>
+                            </div>
+                          </div>
+                        </td>
+
+                        <!-- Columna: info básica -->
+                        <td class="ftd-info">
+                          <span class="fam-info-tag">{{ row.infoLabel }}</span>
+                        </td>
+
+                        <!-- Permiso: Estadísticas -->
+                        <td class="ftd-perm">
+                          <button type="button" class="fam-chip"
+                                  [class.fam-chip--on]="row.canViewStats"
+                                  (click)="row.canViewStats = !row.canViewStats">
+                            @if (row.canViewStats) {
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="20 6 9 17 4 12"/>
+                              </svg>
+                            }
+                            {{ row.canViewStats ? 'Activado' : 'Inactivo' }}
+                          </button>
+                        </td>
+
+                        <!-- Permiso: Tableros -->
+                        <td class="ftd-perm">
+                          <button type="button" class="fam-chip"
+                                  [class.fam-chip--on]="row.canEditBoards"
+                                  (click)="row.canEditBoards = !row.canEditBoards">
+                            @if (row.canEditBoards) {
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="20 6 9 17 4 12"/>
+                              </svg>
+                            }
+                            {{ row.canEditBoards ? 'Activado' : 'Inactivo' }}
+                          </button>
+                        </td>
+
+                        <!-- Permiso: Datos personales -->
+                        <td class="ftd-perm">
+                          <button type="button" class="fam-chip"
+                                  [class.fam-chip--on]="row.canEditPersonalData"
+                                  (click)="row.canEditPersonalData = !row.canEditPersonalData">
+                            @if (row.canEditPersonalData) {
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="20 6 9 17 4 12"/>
+                              </svg>
+                            }
+                            {{ row.canEditPersonalData ? 'Activado' : 'Inactivo' }}
+                          </button>
+                        </td>
+
+                        <!-- Eliminar fila -->
+                        <td class="ftd-del">
+                          <button type="button" class="fam-del-btn" (click)="removeFamRow(i)" title="Quitar">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                              <line x1="18" y1="6"  x2="6"  y2="18"/>
+                              <line x1="6"  y1="6"  x2="18" y2="18"/>
+                            </svg>
+                          </button>
+                        </td>
+
+                      </tr>
+                    }
+
+                    <!-- Fila de ejemplo (solo cuando vacío, NO persistente) -->
+                    @if (famRows.length === 0) {
+                      <tr class="fam-help-row">
+                        <td class="ftd-user">
+                          <div class="fam-user-cell">
+                            <div class="fam-avatar fam-avatar--ghost"></div>
+                            <div class="fam-user-meta">
+                              <span class="fam-user-name fam-ghost-text">Nombre Apellidos</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="ftd-info"><span class="fam-info-tag fam-ghost-text">Sin información</span></td>
+                        <td class="ftd-perm"><span class="fam-chip">Inactivo</span></td>
+                        <td class="ftd-perm"><span class="fam-chip">Inactivo</span></td>
+                        <td class="ftd-perm"><span class="fam-chip">Inactivo</span></td>
+                        <td class="ftd-del"></td>
+                      </tr>
+                    }
+
+                  </tbody>
+                </table>
+              </div><!-- /fam-table-wrap -->
+
+              <!-- Fila "añadir usuario" -->
+              <div class="fam-add-row">
+                @if (availableFinalUsers.length > 0) {
+                  <div class="fam-add-controls">
+                    <ion-select
+                      [value]="selectedChildId"
+                      placeholder="Seleccionar usuario final…"
+                      (ionChange)="onChildSelect($event)"
+                      class="fam-select"
+                      interface="action-sheet">
+                      @for (u of availableFinalUsers; track u._id) {
+                        <ion-select-option [value]="u._id">{{ u.name }}</ion-select-option>
+                      }
+                    </ion-select>
+                    <button type="button" class="fam-add-btn"
+                            (click)="addFamUser()"
+                            [disabled]="!selectedChildId">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5"  y1="12" x2="19" y2="12"/>
+                      </svg>
+                      Añadir
+                    </button>
+                  </div>
+                } @else if (centerFinalUsers.length === 0) {
+                  <p class="fam-msg">No hay usuarios finales en este centro todavía.</p>
+                } @else {
+                  <p class="fam-msg fam-msg--done">✓ Todos los usuarios finales ya están asignados.</p>
+                }
+              </div>
+
+            }<!-- /else loading -->
+
+          </div><!-- /charge-section -->
+
+          <button type="submit" class="submit-btn" [disabled]="!famForm.valid || isSaving">
+            @if (isSaving) { <ion-spinner name="crescent" class="btn-spinner"></ion-spinner> }
+            Añadir familiar
+          </button>
+
+        </form>
+      </div>
+    }
+
+  </div><!-- /tablet-frame -->
+</ion-content>

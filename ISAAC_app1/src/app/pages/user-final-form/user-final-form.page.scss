@@ -1,0 +1,39 @@
+// Solo overrides/additions sobre add-user.page.scss (que ya está en styleUrls)
+
+// ── Header (AppPageHeaderComponent) — tema rosa intenso igual que add-user ────
+app-page-header {
+  --aph-bg:            #ff69b4;
+  --aph-border:        transparent;
+  --aph-shadow:        0 2px 12px rgba(233, 30, 140, 0.25);
+  --aph-toolbar-color: #ffffff;
+  --aph-back-color:    #ffffff;
+  --aph-title-color:   #ffffff;
+  --aph-title-size:    18px;
+  --aph-title-weight:  700;
+  --aph-title-ls:      0.3px;
+}
+
+// Estado cargando / error centrado
+.uff-state {
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  gap:             12px;
+  padding:         60px 20px;
+  font-size:       14px;
+  color:           #6b5462;
+
+  svg { width: 36px; height: 36px; stroke: #6b5462; }
+
+  &--error { color: #c0392b; svg { stroke: #c0392b; } }
+}
+
+// Hint junto al label de contraseña (hint gris pequeño)
+.field-label-hint {
+  font-size:      10px;
+  font-weight:    400;
+  text-transform: none;
+  color:          #aaa;
+  margin-left:    4px;
+}

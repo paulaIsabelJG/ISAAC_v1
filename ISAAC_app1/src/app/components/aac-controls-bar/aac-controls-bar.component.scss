@@ -1,0 +1,125 @@
+$violet:      #7c4dff;
+$violet-l:    #f0ebff;
+$pink:        #ff69b4;
+$pink-l:      #fff0f7;
+$border:      #f4d0e4;
+$orange:      #ff8c42;
+$orange-l:    #fff3eb;
+$red:         #e53935;
+$red-l:       #ffebee;
+$text-muted:  #6b5462;
+
+:host {
+  display:    block;
+  flex:       0 0 auto;
+}
+
+// ── Barra contenedor ─────────────────────────────────────────────────────────
+.acb-bar {
+  display:      flex;
+  align-items:  center;
+  gap:          8px;
+  padding:      6px 10px;
+  min-height:   80px;
+  background:   #ffffff;
+  border-bottom: 2px solid $border;
+  box-sizing:   border-box;
+}
+
+// ── Grupos laterales ─────────────────────────────────────────────────────────
+.acb-group {
+  display:    flex;
+  align-items: center;
+  gap:        6px;
+  flex:       0 0 auto;
+}
+
+// ── Frase central ─────────────────────────────────────────────────────────────
+.acb-phrase {
+  flex:      1;
+  min-width: 0;
+  align-self: stretch;
+}
+
+// ── Botones ──────────────────────────────────────────────────────────────────
+.acb-btn {
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  gap:             3px;
+  width:           58px;
+  min-height:      62px;
+  border-radius:   14px;
+  border:          2px solid transparent;
+  cursor:          pointer;
+  transition:      background 0.12s, border-color 0.12s, transform 0.08s;
+  font-family:     inherit;
+
+  svg {
+    width:  24px;
+    height: 24px;
+    flex:   0 0 auto;
+  }
+
+  &:active:not([disabled]) { transform: scale(0.93); }
+
+  // ── Home ───────────────────────────────────────────────────────────────────
+  &--home {
+    background:   $violet-l;
+    border-color: rgba($violet, 0.3);
+    svg { stroke: $violet; }
+    &:hover { background: darken($violet-l, 4%); border-color: $violet; }
+  }
+
+  // ── Back ───────────────────────────────────────────────────────────────────
+  &--back {
+    background:   $violet-l;
+    border-color: rgba($violet, 0.3);
+    svg { stroke: $violet; }
+    &:hover:not([disabled]) { background: darken($violet-l, 4%); border-color: $violet; }
+  }
+
+  // ── Altavoz ────────────────────────────────────────────────────────────────
+  &--speak {
+    background:   $violet;
+    border-color: darken($violet, 8%);
+    svg { stroke: #fff; }
+    &:hover:not([disabled]) { background: darken($violet, 8%); }
+  }
+
+  // ── Goma ───────────────────────────────────────────────────────────────────
+  &--erase {
+    background:   $orange-l;
+    border-color: rgba($orange, 0.35);
+    svg { stroke: $orange; }
+    &:hover:not([disabled]) { background: darken($orange-l, 5%); border-color: $orange; }
+  }
+
+  // ── Papelera ───────────────────────────────────────────────────────────────
+  &--clear {
+    background:   $red-l;
+    border-color: rgba($red, 0.3);
+    svg { stroke: $red; }
+    &:hover:not([disabled]) { background: darken($red-l, 5%); border-color: $red; }
+  }
+
+  // ── Deshabilitado ──────────────────────────────────────────────────────────
+  &--disabled, &[disabled] {
+    opacity: 0.35;
+    cursor:  not-allowed;
+  }
+}
+
+// ── Label del botón ──────────────────────────────────────────────────────────
+.acb-btn-label {
+  font-size:   9px;
+  font-weight: 700;
+  color:       $text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.acb-btn--speak .acb-btn-label { color: rgba(#fff, 0.9); }

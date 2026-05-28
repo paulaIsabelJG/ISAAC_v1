@@ -1,0 +1,231 @@
+$pink:        #ff69b4;
+$pink-dark:   #e91e8c;
+$pink-light:  #fff0f7;
+$mint:        #20c997;
+$mint-light:  #e0fff6;
+$border:      #ffb6c1;
+$text-dark:   #222222;
+$text-muted:  #7a5163;
+
+.register-content { --background: #fff8fb; }
+
+.register-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100%;
+  padding: 28px 20px 40px;
+  box-sizing: border-box;
+}
+
+.register-logo {
+  margin-bottom: 18px;
+}
+
+.logo-text {
+  font-size: 36px;
+  font-weight: 800;
+  color: $pink;
+  letter-spacing: 4px;
+}
+
+// ── Card ──────────────────────────────────────────────────────────────────────
+.register-card {
+  width: 100%;
+  max-width: 500px;
+  background: #ffffff;
+  border-radius: 28px;
+  border: 2px solid $border;
+  padding: 28px 22px 24px;
+  box-shadow: 0 12px 36px rgba(255, 105, 180, 0.1);
+}
+
+.register-title {
+  text-align: center;
+  color: $text-dark;
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 20px;
+}
+
+// ── Type selector ─────────────────────────────────────────────────────────────
+.type-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.type-opt {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border: 2px solid #f0e0e8;
+  border-radius: 16px;
+  padding: 14px 16px;
+  background: #fafafa;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: border-color 0.2s, background 0.2s;
+
+  &.active {
+    border-color: $pink;
+    background: $pink-light;
+  }
+
+  &:hover:not(.active) {
+    border-color: $border;
+    background: $pink-light;
+  }
+}
+
+.type-opt-icon {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  svg { width: 22px; height: 22px; }
+
+  &.org-icon  { background: #fff0f7; color: $pink;  svg { stroke: $pink; } }
+  &.user-icon { background: $mint-light; color: $mint; svg { stroke: $mint; } }
+}
+
+.type-opt-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.type-opt-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: $text-dark;
+}
+
+.type-opt-desc {
+  display: block;
+  font-size: 12px;
+  color: $text-muted;
+  margin-top: 2px;
+}
+
+.type-check {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: $pink;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+
+  &.visible { opacity: 1; }
+}
+
+// ── Form ──────────────────────────────────────────────────────────────────────
+.field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: $text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin: 0 0 6px 4px;
+}
+
+.form-item {
+  --border-radius: 14px;
+  --border-color: #ffccd9;
+  --background: #fff8fb;
+  --color: #333;
+  margin-bottom: 14px;
+  ion-input { --color: #42283a; }
+}
+
+// ── Nombre en 2 columnas (para usuario) ──────────────────────────────────────
+.name-row {
+  display: flex;
+  gap: 10px;
+
+  @media (max-width: 360px) { flex-direction: column; }
+}
+
+.name-col {
+  flex: 1;
+  min-width: 0;
+}
+
+// ── Password con ojo ──────────────────────────────────────────────────────────
+.password-item {
+  position: relative;
+}
+
+.eye-btn {
+  background: none;
+  border: none;
+  padding: 0 4px;
+  cursor: pointer;
+  color: $text-muted;
+  display: flex;
+  align-items: center;
+  height: 100%;
+
+  svg {
+    width: 18px;
+    height: 18px;
+    stroke: $text-muted;
+    transition: stroke 0.2s;
+  }
+
+  &:hover svg { stroke: $pink; }
+}
+
+// ── Errores ───────────────────────────────────────────────────────────────────
+.error-message {
+  color: #d32f2f;
+  font-size: 13px;
+  margin: -10px 0 12px 4px;
+}
+
+// ── Submit ────────────────────────────────────────────────────────────────────
+.register-btn {
+  --background: #ff69b4;
+  --background-hover: #e91e8c;
+  --background-activated: #e91e8c;
+  --color: #ffffff;
+  --border-radius: 25px;
+  height: 52px;
+  font-weight: 700;
+  font-size: 16px;
+  margin-top: 12px;
+}
+
+// ── Footer ────────────────────────────────────────────────────────────────────
+.register-footer {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 14px;
+  color: $text-muted;
+
+  span { margin-right: 6px; }
+
+  .login-link {
+    color: $pink;
+    font-weight: 600;
+    text-decoration: none;
+    &:hover { text-decoration: underline; }
+  }
+}
+
+@media (max-width: 480px) {
+  .register-card { padding: 24px 14px 20px; }
+}

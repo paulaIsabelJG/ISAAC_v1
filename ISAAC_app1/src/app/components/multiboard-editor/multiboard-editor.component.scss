@@ -1,0 +1,175 @@
+$violet:       #7c4dff;
+$violet-light: #f0ebff;
+$mint:         #20c997;
+$mint-light:   #e0fff6;
+$mint-dark:    #17a682;
+$border:       #ffb6c1;
+$bg:           #fdf5f9;
+$text-dark:    #222;
+$text-muted:   #6b5462;
+$card:         #fff;
+
+:host {
+  display: block;
+  width:   100%;
+  height:  100%;
+}
+
+// ── Layouts ───────────────────────────────────────────────────────────────────
+.mbe-root {
+  display:  grid;
+  gap:      12px;
+  width:    100%;
+  height:   100%;
+  padding:  12px;
+  box-sizing: border-box;
+
+  &.mbe-layout--2 {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows:    1fr;
+  }
+  &.mbe-layout--3 {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows:    1fr;
+  }
+  &.mbe-layout--4 {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows:    repeat(2, 1fr);
+  }
+}
+
+// ── Hueco ─────────────────────────────────────────────────────────────────────
+.mbe-slot {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  justify-content: center;
+  gap:            10px;
+  border:         2px dashed $border;
+  border-radius:  16px;
+  background:     $card;
+  cursor:         pointer;
+  padding:        16px 12px;
+  box-sizing:     border-box;
+  transition:     border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  min-height:     160px;
+  position:       relative;
+
+  &:hover {
+    border-color: $violet;
+    background:   $violet-light;
+  }
+
+  &--selected {
+    border-color: $violet;
+    border-style: solid;
+    background:   $violet-light;
+    box-shadow:   0 0 0 3px rgba($violet, 0.18);
+  }
+
+  &--assigned {
+    border-style: solid;
+    border-color: $mint;
+    background:   $mint-light;
+
+    &:hover {
+      border-color: $mint-dark;
+      background:   darken($mint-light, 3%);
+    }
+
+    &.mbe-slot--selected {
+      border-color: $mint-dark;
+      box-shadow:   0 0 0 3px rgba($mint, 0.22);
+    }
+  }
+}
+
+.mbe-slot-label {
+  position:    absolute;
+  top:         8px;
+  left:        12px;
+  font-size:   10px;
+  font-weight: 800;
+  color:       $text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+// ── Hueco vacío ───────────────────────────────────────────────────────────────
+.mbe-slot-empty {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            8px;
+  color:          $text-muted;
+
+  svg  { width: 32px; height: 32px; stroke: $text-muted; opacity: 0.6; }
+  span { font-size: 12px; font-weight: 600; }
+}
+
+// ── Hueco asignado ────────────────────────────────────────────────────────────
+.mbe-slot-assigned {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            8px;
+  text-align:     center;
+}
+
+.mbe-slot-icon {
+  width:  36px;
+  height: 36px;
+  stroke: $mint-dark;
+}
+
+.mbe-slot-name {
+  font-size:     13px;
+  font-weight:   700;
+  color:         $mint-dark;
+  text-align:    center;
+  word-break:    break-word;
+  max-width:     100%;
+  line-height:   1.3;
+}
+
+// ── Botones de acción ─────────────────────────────────────────────────────────
+.mbe-slot-actions {
+  display:     flex;
+  gap:         8px;
+  align-items: center;
+  margin-top:  4px;
+}
+
+.mbe-slot-btn {
+  display:       flex;
+  align-items:   center;
+  gap:           4px;
+  padding:       5px 10px;
+  border-radius: 20px;
+  border:        1.5px solid transparent;
+  font-size:     11px;
+  font-weight:   700;
+  font-family:   inherit;
+  cursor:        pointer;
+  transition:    background 0.12s;
+
+  svg { width: 13px; height: 13px; flex: 0 0 auto; }
+
+  &--edit {
+    background:   rgba($mint-dark, 0.1);
+    border-color: rgba($mint-dark, 0.25);
+    color:        $mint-dark;
+    svg { stroke: $mint-dark; }
+
+    &:hover { background: rgba($mint-dark, 0.2); }
+  }
+
+  &--clear {
+    background:   rgba(#c0392b, 0.08);
+    border-color: rgba(#c0392b, 0.2);
+    color:        #c0392b;
+    svg { stroke: #c0392b; }
+
+    &:hover { background: rgba(#c0392b, 0.18); }
+  }
+}

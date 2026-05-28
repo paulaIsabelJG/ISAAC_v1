@@ -1,0 +1,127 @@
+$pink:       #ff69b4;
+$pink-light: #fff0f7;
+$border:     #ffb6c1;
+$mint:       #20c997;
+$mint-light: #e0fff6;
+$text-dark:  #222222;
+$text-muted: #7a5163;
+
+.placeholder-content { --background: #fdf5f9; }
+
+.placeholder-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: 32px 20px;
+  box-sizing: border-box;
+}
+
+.placeholder-card {
+  width: 100%;
+  max-width: 400px;
+  background: #ffffff;
+  border: 2px solid $border;
+  border-radius: 28px;
+  padding: 40px 28px 32px;
+  box-shadow: 0 16px 40px rgba(255, 105, 180, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.placeholder-logo {
+  font-size: 24px;
+  font-weight: 800;
+  color: $pink;
+  letter-spacing: 3px;
+  margin-bottom: 24px;
+}
+
+.placeholder-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: $pink-light;
+  border: 3px solid $border;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $pink;
+  margin-bottom: 16px;
+
+  svg { width: 38px; height: 38px; }
+}
+
+.placeholder-name {
+  font-size: 22px;
+  font-weight: 700;
+  color: $text-dark;
+  margin: 0 0 10px;
+}
+
+.placeholder-type-badge {
+  background: $mint-light;
+  color: $mint;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 12px;
+  padding: 4px 16px;
+  margin-bottom: 8px;
+  letter-spacing: 0.3px;
+}
+
+.placeholder-email {
+  font-size: 13px;
+  color: #aaa;
+  margin: 0 0 28px;
+}
+
+.placeholder-info {
+  background: #f9f9f9;
+  border-radius: 16px;
+  padding: 16px 20px;
+  margin-bottom: 28px;
+  width: 100%;
+  box-sizing: border-box;
+
+  p {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: $text-muted;
+    line-height: 1.5;
+  }
+
+  .info-sub {
+    font-weight: 400;
+    font-size: 13px;
+    color: #aaa;
+    margin-top: 8px;
+  }
+}
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: 1.5px solid $border;
+  border-radius: 25px;
+  color: $text-muted;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 28px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+
+  svg { width: 16px; height: 16px; }
+
+  &:hover {
+    background: $pink-light;
+    border-color: $pink;
+    color: $pink;
+  }
+}

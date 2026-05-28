@@ -1,0 +1,50 @@
+<div class="comm-root">
+
+  <!-- ── Barra AAC ─────────────────────────────────────────────────────────── -->
+  <app-aac-controls-bar
+    mode="communicator"
+    [voiceEnabled]="voiceEnabled"
+    [gender]="gender"
+    [canGoBack]="canGoBack"
+    (homeClick)="onHome()"
+    (backClick)="onBack()">
+  </app-aac-controls-bar>
+
+  <!-- ── Área del tablero ───────────────────────────────────────────────────── -->
+  <div class="comm-board">
+
+    @if (isLoading) {
+      <div class="comm-loading">
+        <ion-spinner name="crescent" color="secondary"></ion-spinner>
+      </div>
+    } @else if (loadError) {
+      <p class="comm-error">{{ loadError }}</p>
+    } @else if (board) {
+
+      @if (isMultiBoard) {
+        <app-multiboard-communicator
+          [masterBoard]="board"
+          [gender]="gender"
+          style="display:flex;flex:1;min-height:0;overflow:hidden">
+        </app-multiboard-communicator>
+
+      } @else if (board.shape === 'grid' || !board.shape) {
+        <app-board-grid
+          [board]="board"
+          mode="communicator"
+          (cellClick)="onCellPress($event.row, $event.col)">
+        </app-board-grid>
+
+      } @else if (board.shape === 'circular') {
+        <app-board-circular
+          [board]="board"
+          mode="communicator"
+          (cellClick)="onCellPress($event.row, $event.col)">
+        </app-board-circular>
+      }
+
+    }
+
+  </div><!-- /comm-board -->
+
+</div><!-- /comm-root -->

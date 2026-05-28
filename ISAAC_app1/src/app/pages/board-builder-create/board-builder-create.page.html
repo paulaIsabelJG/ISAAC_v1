@@ -1,0 +1,384 @@
+<app-page-header
+  title="NUEVO TABLERO"
+  backHref="/board-builder"
+  (backClick)="goBack()">
+</app-page-header>
+
+<ion-content class="bbc-content">
+  <div class="bbc-container">
+    <form [formGroup]="form" (ngSubmit)="create()">
+
+      <!-- ── Imagen de portada ──────────────────────────────────────────── -->
+      <div class="bbc-field">
+        <label class="bbc-label">Imagen del tablero <span class="bbc-optional">(opcional)</span></label>
+        <div class="bbc-img-row">
+          <div class="bbc-img-picker" (click)="pickImage()">
+            @if (imageSafeUrl) {
+              <img [src]="imageSafeUrl" class="bbc-img-preview" alt="Portada"/>
+              <div class="bbc-img-overlay">Cambiar</div>
+            } @else {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="3" y="3" width="18" height="18" rx="3"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <span>Subir imagen</span>
+            }
+          </div>
+          <div class="bbc-img-hint">
+            <p>Imagen de portada del tablero.</p>
+            <p>JPG, PNG, GIF o WebP · máx. 2 MB</p>
+            @if (imageB64) {
+              <button type="button" class="bbc-img-remove" (click)="removeImage()">Eliminar imagen</button>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Nombre ──────────────────────────────────────────────────────── -->
+      <div class="bbc-field">
+        <label class="bbc-label">Nombre del tablero *</label>
+        <input class="bbc-input"
+               formControlName="name"
+               type="text"
+               placeholder="Ej: Comunicación básica"
+               autocomplete="off"/>
+        @if (form.get('name')?.touched && form.get('name')?.invalid) {
+          <span class="bbc-error">Introduce un nombre (mín. 2 caracteres)</span>
+        }
+      </div>
+
+      <!-- ── Creador (read-only) ─────────────────────────────────────────── -->
+      <div class="bbc-field">
+        <label class="bbc-label">Creador</label>
+        <input class="bbc-input bbc-input--readonly"
+               [value]="creatorName"
+               type="text"
+               readonly/>
+      </div>
+
+      <!-- ── Usuarios asignados ─────────────────────────────────────────── -->
+      <div class="bbc-field">
+        <label class="bbc-label">Usuarios asignados *</label>
+
+        @if (lockAssignedUsers) {
+          <!-- Usuarios bloqueados: vienen heredados del editor, no son modificables -->
+          <div class="bbc-locked-users">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <span>{{ lockedUserNames }}</span>
+          </div>
+          <span class="bbc-hint">Usuarios heredados del tablero origen · no modificables</span>
+        } @else if (usersLoading) {
+          <div class="bbc-loading">
+            <ion-spinner name="crescent" color="secondary"></ion-spinner>
+            <span>Cargando usuarios…</span>
+          </div>
+        } @else if (usersError) {
+          <span class="bbc-error">{{ usersError }}</span>
+        } @else if (centerUsers.length === 0) {
+          <span class="bbc-empty-msg">No hay usuarios finales en el centro.</span>
+        } @else {
+          <ion-select class="bbc-select"
+                      placeholder="Selecciona usuario(s)"
+                      [multiple]="true"
+                      [value]="cfgAssignedUserIds"
+                      (ionChange)="onUserMultiSelect($event)"
+                      interface="alert"
+                      cancelText="Cancelar"
+                      okText="Aceptar">
+            @for (u of centerUsers; track u._id) {
+              <ion-select-option [value]="u._id">{{ u.name }}</ion-select-option>
+            }
+          </ion-select>
+          <button type="button" class="bbc-all-users-btn" (click)="selectAllUsers()">
+            Seleccionar todos
+          </button>
+          @if (cfgAssignedUserIds.length === 0) {
+            <span class="bbc-hint">Selecciona al menos un usuario.</span>
+          } @else {
+            <span class="bbc-hint">
+              {{ cfgAssignedUserIds.length === centerUsers.length
+                  ? 'Todos los usuarios del centro'
+                  : cfgAssignedUserIds.length + ' usuario(s) seleccionado(s)' }}
+            </span>
+          }
+        }
+      </div>
+
+      <!-- ── Tipo de tablero ───────────────────────────────────────────────── -->
+      <div class="bbc-field">
+        <label class="bbc-label">
+          Tipo de tablero
+          @if (lockBoardRole) { <span class="bbc-optional">(fijado)</span> }
+        </label>
+        <div class="bbc-shape-btns">
+
+          <button type="button"
+                  class="bbc-shape-btn"
+                  [class.bbc-shape-btn--active]="cfgBoardRole === 'main'"
+                  [class.bbc-shape-btn--disabled]="lockBoardRole"
+                  [attr.disabled]="lockBoardRole || null"
+                  (click)="!lockBoardRole && (cfgBoardRole = 'main')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            <span>Principal</span>
+          </button>
+
+          <button type="button"
+                  class="bbc-shape-btn"
+                  [class.bbc-shape-btn--active]="cfgBoardRole === 'secondary'"
+                  [class.bbc-shape-btn--disabled]="lockBoardRole"
+                  [attr.disabled]="lockBoardRole || null"
+                  (click)="!lockBoardRole && (cfgBoardRole = 'secondary')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="3"/>
+              <line x1="8" y1="12" x2="16" y2="12"/>
+              <line x1="12" y1="8" x2="12" y2="16"/>
+            </svg>
+            <span>Secundario</span>
+          </button>
+
+        </div>
+        <span class="bbc-hint">
+          @if (lockBoardRole) {
+            Tablero enlazado como destino de navegación · tipo bloqueado
+          } @else if (cfgBoardRole === 'secondary') {
+            Tablero enlazado (destino de navegación desde otro tablero)
+          } @else {
+            Tablero raíz asignado directamente al usuario
+          }
+        </span>
+      </div>
+
+      <!-- ── Forma del tablero ─────────────────────────────────────────── -->
+      <div class="bbc-field">
+        <label class="bbc-label">Forma del tablero</label>
+        <div class="bbc-shape-btns">
+
+          <button type="button"
+                  class="bbc-shape-btn"
+                  [class.bbc-shape-btn--active]="selectedShape === 'grid'"
+                  (click)="form.get('shape')!.setValue('grid')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+              <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+              <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+              <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+            </svg>
+            <span>Cuadrícula</span>
+          </button>
+
+          <button type="button"
+                  class="bbc-shape-btn"
+                  [class.bbc-shape-btn--active]="selectedShape === 'circular'"
+                  (click)="form.get('shape')!.setValue('circular')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="9"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            <span>Circular</span>
+          </button>
+
+          <button type="button"
+                  class="bbc-shape-btn"
+                  [class.bbc-shape-btn--active]="selectedShape === 'multi'"
+                  [class.bbc-shape-btn--disabled]="lockBoardRole"
+                  [attr.disabled]="lockBoardRole || null"
+                  (click)="!lockBoardRole && form.get('shape')!.setValue('multi')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="3" width="9" height="18" rx="2"/>
+              <rect x="13" y="3" width="9" height="18" rx="2"/>
+            </svg>
+            <span>Multitablero</span>
+          </button>
+
+        </div>
+        <span class="bbc-hint">
+          @if (selectedShape === 'multi') {
+            Pantalla con varios tableros simultáneos
+          } @else if (selectedShape === 'circular') {
+            Tablero con pictogramas en disposición circular
+          } @else {
+            Tablero con pictogramas en cuadrícula
+          }
+        </span>
+      </div>
+
+      <!-- ── Número de huecos (solo para multitablero) ──────────────────── -->
+      @if (isMultiBoard) {
+        <div class="bbc-field">
+          <label class="bbc-label">Número de tableros en pantalla</label>
+          <div class="bbc-shape-btns">
+
+            <button type="button"
+                    class="bbc-shape-btn"
+                    [class.bbc-shape-btn--active]="cfgSlotCount === 2"
+                    (click)="cfgSlotCount = 2">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <rect x="2"  y="3" width="9" height="18" rx="1.5"/>
+                <rect x="13" y="3" width="9" height="18" rx="1.5"/>
+              </svg>
+              <span>Dos</span>
+            </button>
+
+            <button type="button"
+                    class="bbc-shape-btn"
+                    [class.bbc-shape-btn--active]="cfgSlotCount === 3"
+                    (click)="cfgSlotCount = 3">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <rect x="1"  y="3" width="6" height="18" rx="1.5"/>
+                <rect x="9"  y="3" width="6" height="18" rx="1.5"/>
+                <rect x="17" y="3" width="6" height="18" rx="1.5"/>
+              </svg>
+              <span>Tres</span>
+            </button>
+
+            <button type="button"
+                    class="bbc-shape-btn"
+                    [class.bbc-shape-btn--active]="cfgSlotCount === 4"
+                    (click)="cfgSlotCount = 4">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <rect x="2"  y="2"  width="9" height="9" rx="1.5"/>
+                <rect x="13" y="2"  width="9" height="9" rx="1.5"/>
+                <rect x="2"  y="13" width="9" height="9" rx="1.5"/>
+                <rect x="13" y="13" width="9" height="9" rx="1.5"/>
+              </svg>
+              <span>Cuatro</span>
+            </button>
+
+          </div>
+          <span class="bbc-hint">
+            @if (cfgSlotCount === 2) { Distribución: dos columnas }
+            @else if (cfgSlotCount === 3) { Distribución: tres columnas }
+            @else { Distribución: cuadrícula 2 × 2 }
+          </span>
+        </div>
+      }
+
+      <!-- ── Campos de cuadrícula ────────────────────────────────────────── -->
+      @if (selectedShape === 'grid') {
+        <div class="bbc-row">
+          <div class="bbc-field bbc-field--half">
+            <label class="bbc-label">Nº filas</label>
+            <input class="bbc-input bbc-input--num"
+                   formControlName="rows"
+                   type="number" min="1" max="10"/>
+          </div>
+          <div class="bbc-field bbc-field--half">
+            <label class="bbc-label">Nº columnas</label>
+            <input class="bbc-input bbc-input--num"
+                   formControlName="columns"
+                   type="number" min="1" max="10"/>
+          </div>
+        </div>
+      }
+
+      <!-- ── Opciones IA (cuadrícula y multitablero) ───────────────────── -->
+      @if (selectedShape === 'grid' || isMultiBoard) {
+        <div class="bbc-toggles">
+          <div class="bbc-toggle-row" (click)="form.get('predictorEnabled')!.setValue(!form.get('predictorEnabled')!.value)">
+            <div class="bbc-toggle-info">
+              <span class="bbc-toggle-label">Activar predictor IA</span>
+              <span class="bbc-toggle-sub">Sugiere el siguiente pictograma (próx.)</span>
+            </div>
+            <div class="bbc-toggle-switch"
+                 [class.bbc-toggle-switch--on]="form.get('predictorEnabled')?.value">
+              <div class="bbc-toggle-thumb"></div>
+            </div>
+          </div>
+
+          <!-- Tamaño columna IA (visible solo cuando predictor activo, solo cuadrícula) -->
+          @if (predictorEnabled && selectedShape === 'grid') {
+            <div class="bbc-ia-size-panel">
+              <p class="bbc-ia-size-title">Tamaño de la columna IA</p>
+              <div class="bbc-row">
+                <div class="bbc-field bbc-field--half" style="margin-bottom:0">
+                  <label class="bbc-label">Filas IA</label>
+                  <input class="bbc-input bbc-input--num"
+                         formControlName="iaRows"
+                         type="number" min="1" max="20"/>
+                </div>
+                <div class="bbc-field bbc-field--half" style="margin-bottom:0">
+                  <label class="bbc-label">Columnas IA</label>
+                  <input class="bbc-input bbc-input--num"
+                         formControlName="iaCols"
+                         type="number" min="1" max="5"/>
+                </div>
+              </div>
+            </div>
+          }
+
+          <div class="bbc-toggle-row" (click)="form.get('aiRewriteEnabled')!.setValue(!form.get('aiRewriteEnabled')!.value)">
+            <div class="bbc-toggle-info">
+              <span class="bbc-toggle-label">Corrector IA</span>
+              <span class="bbc-toggle-sub">Reformula frases automáticamente (próx.)</span>
+            </div>
+            <div class="bbc-toggle-switch"
+                 [class.bbc-toggle-switch--on]="form.get('aiRewriteEnabled')?.value">
+              <div class="bbc-toggle-thumb"></div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ── Campos de tablero circular ────────────────────────────────── -->
+      @if (selectedShape === 'circular') {
+        <div class="bbc-field">
+          <label class="bbc-label">Nº ranuras exteriores</label>
+          <input class="bbc-input bbc-input--num"
+                 formControlName="circleSlots"
+                 type="number" min="3" max="20"/>
+          <span class="bbc-hint">Pictogramas alrededor del centro (3–20)</span>
+        </div>
+
+        <div class="bbc-toggles">
+          <div class="bbc-toggle-row" (click)="form.get('locationColumnEnabled')!.setValue(!form.get('locationColumnEnabled')!.value)">
+            <div class="bbc-toggle-info">
+              <span class="bbc-toggle-label">Columna de ubicación</span>
+              <span class="bbc-toggle-sub">Ranuras laterales para contexto de lugar</span>
+            </div>
+            <div class="bbc-toggle-switch"
+                 [class.bbc-toggle-switch--on]="form.get('locationColumnEnabled')?.value">
+              <div class="bbc-toggle-thumb"></div>
+            </div>
+          </div>
+
+          @if (locationColumnEnabled) {
+            <div class="bbc-ia-size-panel">
+              <p class="bbc-ia-size-title">Nº ranuras de ubicación</p>
+              <div class="bbc-field" style="margin-bottom:0">
+                <input class="bbc-input bbc-input--num"
+                       formControlName="locationColumnSlots"
+                       type="number" min="1" max="20"/>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- ── Botón CREAR ────────────────────────────────────────────────── -->
+      <button type="submit"
+              class="bbc-submit"
+              [disabled]="isSaving">
+        @if (isSaving) {
+          <ion-spinner name="crescent"></ion-spinner>
+        } @else {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+            <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+            <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+            <line x1="17.5" y1="14" x2="17.5" y2="21"/>
+            <line x1="14" y1="17.5" x2="21" y2="17.5"/>
+          </svg>
+          CREAR TABLERO
+        }
+      </button>
+
+    </form>
+  </div>
+</ion-content>

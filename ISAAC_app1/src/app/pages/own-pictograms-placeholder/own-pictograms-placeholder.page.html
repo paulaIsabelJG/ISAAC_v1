@@ -1,0 +1,273 @@
+<app-page-header
+  title="PICTOGRAMAS PROPIOS"
+  backHref="/add-user"
+  (backClick)="goBack()">
+</app-page-header>
+
+<ion-content class="op-content">
+  <div class="op-container">
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         SECCIÓN 1 — ÁLBUM DE PICTOGRAMAS
+    ════════════════════════════════════════════════════════════════════════ -->
+    <section class="card-section">
+
+      <div class="sec-head">
+        <div class="sec-head-left">
+          <span class="sec-dot sec-dot--mint"></span>
+          <h2 class="sec-title">ÁLBUM DE PICTOGRAMAS</h2>
+        </div>
+        @if (!isLoading && pictograms.length > 0) {
+          <span class="album-badge">{{ pictograms.length }}</span>
+        }
+      </div>
+
+      <!-- Estado: cargando / error -->
+      @if (isLoading || loadError) {
+        <app-loading-error-state
+          [loading]="isLoading"
+          [error]="loadError"
+          loadingText="Cargando pictogramas…"
+          [padding]="'32px 0 20px'">
+        </app-loading-error-state>
+
+      <!-- Estado: sin pictogramas -->
+      } @else if (pictograms.length === 0) {
+        <div class="album-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+            <rect x="2" y="3" width="20" height="18" rx="3"/>
+            <circle cx="8.5" cy="10.5" r="2"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+          <span>Este usuario aún no tiene pictogramas propios</span>
+        </div>
+
+      <!-- Lista de tarjetas -->
+      } @else {
+        <div class="album-scroll">
+          @for (p of pictograms; track p.id) {
+            <div class="picto-card" [style.border-color]="getColor(p.wordType).bg">
+
+              <!-- Franja de color Fitzgerald -->
+              <div class="picto-bar" [style.background]="getColor(p.wordType).bg"></div>
+
+              <!-- Cuerpo: imagen + botón tres puntos -->
+              <div class="picto-body">
+                <button class="picto-menu-btn"
+                        (click)="openMenu(p); $event.stopPropagation()"
+                        [attr.aria-label]="'Opciones de ' + p.name">
+                  <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                    <circle cx="12" cy="5"  r="1.6"/>
+                    <circle cx="12" cy="12" r="1.6"/>
+                    <circle cx="12" cy="19" r="1.6"/>
+                  </svg>
+                </button>
+                <img [src]="p.safeImageUrl" [alt]="p.name" class="picto-img"/>
+              </div>
+
+              <!-- Pie: nombre -->
+              <div class="picto-foot"
+                   [style.background]="getColor(p.wordType).bg"
+                   [style.color]="getColor(p.wordType).text">
+                {{ p.name }}
+              </div>
+
+            </div>
+          }
+        </div>
+      }
+
+    </section>
+
+    <div class="sec-divider"></div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         SECCIÓN 2 — CREAR / EDITAR PICTOGRAMA
+    ════════════════════════════════════════════════════════════════════════ -->
+    <section class="card-section" [class.card-section--editing]="isEditing">
+
+      <div class="sec-head">
+        <div class="sec-head-left">
+          <span class="sec-dot" [class.sec-dot--pink]="!isEditing" [class.sec-dot--orange]="isEditing"></span>
+          <h2 class="sec-title">
+            @if (isEditing) { EDITANDO PICTOGRAMA } @else { CREAR NUEVO PICTOGRAMA }
+          </h2>
+        </div>
+        <!-- Botón cancelar edición -->
+        @if (isEditing) {
+          <button class="cancel-edit-btn" (click)="cancelEdit()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+            Cancelar
+          </button>
+        }
+      </div>
+
+      <div class="create-body">
+
+        <!-- ── Vista previa (columna izquierda) ─────────────────────────── -->
+        <div class="create-preview">
+          <p class="preview-label">Vista previa</p>
+
+          <div class="picto-card picto-card--lg"
+               [style.border-color]="selectedColor.bg"
+               (click)="pickImage()"
+               title="Toca para seleccionar imagen">
+            <div class="picto-bar" [style.background]="selectedColor.bg"></div>
+            <div class="picto-body picto-body--click">
+              @if (formImageUrl) {
+                <img [src]="formImageUrl" alt="Preview" class="picto-img"/>
+              } @else {
+                <div class="picto-img-placeholder">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                    <circle cx="12" cy="13" r="4"/>
+                  </svg>
+                  <span>Imagen</span>
+                </div>
+              }
+            </div>
+            <div class="picto-foot"
+                 [style.background]="selectedColor.bg"
+                 [style.color]="selectedColor.text">
+              {{ formName.trim() || 'Nombre' }}
+            </div>
+          </div>
+
+          <p class="color-hint">
+            <span class="color-dot"
+                  [style.background]="selectedColor.bg"
+                  [style.border-color]="selectedColor.bg === '#eeeeee' ? '#bbb' : selectedColor.bg">
+            </span>
+            <span [style.color]="selectedColor.bg === '#eeeeee' ? '#666' : selectedColor.bg">
+              {{ selectedColor.help }}
+            </span>
+          </p>
+        </div>
+
+        <!-- ── Formulario (columna derecha) ─────────────────────────────── -->
+        <div class="create-form">
+
+          <!-- Nombre -->
+          <div class="field">
+            <label class="field-label">Nombre *</label>
+            <input type="text"
+                   class="field-input"
+                   [(ngModel)]="formName"
+                   placeholder="Ej: Comer, Mamá, Azul…"/>
+            @if (formTouched && !formName.trim()) {
+              <span class="field-error">El nombre es obligatorio</span>
+            }
+          </div>
+
+          <!-- Tipo de palabra — ion-select -->
+          <div class="field">
+            <label class="field-label">Tipo de palabra *</label>
+            <ion-select
+              class="word-type-select"
+              [(ngModel)]="formWordType"
+              interface="popover"
+              fill="outline"
+              aria-label="Tipo de palabra">
+              @for (c of FITZGERALD; track c.type) {
+                <ion-select-option [value]="c.type">{{ c.label }}</ion-select-option>
+              }
+            </ion-select>
+          </div>
+
+          <!-- Imagen -->
+          <div class="field">
+            <label class="field-label">
+              Imagen *
+              <span class="field-hint">(JPG, PNG, WEBP · máx. 2 MB)</span>
+            </label>
+            <button type="button"
+                    class="img-pick-btn"
+                    [class.img-pick-btn--ok]="!!formImageB64"
+                    (click)="pickImage()">
+              @if (formImageB64) {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                Imagen cargada · Cambiar
+              } @else {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                Seleccionar imagen
+              }
+            </button>
+            @if (imgError) { <span class="field-error">{{ imgError }}</span> }
+            @if (formTouched && !formImageB64 && !imgError) {
+              <span class="field-error">La imagen es obligatoria</span>
+            }
+          </div>
+
+          <!-- Descripción -->
+          <div class="field">
+            <label class="field-label">
+              Descripción
+              <span class="field-hint">(opcional)</span>
+            </label>
+            <textarea class="field-input field-textarea"
+                      [(ngModel)]="formDescription"
+                      placeholder="Contexto o nota sobre este pictograma…"
+                      rows="2"></textarea>
+          </div>
+
+          <!-- Botón añadir / guardar -->
+          <button type="button"
+                  class="submit-btn"
+                  [class.submit-btn--edit]="isEditing"
+                  [disabled]="isSaving"
+                  (click)="addOrSave()">
+            @if (isSaving) {
+              <ion-spinner name="crescent" class="btn-spinner"></ion-spinner>
+            } @else if (isEditing) {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            } @else {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            }
+            {{ isEditing ? 'GUARDAR CAMBIOS' : 'AÑADIR PICTOGRAMA' }}
+          </button>
+
+        </div>
+      </div>
+    </section>
+
+    <div class="sec-divider"></div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         SECCIÓN 3 — GUÍA DE COLORES FITZGERALD
+    ════════════════════════════════════════════════════════════════════════ -->
+    <section class="card-section fitz-section">
+
+      <h3 class="fitz-title">Guía de colores Fitzgerald</h3>
+      <p class="fitz-subtitle">Toca un color para seleccionar ese tipo de palabra</p>
+
+      <div class="fitz-grid">
+        @for (c of FITZGERALD; track c.type) {
+          <div class="fitz-chip"
+               [style.background]="c.bg"
+               [style.color]="c.text"
+               [class.fitz-chip--active]="formWordType === c.type"
+               (click)="formWordType = c.type">
+            <span class="fitz-chip-name">{{ c.label }}</span>
+            <span class="fitz-chip-help">{{ c.help }}</span>
+          </div>
+        }
+      </div>
+
+    </section>
+
+  </div><!-- /op-container -->
+</ion-content>

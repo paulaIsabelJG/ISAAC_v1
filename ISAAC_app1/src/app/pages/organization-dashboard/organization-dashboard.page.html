@@ -1,0 +1,201 @@
+<ion-content class="dash-content">
+  <div class="dash-container">
+
+    <!-- ── Cabecera ──────────────────────────────────────────────────────────── -->
+    <div class="dash-header">
+
+      <!-- Marca -->
+      <div class="dash-brand">
+        <span class="brand-name">ISAAC</span>
+        <span class="brand-label">Panel de organización</span>
+      </div>
+
+      <!-- Usuario / avatar / logout -->
+      <div class="dash-user">
+        <div class="dash-org-avatar">
+          @if (orgAvatarUrl) {
+            <img [src]="orgAvatarUrl" class="org-avatar-img" alt="Avatar organización"/>
+          } @else {
+            <div class="org-avatar-placeholder">
+              {{ user?.name?.charAt(0)?.toUpperCase() ?? 'O' }}
+            </div>
+          }
+        </div>
+        <div class="dash-user-info">
+          <span class="dash-user-name">{{ user?.name }}</span>
+          <span class="dash-user-type">Organización</span>
+        </div>
+        <button class="logout-btn" (click)="logout()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          Salir
+        </button>
+      </div>
+
+    </div>
+
+    <!-- ── Divisor ───────────────────────────────────────────────────────────── -->
+    <div class="dash-divider"></div>
+
+    <!-- Botones de acción centrales -->
+      <div class="action-row">
+        <button class="action-btn action-btn--pink" (click)="goToProfile()">
+          <img src="assets/controlApp/configuration.png" class="action-icon" alt="Perfil"/>
+          <span>Configurar perfil</span>
+        </button>
+
+        <button class="action-btn action-btn--mint" (click)="goToAddUser()">
+          <img src="assets/controlApp/user.png" class="action-icon" alt="Añadir Usuario"/>
+          <span>Agregar usuario</span>
+        </button>
+
+        <button class="action-btn action-btn--violet" (click)="goToBoardBuilder()">
+          <img src="assets/controlApp/boardBuilder.png" class="action-icon" alt="Creación de tableros"/>
+          <span>Crear tablero</span>
+        </button>
+      </div>
+
+
+    <!-- ── Cuerpo principal: 2 columnas ─────────────────────────────────────── -->
+    <div class="dash-body">
+
+      <!-- ── Columna izquierda: Usuarios finales ─────────────────────────── -->
+      <div class="dash-col">
+        <div class="col-header">
+          <div class="col-title-row">
+            <h2 class="col-title">Usuarios finales</h2>
+            <span class="col-count">{{ filteredFinalUsers.length }}</span>
+          </div>
+          <ion-searchbar
+            class="col-searchbar"
+            placeholder="Buscar por nombre o apellidos..."
+            (ionInput)="onSearchFinalUsers($event)"
+            debounce="150"
+            animated>
+          </ion-searchbar>
+        </div>
+
+        <div class="users-grid">
+
+          <!-- Estado: cargando -->
+          @if (isLoading) {
+            <div class="col-loading">
+              <ion-spinner name="crescent" color="primary"></ion-spinner>
+            </div>
+          } @else if (loadError) {
+            <!-- Estado: error -->
+            <div class="no-results col-error">{{ loadError }}</div>
+          } @else {
+            <!-- Tarjetas de usuario -->
+            @for (u of filteredFinalUsers; track u.email) {
+              <div class="user-card user-card--clickable" (click)="goToUserSession(u._id)">
+                <div class="user-card-avatar user-card-avatar--blue">
+                  @if (u.image) {
+                    <img [src]="buildSafeUrl(u.image)" [alt]="u.name"/>
+                  } @else {
+                    <span class="user-card-initial">{{ getInitial(u) }}</span>
+                  }
+                </div>
+                <span class="user-card-name">{{ u.name }}</span>
+                <span class="user-card-surname">{{ u.surname }}</span>
+              </div>
+            }
+
+            <!-- Botón añadir -->
+            <div class="user-card user-card--add" (click)="goToAddUser()">
+              <div class="user-card-avatar user-card-avatar--add">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+              </div>
+              <span class="user-card-name">Añadir</span>
+              <span class="user-card-surname">&nbsp;</span>
+            </div>
+
+            <!-- Sin resultados (búsqueda) -->
+            @if (filteredFinalUsers.length === 0 && searchFinalUsers) {
+              <div class="no-results">Sin resultados</div>
+            }
+            <!-- Vacío (sin usuarios todavía) -->
+            @if (allFinalUsers.length === 0 && !searchFinalUsers) {
+              <div class="no-results">Aún no hay usuarios finales</div>
+            }
+          }
+
+        </div>
+      </div>
+
+      <!-- ── Columna derecha: Profesionales ──────────────────────────────── -->
+      <div class="dash-col">
+        <div class="col-header">
+          <div class="col-title-row">
+            <h2 class="col-title">Profesionales</h2>
+            <span class="col-count col-count--mint">{{ filteredProfessionals.length }}</span>
+          </div>
+          <ion-searchbar
+            class="col-searchbar"
+            placeholder="Buscar por nombre o apellidos..."
+            (ionInput)="onSearchProfessionals($event)"
+            debounce="150"
+            animated>
+          </ion-searchbar>
+        </div>
+
+        <div class="users-grid">
+
+          <!-- Estado: cargando -->
+          @if (isLoading) {
+            <div class="col-loading">
+              <ion-spinner name="crescent" color="primary"></ion-spinner>
+            </div>
+          } @else if (loadError) {
+            <!-- Estado: error -->
+            <div class="no-results col-error">{{ loadError }}</div>
+          } @else {
+            <!-- Tarjetas de profesional -->
+            @for (u of filteredProfessionals; track u.email) {
+              <div class="user-card user-card--clickable" (click)="goToProfessionalSession(u._id)">
+                <div class="user-card-avatar user-card-avatar--mint">
+                  @if (u.image) {
+                    <img [src]="buildSafeUrl(u.image)" [alt]="u.name"/>
+                  } @else {
+                    <span class="user-card-initial">{{ getInitial(u) }}</span>
+                  }
+                </div>
+                <span class="user-card-name">{{ u.name }}</span>
+                <span class="user-card-surname">{{ u.surname }}</span>
+              </div>
+            }
+
+            <!-- Botón añadir -->
+            <div class="user-card user-card--add" (click)="goToAddUser()">
+              <div class="user-card-avatar user-card-avatar--add">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+              </div>
+              <span class="user-card-name">Añadir</span>
+              <span class="user-card-surname">&nbsp;</span>
+            </div>
+
+            <!-- Sin resultados (búsqueda) -->
+            @if (filteredProfessionals.length === 0 && searchProfessionals) {
+              <div class="no-results">Sin resultados</div>
+            }
+            <!-- Vacío (sin profesionales todavía) -->
+            @if (allProfessionals.length === 0 && !searchProfessionals) {
+              <div class="no-results">Aún no hay profesionales</div>
+            }
+          }
+
+        </div>
+      </div>
+
+    </div><!-- dash-body -->
+  </div><!-- dash-container -->
+</ion-content>

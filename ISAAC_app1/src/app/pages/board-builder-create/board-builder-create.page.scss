@@ -1,0 +1,412 @@
+// ── Variables ────────────────────────────────────────────────────────────────
+$pink:         #ff69b4;
+$pink-dark:    #e91e8c;
+$pink-light:   #fff0f7;
+$violet:       #7c4dff;
+$violet-light: #f0ebff;
+$border:       #ffb6c1;
+$bg:           #fdf5f9;
+$text-dark:    #222222;
+$text-muted:   #6b5462;
+$card-bg:      #ffffff;
+
+// ── Header (AppPageHeaderComponent) ──────────────────────────────────────────
+// bg/border = default del componente (#fdf5f9 / #ffb6c1)
+app-page-header {
+  --aph-title-color: #{$violet};
+}
+
+// ── Content ──────────────────────────────────────────────────────────────────
+.bbc-content { --background: #{$bg}; }
+
+.bbc-container {
+  max-width:  560px;
+  margin:     0 auto;
+  padding:    24px 20px 60px;
+  box-sizing: border-box;
+}
+
+// ── Campo ────────────────────────────────────────────────────────────────────
+.bbc-field {
+  margin-bottom: 20px;
+  display:       flex;
+  flex-direction: column;
+  gap:           6px;
+
+  &--half { flex: 1; }
+}
+
+.bbc-label {
+  font-size:   12px;
+  font-weight: 700;
+  color:       $text-muted;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.bbc-input {
+  height:       44px;
+  padding:      0 14px;
+  border:       1.5px solid $border;
+  border-radius: 12px;
+  background:   $card-bg;
+  font-size:    14px;
+  font-family:  inherit;
+  color:        $text-dark;
+  outline:      none;
+  transition:   border-color 0.15s;
+  box-sizing:   border-box;
+  width:        100%;
+
+  &:focus          { border-color: $violet; }
+  &--readonly      { background: #faf6f8; color: $text-muted; cursor: default; }
+  &--num           { width: 80px; text-align: center; }
+}
+
+.bbc-select {
+  --background: #{$card-bg};
+  --border-radius: 12px;
+  --padding-start: 14px;
+  --padding-end:   14px;
+  border:       1.5px solid $border;
+  border-radius: 12px;
+  font-size:    14px;
+  height:       44px;
+}
+
+.bbc-error     { font-size: 12px; color: #c0392b; }
+.bbc-empty-msg { font-size: 13px; color: $text-muted; }
+.bbc-hint      { font-size: 11px; color: $text-muted; display: block; margin-top: 4px; }
+
+// ── Botón "Seleccionar todos" ─────────────────────────────────────────────────
+// ── Usuarios bloqueados (flujo link-back desde celda del editor) ──────────────
+.bbc-locked-users {
+  display:      flex;
+  align-items:  center;
+  gap:          10px;
+  height:       44px;
+  padding:      0 14px;
+  border:       1.5px solid $border;
+  border-radius: 12px;
+  background:   #faf6f8;
+  font-size:    14px;
+  color:        $text-muted;
+  box-sizing:   border-box;
+
+  svg {
+    flex:        0 0 auto;
+    width:       18px;
+    height:      18px;
+    stroke:      $text-muted;
+    opacity:     0.7;
+  }
+
+  span {
+    overflow:      hidden;
+    text-overflow: ellipsis;
+    white-space:   nowrap;
+  }
+}
+
+// ── Botón "Seleccionar todos" ─────────────────────────────────────────────────
+.bbc-all-users-btn {
+  display:       block;
+  width:         100%;
+  height:        30px;
+  background:    transparent;
+  border:        1px solid $border;
+  border-radius: 8px;
+  color:         $text-muted;
+  font-size:     11px;
+  font-weight:   700;
+  font-family:   inherit;
+  cursor:        pointer;
+  margin-top:    6px;
+  transition:    background 0.15s, border-color 0.15s;
+
+  &:hover { background: $pink-light; border-color: $pink-dark; color: $pink-dark; }
+}
+
+.bbc-loading {
+  display:     flex;
+  align-items: center;
+  gap:         10px;
+  font-size:   14px;
+  color:       $text-muted;
+}
+
+// ── Row ──────────────────────────────────────────────────────────────────────
+.bbc-row {
+  display: flex;
+  gap:     16px;
+}
+
+// ── Forma ────────────────────────────────────────────────────────────────────
+.bbc-shape-btns {
+  display:   flex;
+  gap:       12px;
+  flex-wrap: wrap;
+}
+
+.bbc-shape-btn {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            8px;
+  width:          120px;
+  padding:        16px 12px;
+  border:         1.5px solid $border;
+  border-radius:  16px;
+  background:     $card-bg;
+  cursor:         pointer;
+  font-family:    inherit;
+  transition:     border-color 0.15s, background 0.15s;
+  position:       relative;
+
+  svg  { width: 28px; height: 28px; stroke: $text-muted; }
+  span { font-size: 12px; font-weight: 700; color: $text-muted; }
+
+  &--active {
+    border-color: $violet;
+    background:   $violet-light;
+    svg  { stroke: $violet; }
+    span { color:  $violet; }
+  }
+
+  &--disabled {
+    opacity: 0.5;
+    cursor:  not-allowed;
+  }
+}
+
+.bbc-slot-num {
+  font-size:   28px;
+  font-weight: 900;
+  line-height: 1;
+  color:       inherit;
+}
+
+.bbc-soon {
+  position:      absolute;
+  top:           6px;
+  right:         6px;
+  background:    #ffe0b2;
+  color:         #e65100;
+  font-size:     9px !important;
+  font-weight:   700 !important;
+  border-radius: 6px;
+  padding:       2px 6px;
+}
+
+// ── Toggles ──────────────────────────────────────────────────────────────────
+.bbc-toggles {
+  display:        flex;
+  flex-direction: column;
+  gap:            12px;
+  margin-bottom:  20px;
+}
+
+.bbc-toggle-row {
+  display:        flex;
+  align-items:    center;
+  justify-content: space-between;
+  gap:            12px;
+  background:     $card-bg;
+  border:         1.5px solid $border;
+  border-radius:  14px;
+  padding:        14px 16px;
+  cursor:         pointer;
+  user-select:    none;
+}
+
+.bbc-toggle-info {
+  display:        flex;
+  flex-direction: column;
+  gap:            2px;
+}
+
+.bbc-toggle-label {
+  font-size:   14px;
+  font-weight: 700;
+  color:       $text-dark;
+}
+
+.bbc-toggle-sub {
+  font-size: 11px;
+  color:     $text-muted;
+}
+
+.bbc-toggle-switch {
+  width:         46px;
+  height:        26px;
+  border-radius: 13px;
+  background:    #ddd;
+  flex:          0 0 auto;
+  position:      relative;
+  transition:    background 0.2s;
+
+  &--on {
+    background: $violet;
+    .bbc-toggle-thumb { left: calc(100% - 24px); }
+  }
+}
+
+.bbc-toggle-thumb {
+  position:      absolute;
+  top:           3px;
+  left:          3px;
+  width:         20px;
+  height:        20px;
+  border-radius: 50%;
+  background:    #fff;
+  box-shadow:    0 1px 4px rgba(0,0,0,0.2);
+  transition:    left 0.2s;
+}
+
+// ── Info box ─────────────────────────────────────────────────────────────────
+.bbc-info-box {
+  display:       flex;
+  align-items:   flex-start;
+  gap:           10px;
+  background:    #fff8e1;
+  border:        1.5px solid #ffe082;
+  border-radius: 14px;
+  padding:       14px 16px;
+  font-size:     13px;
+  color:         #795548;
+  margin-bottom: 20px;
+
+  svg { width: 22px; height: 22px; stroke: #e65100; flex: 0 0 auto; margin-top: 1px; }
+}
+
+// ── Imagen de portada ─────────────────────────────────────────────────────────
+$mint: #20c997;
+
+.bbc-optional {
+  font-weight:    500;
+  text-transform: none;
+  font-size:      10px;
+  color:          #aaa;
+  margin-left:    4px;
+}
+
+.bbc-img-row {
+  display:     flex;
+  align-items: flex-start;
+  gap:         16px;
+}
+
+.bbc-img-picker {
+  flex:            0 0 auto;
+  width:           88px;
+  height:          88px;
+  border:          2px dashed $border;
+  border-radius:   16px;
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  gap:             6px;
+  cursor:          pointer;
+  overflow:        hidden;
+  position:        relative;
+  transition:      border-color 0.15s;
+  background:      #faf6f8;
+
+  svg  { width: 28px; height: 28px; stroke: #ccc; }
+  span { font-size: 10px; color: $text-muted; font-weight: 600; }
+
+  &:hover { border-color: $violet; }
+}
+
+.bbc-img-preview {
+  width:      100%;
+  height:     100%;
+  object-fit: cover;
+}
+
+.bbc-img-overlay {
+  position:        absolute;
+  inset:           0;
+  background:      rgba(0,0,0,0.45);
+  color:           #fff;
+  font-size:       11px;
+  font-weight:     700;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  opacity:         0;
+  transition:      opacity 0.15s;
+
+  .bbc-img-picker:hover & { opacity: 1; }
+}
+
+.bbc-img-hint {
+  flex:           1;
+  display:        flex;
+  flex-direction: column;
+  gap:            4px;
+
+  p { font-size: 11px; color: $text-muted; margin: 0; line-height: 1.4; }
+}
+
+.bbc-img-remove {
+  margin-top:    4px;
+  background:    transparent;
+  border:        1px solid #f8c4cf;
+  border-radius: 8px;
+  color:         #c0392b;
+  font-size:     11px;
+  font-weight:   700;
+  font-family:   inherit;
+  padding:       4px 10px;
+  cursor:        pointer;
+  transition:    background 0.15s;
+
+  &:hover { background: #fff0f0; }
+}
+
+// ── Panel tamaño IA ───────────────────────────────────────────────────────────
+.bbc-ia-size-panel {
+  background:    color-mix(in srgb, #{$mint} 10%, white);
+  border:        1.5px solid $mint;
+  border-radius: 14px;
+  padding:       14px 16px 16px;
+  margin:        -4px 0 12px;
+}
+
+.bbc-ia-size-title {
+  font-size:      11px;
+  font-weight:    800;
+  color:          darken($mint, 10%);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin:         0 0 12px;
+}
+
+// ── Botón submit ─────────────────────────────────────────────────────────────
+.bbc-submit {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  gap:             10px;
+  width:           100%;
+  height:          52px;
+  border:          none;
+  border-radius:   16px;
+  background:      $violet;
+  color:           #fff;
+  font-size:       14px;
+  font-weight:     800;
+  font-family:     inherit;
+  letter-spacing:  1px;
+  cursor:          pointer;
+  margin-top:      8px;
+  transition:      opacity 0.15s, transform 0.15s;
+
+  svg { width: 20px; height: 20px; stroke: #fff; }
+
+  &:hover:not(:disabled) { opacity: 0.92; transform: translateY(-1px); }
+  &:active:not(:disabled){ opacity: 0.85; transform: translateY(0); }
+  &:disabled             { opacity: 0.5;  cursor: not-allowed; }
+}

@@ -1,0 +1,874 @@
+// ── Variables ────────────────────────────────────────────────────────────────
+$pink:         #ff69b4;
+$pink-dark:    #e91e8c;
+$pink-light:   #fff0f7;
+$violet:       #7c4dff;
+$violet-light: #f0ebff;
+$blue:         #4a9eff;
+$blue-light:   #e8f4ff;
+$mint:         #20c997;
+$border:       #ffb6c1;
+$bg:           #fdf5f9;
+$text-dark:    #222222;
+$text-muted:   #6b5462;
+$card-bg:      #ffffff;
+$panel-bg:     #faf5f8;
+
+// ── Content ──────────────────────────────────────────────────────────────────
+.bbe-content { --background: #{$bg}; }
+
+// ── Estado cargando / error → LoadingErrorStateComponent ─────────────────────
+// .bbe-state eliminado: la página usa <app-loading-error-state> desde sprint 2.
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  LAYOUT EDITOR
+// ─────────────────────────────────────────────────────────────────────────────
+.bbe-layout {
+  display:    flex;
+  // Altura explícita: viewport - barra de herramientas de Ionic (56 px)
+  // dvh para que funcione igual en escritorio, tablet y móvil
+  height:     calc(100dvh - 56px);
+  max-height: calc(100dvh - 56px);
+  overflow:   hidden;
+}
+
+// La barra OBF no debe comprimirse nunca
+.bbe-obf-bar { flex: 0 0 auto; }
+
+// ── Columna izquierda → BoardSidebarLeftComponent ────────────────────────────
+// Layout del host en board-sidebar-left.component.scss (:host).
+// Todos los estilos bbe-panel, bbe-lbl, bbe-inp, bbe-toggle*, bbe-role-*,
+// bbe-cfg-img-*, bbe-shared-badge, bbe-all-users-btn, bbe-boards-sub, etc.
+// viven en board-sidebar-left.component.scss.
+
+// ── Columna central ───────────────────────────────────────────────────────────
+.bbe-col-center {
+  flex:           1;
+  overflow:       hidden;    // no scroll → el grid rellena el alto disponible
+  padding:        12px 12px 12px;
+  box-sizing:     border-box;
+  display:        flex;
+  flex-direction: column;
+  gap:            10px;
+}
+
+.bbe-obf-bar {
+  display: flex;
+  gap:     10px;
+}
+
+.bbe-obf-btn {
+  display:         flex;
+  align-items:     center;
+  gap:             6px;
+  padding:         7px 14px;
+  border:          1.5px solid $border;
+  border-radius:   10px;
+  background:      $card-bg;
+  font-size:       12px;
+  font-weight:     600;
+  color:           $text-muted;
+  font-family:     inherit;
+  cursor:          pointer;
+  transition:      border-color 0.15s, color 0.15s;
+
+  svg { width: 15px; height: 15px; stroke: $text-muted; }
+  &:hover { border-color: $violet; color: $violet; svg { stroke: $violet; } }
+}
+
+// ── Grid e IA → BoardGridComponent ───────────────────────────────────────────
+// .bbe-grid-area, .bbe-grid-wrap, .bbe-ia-col, .bbe-ia-cell, .bbe-ia-logo,
+// .bbe-ia-label → eliminados: BoardGridComponent usa bgc-* en su propio SCSS.
+
+// ── Celdas → PictogramCellComponent / PictCellContentComponent ───────────────
+// .bbe-grid, .bbe-cell, .bbe-cell-img-wrap, .bbe-cell-img, .bbe-cell-img-placeholder,
+// .bbe-cell-label, .bbe-cell-plus, .bbe-cell-empty-preview → eliminados:
+// PictogramCellComponent gestiona su propio estilo.
+
+// ── Tablero circular → BoardCircularComponent ─────────────────────────────────
+// .bbe-circle-area, .bbe-loc-col, .bbe-loc-cell, .bbe-circle-canvas,
+// .bbe-circ-slot, .bbe-circ-center, .bbe-circ-center-hint, .bbe-center-wait-icon,
+// .bbe-resume-img, .bbe-circ-sim-badge → eliminados: BoardCircularComponent usa bcc-*
+
+// ── Vista previa → BoardPreviewContainerComponent ────────────────────────────
+// .bbe-preview-board--circular → eliminado: vive en board-preview-container.component.scss.
+// Todos los estilos (bpc-aac-bar, bpc-aac-btn, bpc-preview-board, :host)
+// viven en board-preview-container.component.scss.
+
+// ── Columna derecha → BoardCellPanelComponent ─────────────────────────────────
+// Layout del host en board-cell-panel.component.scss (:host).
+// Todos los estilos del panel (bcp-*) viven en el propio componente.
+// .bbe-personal-blocked, .bbe-create-board-btn, .bbe-hint-sm → eliminados.
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  EDITOR — canvas que rellena la columna central
+// ─────────────────────────────────────────────────────────────────────────────
+
+// IA col y canvas igualan altura — app-board-grid es elemento host, recibe
+// el atributo ngcontent del padre por estar en el template del page.
+.bbe-col-center app-board-grid {
+  align-items: stretch;
+}
+
+// .bbe-col-center .bbe-ia-col → eliminado (bgc-ia-col en BoardGridComponent)
+// .bbe-col-center .bbe-ia-cell → eliminado
+// .bbe-col-center .bbe-grid-wrap → eliminado
+// .bbe-col-center .bbe-grid → eliminado
+// .bbe-col-center .bbe-cell → eliminado
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  DRAG AND DROP / MODO MOVER TÁCTIL → eliminados
+// ─────────────────────────────────────────────────────────────────────────────
+// .bbe-cell--dragging, .bbe-cell--dragover, .bbe-circ-slot.bbe-cell--dragover,
+// .bbe-circ-center.bbe-cell--dragover, .bbe-cell--move-src, .bbe-cell--move-dst,
+// @keyframes bbe-move-pulse → eliminados:
+// BoardGridComponent y BoardCircularComponent gestionan DnD con sus propias clases.
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  RESPONSIVE — pantallas pequeñas
+// ─────────────────────────────────────────────────────────────────────────────
+@media (max-width: 900px) {
+  // Paneles laterales gestionan su propia anchura en sus :host media queries
+}
+
+@media (max-width: 680px) {
+  .bbe-layout {
+    flex-direction: column;
+    overflow:       auto;
+  }
+
+  .bbe-col-center { overflow: visible; }
+}
+
+// ── Vista previa del multitablero ─────────────────────────────────────────────
+.bbe-multi-preview {
+  display:        flex;
+  flex-direction: column;
+  height:         100%;
+  overflow:       hidden;
+}
+
+.bbe-mpv-aac-bar {
+  display:     flex;
+  align-items: center;
+  gap:         6px;
+  padding:     6px 10px;
+  background:  $pink-light;
+  border-bottom: 1.5px solid $border;
+  flex:        0 0 auto;
+}
+
+.bbe-mpv-btn {
+  flex:            0 0 auto;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  width:           36px;
+  height:          36px;
+  border-radius:   50%;
+  border:          1.5px solid $border;
+  background:      #fff;
+  cursor:          pointer;
+  transition:      background 0.12s;
+
+  svg { width: 18px; height: 18px; stroke: $text-muted; }
+
+  &:hover { background: darken($pink-light, 4%); }
+
+  &--speak svg { stroke: $pink-dark; }
+}
+
+.bbe-mpv-phrase {
+  flex:        1;
+  display:     flex;
+  align-items: center;
+  gap:         6px;
+  overflow-x:  auto;
+  min-height:  44px;
+  padding:     2px 4px;
+}
+
+.bbe-mpv-phrase-placeholder {
+  font-size:  12px;
+  color:      $text-muted;
+  white-space: nowrap;
+}
+
+.bbe-mpv-phrase-item {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            2px;
+  min-width:      44px;
+  max-width:      64px;
+}
+
+.bbe-mpv-phrase-img {
+  width:       40px;
+  height:      40px;
+  object-fit:  contain;
+  border:      1px solid $border;
+  border-radius: 6px;
+  background:  #fff;
+}
+
+.bbe-mpv-phrase-lbl {
+  font-size:     9px;
+  color:         $text-dark;
+  text-align:    center;
+  white-space:   nowrap;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+  max-width:     100%;
+}
+
+// ── Barra proporciones ────────────────────────────────────────────────────────
+.bbe-proportion-bar {
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+  padding:     4px 8px;
+  background:  rgba($violet, 0.04);
+  border-bottom: 1px solid rgba($violet, 0.12);
+  flex:        0 0 auto;
+}
+
+.bbe-proportion-toggle {
+  display:       flex;
+  align-items:   center;
+  gap:           5px;
+  padding:       4px 10px;
+  border-radius: 20px;
+  border:        1.5px solid rgba($violet, 0.2);
+  background:    #fff;
+  font-size:     11px;
+  font-weight:   700;
+  color:         $text-muted;
+  cursor:        pointer;
+  transition:    all 0.12s;
+
+  svg { width: 14px; height: 14px; stroke: $text-muted; flex: 0 0 auto; }
+
+  &--active {
+    background:   $violet-light;
+    border-color: $violet;
+    color:        $violet;
+    svg { stroke: $violet; }
+  }
+
+  &:hover { border-color: $violet; color: $violet; svg { stroke: $violet; } }
+}
+
+.bbe-proportion-reset,
+.bbe-proportion-save {
+  padding:       4px 10px;
+  border-radius: 20px;
+  border:        1.5px solid $border;
+  background:    #fff;
+  font-size:     11px;
+  font-weight:   700;
+  cursor:        pointer;
+
+  &:hover { background: #f8f0f6; }
+}
+
+.bbe-proportion-save {
+  border-color: $violet;
+  color:        $violet;
+  &:hover { background: $violet-light; }
+}
+
+// ── Panel de sliders táctiles ─────────────────────────────────────────────────
+.bbe-proportion-panel {
+  padding:    8px 12px;
+  background: rgba($violet, 0.03);
+  border-bottom: 1px solid rgba($violet, 0.1);
+  flex:       0 0 auto;
+}
+
+.bbe-prop-label {
+  font-size:   10px;
+  font-weight: 800;
+  color:       $violet;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin:      0 0 4px;
+}
+
+.bbe-prop-row {
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+  margin-bottom: 4px;
+}
+
+.bbe-prop-slot-tag {
+  flex:          0 0 auto;
+  font-size:     10px;
+  font-weight:   800;
+  color:         $violet;
+  background:    rgba($violet, 0.1);
+  border-radius: 4px;
+  padding:       2px 6px;
+  min-width:     22px;
+  text-align:    center;
+}
+
+.bbe-prop-range {
+  flex:   1;
+  --bar-background:       #{rgba($violet, 0.2)};
+  --bar-background-active: #{$violet};
+  --knob-background:      #{$violet};
+  --knob-size:             20px;
+}
+
+.bbe-prop-pct {
+  flex:        0 0 auto;
+  font-size:   11px;
+  font-weight: 700;
+  color:       $text-dark;
+  min-width:   32px;
+  text-align:  right;
+}
+
+// ── Layout flex de slots ──────────────────────────────────────────────────────
+.bbe-multi-grids {
+  flex:       1;
+  display:    flex;
+  flex-direction: column;
+  overflow:   hidden;
+  min-height: 0;
+  padding:    6px;
+  gap:        0;
+}
+
+.bbe-multi-row {
+  display:    flex;
+  flex-direction: row;
+  min-height: 0;
+  gap:        0;
+}
+
+.bbe-multi-slot {
+  display:        flex;
+  flex-direction: column;
+  border:         2px solid $border;
+  border-radius:  10px;
+  overflow:       hidden;
+  background:     #fff;
+  min-height:     0;
+  min-width:      0;
+  transition:     border-color 0.15s;
+  margin:         3px;  // pequeño gap visual entre slots
+
+  &--active {
+    border-color: $violet;
+    box-shadow:   0 0 0 2px rgba($violet, 0.15);
+  }
+}
+
+// ── Handles de resize ─────────────────────────────────────────────────────────
+.bbe-resize-handle {
+  flex:     0 0 auto;
+  position: relative;
+  z-index:  20;
+  display:  flex;
+  align-items:     center;
+  justify-content: center;
+
+  &--col {
+    width:  14px;
+    cursor: ew-resize;
+    align-self: stretch;
+
+    &:hover .bbe-resize-handle-inner,
+    &:active .bbe-resize-handle-inner {
+      background: $violet;
+      opacity:    0.5;
+    }
+  }
+
+  &--row {
+    height: 14px;
+    cursor: ns-resize;
+    align-self: stretch;
+    width: 100%;
+
+    &:hover .bbe-resize-handle-inner,
+    &:active .bbe-resize-handle-inner {
+      background: $violet;
+      opacity:    0.5;
+    }
+  }
+}
+
+.bbe-resize-handle-inner {
+  border-radius: 4px;
+  background:    rgba($border, 0.6);
+  transition:    background 0.15s, opacity 0.15s;
+  pointer-events: none;
+
+  .bbe-resize-handle--col & {
+    width:  4px;
+    height: 40px;
+  }
+
+  .bbe-resize-handle--row & {
+    height: 4px;
+    width:  40px;
+  }
+}
+
+.bbe-multi-slot-header {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  padding:         6px 10px;
+  background:      #f8f0ff;
+  border-bottom:   1px solid rgba($violet, 0.2);
+  flex:            0 0 auto;
+}
+
+.bbe-multi-slot-title {
+  font-size:   11px;
+  font-weight: 800;
+  color:       $violet;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  white-space:    nowrap;
+  overflow:       hidden;
+  text-overflow:  ellipsis;
+  flex:           1;
+}
+
+.bbe-multi-slot-actions {
+  display:     flex;
+  gap:         4px;
+  flex:        0 0 auto;
+}
+
+.bbe-slot-btn {
+  display:       flex;
+  align-items:   center;
+  justify-content: center;
+  width:         24px;
+  height:        24px;
+  border-radius: 6px;
+  border:        none;
+  cursor:        pointer;
+  transition:    background 0.12s;
+
+  svg { width: 14px; height: 14px; }
+
+  &--assign {
+    background: rgba($violet, 0.1);
+    svg { stroke: $violet; }
+    &:hover { background: rgba($violet, 0.22); }
+  }
+
+  &--clear {
+    background: rgba(#c0392b, 0.08);
+    svg { stroke: #c0392b; }
+    &:hover { background: rgba(#c0392b, 0.18); }
+  }
+
+  &--view {
+    width:         auto;
+    padding:       2px 10px;
+    background:    rgba($violet, 0.08);
+    border-radius: 12px;
+    font-size:     10px;
+    font-weight:   700;
+    color:         $violet;
+    letter-spacing: 0.3px;
+    &:hover { background: rgba($violet, 0.18); }
+  }
+}
+
+.bbe-multi-slot-body {
+  flex:     1;
+  display:  flex;
+  min-height: 0;
+  overflow: hidden;
+
+  app-board-grid {
+    flex:    1;
+    display: flex;
+  }
+}
+
+.bbe-multi-slot-state {
+  flex:            1;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+}
+
+.bbe-multi-slot-empty {
+  flex:            1;
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  gap:             8px;
+  cursor:          pointer;
+  color:           #9b6dff;
+  opacity:         0.6;
+  transition:      opacity 0.12s;
+
+  svg  { width: 32px; height: 32px; stroke: currentColor; }
+  span { font-size: 11px; font-weight: 600; text-align: center; }
+
+  &:hover { opacity: 1; }
+}
+
+// ── Panel derecho del multitablero ────────────────────────────────────────────
+.bbe-multi-panel {
+  width:          260px;
+  flex:           0 0 260px;
+  display:        flex;
+  flex-direction: column;
+  background:     #fdf5f9;
+  border-left:    1.5px solid $border;
+  overflow:       hidden;  // el scroll lo gestiona .bbe-mpanel-body
+}
+
+.bbe-multi-seg {
+  margin:  8px;
+  flex:    0 0 auto;
+}
+
+// Área de contenido scrollable debajo del segmento
+.bbe-mpanel-body {
+  flex:            1;
+  min-height:      0;
+  overflow-y:      auto;
+  overflow-x:      hidden;
+  scrollbar-width: thin;
+  scrollbar-color: $border transparent;
+
+  // Cuando app-board-cell-panel está dentro de este contenedor,
+  // anulamos su flex/width/overflow propios para que el padre haga scroll.
+  // La clase .bbe-cell-panel-in-multi se aplica al host desde el template.
+  .bbe-cell-panel-in-multi {
+    display:      block;
+    width:        100%;
+    flex:         none;
+    overflow-y:   visible;  // el padre hace scroll, no el propio panel
+    border-left:  none;
+    padding:      12px 12px 40px;
+    box-sizing:   border-box;
+  }
+}
+
+// ── Configuración de huecos (tab Tablero) ─────────────────────────────────────
+.bbe-multi-panel-title {
+  font-size:      10px;
+  font-weight:    800;
+  color:          #6b5462;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding:        10px 10px 4px;
+}
+
+.bbe-multi-slot-cfg {
+  padding:    4px 0;
+  flex:       1;
+  overflow-y: auto;
+}
+
+.bbe-slot-row {
+  display:       flex;
+  align-items:   center;
+  gap:           8px;
+  padding:       8px 10px;
+  border-bottom: 1px solid rgba($border, 0.6);
+  transition:    background 0.12s;
+
+  &--active {
+    background: rgba($violet, 0.06);
+  }
+}
+
+.bbe-slot-row-info {
+  flex:           1;
+  display:        flex;
+  flex-direction: column;
+  gap:            2px;
+  min-width:      0;
+}
+
+.bbe-slot-row-label {
+  font-size:   10px;
+  font-weight: 800;
+  color:       $violet;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.bbe-slot-row-board {
+  font-size:     12px;
+  font-weight:   600;
+  color:         #222;
+  white-space:   nowrap;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+}
+
+.bbe-slot-row-btns {
+  display: flex;
+  gap:     4px;
+}
+
+.bbe-slot-mini-btn {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  width:           26px;
+  height:          26px;
+  border-radius:   6px;
+  border:          1px solid transparent;
+  cursor:          pointer;
+  transition:      background 0.12s;
+
+  svg { width: 13px; height: 13px; }
+
+  &--assign {
+    background:   rgba($violet, 0.1);
+    border-color: rgba($violet, 0.2);
+    svg { stroke: $violet; }
+    &:hover { background: rgba($violet, 0.2); }
+  }
+
+  &--clear {
+    background:   rgba(#c0392b, 0.08);
+    border-color: rgba(#c0392b, 0.15);
+    svg { stroke: #c0392b; }
+    &:hover { background: rgba(#c0392b, 0.18); }
+  }
+}
+
+.bbe-slot-picker {
+  margin:        8px;
+  padding:       10px;
+  background:    rgba($violet, 0.05);
+  border:        1.5px solid rgba($violet, 0.2);
+  border-radius: 10px;
+}
+
+.bbe-slot-picker-label {
+  font-size:   11px;
+  font-weight: 700;
+  color:       $violet;
+  margin:      0 0 8px;
+}
+
+.bbe-slot-cancel-btn {
+  width:         100%;
+  margin-top:    8px;
+  padding:       6px;
+  border-radius: 8px;
+  border:        1.5px solid $border;
+  background:    #fff;
+  font-size:     11px;
+  font-weight:   700;
+  color:         #6b5462;
+  cursor:        pointer;
+
+  &:hover { background: #f8f0f6; }
+}
+
+.bbe-multi-hint {
+  font-size:   12px;
+  color:       #6b5462;
+  padding:     6px 10px 10px;
+  line-height: 1.4;
+}
+
+.bbe-multi-empty {
+  font-size: 12px;
+  color:     #6b5462;
+  padding:   8px 4px;
+}
+
+.bbe-board-item {
+  display:       flex;
+  align-items:   center;
+  gap:           10px;
+  padding:       9px 10px;
+  border-radius: 8px;
+  border:        1.5px solid $border;
+  background:    #fff;
+  margin-bottom: 6px;
+  cursor:        pointer;
+  transition:    background 0.12s, border-color 0.12s;
+
+  svg  { width: 18px; height: 18px; stroke: $violet; flex: 0 0 auto; }
+  span { font-size: 12px; font-weight: 600; color: #222; }
+
+  &:hover {
+    background:   $violet-light;
+    border-color: $violet;
+  }
+}
+
+// ── Subtítulo de subsección en panel Tamaños ─────────────────────────────────
+.bbe-prop-sublabel {
+  font-size:      10px;
+  font-weight:    700;
+  color:          $text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin:         0 0 6px;
+  padding:        0 0 0 2px;
+}
+
+// ── Editor de filas/columnas del minitablero activo ───────────────────────────
+.bbe-slot-grid-cfg {
+  padding: 0 0 4px;
+}
+
+.bbe-slot-grid-inputs {
+  display: flex;
+  gap:     10px;
+  margin-bottom: 8px;
+}
+
+.bbe-slot-grid-field {
+  flex:        1;
+  display:     flex;
+  flex-direction: column;
+  gap:         3px;
+}
+
+.bbe-slot-grid-label {
+  font-size:   10px;
+  font-weight: 700;
+  color:       $text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.bbe-slot-grid-input {
+  width:         100%;
+  padding:       5px 8px;
+  border:        1.5px solid $border;
+  border-radius: 8px;
+  font-size:     13px;
+  font-weight:   600;
+  color:         $text-dark;
+  background:    #fff;
+  text-align:    center;
+  outline:       none;
+
+  &:focus { border-color: $violet; }
+}
+
+.bbe-slot-grid-save {
+  display:       flex;
+  align-items:   center;
+  gap:           6px;
+  padding:       6px 14px;
+  border-radius: 20px;
+  border:        1.5px solid $violet;
+  background:    $violet-light;
+  color:         $violet;
+  font-size:     11px;
+  font-weight:   700;
+  cursor:        pointer;
+  transition:    background 0.12s;
+
+  &:hover { background: darken($violet-light, 4%); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+// ── Botón + central en slot vacío ─────────────────────────────────────────────
+.bbe-multi-slot-add {
+  flex:            1;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  width:           100%;
+  border:          none;
+  background:      transparent;
+  cursor:          pointer;
+
+  svg {
+    width:         48px;
+    height:        48px;
+    stroke:        $violet;
+    opacity:       0.35;
+    transition:    opacity 0.15s, transform 0.15s;
+  }
+
+  &:hover svg {
+    opacity:   0.75;
+    transform: scale(1.12);
+  }
+}
+
+// ── Panel preview barra AAC (encima del tablero, editor mode) ─────────────────
+$violet:  #7c4dff;
+$border:  #ffb6c1;
+$bg-soft: #fdf5f9;
+
+.bbe-aac-preview-panel {
+  flex:          0 0 auto;
+  border-radius: 10px;
+  border:        1.5px solid $border;
+  background:    #fff;
+  overflow:      hidden;
+  transition:    border-color 0.15s;
+
+  &:hover { border-color: rgba($violet, 0.4); }
+}
+
+.bbe-aac-preview-header {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  padding:         6px 10px;
+  background:      $bg-soft;
+  cursor:          pointer;
+  user-select:     none;
+  gap:             8px;
+}
+
+.bbe-aac-preview-title {
+  font-size:      10px;
+  font-weight:    800;
+  color:          $violet;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.bbe-aac-preview-toggle {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  width:           22px;
+  height:          22px;
+  border:          none;
+  background:      rgba($violet, 0.1);
+  border-radius:   6px;
+  cursor:          pointer;
+  flex:            0 0 auto;
+  color:           $violet;
+
+  svg { width: 12px; height: 12px; stroke: $violet; }
+  &:hover { background: rgba($violet, 0.2); }
+}
+
+.bbe-aac-preview-bar {
+  border-top: 1px solid $border;
+
+  // La barra AAC interna no necesita el margen/padding por defecto
+  app-aac-controls-bar { display: block; }
+}
+
+// Colapsado: sin la barra interna, solo el header
+.bbe-aac-preview-panel--collapsed {
+  .bbe-aac-preview-header {
+    border-bottom: none;
+  }
+}

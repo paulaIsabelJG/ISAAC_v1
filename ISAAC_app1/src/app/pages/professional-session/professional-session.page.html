@@ -1,0 +1,199 @@
+@if (fromLogin) {
+  <!-- ── CASO 2: profesional accede desde login — cabecera ISAAC + Salir ──── -->
+  <ion-header class="ion-no-border">
+    <ion-toolbar class="ps-toolbar">
+      <ion-buttons slot="start">
+        <span class="ps-brand">ISAAC</span>
+      </ion-buttons>
+      <ion-buttons slot="end">
+        <ion-button class="ps-logout-btn" fill="clear" (click)="goBack()">
+          Salir
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               class="ps-logout-icon" slot="end">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+        </ion-button>
+      </ion-buttons>
+    </ion-toolbar>
+  </ion-header>
+} @else {
+  <!-- ── CASO 1: organización navega desde dashboard ────────────────────────── -->
+  <app-page-header
+    title="PERFIL PROFESIONAL"
+    backHref="/organization-dashboard"
+    (backClick)="goBack()">
+  </app-page-header>
+}
+
+<ion-content class="ps-content">
+
+  <!-- ── Cargando / Error ──────────────────────────────────────────────────── -->
+  @if (isLoading || loadError) {
+    <app-loading-error-state
+      [loading]="isLoading"
+      [error]="loadError">
+    </app-loading-error-state>
+  }
+
+  <!-- ── Contenido principal ───────────────────────────────────────────────── -->
+  @else {
+    <div class="ps-container">
+
+      <!-- ── Cabecera del profesional ───────────────────────────────────────── -->
+      <div class="ps-prof-header">
+        <div class="ps-avatar">
+          @if (avatarUrl) {
+            <img [src]="avatarUrl" class="ps-avatar-img" alt="Avatar"/>
+          } @else {
+            <div class="ps-avatar-placeholder">{{ getInitial() }}</div>
+          }
+        </div>
+        <div class="ps-prof-meta">
+          <span class="ps-prof-name">{{ getDisplayName() }}</span>
+          <span class="ps-prof-surname">{{ getDisplaySurname() }}</span>
+          <span class="ps-prof-email">{{ professional?.email }}</span>
+          @if (getProfessionalTypeLabel()) {
+            <span class="ps-prof-type-badge">{{ getProfessionalTypeLabel() }}</span>
+          }
+        </div>
+      </div>
+
+      <!-- ── Botón Board Builder ────────────────────────────────────────────── -->
+      <div class="ps-controls">
+        <button class="ps-ctrl-btn ps-ctrl-btn--violet" (click)="goToBoardBuilder()">
+          <img src="assets/user-session/board-builder.png"
+               class="ps-ctrl-icon" alt="Tablero Builder"/>
+          <span>Tablero Builder</span>
+        </button>
+      </div>
+
+      <!-- ── Divisor ────────────────────────────────────────────────────────── -->
+      <div class="ps-divider"></div>
+
+      <!-- ── Tabla de usuarios asignados ───────────────────────────────────── -->
+      <div class="ps-users-section">
+
+        <div class="ps-section-header">
+          <span class="ps-section-title">USUARIOS ASIGNADOS</span>
+          @if (!usersLoading) {
+            <span class="ps-section-count">{{ assignedUsers.length }}</span>
+          }
+        </div>
+
+        @if (usersLoading) {
+          <div class="ps-users-state">
+            <ion-spinner name="crescent" color="secondary"></ion-spinner>
+          </div>
+        } @else if (usersError) {
+          <div class="ps-users-state ps-users-state--error">
+            <span>{{ usersError }}</span>
+          </div>
+        } @else if (assignedUsers.length === 0) {
+          <div class="ps-users-empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            <span>Aún no hay usuarios asignados a este profesional.</span>
+          </div>
+        } @else {
+
+          <div class="ps-table-wrap">
+            <table class="ps-table">
+
+              <thead>
+                <tr>
+                  <th class="ps-th-user">Usuario</th>
+                  <th class="ps-th-perm">Datos pers.</th>
+                  <th class="ps-th-perm">Tableros</th>
+                  <th class="ps-th-perm">Estadísticas</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                @for (user of assignedUsers; track user.userId) {
+                  <tr class="ps-row"
+                      [class.ps-row--clickable]="fromLogin"
+                      (click)="fromLogin ? goToUserSession(user.userId) : null">
+
+                    <!-- Columna: usuario -->
+                    <td class="ps-td-user">
+                      <div class="ps-user-cell">
+                        <div class="ps-user-avatar">
+                          @if (user.image) {
+                            <img [src]="buildSafeUrl(user.image)" [alt]="user.name" class="ps-user-avatar-img"/>
+                          } @else {
+                            <span class="ps-user-avatar-initial">{{ getInitialUser(user) }}</span>
+                          }
+                        </div>
+                        <div class="ps-user-meta">
+                          <span class="ps-user-name">{{ user.name }} {{ user.surname }}</span>
+                          <span class="ps-user-email">{{ user.email }}</span>
+                        </div>
+                        @if (fromLogin) {
+                          <svg class="ps-row-arrow" viewBox="0 0 24 24" fill="none"
+                               stroke="currentColor" stroke-width="2.5">
+                            <polyline points="9 18 15 12 9 6"/>
+                          </svg>
+                        }
+                      </div>
+                    </td>
+
+                    <!-- Permiso: Datos personales -->
+                    <td class="ps-td-perm">
+                      <span class="ps-perm-chip" [class.ps-perm-chip--on]="user.canEditPersonalData">
+                        @if (user.canEditPersonalData) {
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="20 6 9 17 4 12"/>
+                          </svg>
+                        }
+                        {{ user.canEditPersonalData ? 'Sí' : 'No' }}
+                      </span>
+                    </td>
+
+                    <!-- Permiso: Tableros -->
+                    <td class="ps-td-perm">
+                      <span class="ps-perm-chip" [class.ps-perm-chip--on]="user.canEditBoards">
+                        @if (user.canEditBoards) {
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="20 6 9 17 4 12"/>
+                          </svg>
+                        }
+                        {{ user.canEditBoards ? 'Sí' : 'No' }}
+                      </span>
+                    </td>
+
+                    <!-- Permiso: Estadísticas -->
+                    <td class="ps-td-perm">
+                      <span class="ps-perm-chip" [class.ps-perm-chip--on]="user.canViewStats">
+                        @if (user.canViewStats) {
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="20 6 9 17 4 12"/>
+                          </svg>
+                        }
+                        {{ user.canViewStats ? 'Sí' : 'No' }}
+                      </span>
+                    </td>
+
+                  </tr>
+                }
+              </tbody>
+
+            </table>
+          </div><!-- /ps-table-wrap -->
+
+          @if (fromLogin) {
+            <p class="ps-table-hint">Toca una fila para acceder a la sesión del usuario.</p>
+          }
+
+        }
+
+      </div><!-- /ps-users-section -->
+
+    </div><!-- /ps-container -->
+  }
+
+</ion-content>

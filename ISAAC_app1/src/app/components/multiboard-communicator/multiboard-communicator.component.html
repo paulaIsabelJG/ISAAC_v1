@@ -1,0 +1,49 @@
+<div class="mbc-root"
+     [ngClass]="layoutClass"
+     [style.grid-template-columns]="gridTemplateColumns"
+     [style.grid-template-rows]="gridTemplateRows">
+
+  @for (state of slotStates; track state.slotId) {
+    <div class="mbc-slot">
+
+      <!-- Indicador de hueco -->
+      <div class="mbc-slot-header">
+        <span class="mbc-slot-label">Hueco {{ state.slotId }}</span>
+        @if (canGoBackInSlot(state)) {
+          <button class="mbc-back-btn" (click)="goBackInSlot(state)" title="Volver">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+          </button>
+        }
+      </div>
+
+      <!-- Contenido del slot -->
+      @if (state.isLoading) {
+        <div class="mbc-slot-state">
+          <ion-spinner name="crescent" color="secondary"></ion-spinner>
+        </div>
+      } @else if (state.loadError) {
+        <div class="mbc-slot-state mbc-slot-state--error">{{ state.loadError }}</div>
+      } @else if (!state.boardId) {
+        <div class="mbc-slot-empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+            <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+            <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+            <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+            <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+          </svg>
+          <span>Sin tablero asignado</span>
+        </div>
+      } @else if (state.board) {
+        <app-board-grid
+          [board]="state.board"
+          mode="communicator"
+          (cellClick)="onCellPress(state, $event.row, $event.col)">
+        </app-board-grid>
+      }
+
+    </div>
+  }
+
+</div>

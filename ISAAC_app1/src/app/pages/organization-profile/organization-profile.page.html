@@ -1,0 +1,138 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar class="op-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/organization-dashboard" text="Volver"
+                       (click)="$event.stopImmediatePropagation(); goBack()">
+      </ion-back-button>
+    </ion-buttons>
+    <ion-title class="op-title">Perfil organización</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="profile-content">
+  <div class="profile-container">
+
+    <div class="profile-card">
+
+      <!-- ── Avatar / selector de imagen ──────────────────────────────────── -->
+      <div class="avatar-section">
+        <div class="avatar-wrap" (click)="onAvatarClick()" title="Haz clic para cambiar la imagen">
+          @if (previewUrl) {
+            <img class="avatar-img" [src]="previewUrl" alt="Foto de perfil"/>
+          } @else {
+            <div class="avatar-placeholder">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="12" cy="8" r="4"/>
+                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+              </svg>
+            </div>
+          }
+          <div class="avatar-overlay">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+          </div>
+        </div>
+        <p class="avatar-hint">Toca para cambiar imagen · Máx. 2 MB</p>
+      </div>
+
+      <h1 class="profile-title">Configurar perfil</h1>
+      <p class="profile-subtitle">Actualiza los datos de tu organización</p>
+
+      <form [formGroup]="profileForm" (ngSubmit)="onSave()">
+
+        <!-- Nombre -->
+        <div class="field-label">Nombre</div>
+        <ion-item class="form-item">
+          <ion-input formControlName="name" type="text"
+                     placeholder="Nombre de la organización"></ion-input>
+        </ion-item>
+        @if (profileForm.get('name')?.invalid && profileForm.get('name')?.touched) {
+          <div class="error-msg">
+            @if (profileForm.get('name')?.errors?.['required'])  { <span>El nombre es obligatorio</span> }
+            @if (profileForm.get('name')?.errors?.['minlength']) { <span>Mínimo 2 caracteres</span> }
+          </div>
+        }
+
+        <!-- Email -->
+        <div class="field-label">Email</div>
+        <ion-item class="form-item">
+          <ion-input formControlName="email" type="email"
+                     placeholder="email@ejemplo.com"></ion-input>
+        </ion-item>
+        @if (profileForm.get('email')?.invalid && profileForm.get('email')?.touched) {
+          <div class="error-msg">
+            @if (profileForm.get('email')?.errors?.['required']) { <span>El email es obligatorio</span> }
+            @if (profileForm.get('email')?.errors?.['email'])    { <span>Formato inválido</span> }
+          </div>
+        }
+
+        <!-- Contraseña -->
+        <div class="field-label">Contraseña</div>
+        <div class="password-wrap">
+          <input
+            formControlName="password"
+            [type]="showPassword ? 'text' : 'password'"
+            placeholder="Nueva contraseña (vacío = sin cambios)"
+            class="password-input"
+            autocomplete="new-password"
+          />
+          <button type="button" class="eye-btn" (click)="showPassword = !showPassword" tabindex="-1">
+            @if (showPassword) {
+              <!-- Ojo tachado: contraseña visible -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
+              </svg>
+            } @else {
+              <!-- Ojo abierto: contraseña oculta -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            }
+          </button>
+        </div>
+
+        <!-- Centro / Dirección con autocompletado -->
+        <div class="field-label">Centro / Dirección</div>
+        <div class="autocomplete-wrap">
+          <ion-item class="form-item form-item--no-mb">
+            <ion-input
+              formControlName="centro"
+              type="text"
+              placeholder="Nombre del centro o dirección"
+              autocomplete="off"
+              (ionInput)="onCentroInput($event)"
+              (ionBlur)="closeSuggestions()">
+            </ion-input>
+          </ion-item>
+
+          @if (showSuggestions && suggestions.length > 0) {
+            <div class="suggestions-dropdown">
+              @for (s of suggestions; track s.formattedAddress) {
+                <div class="suggestion-item" (mousedown)="selectSuggestion(s)">
+                  <svg class="suggestion-pin" viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" stroke-width="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                  </svg>
+                  <span>{{ s.formattedAddress }}</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <ion-button expand="block" type="submit" class="save-btn"
+                    [disabled]="!profileForm.valid || isSaving">
+          @if (isSaving) { <ion-spinner name="crescent" slot="start"></ion-spinner> }
+          {{ isSaving ? 'Guardando...' : 'Guardar cambios' }}
+        </ion-button>
+
+      </form>
+    </div>
+  </div>
+</ion-content>

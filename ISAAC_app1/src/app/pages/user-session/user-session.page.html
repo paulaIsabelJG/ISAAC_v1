@@ -1,0 +1,141 @@
+@if (fromLogin) {
+  <!-- ── CASO 2: usuario final accede desde login — cabecera ISAAC + Salir ── -->
+  <ion-header class="ion-no-border">
+    <ion-toolbar class="us-toolbar">
+      <ion-buttons slot="start">
+        <span class="us-brand">ISAAC</span>
+      </ion-buttons>
+      <ion-buttons slot="end">
+        <ion-button class="us-logout-btn" fill="clear" (click)="goBack()">
+          Salir
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               class="us-logout-icon" slot="end">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+        </ion-button>
+      </ion-buttons>
+    </ion-toolbar>
+  </ion-header>
+} @else {
+  <!-- ── CASO 1: navegación interna desde dashboard ────────────────────────── -->
+  <app-page-header
+    title="PERFIL USUARIO"
+    backHref="/organization-dashboard"
+    (backClick)="goBack()">
+  </app-page-header>
+}
+
+<ion-content class="us-content">
+
+  <!-- ── Cargando / Error ─────────────────────────────────────────────────── -->
+  @if (isLoading || loadError) {
+    <app-loading-error-state
+      [loading]="isLoading"
+      [error]="loadError">
+    </app-loading-error-state>
+  }
+
+  <!-- ── Contenido principal ───────────────────────────────────────────────── -->
+  @else {
+    <div class="us-container">
+
+      <!-- ── Cabecera del usuario ─────────────────────────────────────────── -->
+      <div class="us-user-header">
+        <div class="us-avatar">
+          @if (avatarUrl) {
+            <img [src]="avatarUrl" class="us-avatar-img" alt="Avatar"/>
+          } @else {
+            <div class="us-avatar-placeholder">{{ getInitial() }}</div>
+          }
+        </div>
+        <div class="us-user-meta">
+          <span class="us-user-name">{{ getDisplayName() }}</span>
+          <span class="us-user-surname">{{ getDisplaySurname() }}</span>
+          <span class="us-user-email">{{ targetUser?.email }}</span>
+        </div>
+      </div>
+
+      <!-- ── Controles (visibles según permisos) ─────────────────────────── -->
+      <div class="us-controls"
+           [class.us-controls--empty]="!permissions.canViewPersonalData && !permissions.canViewStats && !permissions.canEditBoards">
+
+        @if (permissions.canViewPersonalData) {
+          <button class="us-ctrl-btn us-ctrl-btn--blue" (click)="goToPersonalData()">
+            <img src="assets/user-session/personal-data.png"
+                 class="us-ctrl-icon" alt="Datos personales"/>
+            <span>Datos personales</span>
+          </button>
+        }
+
+        @if (permissions.canViewStats) {
+          <button class="us-ctrl-btn us-ctrl-btn--pink" (click)="goToStats()">
+            <img src="assets/user-session/statistics.png"
+                 class="us-ctrl-icon" alt="Estadísticas"/>
+            <span>Estadísticas</span>
+          </button>
+        }
+
+        @if (permissions.canEditBoards) {
+          <button class="us-ctrl-btn us-ctrl-btn--violet" (click)="goToBoardBuilder()">
+            <img src="assets/user-session/board-builder.png"
+                 class="us-ctrl-icon" alt="Tablero Builder"/>
+            <span>Tablero Builder</span>
+          </button>
+        }
+
+        <!-- Mensaje si no hay ningún control visible (familiar/prof sin permisos) -->
+        @if (!permissions.canViewPersonalData && !permissions.canViewStats && !permissions.canEditBoards) {
+          <p class="us-no-perms">
+            Sin accesos configurados para este usuario.
+          </p>
+        }
+      </div>
+
+      <!-- ── Divisor ──────────────────────────────────────────────────────── -->
+      <div class="us-divider"></div>
+
+      <!-- ── Tableros propios (boardRole=main, asignados a este usuario) ───── -->
+      <div class="us-boards-section">
+
+        <div class="us-section-header">
+          <span class="us-section-title">TABLEROS PROPIOS</span>
+          @if (!boardsLoading) {
+            <span class="us-section-count">{{ assignedBoards.length }}</span>
+          }
+        </div>
+
+        @if (boardsLoading) {
+          <div class="us-boards-state">
+            <ion-spinner name="crescent" color="secondary"></ion-spinner>
+          </div>
+        } @else if (boardsError) {
+          <div class="us-boards-state us-boards-state--error">
+            <span>{{ boardsError }}</span>
+          </div>
+        } @else if (assignedBoards.length === 0) {
+          <div class="us-boards-empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+              <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+              <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+              <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+              <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+            </svg>
+            <span>Aún no hay tableros principales asignados a este usuario.</span>
+          </div>
+        } @else {
+          <div class="us-boards-grid">
+            @for (board of assignedBoards; track board._id) {
+              <app-board-mini-card [board]="board" (cardClick)="openBoard($event)">
+              </app-board-mini-card>
+            }
+          </div>
+        }
+
+      </div><!-- /us-boards-section -->
+
+    </div><!-- /us-container -->
+  }
+
+</ion-content>

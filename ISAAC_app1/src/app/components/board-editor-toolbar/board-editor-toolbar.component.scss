@@ -1,0 +1,71 @@
+// ── Variables ─────────────────────────────────────────────────────────────────
+// Reflejan el design system del editor (board-builder-editor.page.scss).
+$violet:     #7c4dff;
+$border:     #ffb6c1;
+$bg:         #fdf5f9;
+$text-muted: #6b5462;
+
+// ── Toolbar ────────────────────────────────────────────────────────────────────
+.bet-toolbar {
+  --background:   #{$bg};
+  --border-color: #{$border};
+}
+
+// ── Título ────────────────────────────────────────────────────────────────────
+.bet-title {
+  font-size:      14px;
+  font-weight:    800;
+  color:          $violet;
+  letter-spacing: 1.5px;
+  text-align:     center;
+  white-space:    nowrap;
+  overflow:       hidden;
+  text-overflow:  ellipsis;
+}
+
+// ── Botones del toolbar ───────────────────────────────────────────────────────
+.bet-btn {
+  --color:         #{$text-muted};
+  --padding-start: 8px;
+  --padding-end:   8px;
+
+  svg {
+    width:  20px;
+    height: 20px;
+    stroke: $text-muted;
+  }
+
+  // Botón "Vista previa": ícono violeta para destacarlo
+  &--preview svg { stroke: $violet; }
+
+  // Botón de perfil cuando el tablero YA está en el perfil: check verde
+  &--in-profile svg { stroke: #2ecc71; }
+
+  // Botón Publicar
+  &--publish {
+    --color: #{$text-muted};
+    font-size:   12px;
+    font-weight: 700;
+    gap:         4px;
+
+    svg { width: 16px; height: 16px; stroke: $text-muted; flex: 0 0 auto; }
+
+    &.bet-btn--in-profile {
+      --color: #17a682;
+      svg { stroke: #17a682; }
+    }
+  }
+}
+
+// ── Botón "← Editar" (solo en modo preview) ───────────────────────────────────
+.bet-back-preview {
+  --color:     #{$violet};
+  font-size:   14px;
+  font-weight: 700;
+
+  svg {
+    width:  20px;
+    height: 20px;
+    stroke: $violet;
+  }
+}

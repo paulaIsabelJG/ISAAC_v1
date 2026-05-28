@@ -1,0 +1,111 @@
+$border:    #ffb6c1;
+$bg:        #fdf5f9;
+$mint:      #20c997;
+$mint-light:#e0fff6;
+$mint-dark: #17a682;
+$text-muted:#6b5462;
+
+:host {
+  display: block;
+  width:   100%;
+  height:  100%;
+}
+
+// ── Layouts ───────────────────────────────────────────────────────────────────
+.mbc-root {
+  display:    grid;
+  gap:        6px;
+  width:      100%;
+  height:     100%;
+  padding:    6px;
+  box-sizing: border-box;
+
+  &.mbc-layout--2 {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows:    1fr;
+  }
+  &.mbc-layout--3 {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows:    1fr;
+  }
+  &.mbc-layout--4 {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows:    repeat(2, 1fr);
+  }
+}
+
+// ── Hueco ─────────────────────────────────────────────────────────────────────
+.mbc-slot {
+  display:        flex;
+  flex-direction: column;
+  border:         1.5px solid $border;
+  border-radius:  12px;
+  overflow:       hidden;
+  background:     #fff;
+  min-height:     0;  // permite que el grid comprima correctamente
+}
+
+// ── Cabecera del slot ─────────────────────────────────────────────────────────
+.mbc-slot-header {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  padding:         4px 10px;
+  background:      $mint-light;
+  border-bottom:   1px solid rgba($mint, 0.3);
+  flex:            0 0 auto;
+}
+
+.mbc-slot-label {
+  font-size:   10px;
+  font-weight: 800;
+  color:       $mint-dark;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.mbc-back-btn {
+  background: none;
+  border:     none;
+  cursor:     pointer;
+  padding:    2px 4px;
+  display:    flex;
+  align-items: center;
+  border-radius: 6px;
+
+  svg { width: 16px; height: 16px; stroke: $mint-dark; }
+
+  &:hover { background: rgba($mint, 0.15); }
+}
+
+// ── Estado cargando/error/vacío ───────────────────────────────────────────────
+.mbc-slot-state {
+  flex:            1;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  color:           $text-muted;
+  font-size:       12px;
+
+  &--error { color: #c0392b; }
+}
+
+.mbc-slot-empty {
+  flex:            1;
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  gap:             8px;
+  color:           $text-muted;
+
+  svg  { width: 32px; height: 32px; stroke: $border; }
+  span { font-size: 12px; }
+}
+
+// El BoardGridComponent ocupa todo el espacio restante del slot
+app-board-grid {
+  flex:     1;
+  display:  flex;
+  min-height: 0;
+}

@@ -1,0 +1,30 @@
+<!-- ── Barra AAC ─────────────────────────────────────────────────────────── -->
+<app-aac-controls-bar
+  mode="preview"
+  [canGoBack]="canGoBack"
+  (homeClick)="homeClick.emit()"
+  (backClick)="backClick.emit()">
+</app-aac-controls-bar>
+
+<!-- ── Tablero GRID en preview ────────────────────────────────────────────── -->
+@if (!isCircular) {
+  <div class="bpc-preview-board">
+    <app-board-grid
+      [board]="board"
+      mode="preview"
+      (cellClick)="cellClick.emit($event)">
+    </app-board-grid>
+  </div>
+}
+
+<!-- ── Tablero CIRCULAR en preview ───────────────────────────────────────── -->
+@if (isCircular) {
+  <app-board-circular
+    [board]="board"
+    mode="preview"
+    [centerPict]="previewCenterPict"
+    [simMode]="circularSimMode"
+    [isCenterWaiting]="isCenterShowingLastPhrase"
+    (cellClick)="cellClick.emit($event)">
+  </app-board-circular>
+}

@@ -1,0 +1,100 @@
+<!-- ════════════════════════════════════════════════════════════════════════
+     AacControlsBarComponent — renderizado dinámico según controlsConfig
+     Orden determinada por effectiveConfig.order.
+     phraseBar siempre visible, el resto según visibleButtons.
+     ════════════════════════════════════════════════════════════════════════ -->
+
+<div class="acb-bar">
+
+  @for (item of orderedItems; track item) {
+
+    <!-- ── Frase central (siempre visible) ─────────────────────────────── -->
+    @if (isPhraseBar(item)) {
+      <app-phrase-band
+        class="acb-phrase"
+        [items]="phrase"
+        placeholder="Pulsa los pictogramas para construir la frase…"
+        style="--pb-strip-bg:#fff; --pb-strip-border:#f4d0e4; --pb-item-border:#f4d0e4;
+               --pb-img-size:42px; --pb-label-size:10px; --pb-label-transform:none;
+               --pb-label-spacing:0; --pb-placeholder-color:#9b6daa;">
+      </app-phrase-band>
+    }
+
+    <!-- ── Home ────────────────────────────────────────────────────────── -->
+    @if (item === 'home' && isVisible('home')) {
+      <button class="acb-btn acb-btn--home"
+              (click)="onHome()"
+              title="Inicio — volver a la pantalla principal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        <span class="acb-btn-label">Inicio</span>
+      </button>
+    }
+
+    <!-- ── Back ────────────────────────────────────────────────────────── -->
+    @if (item === 'back' && isVisible('back')) {
+      <button class="acb-btn acb-btn--back"
+              [class.acb-btn--disabled]="!canGoBack"
+              [disabled]="!canGoBack"
+              (click)="onBack()"
+              title="Volver al tablero anterior">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        <span class="acb-btn-label">Atrás</span>
+      </button>
+    }
+
+    <!-- ── Altavoz ─────────────────────────────────────────────────────── -->
+    @if (item === 'speak' && isVisible('speak')) {
+      <button class="acb-btn acb-btn--speak"
+              [class.acb-btn--disabled]="!hasPhrase"
+              [disabled]="!hasPhrase"
+              (click)="onSpeak()"
+              title="Leer frase">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+        </svg>
+        <span class="acb-btn-label">Hablar</span>
+      </button>
+    }
+
+    <!-- ── Goma de borrar ──────────────────────────────────────────────── -->
+    @if (item === 'deleteLast' && isVisible('deleteLast')) {
+      <button class="acb-btn acb-btn--erase"
+              [class.acb-btn--disabled]="!hasPhrase"
+              [disabled]="!hasPhrase"
+              (click)="onErase()"
+              title="Borrar último pictograma">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/>
+          <line x1="18" y1="9" x2="12" y2="15"/>
+          <line x1="12" y1="9" x2="18" y2="15"/>
+        </svg>
+        <span class="acb-btn-label">Borrar</span>
+      </button>
+    }
+
+    <!-- ── Papelera ────────────────────────────────────────────────────── -->
+    @if (item === 'clearAll' && isVisible('clearAll')) {
+      <button class="acb-btn acb-btn--clear"
+              [class.acb-btn--disabled]="!hasPhrase"
+              [disabled]="!hasPhrase"
+              (click)="onClear()"
+              title="Limpiar frase completa">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+          <path d="M10 11v6M14 11v6M9 6V4h6v2"/>
+        </svg>
+        <span class="acb-btn-label">Limpiar</span>
+      </button>
+    }
+
+  }
+
+</div>
