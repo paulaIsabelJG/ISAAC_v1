@@ -208,7 +208,7 @@ export class MultiboardCommunicatorComponent implements OnInit, OnDestroy, OnCha
     }
 
     if (this.showPredictor) {
-      const predictorColWidth = `${this.aac.iaCols * 140}px`;
+      const predictorColWidth = `${this.aac.iaCols * 6.5}%`;
       return `${predictorColWidth} ${boardCols}`;
     }
     return boardCols;

@@ -76,6 +76,42 @@ $panel-bg:     #faf5f8;
   &:hover { border-color: $violet; color: $violet; svg { stroke: $violet; } }
 }
 
+// ── Wrapper de proporciones reales: barra AAC + tablero ──────────────────────
+// .bbe-comm-outer: centra verticalmente el wrapper (align-items: center).
+// .bbe-comm-wrapper: columna flex que apila barra AAC + tablero; flex:1 para
+//   ocupar el ancho completo del centro (como flex item del outer row).
+// .bbe-comm-board-area: tiene el aspect-ratio del área de tablero del comunicador
+//   (asignado dinámicamente). Sizedby aspect-ratio; nunca crece ni encoge.
+
+.bbe-comm-outer {
+  flex:            1;
+  min-height:      0;
+  overflow:        hidden;
+  display:         flex;
+  align-items:     center;   // centra verticalmente el wrapper
+  justify-content: center;
+}
+
+// flex: 1 → ocupa todo el ancho horizontal del outer (flex row).
+// Columna: barra AAC (0 0 auto) encima + tablero (0 0 auto, aspect-ratio) abajo.
+.bbe-comm-wrapper {
+  flex:           1;
+  min-height:     0;
+  display:        flex;
+  flex-direction: column;
+  overflow:       hidden;
+}
+
+// width: 100% → ocupa el ancho del wrapper.
+// flex: 0 0 auto → no crece ni encoge; la altura la determina el aspect-ratio.
+// aspect-ratio aplicado vía [style.aspect-ratio]: ratio = vw / (vh - 136).
+.bbe-comm-board-area {
+  width:    100%;
+  flex:     0 0 auto;
+  display:  flex;
+  overflow: hidden;
+}
+
 // ── Grid e IA → BoardGridComponent ───────────────────────────────────────────
 // .bbe-grid-area, .bbe-grid-wrap, .bbe-ia-col, .bbe-ia-cell, .bbe-ia-logo,
 // .bbe-ia-label → eliminados: BoardGridComponent usa bgc-* en su propio SCSS.
@@ -101,13 +137,15 @@ $panel-bg:     #faf5f8;
 // .bbe-personal-blocked, .bbe-create-board-btn, .bbe-hint-sm → eliminados.
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  EDITOR — canvas que rellena la columna central
+//  EDITOR — tablero rellena bbe-comm-board-area
 // ─────────────────────────────────────────────────────────────────────────────
 
-// IA col y canvas igualan altura — app-board-grid es elemento host, recibe
-// el atributo ngcontent del padre por estar en el template del page.
-.bbe-col-center app-board-grid {
-  align-items: stretch;
+// app-board-grid y app-board-circular rellenan el área de tablero.
+.bbe-comm-board-area app-board-grid,
+.bbe-comm-board-area app-board-circular {
+  flex: 1;
+  min-height: 0;
+  min-width:  0;
 }
 
 // .bbe-col-center .bbe-ia-col → eliminado (bgc-ia-col en BoardGridComponent)
@@ -344,6 +382,7 @@ $panel-bg:     #faf5f8;
   flex:           0 0 auto;
   display:        flex;
   flex-direction: column;
+  --ipc-label-fz: clamp(6px, 10cqi, 10px);  // edit: label proporcional pequeño
   // width se aplica dinámicamente via [style.width.px]
   border-radius:  10px;
   overflow:       hidden;

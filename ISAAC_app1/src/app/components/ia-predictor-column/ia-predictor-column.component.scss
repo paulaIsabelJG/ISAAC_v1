@@ -66,9 +66,10 @@ $mint-dark: #17a682;
   border-radius:   10px;
   padding:         6px 4px;
   min-height:      0;
-  min-width:       60px;
+  min-width:       0;
   gap:             4px;
   overflow:        hidden;
+  container-type:  inline-size;  // habilita cqi para ipc-label
 }
 
 .ipc-logo {
@@ -81,7 +82,7 @@ $mint-dark: #17a682;
 }
 
 .ipc-label {
-  font-size:      9px;
+  font-size:      var(--ipc-label-fz, clamp(9px, 10cqi, 10px));
   font-weight:    700;
   color:          $mint-dark;
   text-transform: uppercase;

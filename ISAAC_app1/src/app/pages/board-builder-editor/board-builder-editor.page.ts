@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, HostListener, OnInit, OnDestroy } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { IonicModule, ToastController, AlertController } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -202,6 +202,7 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   }
 
   ionViewWillEnter() {
+    this.updateBoardAspectRatio();
     const linkFlag = this.route.snapshot.queryParamMap.get('linkCreatedBoard');
     if (linkFlag === 'true') {
       this.pendingLinkBoardId    = this.route.snapshot.queryParamMap.get('newlyCreatedTargetBoardId') ?? '';
@@ -1006,7 +1007,7 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
         } else {
           const meta    = metaByBtnId.get(btnId) ?? null;
           const inferred = meta
-            ? this.obzImportSvc.inferWordTypeFromLocalArasaacMetadata(meta, label)
+            ? this.obzImportSvc.inferWordTypeFromLocalArasaacMetadata(meta)
             : null;
           if (inferred !== null) {
             wordType          = inferred;
@@ -1268,6 +1269,21 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
 
   // ── Getters y métodos del multitablero ───────────────────────────────────────
 
+  // ── Aspect ratio del comunicador real ────────────────────────────────────────
+  /** Ratio W/H del área de tablero en el comunicador (para la preview del editor). */
+  boardAspectRatio = 'auto';
+
+  @HostListener('window:resize')
+  onWindowResize(): void { this.updateBoardAspectRatio(); }
+
+  private updateBoardAspectRatio(): void {
+    // Ratio del área de tablero en el comunicador/preview: vw / (vh - toolbar - AACbar)
+    // 56px = toolbar Ionic, 80px = min-height barra AAC (acb-root).
+    const w = window.innerWidth;
+    const h = window.innerHeight - 136;
+    this.boardAspectRatio = h > 0 ? `${w} / ${h}` : 'auto';
+  }
+
   get isMultiBoard(): boolean {
     // shape==='multi' para boards nuevos; boardRole==='multi' para boards legados.
     return this.board?.shape === 'multi' || this.board?.boardRole === 'multi';
@@ -1281,9 +1297,9 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   get multiPredictorIaRows(): number { return this.board?.iaRows ?? 5; }
   get multiPredictorIaCols(): number { return this.board?.iaCols ?? 1; }
 
-  /** Ancho en px del slot predictor en el editor multitablero. */
-  get multiPredictorSlotWidth(): number {
-    return this.multiPredictorIaCols * 140;
+  /** Ancho proporcional del slot predictor en el editor multitablero (6.5% por columna). */
+  get multiPredictorSlotWidth(): string {
+    return `${this.multiPredictorIaCols * 6.5}%`;
   }
 
   /** Tableros main disponibles para asignar a slots (excluye el propio multitablero). */

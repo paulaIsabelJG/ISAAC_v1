@@ -255,19 +255,36 @@ export class ObzImportService {
       const shape  = this.detectBoardShape(obf);
       const imgMap = await this.resolveZipImages(obf, zip, warnings);
 
-      // Pre-cargar metadata ARASAAC para inferir colores Fitzgerald
+      // Pre-cargar metadata ARASAAC para inferir colores Fitzgerald.
+      // Se usa img.url / img.path del OBF directamente: imgMap puede contener
+      // data: URIs (imágenes embebidas en ZIP) donde no es posible extraer el ID.
+      const arasaacIdByImageId = new Map<string, string>();
+      for (const img of obf.images ?? []) {
+        const resolved = this.extractArasaacIdFromUrl(img.url)
+          ?? this.extractArasaacIdFromFilename(img.path);
+        if (resolved) arasaacIdByImageId.set(String(img.id), resolved);
+      }
+      console.log(`[OBZ color] OBF "${obf.name}" — imágenes totales: ${(obf.images ?? []).length}, con ID ARASAAC: ${arasaacIdByImageId.size}`);
+      const btnsWithColor    = (obf.buttons ?? []).filter(b => b.background_color).length;
+      const btnsWithoutColor = (obf.buttons ?? []).filter(b => !b.background_color && b.image_id != null).length;
+      console.log(`[OBZ color] Botones con background_color: ${btnsWithColor}, sin color (candidatos inferencia): ${btnsWithoutColor}`);
+      // Muestra las primeras 3 rutas/urls de imagen para diagnóstico
+      (obf.images ?? []).slice(0, 3).forEach(img =>
+        console.log(`[OBZ color] img id=${img.id} url=${img.url ?? '—'} path=${img.path ?? '—'}`)
+      );
+
       const metaMap = new Map<string, Record<string, unknown> | null>();
       await Promise.all(
         (obf.buttons ?? [])
           .filter(btn => !btn.background_color && btn.image_id != null)
           .map(async btn => {
-            const imgUrl    = imgMap.get(String(btn.image_id)) ?? '';
-            const arasaacId = this.extractArasaacIdFromUrl(imgUrl);
+            const arasaacId = arasaacIdByImageId.get(String(btn.image_id));
             if (!arasaacId) return;
             const meta = await this.getLocalArasaacMetadata(arasaacId);
             metaMap.set(String(btn.id), meta);
           }),
       );
+      console.log(`[OBZ color] metaMap poblado: ${metaMap.size} entradas`);
 
       const { cells, linksByCell } = shape === 'circular'
         ? this.buildCircularCells(obf, imgMap, warnings, metaMap)
@@ -665,9 +682,11 @@ export class ObzImportService {
       fitzgeraldEnabled = false;
     } else {
       const meta     = metaMap.get(String(btn.id)) ?? null;
+      console.log(`[obfBtnToCell] btn.id=${btn.id} label="${label}" meta=${meta === null ? 'NULL' : 'OK'}`);
       const inferred = meta
-        ? this.inferWordTypeFromLocalArasaacMetadata(meta, label)
+        ? this.inferWordTypeFromLocalArasaacMetadata(meta)
         : null;
+      console.log(`[obfBtnToCell] inferred=${inferred}`);
       if (inferred !== null) {
         wordType          = inferred;
         color             = FITZGERALD[wordType];
@@ -738,6 +757,15 @@ export class ObzImportService {
     return null;
   }
 
+  /** Extrae el ID ARASAAC del nombre de fichero de imagen embebida en un OBZ.
+   *  Soporta: "2247_500.png", "images/2247.png", "2247_300.svg", etc. */
+  extractArasaacIdFromFilename(path?: string | null): string | null {
+    if (!path) return null;
+    const m = String(path).match(/(\d+)(?:_\d+)?\.(?:png|jpg|svg|webp|gif)$/i);
+    return m?.[1] ?? null;
+  }
+
+
   /**
    * Consulta la BD local ARASAAC (sin llamar a API externa).
    * Cachea por arasaacId durante la vida del servicio para evitar peticiones duplicadas.
@@ -764,39 +792,37 @@ export class ObzImportService {
   }
 
   /**
-   * Infiere WordType ISAAC solo si alguna keyword coincide exactamente con el label.
-   * Mapeo ARASAAC type: 3→verb · 4→descriptor · 2→noun · 1→noun
-   * Devuelve null si no hay coincidencia (el llamador aplica fallback).
+   * Infiere WordType ISAAC a partir del tipo numérico de la primera keyword con tipo válido.
+   * Mapeo ARASAAC type: 3→verb · 4→descriptor · 1|2→noun
+   * Devuelve null si ninguna keyword tiene tipo numérico (el llamador aplica fallback).
    */
   inferWordTypeFromLocalArasaacMetadata(
-    meta:          Record<string, unknown>,
-    fallbackLabel: string,
+    meta: Record<string, unknown>,
   ): WordType | null {
-    const normalizedLabel = fallbackLabel.trim().toLowerCase();
-    const rawKeywords     = (meta['keywords'] as unknown[]) ?? [];
+    const rawKeywords = (meta['keywords'] as unknown[]) ?? [];
+    console.log('[infer] keywords (primeros 3):', JSON.stringify(rawKeywords.slice(0, 3)));
 
     let matchType: number | null = null;
     for (const k of rawKeywords) {
       if (k !== null && typeof k === 'object') {
-        const kw = String((k as Record<string, unknown>)['keyword'] ?? '').trim().toLowerCase();
-        if (kw === normalizedLabel) {
-          const t   = (k as Record<string, unknown>)['type'];
-          matchType = typeof t === 'number' ? t : null;
-          break;
-        }
+        const t = (k as Record<string, unknown>)['type'];
+        if (typeof t === 'number') { matchType = t; break; }
       }
     }
 
+    console.log('[infer] matchType:', matchType);
+
     if (matchType === null) return null;
 
-    let wordType: WordType;
-    if      (matchType === 3) wordType = 'verb';
-    else if (matchType === 4) wordType = 'descriptor';
-    else if (matchType === 2) wordType = 'noun';
-    else if (matchType === 1) wordType = 'noun';
-    else                      wordType = 'misc';
+    let result: WordType;
+    if      (matchType === 3) result = 'verb';
+    else if (matchType === 4) result = 'descriptor';
+    else if (matchType === 2) result = 'noun';
+    else if (matchType === 1) result = 'noun';
+    else                      result = 'misc';
 
-    return wordType;
+    console.log('[infer] wordType resultado:', result);
+    return result;
   }
 
   /**

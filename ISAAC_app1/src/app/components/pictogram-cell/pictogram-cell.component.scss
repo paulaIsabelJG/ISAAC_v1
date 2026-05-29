@@ -40,6 +40,16 @@ $border:  #ffb6c1;
   user-select:   none;
   -webkit-tap-highlight-color: transparent;
   transition:    border-color 0.15s, transform 0.12s, box-shadow 0.12s;
+
+  // ── Font-size del label (consumido por PictCellContentComponent) ───────────
+  // Edit (default): proporcional al ancho real de la celda en el editor.
+  --pcc-label-fz: clamp(7px, 4cqi, 14px);
+}
+
+// Preview y comunicador: celdas más grandes → restaurar comportamiento original.
+:host(.pgc--preview),
+:host(.pgc--comm) {
+  --pcc-label-fz: clamp(8px, 11cqi, 14px);
 }
 
 // ── Hover: solo en edit (preview y communicator no escalan al hover) ───────────

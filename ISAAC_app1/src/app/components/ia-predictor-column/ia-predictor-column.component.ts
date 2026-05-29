@@ -41,9 +41,7 @@ export class IaPredictorColumnComponent {
    * En modo autónomo (columna junto al tablero): ancho natural fijo por celda.
    */
   get gridColsStyle(): string {
-    return this.embedded
-      ? `repeat(${this.cols}, 1fr)`
-      : `repeat(${this.cols}, minmax(60px, 90px))`;
+    return `repeat(${this.cols}, 1fr)`;
   }
 
   get gridRowsStyle(): string { return `repeat(${this.rows}, 1fr)`; }

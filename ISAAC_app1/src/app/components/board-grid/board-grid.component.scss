@@ -22,8 +22,13 @@ $card-bg: #ffffff;
 // En el contexto flex de :host debe ser flex: 0 0 auto para no expandirse.
 
 app-ia-predictor-column {
-  flex:        0 0 auto;
+  flex:        0 0 6.5%;   // proporcional al ancho del tablero (≈90px en preview 1440px)
   align-self:  stretch;
+}
+
+// En modo edición: label proporcional a la celda pequeña del editor
+:host(.bgc--edit) app-ia-predictor-column {
+  --ipc-label-fz: clamp(6px, 10cqi, 10px);
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

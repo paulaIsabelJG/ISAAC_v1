@@ -45,6 +45,6 @@ $mint:     #20c997;
 
 // El componente predictor ocupa ancho natural y todo el alto disponible
 app-ia-predictor-column {
-  flex:       0 0 auto;
+  flex:       0 0 6.5%;   // proporcional al ancho del área de tablero
   align-self: stretch;
 }

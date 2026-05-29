@@ -46,7 +46,7 @@ export function getCellBgColor(cell: BoardCell | null): string {
 export function getCellBorderColor(cell: BoardCell | null): string {
   if (isCellDisabled(cell)) return '#bdbdbd';
   const base = getCellBaseColor(cell?.pictogram ?? null);
-  if (!base) return '#ffb6c1';            // rosa por defecto (celda vacía)
-  if (base === '#ffffff') return '#cccccc'; // evita borde invisible en misc
+  if (!base) return '#ffb6c1';                                    // rosa por defecto (celda vacía)
+  if (base === '#ffffff' || base === '#f5f5f5') return '#cccccc'; // misc / near-white → borde gris visible
   return `color-mix(in srgb, ${base} 55%, white)`;
 }

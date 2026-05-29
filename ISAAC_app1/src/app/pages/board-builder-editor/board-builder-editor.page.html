@@ -107,195 +107,207 @@
           </button>
         </div>
 
-        <!-- ── Preview de la barra AAC (solo tableros principales) ────────── -->
-        @if (board?.boardRole === 'main') {
-          <div class="bbe-aac-preview-panel"
-               [class.bbe-aac-preview-panel--collapsed]="controlsBarPreviewCollapsed">
+        <!-- ── Wrapper proporciones reales: barra AAC + tablero ────────────── -->
+        <div class="bbe-comm-outer">
+          <div class="bbe-comm-wrapper">
 
-            <div class="bbe-aac-preview-header" (click)="controlsBarPreviewCollapsed = !controlsBarPreviewCollapsed">
-              <span class="bbe-aac-preview-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;vertical-align:middle;margin-right:4px">
-                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
-                </svg>
-                Vista previa barra AAC
-              </span>
-              <button class="bbe-aac-preview-toggle" title="{{ controlsBarPreviewCollapsed ? 'Expandir' : 'Colapsar' }}">
-                @if (controlsBarPreviewCollapsed) {
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                  </svg>
-                } @else {
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <line x1="5" y1="12" x2="19" y2="12"/>
-                  </svg>
+            <!-- ── Preview de la barra AAC (solo tableros principales) ─────── -->
+            @if (board?.boardRole === 'main') {
+              <div class="bbe-aac-preview-panel"
+                   [class.bbe-aac-preview-panel--collapsed]="controlsBarPreviewCollapsed">
+
+                <div class="bbe-aac-preview-header" (click)="controlsBarPreviewCollapsed = !controlsBarPreviewCollapsed">
+                  <span class="bbe-aac-preview-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;vertical-align:middle;margin-right:4px">
+                      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                      <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                    </svg>
+                    Vista previa barra AAC
+                  </span>
+                  <button class="bbe-aac-preview-toggle" title="{{ controlsBarPreviewCollapsed ? 'Expandir' : 'Colapsar' }}">
+                    @if (controlsBarPreviewCollapsed) {
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                      </svg>
+                    } @else {
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                      </svg>
+                    }
+                  </button>
+                </div>
+
+                @if (!controlsBarPreviewCollapsed) {
+                  <div class="bbe-aac-preview-bar" style="pointer-events:none">
+                    <app-aac-controls-bar
+                      mode="preview"
+                      [controlsConfig]="previewControlsConfig ?? currentControlsConfig">
+                    </app-aac-controls-bar>
+                  </div>
                 }
-              </button>
-            </div>
-
-            @if (!controlsBarPreviewCollapsed) {
-              <div class="bbe-aac-preview-bar" style="pointer-events:none">
-                <app-aac-controls-bar
-                  mode="preview"
-                  [controlsConfig]="previewControlsConfig ?? currentControlsConfig">
-                </app-aac-controls-bar>
-              </div>
-            }
-          </div>
-        }
-
-        <!-- ── MULTITABLERO editor: boards reales con resize ────────────── -->
-        @if (isMultiBoard) {
-
-          <!-- Wrapper fila: slot predictor (izq.) + grids (resto) -->
-          <div class="bbe-multi-with-predictor">
-
-            <!-- Slot Predictor IA (solo si predictorEnabled en el tablero raíz) -->
-            @if (showMultiPredictor) {
-              <div class="bbe-multi-predictor-slot"
-                   [style.width.px]="multiPredictorSlotWidth">
-                <app-ia-predictor-column
-                  [rows]="multiPredictorIaRows"
-                  [cols]="multiPredictorIaCols"
-                  [showHeader]="true"
-                  [embedded]="true">
-                </app-ia-predictor-column>
               </div>
             }
 
-          <!-- Grid principal de slots con handles de resize -->
-          <div class="bbe-multi-grids">
+            <!-- ── Área del tablero ─────────────────────────────────────────── -->
+            <div class="bbe-comm-board-area" [style.aspect-ratio]="boardAspectRatio">
 
-            @for (row of slotsByRow; track $index; let rowIdx = $index) {
+              <!-- ── MULTITABLERO editor: boards reales con resize ──────────── -->
+              @if (isMultiBoard) {
 
-              <!-- Fila de slots -->
-              <div class="bbe-multi-row" [style.flex]="slotFlexRow(rowIdx)">
+                <!-- Wrapper fila: slot predictor (izq.) + grids (resto) -->
+                <div class="bbe-multi-with-predictor">
 
-                @for (slotId of row; track slotId; let colIdx = $index) {
-
-                  <!-- Slot -->
-                  <div class="bbe-multi-slot"
-                       [style.flex]="slotFlexCol(slotId)"
-                       [class.bbe-multi-slot--active]="activeCellSlotId === slotId">
-
-                    <!-- Cabecera del slot -->
-                    <div class="bbe-multi-slot-header">
-                      <span class="bbe-multi-slot-title">{{ getSlotTitle(slotId) }}</span>
-                      @if (getSlotBoardId(slotId)) {
-                        <button class="bbe-slot-btn bbe-slot-btn--view"
-                                (click)="onEditSlotBoard(getSlotBoardId(slotId)!)"
-                                title="Editar este tablero">
-                          Ver tablero
-                        </button>
-                      }
-                    </div>
-
-                    <!-- Board del slot -->
-                    <div class="bbe-multi-slot-body">
-                      @if (isSlotLoading(slotId)) {
-                        <div class="bbe-multi-slot-state">
-                          <ion-spinner name="crescent" color="secondary"></ion-spinner>
-                        </div>
-                      } @else if (getSlotBoard(slotId)) {
-                        <app-board-grid
-                          [board]="getSlotBoard(slotId)"
-                          mode="edit"
-                          [selectedCell]="selectedCellForSlot(slotId)"
-                          [draggedCell]="activeCellSlotId === slotId ? draggedCell : null"
-                          [dragOverCell]="activeCellSlotId === slotId ? dragOverCell : null"
-                          [moveSrcCell]="activeCellSlotId === slotId ? moveSrcCell : null"
-                          (cellClick)="onMultiSlotCellClick(slotId, $event.row, $event.col)"
-                          (cellDblClick)="onMultiSlotCellDblClick(slotId, $event.row, $event.col)"
-                          (cellDragStart)="onMultiSlotCellDragStart(slotId, $event.event, $event.row, $event.col)"
-                          (cellDragOver)="onMultiSlotCellDragOver(slotId, $event.event, $event.row, $event.col)"
-                          (cellDragLeave)="onMultiSlotCellDragLeave(slotId, $event.event, $event.row, $event.col)"
-                          (cellDrop)="onMultiSlotCellDrop(slotId, $event.event, $event.row, $event.col)"
-                          (cellDragEnd)="onCellDragEnd()">
-                        </app-board-grid>
-                      } @else {
-                        <button class="bbe-multi-slot-add"
-                                (click)="onSlotSelected(slotId)"
-                                title="Asignar tablero a este hueco">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="12" y1="5" x2="12" y2="19"/>
-                            <line x1="5"  y1="12" x2="19" y2="12"/>
-                          </svg>
-                        </button>
-                      }
-                    </div>
-
-                  </div><!-- /bbe-multi-slot -->
-
-                  <!-- Handle de columna entre slots (no después del último) -->
-                  @if (colIdx < row.length - 1) {
-                    <div class="bbe-resize-handle bbe-resize-handle--col"
-                         (pointerdown)="onColHandleDown($event, colIdx)"
-                         (pointermove)="onColHandleMove($event)"
-                         (pointerup)="onColHandleUp($event)"
-                         title="Arrastrar para redimensionar">
-                      <div class="bbe-resize-handle-inner"></div>
+                  <!-- Slot Predictor IA (solo si predictorEnabled en el tablero raíz) -->
+                  @if (showMultiPredictor) {
+                    <div class="bbe-multi-predictor-slot"
+                         [style.width]="multiPredictorSlotWidth">
+                      <app-ia-predictor-column
+                        [rows]="multiPredictorIaRows"
+                        [cols]="multiPredictorIaCols"
+                        [showHeader]="true"
+                        [embedded]="true">
+                      </app-ia-predictor-column>
                     </div>
                   }
 
-                }
+                <!-- Grid principal de slots con handles de resize -->
+                <div class="bbe-multi-grids">
 
-              </div><!-- /bbe-multi-row -->
+                  @for (row of slotsByRow; track $index; let rowIdx = $index) {
 
-              <!-- Handle de fila entre filas (solo para 4 huecos, no después de la última) -->
-              @if (rowIdx < slotsByRow.length - 1) {
-                <div class="bbe-resize-handle bbe-resize-handle--row"
-                     (pointerdown)="onRowHandleDown($event)"
-                     (pointermove)="onRowHandleMove($event)"
-                     (pointerup)="onRowHandleUp($event)"
-                     title="Arrastrar para redimensionar altura">
-                  <div class="bbe-resize-handle-inner"></div>
-                </div>
+                    <!-- Fila de slots -->
+                    <div class="bbe-multi-row" [style.flex]="slotFlexRow(rowIdx)">
+
+                      @for (slotId of row; track slotId; let colIdx = $index) {
+
+                        <!-- Slot -->
+                        <div class="bbe-multi-slot"
+                             [style.flex]="slotFlexCol(slotId)"
+                             [class.bbe-multi-slot--active]="activeCellSlotId === slotId">
+
+                          <!-- Cabecera del slot -->
+                          <div class="bbe-multi-slot-header">
+                            <span class="bbe-multi-slot-title">{{ getSlotTitle(slotId) }}</span>
+                            @if (getSlotBoardId(slotId)) {
+                              <button class="bbe-slot-btn bbe-slot-btn--view"
+                                      (click)="onEditSlotBoard(getSlotBoardId(slotId)!)"
+                                      title="Editar este tablero">
+                                Ver tablero
+                              </button>
+                            }
+                          </div>
+
+                          <!-- Board del slot -->
+                          <div class="bbe-multi-slot-body">
+                            @if (isSlotLoading(slotId)) {
+                              <div class="bbe-multi-slot-state">
+                                <ion-spinner name="crescent" color="secondary"></ion-spinner>
+                              </div>
+                            } @else if (getSlotBoard(slotId)) {
+                              <app-board-grid
+                                [board]="getSlotBoard(slotId)"
+                                mode="edit"
+                                [selectedCell]="selectedCellForSlot(slotId)"
+                                [draggedCell]="activeCellSlotId === slotId ? draggedCell : null"
+                                [dragOverCell]="activeCellSlotId === slotId ? dragOverCell : null"
+                                [moveSrcCell]="activeCellSlotId === slotId ? moveSrcCell : null"
+                                (cellClick)="onMultiSlotCellClick(slotId, $event.row, $event.col)"
+                                (cellDblClick)="onMultiSlotCellDblClick(slotId, $event.row, $event.col)"
+                                (cellDragStart)="onMultiSlotCellDragStart(slotId, $event.event, $event.row, $event.col)"
+                                (cellDragOver)="onMultiSlotCellDragOver(slotId, $event.event, $event.row, $event.col)"
+                                (cellDragLeave)="onMultiSlotCellDragLeave(slotId, $event.event, $event.row, $event.col)"
+                                (cellDrop)="onMultiSlotCellDrop(slotId, $event.event, $event.row, $event.col)"
+                                (cellDragEnd)="onCellDragEnd()">
+                              </app-board-grid>
+                            } @else {
+                              <button class="bbe-multi-slot-add"
+                                      (click)="onSlotSelected(slotId)"
+                                      title="Asignar tablero a este hueco">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                  <line x1="12" y1="5" x2="12" y2="19"/>
+                                  <line x1="5"  y1="12" x2="19" y2="12"/>
+                                </svg>
+                              </button>
+                            }
+                          </div>
+
+                        </div><!-- /bbe-multi-slot -->
+
+                        <!-- Handle de columna entre slots (no después del último) -->
+                        @if (colIdx < row.length - 1) {
+                          <div class="bbe-resize-handle bbe-resize-handle--col"
+                               (pointerdown)="onColHandleDown($event, colIdx)"
+                               (pointermove)="onColHandleMove($event)"
+                               (pointerup)="onColHandleUp($event)"
+                               title="Arrastrar para redimensionar">
+                            <div class="bbe-resize-handle-inner"></div>
+                          </div>
+                        }
+
+                      }
+
+                    </div><!-- /bbe-multi-row -->
+
+                    <!-- Handle de fila entre filas (solo para 4 huecos, no después de la última) -->
+                    @if (rowIdx < slotsByRow.length - 1) {
+                      <div class="bbe-resize-handle bbe-resize-handle--row"
+                           (pointerdown)="onRowHandleDown($event)"
+                           (pointermove)="onRowHandleMove($event)"
+                           (pointerup)="onRowHandleUp($event)"
+                           title="Arrastrar para redimensionar altura">
+                        <div class="bbe-resize-handle-inner"></div>
+                      </div>
+                    }
+
+                  }
+
+                </div><!-- /bbe-multi-grids -->
+
+                </div><!-- /bbe-multi-with-predictor -->
               }
 
-            }
+              <!-- ── GRID editor ────────────────────────────────────────────── -->
+              @if (!isMultiBoard && !isCircular) {
+                <app-board-grid
+                  [board]="board"
+                  mode="edit"
+                  [selectedCell]="selectedCell"
+                  [draggedCell]="draggedCell"
+                  [dragOverCell]="dragOverCell"
+                  [moveSrcCell]="moveSrcCell"
+                  (cellClick)="onCellClick($event.row, $event.col)"
+                  (cellDblClick)="onCellDblClick($event.row, $event.col)"
+                  (cellDragStart)="onCellDragStart($event.event, $event.row, $event.col)"
+                  (cellDragOver)="onCellDragOver($event.event, $event.row, $event.col)"
+                  (cellDragLeave)="onCellDragLeave($event.event, $event.row, $event.col)"
+                  (cellDrop)="onCellDrop($event.event, $event.row, $event.col)"
+                  (cellDragEnd)="onCellDragEnd()">
+                </app-board-grid>
+              }
 
-          </div><!-- /bbe-multi-grids -->
+              <!-- ── CIRCULAR editor ────────────────────────────────────────── -->
+              @if (!isMultiBoard && isCircular) {
+                <app-board-circular
+                  [board]="board"
+                  mode="edit"
+                  [selectedCell]="selectedCell"
+                  [draggedCell]="draggedCell"
+                  [dragOverCell]="dragOverCell"
+                  [moveSrcCell]="moveSrcCell"
+                  (cellClick)="onCellClick($event.row, $event.col)"
+                  (cellDblClick)="onCellDblClick($event.row, $event.col)"
+                  (cellDragStart)="onCellDragStart($event.event, $event.row, $event.col)"
+                  (cellDragOver)="onCellDragOver($event.event, $event.row, $event.col)"
+                  (cellDragLeave)="onCellDragLeave($event.event, $event.row, $event.col)"
+                  (cellDrop)="onCellDrop($event.event, $event.row, $event.col)"
+                  (cellDragEnd)="onCellDragEnd()">
+                </app-board-circular>
+              }
 
-          </div><!-- /bbe-multi-with-predictor -->
-        }
+            </div><!-- /bbe-comm-board-area -->
 
-        <!-- ── GRID editor ──────────────────────────────────────────────── -->
-        @if (!isMultiBoard && !isCircular) {
-          <app-board-grid
-            [board]="board"
-            mode="edit"
-            [selectedCell]="selectedCell"
-            [draggedCell]="draggedCell"
-            [dragOverCell]="dragOverCell"
-            [moveSrcCell]="moveSrcCell"
-            (cellClick)="onCellClick($event.row, $event.col)"
-            (cellDblClick)="onCellDblClick($event.row, $event.col)"
-            (cellDragStart)="onCellDragStart($event.event, $event.row, $event.col)"
-            (cellDragOver)="onCellDragOver($event.event, $event.row, $event.col)"
-            (cellDragLeave)="onCellDragLeave($event.event, $event.row, $event.col)"
-            (cellDrop)="onCellDrop($event.event, $event.row, $event.col)"
-            (cellDragEnd)="onCellDragEnd()">
-          </app-board-grid>
-        }
-
-        <!-- ── CIRCULAR editor ───────────────────────────────────────────── -->
-        @if (!isMultiBoard && isCircular) {
-          <app-board-circular
-            [board]="board"
-            mode="edit"
-            [selectedCell]="selectedCell"
-            [draggedCell]="draggedCell"
-            [dragOverCell]="dragOverCell"
-            [moveSrcCell]="moveSrcCell"
-            (cellClick)="onCellClick($event.row, $event.col)"
-            (cellDblClick)="onCellDblClick($event.row, $event.col)"
-            (cellDragStart)="onCellDragStart($event.event, $event.row, $event.col)"
-            (cellDragOver)="onCellDragOver($event.event, $event.row, $event.col)"
-            (cellDragLeave)="onCellDragLeave($event.event, $event.row, $event.col)"
-            (cellDrop)="onCellDrop($event.event, $event.row, $event.col)"
-            (cellDragEnd)="onCellDragEnd()">
-          </app-board-circular>
-        }
+          </div><!-- /bbe-comm-wrapper -->
+        </div><!-- /bbe-comm-outer -->
 
       </div><!-- /col-center -->
 
