@@ -8,17 +8,12 @@
                └── .bgc-grid  (CSS Grid N×M con app-pictogram-cell)
      ══════════════════════════════════════════════════════════════════════ -->
 
-<!-- ── Columna Predictor IA (edit/preview, solo si predictorEnabled) ───── -->
+<!-- ── Columna Predictor IA (edit/preview, hereda config del raíz en preview) -->
 @if (iaColumnVisible) {
-  <div class="bgc-ia-col"
-       [style.grid-template-columns]="iaColsStyle">
-    @for (i of iaCells; track i) {
-      <div class="bgc-ia-cell">
-        <img src="assets/board-builder/logo-IA.png" class="bgc-ia-logo" alt="IA"/>
-        <span class="bgc-ia-label">PICTO IA</span>
-      </div>
-    }
-  </div>
+  <app-ia-predictor-column
+    [rows]="iaRows"
+    [cols]="iaCols">
+  </app-ia-predictor-column>
 }
 
 <!-- ── Grid canvas ──────────────────────────────────────────────────────── -->

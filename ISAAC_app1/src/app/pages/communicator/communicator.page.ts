@@ -12,6 +12,7 @@ import { BoardGridComponent } from '../../components/board-grid/board-grid.compo
 import { BoardCircularComponent } from '../../components/board-circular/board-circular.component';
 import { MultiboardCommunicatorComponent } from '../../components/multiboard-communicator/multiboard-communicator.component';
 import { AacControlsBarComponent } from '../../components/aac-controls-bar/aac-controls-bar.component';
+import { IaPredictorColumnComponent } from '../../components/ia-predictor-column/ia-predictor-column.component';
 
 @Component({
   selector: 'app-communicator',
@@ -25,6 +26,7 @@ import { AacControlsBarComponent } from '../../components/aac-controls-bar/aac-c
     BoardCircularComponent,
     MultiboardCommunicatorComponent,
     AacControlsBarComponent,
+    IaPredictorColumnComponent,
   ],
 })
 export class CommunicatorPage implements OnInit, OnDestroy {
@@ -84,6 +86,10 @@ export class CommunicatorPage implements OnInit, OnDestroy {
     await this.aac.startSession(
       this.userId, boardId, 'communicator', this.canLog,
       this.board?.controlsConfig,
+      !!this.board?.predictorEnabled,
+      this.board?.iaRows ?? 5,
+      this.board?.iaCols ?? 1,
+      !!this.board?.aiRewriteEnabled,
     );
 
     // Suscripción a navegación de tableros (navigate actions, speakAndBack, etc.)
@@ -154,4 +160,13 @@ export class CommunicatorPage implements OnInit, OnDestroy {
   get gender(): string | undefined {
     return this.targetUser?.gender ?? undefined;
   }
+
+  // ── Predictor IA (heredado del tablero raíz) ──────────────────────────────
+
+  get showPredictor(): boolean {
+    return this.aac.predictorEnabled && !this.isMultiBoard;
+  }
+
+  get predictorIaRows(): number { return this.aac.iaRows; }
+  get predictorIaCols(): number { return this.aac.iaCols; }
 }

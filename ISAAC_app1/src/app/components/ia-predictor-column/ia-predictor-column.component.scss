@@ -1,0 +1,91 @@
+$mint:      #20c997;
+$mint-light:#e0fff6;
+$mint-dark: #17a682;
+
+// ── Host ──────────────────────────────────────────────────────────────────────
+// Por defecto: columna autónoma con borde y fondo propios.
+// Con .ipc--embedded: sin borde/fondo (el contenedor padre los provee).
+
+:host {
+  display:        flex;
+  flex-direction: column;
+  min-height:     0;
+  overflow:       hidden;
+  // Modo autónomo (tablero normal, communicator): borde/fondo propios + ancho natural
+  border:         2px solid $mint;
+  border-radius:  14px;
+  background:     color-mix(in srgb, #{$mint} 8%, white);
+  // width: fit-content evita que el 1fr del grid interno se expanda en el flex padre
+  width:          fit-content;
+}
+
+:host(.ipc--embedded) {
+  // Modo embebido (slot de multitablero): sin borde/fondo, ocupa todo el contenedor
+  border:        none;
+  border-radius: 0;
+  background:    transparent;
+  width:         auto;  // el contenedor padre controla el ancho
+}
+
+// ── Cabecera (multitablero) ───────────────────────────────────────────────────
+.ipc-header {
+  flex:           0 0 auto;
+  display:        flex;
+  align-items:    center;
+  gap:            5px;
+  padding:        6px 10px;
+  background:     rgba($mint, 0.18);
+  border-bottom:  1px solid rgba($mint, 0.35);
+  font-size:      9px;
+  font-weight:    800;
+  color:          $mint-dark;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+
+  svg { width: 12px; height: 12px; stroke: $mint-dark; flex: 0 0 auto; }
+}
+
+// ── Grid de celdas ────────────────────────────────────────────────────────────
+.ipc-grid {
+  flex:       1;
+  display:    grid;
+  gap:        6px;
+  padding:    8px;
+  min-height: 0;
+  // grid-template-columns y grid-template-rows aplicados dinámicamente
+}
+
+// ── Celda individual ──────────────────────────────────────────────────────────
+.ipc-cell {
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  background:      rgba($mint, 0.12);
+  border:          1.5px dashed $mint;
+  border-radius:   10px;
+  padding:         6px 4px;
+  min-height:      0;
+  min-width:       60px;
+  gap:             4px;
+  overflow:        hidden;
+}
+
+.ipc-logo {
+  // Crece con la celda hasta un máximo
+  width:     min(40px, 60%);
+  height:    auto;
+  display:   block;
+  opacity:   0.75;
+  flex:      0 0 auto;
+}
+
+.ipc-label {
+  font-size:      9px;
+  font-weight:    700;
+  color:          $mint-dark;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align:     center;
+  flex:           0 0 auto;
+}

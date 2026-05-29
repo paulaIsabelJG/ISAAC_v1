@@ -109,3 +109,16 @@ app-board-grid {
   display:  flex;
   min-height: 0;
 }
+
+// ── Slot Predictor IA → IaPredictorColumnComponent ───────────────────────────
+.mbc-predictor-slot {
+  display:       flex;
+  min-height:    0;
+  border-radius: 12px;
+  overflow:      hidden;
+
+  app-ia-predictor-column {
+    flex:          1;
+    border-radius: 12px;
+  }
+}

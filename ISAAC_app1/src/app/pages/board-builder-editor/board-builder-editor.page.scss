@@ -331,6 +331,30 @@ $panel-bg:     #faf5f8;
   text-align:  right;
 }
 
+// ── Wrapper fila: predictor (opcional) + grids ────────────────────────────────
+.bbe-multi-with-predictor {
+  display:    flex;
+  flex:       1;
+  min-height: 0;
+  overflow:   hidden;
+}
+
+// ── Slot Predictor IA → IaPredictorColumnComponent ───────────────────────────
+.bbe-multi-predictor-slot {
+  flex:           0 0 auto;
+  display:        flex;
+  flex-direction: column;
+  // width se aplica dinámicamente via [style.width.px]
+  border-radius:  10px;
+  overflow:       hidden;
+  margin:         6px 0 6px 6px;
+
+  app-ia-predictor-column {
+    flex:          1;
+    border-radius: 10px;
+  }
+}
+
 // ── Layout flex de slots ──────────────────────────────────────────────────────
 .bbe-multi-grids {
   flex:       1;

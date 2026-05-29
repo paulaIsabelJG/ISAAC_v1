@@ -1,5 +1,6 @@
 $bg:       #fdf5f9;
 $text-muted: #6b5462;
+$mint:     #20c997;
 
 // ── Root ──────────────────────────────────────────────────────────────────────
 .comm-root {
@@ -31,4 +32,19 @@ $text-muted: #6b5462;
   height:          100%;
   font-size:       14px;
   color:           $text-muted;
+}
+
+// ── Fila interna: predictor (opcional) + tablero ──────────────────────────────
+.comm-board-row {
+  display:    flex;
+  flex:       1;
+  gap:        10px;
+  min-height: 0;
+  overflow:   hidden;
+}
+
+// El componente predictor ocupa ancho natural y todo el alto disponible
+app-ia-predictor-column {
+  flex:       0 0 auto;
+  align-self: stretch;
 }

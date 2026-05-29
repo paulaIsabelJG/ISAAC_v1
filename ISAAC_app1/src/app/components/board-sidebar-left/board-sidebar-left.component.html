@@ -119,37 +119,40 @@
     </button>
   </div>
 
-  <!-- Toggle Predictor IA -->
-  <div class="bbe-toggle-row" (click)="localPredictor = !localPredictor">
-    <span class="bbe-toggle-lbl">Predictor IA</span>
-    <div class="bbe-toggle" [class.bbe-toggle--on]="localPredictor">
-      <div class="bbe-toggle-thumb"></div>
+  <!-- IA: solo tableros principales (oculto en secundarios) -->
+  @if (localBoardRole !== 'secondary') {
+    <!-- Toggle Predictor IA -->
+    <div class="bbe-toggle-row" (click)="localPredictor = !localPredictor">
+      <span class="bbe-toggle-lbl">Predictor IA</span>
+      <div class="bbe-toggle" [class.bbe-toggle--on]="localPredictor">
+        <div class="bbe-toggle-thumb"></div>
+      </div>
     </div>
-  </div>
 
-  <!-- Tamaño columna IA (solo cuando predictor activo) -->
-  @if (localPredictor) {
-    <div class="bbe-ia-size-panel">
-      <div class="bbe-cfg-row">
-        <div class="bbe-cfg-field">
-          <label class="bbe-lbl">Filas IA</label>
-          <input class="bbe-inp bbe-inp--num" type="number" min="1" max="20" [(ngModel)]="localIaRows"/>
+    <!-- Tamaño columna IA (solo cuando predictor activo) -->
+    @if (localPredictor) {
+      <div class="bbe-ia-size-panel">
+        <div class="bbe-cfg-row">
+          <div class="bbe-cfg-field">
+            <label class="bbe-lbl">Filas IA</label>
+            <input class="bbe-inp bbe-inp--num" type="number" min="1" max="20" [(ngModel)]="localIaRows"/>
+          </div>
+          <div class="bbe-cfg-field">
+            <label class="bbe-lbl">Columnas IA</label>
+            <input class="bbe-inp bbe-inp--num" type="number" min="1" max="5" [(ngModel)]="localIaCols"/>
+          </div>
         </div>
-        <div class="bbe-cfg-field">
-          <label class="bbe-lbl">Columnas IA</label>
-          <input class="bbe-inp bbe-inp--num" type="number" min="1" max="5" [(ngModel)]="localIaCols"/>
-        </div>
+      </div>
+    }
+
+    <!-- Toggle Corrector IA -->
+    <div class="bbe-toggle-row" (click)="localAiRewrite = !localAiRewrite">
+      <span class="bbe-toggle-lbl">Corrector IA</span>
+      <div class="bbe-toggle" [class.bbe-toggle--on]="localAiRewrite">
+        <div class="bbe-toggle-thumb"></div>
       </div>
     </div>
   }
-
-  <!-- Toggle Corrector IA -->
-  <div class="bbe-toggle-row" (click)="localAiRewrite = !localAiRewrite">
-    <span class="bbe-toggle-lbl">Corrector IA</span>
-    <div class="bbe-toggle" [class.bbe-toggle--on]="localAiRewrite">
-      <div class="bbe-toggle-thumb"></div>
-    </div>
-  </div>
 
   <!-- Botón guardar -->
   <button class="bbe-save-cfg" (click)="onSaveClick()" [disabled]="isSaving">
@@ -159,6 +162,127 @@
     Guardar configuración
   </button>
 </div>
+
+<!-- ── Panel BARRA AAC (solo tableros principales) ──────────────────────── -->
+@if (localBoardRole === 'main') {
+  <div class="bbe-panel">
+    <div class="bbe-panel-header">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+        <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+        <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+      </svg>
+      BARRA AAC
+    </div>
+
+    <div class="bbe-ctrl-hints">
+      <span class="bbe-ctrl-hint-chip">
+        <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">
+          <circle cx="9"  cy="7"  r="1.5"/><circle cx="9"  cy="12" r="1.5"/><circle cx="9"  cy="17" r="1.5"/>
+          <circle cx="15" cy="7"  r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="17" r="1.5"/>
+        </svg>
+        Arrastra para reordenar
+      </span>
+      <span class="bbe-ctrl-hint-chip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+        Ojo para ocultar
+      </span>
+    </div>
+
+    <!-- Lista unificada: orden + visibilidad en una sola experiencia -->
+    <ion-list class="bbe-ctrl-list">
+      <ion-reorder-group [disabled]="false" (ionItemReorder)="onControlsReorder($event)">
+
+        @for (item of orderedItemsMeta; track item.id) {
+          <ion-item class="bbe-ctrl-item"
+                    [class.bbe-ctrl-item--hidden]="!item.visible"
+                    [class.bbe-ctrl-item--phrase]="item.id === 'phraseBar'"
+                    lines="none">
+
+            <div class="bbe-ctrl-icon-wrap" slot="start">
+              @switch (item.id) {
+                @case ('home') {
+                  <svg class="bbe-ctrl-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9 22 9 12 15 12 15 22"/>
+                  </svg>
+                }
+                @case ('back') {
+                  <svg class="bbe-ctrl-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"/>
+                  </svg>
+                }
+                @case ('speak') {
+                  <svg class="bbe-ctrl-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                  </svg>
+                }
+                @case ('phraseBar') {
+                  <svg class="bbe-ctrl-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="6" width="20" height="12" rx="2"/>
+                    <line x1="6" y1="12" x2="18" y2="12"/>
+                  </svg>
+                }
+                @case ('deleteLast') {
+                  <svg class="bbe-ctrl-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/>
+                    <line x1="18" y1="9" x2="12" y2="15"/>
+                    <line x1="12" y1="9" x2="18" y2="15"/>
+                  </svg>
+                }
+                @case ('clearAll') {
+                  <svg class="bbe-ctrl-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                    <path d="M10 11v6M14 11v6M9 6V4h6v2"/>
+                  </svg>
+                }
+                @default {
+                  <svg class="bbe-ctrl-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="4"/>
+                  </svg>
+                }
+              }
+            </div>
+
+            <ion-label class="bbe-ctrl-label-wrap">
+              <span class="bbe-ctrl-name">{{ item.label }}</span>
+              @if (!item.visible) {
+                <span class="bbe-ctrl-badge">Oculto</span>
+              }
+            </ion-label>
+
+            @if (item.canHide) {
+              <button class="bbe-ctrl-eye"
+                      slot="end"
+                      (click)="toggleItemVisibility($any(item.id))">
+                @if (item.visible) {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                } @else {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                    <line x1="1" y1="1" x2="23" y2="23"/>
+                  </svg>
+                }
+              </button>
+            }
+
+            <ion-reorder slot="end"></ion-reorder>
+          </ion-item>
+        }
+
+      </ion-reorder-group>
+    </ion-list>
+  </div>
+}
 
 <!-- ── Panel TABLEROS DEL USUARIO ──────────────────────────────────────────── -->
 <div class="bbe-panel bbe-panel--boards">
@@ -252,60 +376,6 @@
       </div>
     }
 
-  </div>
-}
-
-<!-- ── Panel BARRA AAC (solo tableros principales) ──────────────────────── -->
-@if (localBoardRole === 'main') {
-  <div class="bbe-panel">
-    <div class="bbe-panel-header">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-        <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
-        <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
-      </svg>
-      BARRA AAC
-    </div>
-
-    <p class="bbe-hint" style="margin-bottom:8px">
-      Arrastra para reordenar · Toca el ojo para ocultar/mostrar
-    </p>
-
-    <!-- Lista unificada: orden + visibilidad en una sola experiencia -->
-    <ion-list class="bbe-ctrl-list">
-      <ion-reorder-group [disabled]="false" (ionItemReorder)="onControlsReorder($event)">
-
-        @for (item of orderedItemsMeta; track item.id) {
-          <ion-item class="bbe-ctrl-item"
-                    [class.bbe-ctrl-item--hidden]="!item.visible"
-                    [class.bbe-ctrl-item--phrase]="item.id === 'phraseBar'"
-                    lines="none">
-
-            <div class="bbe-ctrl-icon-wrap" slot="start">
-              <ion-icon [name]="item.icon" class="bbe-ctrl-icon"></ion-icon>
-            </div>
-
-            <ion-label class="bbe-ctrl-label-wrap">
-              <span class="bbe-ctrl-name">{{ item.label }}</span>
-              @if (!item.visible) {
-                <span class="bbe-ctrl-badge">Oculto</span>
-              }
-            </ion-label>
-
-            @if (item.canHide) {
-              <button class="bbe-ctrl-eye"
-                      slot="end"
-                      (click)="toggleItemVisibility($any(item.id))">
-                <ion-icon [name]="item.visible ? 'eye-outline' : 'eye-off-outline'"></ion-icon>
-              </button>
-            }
-
-            <ion-reorder slot="end"></ion-reorder>
-          </ion-item>
-        }
-
-      </ion-reorder-group>
-    </ion-list>
   </div>
 }
 

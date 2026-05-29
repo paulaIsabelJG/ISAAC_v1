@@ -278,8 +278,8 @@
         </div>
       }
 
-      <!-- ── Opciones IA (cuadrícula y multitablero) ───────────────────── -->
-      @if (selectedShape === 'grid' || isMultiBoard) {
+      <!-- ── Opciones IA (solo tableros principales: grid y multi) ───────── -->
+      @if ((selectedShape === 'grid' || isMultiBoard) && cfgBoardRole !== 'secondary') {
         <div class="bbc-toggles">
           <div class="bbc-toggle-row" (click)="form.get('predictorEnabled')!.setValue(!form.get('predictorEnabled')!.value)">
             <div class="bbc-toggle-info">

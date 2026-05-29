@@ -46,6 +46,7 @@ import {
 import { MultiboardEditorComponent } from '../../components/multiboard-editor/multiboard-editor.component';
 import { MultiboardCommunicatorComponent } from '../../components/multiboard-communicator/multiboard-communicator.component';
 import { AacControlsBarComponent } from '../../components/aac-controls-bar/aac-controls-bar.component';
+import { IaPredictorColumnComponent } from '../../components/ia-predictor-column/ia-predictor-column.component';
 
 @Component({
   selector: 'app-board-builder-editor',
@@ -65,6 +66,7 @@ import { AacControlsBarComponent } from '../../components/aac-controls-bar/aac-c
     MultiboardEditorComponent,
     MultiboardCommunicatorComponent,
     AacControlsBarComponent,
+    IaPredictorColumnComponent,
   ],
 })
 export class BoardBuilderEditorPage implements OnInit, OnDestroy {
@@ -742,7 +744,14 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
       this.moveSrcCell  = null;
       this.circularSimMode = false;
       this.circularSimCenter = null;
-      void this.aacRuntime.startSession('', this.boardId, 'preview', false, this.board?.controlsConfig);
+      void this.aacRuntime.startSession(
+        '', this.boardId, 'preview', false,
+        this.board?.controlsConfig,
+        !!this.board?.predictorEnabled,
+        this.board?.iaRows ?? 5,
+        this.board?.iaCols ?? 1,
+        !!this.board?.aiRewriteEnabled,
+      );
 
       // Suscripción a boardNavigated$ para gestionar Back y navigate en preview.
       // Funciona tanto en tablero normal como en multitablero.
@@ -1262,6 +1271,19 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   get isMultiBoard(): boolean {
     // shape==='multi' para boards nuevos; boardRole==='multi' para boards legados.
     return this.board?.shape === 'multi' || this.board?.boardRole === 'multi';
+  }
+
+  /** Muestra el slot predictor en el editor de multitablero. */
+  get showMultiPredictor(): boolean {
+    return this.isMultiBoard && !!this.board?.predictorEnabled;
+  }
+
+  get multiPredictorIaRows(): number { return this.board?.iaRows ?? 5; }
+  get multiPredictorIaCols(): number { return this.board?.iaCols ?? 1; }
+
+  /** Ancho en px del slot predictor en el editor multitablero. */
+  get multiPredictorSlotWidth(): number {
+    return this.multiPredictorIaCols * 140;
   }
 
   /** Tableros main disponibles para asignar a slots (excluye el propio multitablero). */

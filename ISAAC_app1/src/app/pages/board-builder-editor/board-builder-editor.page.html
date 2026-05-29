@@ -147,6 +147,22 @@
         <!-- ── MULTITABLERO editor: boards reales con resize ────────────── -->
         @if (isMultiBoard) {
 
+          <!-- Wrapper fila: slot predictor (izq.) + grids (resto) -->
+          <div class="bbe-multi-with-predictor">
+
+            <!-- Slot Predictor IA (solo si predictorEnabled en el tablero raíz) -->
+            @if (showMultiPredictor) {
+              <div class="bbe-multi-predictor-slot"
+                   [style.width.px]="multiPredictorSlotWidth">
+                <app-ia-predictor-column
+                  [rows]="multiPredictorIaRows"
+                  [cols]="multiPredictorIaCols"
+                  [showHeader]="true"
+                  [embedded]="true">
+                </app-ia-predictor-column>
+              </div>
+            }
+
           <!-- Grid principal de slots con handles de resize -->
           <div class="bbe-multi-grids">
 
@@ -239,6 +255,8 @@
             }
 
           </div><!-- /bbe-multi-grids -->
+
+          </div><!-- /bbe-multi-with-predictor -->
         }
 
         <!-- ── GRID editor ──────────────────────────────────────────────── -->

@@ -53,6 +53,12 @@ export class AacRuntimeService {
   /** Configuración de la barra AAC cargada del tablero raíz. */
   controlsConfig: ControlsConfig = { ...DEFAULT_CONTROLS_CONFIG };
 
+  /** Configuración del Predictor IA y Corrector IA cargados del tablero raíz. */
+  predictorEnabled  = false;
+  iaRows            = 5;
+  iaCols            = 1;
+  aiRewriteEnabled  = false;
+
   private _currentBoardId = '';
   readonly boardNavigated$ = new Subject<string>();
   readonly phraseChanged$  = new BehaviorSubject<AacPhraseItem[]>([]);
@@ -80,6 +86,10 @@ export class AacRuntimeService {
     mode: AacMode,
     canLog = false,
     controlsConfig?: ControlsConfig,
+    predictorEnabled = false,
+    iaRows = 5,
+    iaCols = 1,
+    aiRewriteEnabled = false,
   ): Promise<void> {
     this.mode        = mode;
     this.userId      = userId;
@@ -89,7 +99,11 @@ export class AacRuntimeService {
     this.phrase      = [];
     this.pendingEvents = [];
     this.canLog         = mode === 'communicator' && canLog;
-    this.controlsConfig = controlsConfig ?? { ...DEFAULT_CONTROLS_CONFIG };
+    this.controlsConfig  = controlsConfig ?? { ...DEFAULT_CONTROLS_CONFIG };
+    this.predictorEnabled = predictorEnabled;
+    this.iaRows           = iaRows;
+    this.iaCols           = iaCols;
+    this.aiRewriteEnabled = aiRewriteEnabled;
     this.sessionStarted = new Date().toISOString();
     this.phraseChanged$.next([]);
 
@@ -131,7 +145,11 @@ export class AacRuntimeService {
     this.canLog     = false;
     this.phrase     = [];
     this.boardStack = [];
-    this.pendingEvents = [];
+    this.pendingEvents    = [];
+    this.predictorEnabled = false;
+    this.iaRows           = 5;
+    this.iaCols           = 1;
+    this.aiRewriteEnabled = false;
     this.phraseChanged$.next([]);
   }
 

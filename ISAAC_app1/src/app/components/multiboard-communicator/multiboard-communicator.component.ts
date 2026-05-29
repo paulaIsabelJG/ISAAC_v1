@@ -15,6 +15,7 @@ import { AacRuntimeService } from '../../services/aac-runtime.service';
 import { BoardLayoutService } from '../../services/board-layout.service';
 import { BoardGridComponent } from '../board-grid/board-grid.component';
 import { LoadingErrorStateComponent } from '../loading-error-state/loading-error-state.component';
+import { IaPredictorColumnComponent } from '../ia-predictor-column/ia-predictor-column.component';
 
 interface SlotState {
   slotId:      number;
@@ -36,7 +37,7 @@ interface SlotState {
   templateUrl: './multiboard-communicator.component.html',
   styleUrls:   ['./multiboard-communicator.component.scss'],
   standalone:  true,
-  imports:     [IonicModule, NgClass, BoardGridComponent, LoadingErrorStateComponent],
+  imports:     [IonicModule, NgClass, BoardGridComponent, LoadingErrorStateComponent, IaPredictorColumnComponent],
 })
 export class MultiboardCommunicatorComponent implements OnInit, OnDestroy, OnChanges {
 
@@ -178,21 +179,39 @@ export class MultiboardCommunicatorComponent implements OnInit, OnDestroy, OnCha
     return state.boardStack.length > 0;
   }
 
+  // ── Predictor IA (heredado del tablero raíz vía AacRuntimeService) ───────────
+
+  get showPredictor(): boolean {
+    return this.aac.predictorEnabled;
+  }
+
+  get predictorIaRows(): number { return this.aac.iaRows; }
+  get predictorIaCols(): number { return this.aac.iaCols; }
+
   // ── Layout ────────────────────────────────────────────────────────────────────
 
   get layoutClass(): string {
     return `mbc-layout--${this.masterBoard?.slotCount ?? 2}`;
   }
 
-  /** CSS grid-template-columns calculado a partir de multiBoardLayout.widths. */
+  /** CSS grid-template-columns: incluye columna predictor a la izquierda si aplica. */
   get gridTemplateColumns(): string {
     const count  = this.masterBoard?.slotCount ?? 2;
     const cols   = count === 4 ? 2 : count;
     const widths = this.masterBoard?.multiBoardLayout?.widths;
+
+    let boardCols: string;
     if (widths && widths.length === cols && widths.every(v => v > 0)) {
-      return widths.map(w => w + 'fr').join(' ');
+      boardCols = widths.map(w => w + 'fr').join(' ');
+    } else {
+      boardCols = `repeat(${cols}, 1fr)`;
     }
-    return `repeat(${cols}, 1fr)`;
+
+    if (this.showPredictor) {
+      const predictorColWidth = `${this.aac.iaCols * 140}px`;
+      return `${predictorColWidth} ${boardCols}`;
+    }
+    return boardCols;
   }
 
   /** CSS grid-template-rows calculado a partir de multiBoardLayout.heights (solo 4 huecos). */

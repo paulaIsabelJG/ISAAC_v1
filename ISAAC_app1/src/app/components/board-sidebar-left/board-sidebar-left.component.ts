@@ -192,15 +192,16 @@ export class BoardSidebarLeftComponent implements OnChanges {
 
   /** Emite el payload del formulario hacia la page para que haga el API call. */
   onSaveClick(): void {
+    const isSecondary = this.localBoardRole === 'secondary';
     this.saveConfig.emit({
       name:             this.localName,
       imageB64:         this.localImageB64,
       rows:             this.localRows,
       cols:             this.localCols,
-      predictor:        this.localPredictor,
-      aiRewrite:        this.localAiRewrite,
-      iaRows:           this.localIaRows,
-      iaCols:           this.localIaCols,
+      predictor:        isSecondary ? false : this.localPredictor,
+      aiRewrite:        isSecondary ? false : this.localAiRewrite,
+      iaRows:           isSecondary ? 5     : this.localIaRows,
+      iaCols:           isSecondary ? 1     : this.localIaCols,
       boardRole:        this.localBoardRole,
       circleSlots:      this.localCircleSlots,
       locationEnabled:  this.localLocationEnabled,

@@ -1,12 +1,14 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { Board, BoardCell, CellPictogram } from '../../services/board.service';
 import { BoardLayoutService } from '../../services/board-layout.service';
+import { AacRuntimeService } from '../../services/aac-runtime.service';
 import {
   getCellBgColor,
   getCellBorderColor,
   isCellDisabled,
 } from '../../shared/utils/board-color.utils';
 import { PictogramCellComponent, CellMode } from '../pictogram-cell/pictogram-cell.component';
+import { IaPredictorColumnComponent } from '../ia-predictor-column/ia-predictor-column.component';
 
 /** Payload emitido junto a cada evento de celda (sin DragEvent para clicks simples). */
 export interface CellCoord {
@@ -42,7 +44,7 @@ export interface CellDragPayload extends CellCoord {
   templateUrl: './board-grid.component.html',
   styleUrls: ['./board-grid.component.scss'],
   standalone: true,
-  imports: [PictogramCellComponent],
+  imports: [PictogramCellComponent, IaPredictorColumnComponent],
   host: {
     '[class.bgc--edit]':         "mode === 'edit'",
     '[class.bgc--preview]':      "mode === 'preview'",
@@ -72,7 +74,10 @@ export class BoardGridComponent {
   @Output() cellDrop      = new EventEmitter<CellDragPayload>();
   @Output() cellDragEnd   = new EventEmitter<void>();
 
-  constructor(private boardLayoutSvc: BoardLayoutService) {}
+  constructor(
+    private boardLayoutSvc: BoardLayoutService,
+    private aac: AacRuntimeService,
+  ) {}
 
   // ── Grid helpers ──────────────────────────────────────────────────────────
 
@@ -126,15 +131,33 @@ export class BoardGridComponent {
 
   // ── Columna Predictor IA ──────────────────────────────────────────────────
 
-  /** La columna IA solo tiene sentido en edit/preview (nunca en communicator). */
+  /**
+   * En communicator: nunca (el communicator.page lo renderiza fuera).
+   * En preview: usa config del tablero raíz (aac.predictorEnabled) para que
+   *   los secundarios hereden el predictor del principal activo.
+   * En edit: usa config del tablero actual.
+   */
   get iaColumnVisible(): boolean {
-    return this.mode !== 'communicator' && !!this.board?.predictorEnabled;
+    if (this.mode === 'communicator') return false;
+    if (this.mode === 'preview') return this.aac.predictorEnabled || !!this.board?.predictorEnabled;
+    return !!this.board?.predictorEnabled;
+  }
+
+  /** Fuente de config IA: servicio (raíz) en preview, tablero propio en edit. */
+  get iaRows(): number {
+    return (this.mode === 'preview' && this.aac.predictorEnabled)
+      ? this.aac.iaRows
+      : (this.board?.iaRows ?? 5);
+  }
+
+  get iaCols(): number {
+    return (this.mode === 'preview' && this.aac.predictorEnabled)
+      ? this.aac.iaCols
+      : (this.board?.iaCols ?? 1);
   }
 
   get iaCells(): number[] {
-    const rows = this.board?.iaRows ?? 5;
-    const cols = this.board?.iaCols ?? 1;
-    return Array.from({ length: rows * cols }, (_, i) => i);
+    return Array.from({ length: this.iaRows * this.iaCols }, (_, i) => i);
   }
 
   // ── Style helpers para el template ───────────────────────────────────────
@@ -148,7 +171,11 @@ export class BoardGridComponent {
   }
 
   get iaColsStyle(): string {
-    return `repeat(${this.board?.iaCols ?? 1}, 1fr)`;
+    return `repeat(${this.iaCols}, 1fr)`;
+  }
+
+  get iaRowsStyle(): string {
+    return `repeat(${this.iaRows}, 1fr)`;
   }
 
   // ── Manejadores de eventos: re-emiten con coordenadas ─────────────────────
