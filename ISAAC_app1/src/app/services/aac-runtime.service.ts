@@ -260,12 +260,18 @@ export class AacRuntimeService {
 
   // ── Voice synthesis ───────────────────────────────────────────────────────
 
+  /** Normaliza el texto para TTS: convierte a minúsculas para que el motor
+   *  no interprete palabras en mayúsculas (NO, SÍ, VEN…) como siglas. */
+  private normalizeTtsText(text: string): string {
+    return text.trim().toLowerCase();
+  }
+
   speakText(text: string, gender?: string): void {
     if (!text?.trim()) return;
     if (!window.speechSynthesis) { console.warn('[AAC] speechSynthesis not available'); return; }
 
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text.trim());
+    const utterance = new SpeechSynthesisUtterance(this.normalizeTtsText(text));
     utterance.lang  = 'es-ES';
     utterance.rate  = 0.9;
     utterance.pitch = 1;
@@ -308,7 +314,7 @@ export class AacRuntimeService {
     if (!window.speechSynthesis) { onEnd?.(); return; }
 
     window.speechSynthesis.cancel();
-    const utterance  = new SpeechSynthesisUtterance(text.trim());
+    const utterance  = new SpeechSynthesisUtterance(this.normalizeTtsText(text));
     utterance.lang   = 'es-ES';
     utterance.rate   = 0.9;
     utterance.pitch  = 1;

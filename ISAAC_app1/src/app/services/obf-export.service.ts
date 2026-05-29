@@ -44,8 +44,11 @@ export class ObfExportService {
   async collectLinkedBoards(
     root: Board,
   ): Promise<{ boards: Map<string, Board>; warnings: string[] }> {
-    const boards  = new Map<string, Board>();
-    const visited = new Set<string>();
+    const boards        = new Map<string, Board>();
+    const visited       = new Set<string>();
+    // Tableros excluidos por shape-mismatch desde cell links.
+    // NO se añaden a visited para que el slot loop pueda recogerlos igualmente.
+    const shapeExcluded = new Set<string>();
     const warnings: string[] = [];
     const queue: Board[] = [root];
 
@@ -56,11 +59,12 @@ export class ObfExportService {
       visited.add(cid);
       boards.set(cid, current);
 
+      // ── Referencias estándar: navegación por celda (load_board) ───────────────
       for (const cell of current.cells) {
         const rawTarget = cell.action?.targetBoardId;
         if (!rawTarget) continue;
         const targetId = String(rawTarget);
-        if (visited.has(targetId)) continue;
+        if (visited.has(targetId) || shapeExcluded.has(targetId)) continue;
 
         try {
           const res = await firstValueFrom(
@@ -68,22 +72,15 @@ export class ObfExportService {
           );
           const linked = res.board;
 
-          // Verificar compatibilidad de shape (grid↔circular no se mezclan)
-          if (linked.shape !== current.shape) {
+          // Verificar compatibilidad de shape (grid↔circular no se mezclan).
+          // Se usa shapeExcluded (no visited) para que el slot loop pueda
+          // recoger este tablero aunque sea incompatible como destino de celda.
+          if (linked.shape !== current.shape && current.shape !== 'multi') {
             warnings.push(
               `"${current.name}" enlaza a "${linked.name}" con layout incompatible ` +
                 `(${current.shape} → ${linked.shape}). El enlace se excluye del paquete.`,
             );
-            visited.add(String(linked._id)); // no reintentar
-            continue;
-          }
-
-          // Verificar que pertenece al mismo usuario
-          if (String(linked.userId) !== String(current.userId)) {
-            warnings.push(
-              `"${linked.name}" pertenece a otro usuario y no se incluye en el paquete.`,
-            );
-            visited.add(String(linked._id));
+            shapeExcluded.add(String(linked._id));
             continue;
           }
 
@@ -92,6 +89,25 @@ export class ObfExportService {
           warnings.push(
             `No se pudo cargar el tablero enlazado (ID: ${targetId}).`,
           );
+          visited.add(targetId);
+        }
+      }
+
+      // ── Referencias ISAAC multitablero: tableros asignados a huecos ──────────
+      // El slot loop sigue usando solo visited.has() — los tableros en shapeExcluded
+      // NO están en visited, por lo que esta vía los recoge correctamente.
+      for (const slot of current.multiBoardSlots ?? []) {
+        if (!slot.boardId) continue;
+        const targetId = String(slot.boardId);
+        if (visited.has(targetId)) continue;
+
+        try {
+          const res = await firstValueFrom(this.boardSvc.getBoardById(targetId));
+          const linked = res.board;
+
+          queue.push(linked);
+        } catch {
+          warnings.push(`No se pudo cargar el tablero del hueco (ID: ${targetId}).`);
           visited.add(targetId);
         }
       }
@@ -133,11 +149,20 @@ export class ObfExportService {
         if (lb) {
           const targetId   = String(lb['id'] ?? '');
           const targetPath = boardPaths.get(targetId);
-          if (targetPath) {
-            lb['path'] = targetPath;
+          if (targetPath) lb['path'] = targetPath;
+        }
+      }
+
+      // Añadir boardPath a cada slot de ext_isaac_slot_config
+      const slotCfg = obf['ext_isaac_slot_config'] as Record<string, unknown> | undefined;
+      if (slotCfg) {
+        const slots = slotCfg['slots'] as Array<Record<string, unknown>> | undefined;
+        for (const slot of slots ?? []) {
+          const bid = slot['boardId'] as string | null | undefined;
+          if (bid) {
+            const slotPath = boardPaths.get(bid);
+            if (slotPath) slot['boardPath'] = slotPath;
           }
-          // Si el destino no está en el OBZ (shape incompatible, otro usuario)
-          // → load_board queda sin "path"; el visor sabrá que es un enlace externo
         }
       }
 
@@ -223,12 +248,11 @@ export class ObfExportService {
       };
       if (imgId) btn['image_id'] = imgId;
 
-      // FIX 1: action solo en casos especiales; voz normal NO lleva action en OBF
+      // action solo en casos especiales; voz normal NO lleva action en OBF
       if (actionType === 'disabled') {
-        btn['action']               = ':ext_isaac_disabled';
-        btn['ext_isaac_disabled']   = true;
+        btn['action']             = ':ext_isaac_disabled';
+        btn['ext_isaac_disabled'] = true;
       } else if (actionType === 'navigate' && targetId) {
-        // FIX 6: load_board con name si disponible en knownBoards
         const linked = knownBoards.find((b) => b._id === String(targetId));
         btn['load_board'] = linked?.name
           ? { id: String(targetId), name: linked.name }
@@ -238,8 +262,16 @@ export class ObfExportService {
         btn['load_board'] = linked?.name
           ? { id: String(targetId), name: linked.name }
           : { id: String(targetId) };
-        btn['ext_isaac_action_type'] = 'voice_board';
-        // vocalization ya cubre la voz; no se añade action adicional
+        btn['ext_isaac_action_type'] = 'voice+navigate';
+      } else if ((actionType === 'setSlot' || actionType === 'voice+setSlot') && targetId) {
+        const linked = knownBoards.find((b) => b._id === String(targetId));
+        btn['load_board'] = linked?.name
+          ? { id: String(targetId), name: linked.name }
+          : { id: String(targetId) };
+        btn['ext_isaac_action_type']     = actionType;
+        btn['ext_isaac_set_slot_target'] = cell.action.targetSlotId ?? null;
+      } else if (actionType === 'speakAndBack') {
+        btn['ext_isaac_action_type'] = 'speakAndBack';
       }
       // 'voice': sin action — vocalization es suficiente según OBF
 
@@ -266,16 +298,34 @@ export class ObfExportService {
         }
         order.push(row);
       }
-      // FIX 3: description_html omitido si vacío
-      return {
+      const gridObf: Record<string, unknown> = {
         format:  'open-board-0.1',
         id:      String(board._id),
         locale:  'es',
         name:    board.name,
+        // Campos propietarios ISAAC
+        ext_isaac_board_role: board.boardRole ?? 'main',
+        ext_isaac_shape:      board.shape,
+        ext_isaac_rows:       board.rows,
+        ext_isaac_columns:    board.columns,
         buttons,
         images,
-        grid:    { rows: board.rows, columns: board.columns, order },
+        grid: { rows: board.rows, columns: board.columns, order },
       };
+      if (board.controlsConfig) {
+        gridObf['ext_isaac_controls_config'] = board.controlsConfig;
+      }
+      if (board.shape === 'multi') {
+        gridObf['ext_isaac_slot_config'] = {
+          slotCount: board.slotCount ?? 2,
+          slots: (board.multiBoardSlots ?? []).map(s => ({
+            slotId:  s.slotId,
+            boardId: s.boardId ? String(s.boardId) : null,
+          })),
+          layout: board.multiBoardLayout ?? null,
+        };
+      }
+      return gridObf;
     }
 
     // ── CIRCULAR ──────────────────────────────────────────────────────────────
@@ -363,20 +413,25 @@ export class ObfExportService {
       order,
     } = this.buildCircularGridFallback(N, outerIds, centerBtnId, locIds);
 
-    // FIX 3: description_html omitido
-    return {
-      format:                       'open-board-0.1',
-      id:                           String(board._id),
-      locale:                       'es',
-      name:                         board.name,
-      ext_isaac_layout:             'circular',
-      ext_isaac_circle_slots:       N,
-      ext_isaac_location_column:    locEnabled,
-      ext_isaac_location_slots:     L,
+    const circObf: Record<string, unknown> = {
+      format:                    'open-board-0.1',
+      id:                        String(board._id),
+      locale:                    'es',
+      name:                      board.name,
+      ext_isaac_board_role:      board.boardRole ?? 'main',
+      ext_isaac_shape:           'circular',
+      ext_isaac_layout:          'circular',
+      ext_isaac_circle_slots:    N,
+      ext_isaac_location_column: locEnabled,
+      ext_isaac_location_slots:  L,
       buttons,
       images,
       grid: { rows: gRows, columns: gCols, order },
     };
+    if (board.controlsConfig) {
+      circObf['ext_isaac_controls_config'] = board.controlsConfig;
+    }
+    return circObf;
   }
 
   /**

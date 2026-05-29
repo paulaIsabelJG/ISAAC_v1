@@ -29,6 +29,9 @@ import {
   ActionType,
   BoardShape,
   CreateBoardPayload,
+  ControlsConfig,
+  DEFAULT_CONTROLS_CONFIG,
+  MultiBoardSlot,
 } from './board.service';
 import { WordType, FITZGERALD } from '../shared/constants/fitzgerald';
 
@@ -59,6 +62,8 @@ export interface ObfButtonOBZ {
   ext_isaac_role?:             string;
   ext_isaac_angle?:            number;
   ext_isaac_show_last_phrase?: boolean;
+  ext_isaac_action_type?:      string;   // 'setSlot' | 'voice+setSlot' | 'speakAndBack' | 'voice+navigate'
+  ext_isaac_set_slot_target?:  number | null;
   left?:   number;
   top?:    number;
   width?:  number;
@@ -72,16 +77,24 @@ export interface ObfGridOBZ {
 }
 
 export interface ObfDocumentOBZ {
-  format?:                    string;
-  id?:                        string | number;
-  name?:                      string;
-  buttons?:                   ObfButtonOBZ[];
-  images?:                    ObfImageOBZ[];
-  grid?:                      ObfGridOBZ;
-  ext_isaac_layout?:          string;
-  ext_isaac_circle_slots?:    number;
-  ext_isaac_location_column?: boolean;
-  ext_isaac_location_slots?:  number;
+  format?:                     string;
+  id?:                         string | number;
+  name?:                       string;
+  buttons?:                    ObfButtonOBZ[];
+  images?:                     ObfImageOBZ[];
+  grid?:                       ObfGridOBZ;
+  // Campos circulares (existentes)
+  ext_isaac_layout?:           string;
+  ext_isaac_circle_slots?:     number;
+  ext_isaac_location_column?:  boolean;
+  ext_isaac_location_slots?:   number;
+  // Campos ISAAC propietarios (nuevos)
+  ext_isaac_board_role?:       string;   // 'main' | 'secondary' | 'multi'
+  ext_isaac_shape?:            string;   // 'grid' | 'circular' | 'multi'
+  ext_isaac_rows?:             number;
+  ext_isaac_columns?:          number;
+  ext_isaac_controls_config?:  unknown;  // ControlsConfig — validado al leer
+  ext_isaac_slot_config?:      unknown;  // RawSlotConfig  — validado al leer
 }
 
 /** Referencia a un tablero destino tal como viene en btn.load_board */
@@ -131,15 +144,24 @@ export interface ObzPreviewResult {
 
 // ─── Estado interno de la importación en dos pasadas ─────────────────────────
 
+/** Config de huecos tal como viene en el OBF (boardId = ID original del OBF, pendiente de remap). */
+interface RawSlotConfig {
+  slotCount: number;
+  slots:     Array<{ slotId: number; boardId: string | null; boardPath?: string }>;
+  layout:    { widths: number[]; heights: number[] } | null;
+}
+
 interface ObzParsedBoard {
-  obfId:       string;
-  boardPath:   string;
-  mongoId:     string;
-  isRoot:      boolean;
-  name:        string;
-  shape:       BoardShape;
-  cells:       BoardCell[];
-  linksByCell: Map<string, ObzLinkRef>;
+  obfId:          string;
+  boardPath:      string;
+  mongoId:        string;
+  isRoot:         boolean;
+  name:           string;
+  shape:          BoardShape;
+  cells:          BoardCell[];
+  linksByCell:    Map<string, ObzLinkRef>;
+  rawSlotConfig?: RawSlotConfig;   // pendiente de remap en pasada 2
+  controlsConfig?: ControlsConfig;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -292,12 +314,49 @@ export class ObzImportService {
 
       const boardName   = obf.name?.trim() || 'Tablero importado';
       const isRoot      = (obfId === rootObfId);
-      const boardRole: 'main' | 'secondary' = isRoot ? 'main' : 'secondary';
       const circleSlots = obf.ext_isaac_circle_slots    ?? 8;
       const locEnabled  = obf.ext_isaac_location_column ?? false;
       const locSlots    = obf.ext_isaac_location_slots  ?? 6;
 
-      console.log(`[OBZ] "${boardName}" (${shape}): ${cells.length} celda(s), `
+      // ── Leer campos propietarios ISAAC (con fallbacks seguros) ────────────────
+      const rawExtRole  = obf.ext_isaac_board_role;
+      const boardRole: 'main' | 'secondary' | 'multi' =
+        (rawExtRole === 'main' || rawExtRole === 'secondary' || rawExtRole === 'multi')
+          ? rawExtRole
+          : (isRoot ? 'main' : 'secondary');
+
+      // Si el OBF dice que es 'multi', la forma es 'multi' aunque detectBoardShape diga 'grid'
+      const effectiveShape: BoardShape =
+        (obf.ext_isaac_shape === 'multi') ? 'multi' : shape;
+
+      // Dimensiones del tablero (ext_isaac_* tienen prioridad sobre grid)
+      const boardRows    = obf.ext_isaac_rows    ?? (shape === 'grid' ? obf.grid.rows    : 3);
+      const boardColumns = obf.ext_isaac_columns ?? (shape === 'grid' ? obf.grid.columns : 3);
+
+      // ControlsConfig: leer ext_isaac_controls_config, caer en DEFAULT si ausente o inválido
+      const rawCC = obf.ext_isaac_controls_config as Record<string, unknown> | undefined;
+      const controlsConfig: ControlsConfig =
+        (rawCC && Array.isArray(rawCC['visibleButtons']) && Array.isArray(rawCC['order']))
+          ? (rawCC as unknown as ControlsConfig)
+          : { ...DEFAULT_CONTROLS_CONFIG };
+
+      // SlotConfig: leer ext_isaac_slot_config para multitableros
+      let rawSlotConfig: RawSlotConfig | undefined;
+      const rawSC = obf.ext_isaac_slot_config as Record<string, unknown> | undefined;
+      if (rawSC && Array.isArray(rawSC['slots'])) {
+        const slotCount = typeof rawSC['slotCount'] === 'number' ? rawSC['slotCount'] : 2;
+        rawSlotConfig = {
+          slotCount,
+          slots: (rawSC['slots'] as Array<Record<string, unknown>>).map(s => ({
+            slotId:    typeof s['slotId'] === 'number' ? s['slotId'] : 0,
+            boardId:   s['boardId'] ? String(s['boardId']) : null,
+            boardPath: s['boardPath'] ? String(s['boardPath']) : undefined,
+          })),
+          layout: (rawSC['layout'] as { widths: number[]; heights: number[] } | null) ?? null,
+        };
+      }
+
+      console.log(`[OBZ] "${boardName}" (${effectiveShape}/${boardRole}): ${cells.length} celda(s), `
         + `${(obf.buttons ?? []).length} button(s), `
         + `${(obf.images ?? []).length} image(s)`);
 
@@ -309,8 +368,10 @@ export class ObzImportService {
           const res = await firstValueFrom(
             this.boardSvc.updateBoard(options.existingRootBoardId, {
               name:    boardName,
-              rows:    shape === 'grid' ? obf.grid.rows    : 3,
-              columns: shape === 'grid' ? obf.grid.columns : 3,
+              rows:    boardRows,
+              columns: boardColumns,
+              boardRole,
+              controlsConfig,
               cells:   [],
             }),
           );
@@ -321,21 +382,30 @@ export class ObzImportService {
           const payload: CreateBoardPayload = {
             name:                  boardName,
             userId:                options.userId,
-            shape,
-            rows:                  shape === 'grid' ? obf.grid.rows    : 3,
-            columns:               shape === 'grid' ? obf.grid.columns : 3,
-            circleSlots:           shape === 'circular' ? circleSlots : 8,
+            shape:                 effectiveShape,
+            rows:                  boardRows,
+            columns:               boardColumns,
+            circleSlots:           effectiveShape === 'circular' ? circleSlots : 8,
             locationColumnEnabled: locEnabled,
             locationColumnSlots:   locSlots,
             boardRole,
+            controlsConfig,
             contextCreatorId:      options.contextCreatorId || undefined,
           };
           if (options.assignedUserIds?.length) {
             payload.assignedUserIds = options.assignedUserIds;
           }
+          // Para multi: incluir slotCount y layout (los boardIds se asignan en pasada 2)
+          if (effectiveShape === 'multi' && rawSlotConfig) {
+            payload.slotCount       = Math.min(4, Math.max(2, rawSlotConfig.slotCount)) as 2|3|4;
+            payload.multiBoardSlots = rawSlotConfig.slots.map(
+              (s): MultiBoardSlot => ({ slotId: s.slotId, boardId: null })
+            );
+            if (rawSlotConfig.layout) payload.multiBoardLayout = rawSlotConfig.layout;
+          }
           const res = await firstValueFrom(this.boardSvc.createBoard(payload));
           mongoId = res.board._id;
-          console.log('[OBZ created]', { boardPath, mongoId, name: res.board.name, isRoot });
+          console.log('[OBZ created]', { boardPath, mongoId, name: res.board.name, boardRole, effectiveShape });
         }
 
         // Guardar celdas (sin targetBoardId — pendiente PASADA 2)
@@ -344,7 +414,6 @@ export class ObzImportService {
         }
 
         // Registrar tres claves para compatibilidad con Asterics/ARASAAC
-        // (solo guardan load_board.path, no load_board.id)
         obfIdToMongoId.set(obfId, mongoId);
         const normBoardPath  = boardPath.replace(/\\/g, '/').replace(/^\/+/, '').replace(/^\.\/+/, '');
         const boardFileName  = normBoardPath.split('/').pop() || normBoardPath;
@@ -353,7 +422,11 @@ export class ObzImportService {
         pathToMongoId.set(boardFileName,  mongoId);
         pathToMongoId.set(boardNameNoExt, mongoId);
 
-        parsedEntries.push({ obfId, boardPath, mongoId, isRoot, name: boardName, shape, cells, linksByCell });
+        parsedEntries.push({
+          obfId, boardPath, mongoId, isRoot,
+          name: boardName, shape: effectiveShape, cells, linksByCell,
+          rawSlotConfig, controlsConfig,
+        });
 
       } catch (err) {
         console.error('[OBZ] createBoard error:', err);
@@ -361,7 +434,7 @@ export class ObzImportService {
       }
     }
 
-    // ── PASADA 2: resolver targetBoardId ─────────────────────────────────────
+    // ── PASADA 2a: resolver targetBoardId en celdas ──────────────────────────
     for (const entry of parsedEntries) {
       if (entry.linksByCell.size === 0) continue;
 
@@ -392,16 +465,20 @@ export class ObzImportService {
           continue;
         }
 
-        // Verificar compatibilidad de shape
-        const targetEntry = parsedEntries.find(e => e.mongoId === mongoTargetId);
-        if (targetEntry && targetEntry.shape !== entry.shape) {
-          warnings.push(
-            `Enlace incompatible (${entry.shape} → ${targetEntry.shape}): `
-            + `"${entry.obfId}" → "${ref.id ?? ref.path}". El enlace se desactiva.`,
-          );
-          cell.action = { type: 'disabled', targetBoardId: null };
-          needsUpdate = true;
-          continue;
+        // Verificar compatibilidad de shape — saltar para setSlot y tableros multi
+        // (los huecos del multitablero aceptan cualquier shape)
+        const isSlotAction = cell.action.type === 'setSlot' || cell.action.type === 'voice+setSlot';
+        if (!isSlotAction && entry.shape !== 'multi') {
+          const targetEntry = parsedEntries.find(e => e.mongoId === mongoTargetId);
+          if (targetEntry && targetEntry.shape !== entry.shape) {
+            warnings.push(
+              `Enlace incompatible (${entry.shape} → ${targetEntry.shape}): `
+              + `"${entry.obfId}" → "${ref.id ?? ref.path}". El enlace se desactiva.`,
+            );
+            cell.action = { type: 'disabled', targetBoardId: null };
+            needsUpdate = true;
+            continue;
+          }
         }
 
         cell.action.targetBoardId = mongoTargetId;
@@ -416,6 +493,45 @@ export class ObzImportService {
           console.error('[OBZ] pass2 error:', err);
           warnings.push(`Error al actualizar enlaces del tablero "${entry.obfId}".`);
         }
+      }
+    }
+
+    // ── PASADA 2b: remap de boardId en huecos de multitableros ───────────────
+    for (const entry of parsedEntries) {
+      if (!entry.rawSlotConfig) continue;
+
+      const remappedSlots: MultiBoardSlot[] = entry.rawSlotConfig.slots.map(slot => {
+        if (!slot.boardId) return { slotId: slot.slotId, boardId: null };
+
+        // Misma cascada que en 2a, usando boardPath del slot si está disponible
+        const rawBoardPath = slot.boardPath
+          ? slot.boardPath.replace(/\\/g, '/').replace(/^\/+/, '').replace(/^\.\/+/, '')
+          : '';
+        const slotFileName   = rawBoardPath.split('/').pop() || '';
+        const slotWithoutExt = slotFileName.replace(/\.obf$/i, '');
+
+        const newId =
+          (rawBoardPath  ? pathToMongoId.get(rawBoardPath)  : undefined)
+          ?? (slotFileName   ? pathToMongoId.get(slotFileName)   : undefined)
+          ?? (slotWithoutExt ? pathToMongoId.get(slotWithoutExt) : undefined)
+          ?? obfIdToMongoId.get(slot.boardId);
+
+        if (!newId) {
+          warnings.push(
+            `Hueco ${slot.slotId} del tablero "${entry.name}": boardId "${slot.boardId}" no resuelto.`,
+          );
+        }
+
+        return { slotId: slot.slotId, boardId: newId ?? null };
+      });
+
+      try {
+        await firstValueFrom(this.boardSvc.updateBoardSlots(entry.mongoId, remappedSlots));
+        console.log(`[OBZ] slots remapeados para "${entry.name}":`,
+          remappedSlots.map(s => `${s.slotId}→${s.boardId ?? 'null'}`).join(', '));
+      } catch (err) {
+        console.error('[OBZ] pass2b slots error:', err);
+        warnings.push(`Error al actualizar huecos del multitablero "${entry.name}".`);
       }
     }
 
@@ -710,19 +826,31 @@ export class ObzImportService {
       fitzgeraldEnabled,
       color,
     };
+    const actionType = this.resolveObzActionType(btn);
     const action: CellAction = {
-      type:          this.resolveObzActionType(btn),
+      type:          actionType,
       targetBoardId: null,
     };
+    if (actionType === 'setSlot' || actionType === 'voice+setSlot') {
+      action.targetSlotId = typeof btn.ext_isaac_set_slot_target === 'number'
+        ? btn.ext_isaac_set_slot_target
+        : null;
+    }
     return { row, col, pictogram, action };
   }
 
-  /** Mapea acción OBF a ActionType ISAAC */
+  /** Mapea acción OBF a ActionType ISAAC.
+   *  ext_isaac_action_type tiene prioridad sobre la inferencia por load_board. */
   resolveObzActionType(btn: ObfButtonOBZ): ActionType {
     if (btn.action === ':ext_isaac_disabled' || btn.ext_isaac_disabled === true) {
       return 'disabled';
     }
+    const extType = btn.ext_isaac_action_type;
+    if (extType === 'setSlot')       return 'setSlot';
+    if (extType === 'voice+setSlot') return 'voice+setSlot';
+    if (extType === 'speakAndBack')  return 'speakAndBack';
     if (btn.load_board) {
+      if (extType === 'voice+navigate') return 'voice+navigate';
       return btn.vocalization?.trim() ? 'voice+navigate' : 'navigate';
     }
     return 'voice';

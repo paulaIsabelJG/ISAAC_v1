@@ -199,6 +199,10 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.routeSub?.unsubscribe();
     this.previewNavSub?.unsubscribe();
+    document.removeEventListener('pointermove', this._boundColMove);
+    document.removeEventListener('pointerup',   this._boundColUp);
+    document.removeEventListener('pointermove', this._boundRowMove);
+    document.removeEventListener('pointerup',   this._boundRowUp);
   }
 
   ionViewWillEnter() {
@@ -1225,12 +1229,19 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
           text: 'Añadir',
           handler: async (data: { profileName: string; profileDescription: string }) => {
             try {
+              const currentAssignedIds = (this.board!.assignedUserIds ?? [])
+                .map(String).filter(Boolean);
               const res = await firstValueFrom(
                 this.boardSvc.updateBoard(this.boardId, {
                   visibleInProfile:   true,
                   profileName:        data.profileName?.trim() || this.board!.name,
                   profileDescription: data.profileDescription?.trim() || '',
                   profileImage:       defImage,
+                  // Garantiza que assignedUserIds esté correcto en el momento de publicar
+                  ...(currentAssignedIds.length > 0 && {
+                    assignedUserIds: currentAssignedIds,
+                    userId:          currentAssignedIds[0],
+                  }),
                 }),
               );
               this.board = res.board;
@@ -1325,14 +1336,20 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   savingSlotGrid      = false;
 
   private readonly MIN_PCT = 15;    // mínimo % por slot
-  private resizingCol: number | null = null;  // índice del handle de columna que se arrastra
-  private resizingRow: number | null = null;  // índice del handle de fila que se arrastra
+  private resizingCol: number | null = null;
+  private resizingRow: number | null = null;
   private resizeStartX = 0;
   private resizeStartY = 0;
   private resizeContainerW = 0;
   private resizeContainerH = 0;
   private resizeWidthsSnap:  number[] = [];
   private resizeHeightsSnap: number[] = [];
+
+  // Referencias bound para poder pasar removeEventListener el mismo puntero de función
+  private readonly _boundColMove = (e: PointerEvent) => this.onColHandleMove(e);
+  private readonly _boundColUp   = (e: PointerEvent) => this.onColHandleUp(e);
+  private readonly _boundRowMove = (e: PointerEvent) => this.onRowHandleMove(e);
+  private readonly _boundRowUp   = (e: PointerEvent) => this.onRowHandleUp(e);
 
   private initProportions(): void {
     const count = this.board?.slotCount ?? 2;
@@ -1392,12 +1409,13 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
 
   onColHandleDown(event: PointerEvent, handleIdx: number): void {
     event.preventDefault();
-    (event.target as HTMLElement).setPointerCapture(event.pointerId);
-    this.resizingCol       = handleIdx;
-    this.resizeStartX      = event.clientX;
-    this.resizeWidthsSnap  = [...this.slotWidths];
+    this.resizingCol      = handleIdx;
+    this.resizeStartX     = event.clientX;
+    this.resizeWidthsSnap = [...this.slotWidths];
     const container = (event.target as HTMLElement).closest('.bbe-multi-row') as HTMLElement;
-    this.resizeContainerW  = container?.offsetWidth ?? 800;
+    this.resizeContainerW = container?.offsetWidth ?? 800;
+    document.addEventListener('pointermove', this._boundColMove);
+    document.addEventListener('pointerup',   this._boundColUp);
   }
 
   onColHandleMove(event: PointerEvent): void {
@@ -1413,21 +1431,23 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     this.slotWidths = newWidths;
   }
 
-  onColHandleUp(event: PointerEvent): void {
+  onColHandleUp(_event: PointerEvent): void {
     if (this.resizingCol == null) return;
-    (event.target as HTMLElement).releasePointerCapture(event.pointerId);
     this.resizingCol = null;
+    document.removeEventListener('pointermove', this._boundColMove);
+    document.removeEventListener('pointerup',   this._boundColUp);
     void this.saveLayout();
   }
 
   onRowHandleDown(event: PointerEvent): void {
     event.preventDefault();
-    (event.target as HTMLElement).setPointerCapture(event.pointerId);
-    this.resizingRow       = 0;
-    this.resizeStartY      = event.clientY;
+    this.resizingRow      = 0;
+    this.resizeStartY     = event.clientY;
     this.resizeHeightsSnap = [...this.slotHeights];
     const container = (event.target as HTMLElement).closest('.bbe-multi-grids') as HTMLElement;
-    this.resizeContainerH  = container?.offsetHeight ?? 600;
+    this.resizeContainerH = container?.offsetHeight ?? 600;
+    document.addEventListener('pointermove', this._boundRowMove);
+    document.addEventListener('pointerup',   this._boundRowUp);
   }
 
   onRowHandleMove(event: PointerEvent): void {
@@ -1440,10 +1460,11 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     this.slotHeights = [Math.round(a), Math.round(b)];
   }
 
-  onRowHandleUp(event: PointerEvent): void {
+  onRowHandleUp(_event: PointerEvent): void {
     if (this.resizingRow == null) return;
-    (event.target as HTMLElement).releasePointerCapture(event.pointerId);
     this.resizingRow = null;
+    document.removeEventListener('pointermove', this._boundRowMove);
+    document.removeEventListener('pointerup',   this._boundRowUp);
     void this.saveLayout();
   }
 
@@ -1829,7 +1850,10 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   }
 
   get canAddToProfile(): boolean {
-    return (this.board?.boardRole ?? 'main') === 'main' && !!this.board?.userId;
+    // Permitir publicar en tableros principales y multi (legacy boardRole='multi' incluido).
+    // Solo los secundarios (boardRole='secondary') no se publican directamente.
+    const role = this.board?.boardRole ?? 'main';
+    return role !== 'secondary' && !!this.board?.userId;
   }
 
   get isInProfile(): boolean {

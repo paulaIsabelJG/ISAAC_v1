@@ -237,8 +237,6 @@
                         @if (colIdx < row.length - 1) {
                           <div class="bbe-resize-handle bbe-resize-handle--col"
                                (pointerdown)="onColHandleDown($event, colIdx)"
-                               (pointermove)="onColHandleMove($event)"
-                               (pointerup)="onColHandleUp($event)"
                                title="Arrastrar para redimensionar">
                             <div class="bbe-resize-handle-inner"></div>
                           </div>
@@ -252,8 +250,6 @@
                     @if (rowIdx < slotsByRow.length - 1) {
                       <div class="bbe-resize-handle bbe-resize-handle--row"
                            (pointerdown)="onRowHandleDown($event)"
-                           (pointermove)="onRowHandleMove($event)"
-                           (pointerup)="onRowHandleUp($event)"
                            title="Arrastrar para redimensionar altura">
                         <div class="bbe-resize-handle-inner"></div>
                       </div>
