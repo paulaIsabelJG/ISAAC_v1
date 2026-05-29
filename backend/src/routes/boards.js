@@ -18,7 +18,9 @@ router.post  ('/',                    boardController.createBoard);
 router.post  ('/:boardId/duplicate',  boardController.duplicateBoard);
 router.put   ('/:boardId',            boardController.updateBoard);
 router.patch ('/:boardId/cell',        boardController.updateCell);
-router.patch ('/:boardId/slots',       boardController.updateBoardSlots);
+router.patch ('/:boardId/slots',        boardController.updateBoardSlots);
+router.patch ('/:boardId/folder',        boardController.assignFolder);
+router.put   ('/:boardId/favorite',     boardController.toggleFavorite);
 router.delete('/:boardId',            boardController.deleteBoard);
 
 module.exports = router;

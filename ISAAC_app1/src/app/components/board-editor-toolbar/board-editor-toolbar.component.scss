@@ -57,6 +57,59 @@ $text-muted: #6b5462;
   }
 }
 
+// ── Menú de descarga (OBZ / PDF) ─────────────────────────────────────────────
+.bet-dl-wrap {
+  position: relative;
+  display:  inline-flex;
+}
+
+.bet-dl-menu {
+  position:      absolute;
+  top:           calc(100% + 4px);
+  right:         0;
+  min-width:     172px;
+  background:    #fff;
+  border:        1px solid #e0d4e8;
+  border-radius: 8px;
+  box-shadow:    0 4px 18px rgba(0, 0, 0, 0.13);
+  z-index:       9999;
+  overflow:      hidden;
+}
+
+.bet-dl-item {
+  display:        flex;
+  align-items:    center;
+  gap:            8px;
+  width:          100%;
+  padding:        10px 14px;
+  border:         none;
+  background:     none;
+  cursor:         pointer;
+  font-size:      13px;
+  font-weight:    600;
+  color:          #3a2f42;
+  text-align:     left;
+  white-space:    nowrap;
+  transition:     background 0.12s;
+
+  svg {
+    width:    16px;
+    height:   16px;
+    stroke:   $text-muted;
+    flex:     0 0 auto;
+  }
+
+  &:hover {
+    background: #f7f0fc;
+    color:      $violet;
+    svg { stroke: $violet; }
+  }
+
+  & + & {
+    border-top: 1px solid #f0e8f5;
+  }
+}
+
 // ── Botón "← Editar" (solo en modo preview) ───────────────────────────────────
 .bet-back-preview {
   --color:     #{$violet};

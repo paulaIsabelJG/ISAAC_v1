@@ -22,6 +22,7 @@ import {
 import { WordType, FITZGERALD } from '../../shared/constants/fitzgerald';
 import { AacRuntimeService } from '../../services/aac-runtime.service';
 import { ObfExportService } from '../../services/obf-export.service';
+import { BoardPdfExportService } from '../../services/board-pdf-export.service';
 import {
   ObzImportService,
   ObfButtonOBZ,
@@ -179,6 +180,7 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     private obfExportSvc: ObfExportService,
     private obzImportSvc: ObzImportService,
     private boardLayoutSvc: BoardLayoutService,
+    private boardPdfExportSvc: BoardPdfExportService,
   ) {}
 
   ngOnInit() {
@@ -840,6 +842,30 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
       console.error('exportOBZ:', err);
       (await this.toastCtrl.create({
         message: 'Error al generar el paquete OBZ.', duration: 2500, color: 'danger', position: 'top',
+      })).present();
+    } finally {
+      this.isSaving = false;
+    }
+  }
+
+  async exportPdf(): Promise<void> {
+    if (!this.board) {
+      (await this.toastCtrl.create({
+        message: 'No hay tablero cargado para exportar.', duration: 2500, color: 'danger', position: 'top',
+      })).present();
+      return;
+    }
+    this.isSaving = true;
+    try {
+      await this.boardPdfExportSvc.exportToPdf(this.board);
+      (await this.toastCtrl.create({
+        message: `✓ PDF generado: ${this.board.name}`,
+        duration: 2500, color: 'success', position: 'top',
+      })).present();
+    } catch (err) {
+      console.error('exportPdf:', err);
+      (await this.toastCtrl.create({
+        message: 'Error al generar el PDF.', duration: 2500, color: 'danger', position: 'top',
       })).present();
     } finally {
       this.isSaving = false;

@@ -99,6 +99,9 @@ export interface Board {
   multiBoardLayout?:   { widths: number[]; heights: number[] };
   // Configuración de la barra AAC (solo en tableros principales)
   controlsConfig?:     ControlsConfig;
+  // Carpeta a la que pertenece el tablero (opcional)
+  folderId?:           string | null;
+  isFavorite?:         boolean;
 }
 
 export interface CreateBoardPayload {
@@ -259,6 +262,22 @@ export class BoardService {
   deleteBoard(boardId: string): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(
       `${this.url}/${encodeURIComponent(boardId)}`
+    );
+  }
+
+  /** PATCH /api/boards/:boardId/folder — asignar tablero a carpeta (null = sin carpeta) */
+  assignFolder(boardId: string, folderId: string | null): Observable<{ board: Board }> {
+    return this.http.patch<{ board: Board }>(
+      `${this.url}/${encodeURIComponent(boardId)}/folder`,
+      { folderId },
+    );
+  }
+
+  /** PUT /api/boards/:boardId/favorite — marcar/desmarcar como favorito */
+  toggleFavorite(boardId: string, isFavorite: boolean): Observable<{ board: Board }> {
+    return this.http.put<{ board: Board }>(
+      `${this.url}/${encodeURIComponent(boardId)}/favorite`,
+      { isFavorite },
     );
   }
 }

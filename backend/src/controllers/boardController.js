@@ -447,6 +447,25 @@ exports.updateBoard = async (req, res) => {
     }
 
     await board.save();
+
+    // Propagar asignación a tableros de slots (solo si viene assignedUserIds y es multi)
+    if (
+      assignedUserIds !== undefined &&
+      (board.shape === 'multi' || board.boardRole === 'multi') &&
+      Array.isArray(board.multiBoardSlots) && board.multiBoardSlots.length > 0
+    ) {
+      const slotBoardIds = board.multiBoardSlots
+        .map(s => s.boardId)
+        .filter(id => id != null);
+
+      if (slotBoardIds.length > 0) {
+        await Board.updateMany(
+          { _id: { $in: slotBoardIds } },
+          { $set: { assignedUserIds: board.assignedUserIds, userId: board.userId ?? null } }
+        );
+      }
+    }
+
     res.json({ board });
   } catch (err) {
     console.error('updateBoard error:', err);
@@ -487,7 +506,7 @@ exports.updateCell = async (req, res) => {
         action: action || { type: 'voice', targetBoardId: null },
       };
       if (idx >= 0) {
-        board.cells[idx] = cellData;
+        board.cells.splice(idx, 1, cellData);
       } else {
         board.cells.push(cellData);
       }
@@ -501,6 +520,134 @@ exports.updateCell = async (req, res) => {
     res.status(500).json({ error: err.message || 'Internal server error' });
   }
 };
+
+// ── Helper: BFS — recopila todos los tableros alcanzables desde un raíz ───────
+// Sigue: multiBoardSlots[].boardId y cells[].action.targetBoardId
+// Devuelve Map<String(id), Board> con todos los tableros del grafo.
+async function collectBoardGraph(root) {
+  const allBoards = new Map();  // String(id) -> Board document
+  const visited   = new Set();  // ids ya procesados
+  const queue     = [root];
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+    const cid = String(current._id);
+    if (visited.has(cid)) continue;
+    visited.add(cid);
+    allBoards.set(cid, current);
+
+    // Seguir referencias de slots (multiBoardSlots[].boardId)
+    for (const slot of current.multiBoardSlots ?? []) {
+      if (!slot.boardId) continue;
+      const tid = String(slot.boardId);
+      if (visited.has(tid)) continue;
+      try {
+        const linked = await Board.findById(tid);
+        if (linked) queue.push(linked);
+        else         visited.add(tid);  // tablero eliminado, ignorar
+      } catch { visited.add(tid); }
+    }
+
+    // Seguir referencias de celdas (action.targetBoardId)
+    for (const cell of current.cells ?? []) {
+      const rawTarget = cell.action?.targetBoardId;
+      if (!rawTarget) continue;
+      const tid = String(rawTarget);
+      if (visited.has(tid)) continue;
+      try {
+        const linked = await Board.findById(tid);
+        if (linked) queue.push(linked);
+        else         visited.add(tid);
+      } catch { visited.add(tid); }
+    }
+  }
+
+  return allBoards;
+}
+
+// ── Helper: duplicado profundo de un multitablero y todo su grafo ─────────────
+// Crea copias de todos los tableros alcanzables, remapea todas las referencias
+// internas y devuelve la copia del tablero raíz.
+async function deepDuplicateMultiBoard(root, effectiveCreatorId, sessionUserId, newRootName) {
+  // 1. Recopilar grafo completo via BFS
+  const graphBoards = await collectBoardGraph(root);
+
+  // 2. Generar nuevo ObjectId para cada tablero del grafo
+  const idMap = new Map();   // String(oldId) -> new ObjectId
+  for (const oldId of graphBoards.keys()) {
+    idMap.set(oldId, new mongoose.Types.ObjectId());
+  }
+
+  const rootId = String(root._id);
+
+  // 3. Construir documentos de copia con referencias internas remapeadas
+  const docs = [];
+  for (const [oldId, board] of graphBoards) {
+    const obj   = board.toObject();
+    const newId = idMap.get(oldId);
+
+    // Remap multiBoardSlots: oldBoardId -> newBoardId
+    const newSlots = (obj.multiBoardSlots ?? []).map(s => ({
+      slotId:  s.slotId,
+      boardId: s.boardId
+        ? (idMap.get(String(s.boardId)) ?? null)
+        : null,
+    }));
+
+    // Remap cells[].action.targetBoardId: solo si está en el grafo
+    const newCells = (obj.cells ?? []).map(cell => {
+      if (!cell.action?.targetBoardId) return cell;
+      const oldTarget = String(cell.action.targetBoardId);
+      const newTarget = idMap.has(oldTarget)
+        ? idMap.get(oldTarget)
+        : cell.action.targetBoardId;   // referencia externa: mantener apuntando al original
+      return {
+        row:       cell.row,
+        col:       cell.col,
+        pictogram: cell.pictogram,
+        action:    { ...cell.action, targetBoardId: newTarget },
+      };
+    });
+
+    docs.push({
+      _id:                   newId,
+      name:                  oldId === rootId ? newRootName : obj.name,
+      imageUrl:              obj.imageUrl              || '',
+      creatorId:             sessionUserId,             // legacy = sesión actual
+      createdBy:             effectiveCreatorId,
+      creatorName:           obj.creatorName            || '',
+      userId:                obj.userId,
+      assignedUserIds:       Array.isArray(obj.assignedUserIds) && obj.assignedUserIds.length > 0
+                               ? obj.assignedUserIds
+                               : (obj.userId ? [obj.userId] : []),
+      shape:                 obj.shape,
+      rows:                  obj.rows,
+      columns:               obj.columns,
+      circleSlots:           obj.circleSlots,
+      locationColumnEnabled: obj.locationColumnEnabled,
+      locationColumnSlots:   obj.locationColumnSlots,
+      predictorEnabled:      obj.predictorEnabled,
+      aiRewriteEnabled:      obj.aiRewriteEnabled,
+      iaRows:                obj.iaRows,
+      iaCols:                obj.iaCols,
+      boardRole:             obj.boardRole,
+      slotCount:             obj.slotCount,
+      multiBoardSlots:       newSlots,
+      multiBoardLayout:      obj.multiBoardLayout
+        ? { widths: [...(obj.multiBoardLayout.widths ?? [])], heights: [...(obj.multiBoardLayout.heights ?? [])] }
+        : undefined,
+      controlsConfig:        obj.controlsConfig,
+      cells:                 newCells,
+      // NO copiados: visibleInProfile, profileName, profileImage, profileDescription
+    });
+  }
+
+  // 4. Inserción masiva de todas las copias
+  await Board.insertMany(docs);
+
+  // 5. Devolver la copia del tablero raíz
+  return Board.findById(idMap.get(rootId));
+}
 
 // ── POST /api/boards/:boardId/duplicate ───────────────────────────────────────
 exports.duplicateBoard = async (req, res) => {
@@ -516,7 +663,6 @@ exports.duplicateBoard = async (req, res) => {
     }
 
     // ── Control de acceso ────────────────────────────────────────────────────
-    // El creador efectivo del tablero original (campo nuevo o legacy)
     const effectiveCreatorId = original.createdBy || original.creatorId;
 
     if (String(req.userId) !== String(effectiveCreatorId)) {
@@ -534,13 +680,11 @@ exports.duplicateBoard = async (req, res) => {
       }
     }
 
-    // ── Calcular nombre: "{base} (copia)" / "{base} (copia 2)" etc. ──────────
-    // Eliminar sufijo existente de copia para obtener el nombre base
+    // ── Calcular nombre raíz: "{base} (copia)" / "{base} (copia 2)" etc. ─────
     const baseName  = original.name.replace(/ \(copia(?: \d+)?\)$/, '').trim();
     const safeBase  = baseName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const copyRegex = new RegExp(`^${safeBase} \\(copia(?: (\\d+))?\\)$`);
 
-    // Buscar tableros del mismo contexto con nombre similar
     const siblings = await Board.find({
       $or: [
         { createdBy: effectiveCreatorId },
@@ -560,8 +704,28 @@ exports.duplicateBoard = async (req, res) => {
     const copyNum = maxNum + 1;
     const newName  = copyNum === 1 ? `${baseName} (copia)` : `${baseName} (copia ${copyNum})`;
 
-    // ── Crear copia ───────────────────────────────────────────────────────────
-    // Extraer cells como objetos planos para evitar compartir referencias
+    // ── Multitablero: duplicado profundo del grafo completo ───────────────────
+    const isMulti = original.boardRole === 'multi' || original.shape === 'multi';
+
+    if (isMulti) {
+      const board = await deepDuplicateMultiBoard(
+        original,
+        String(effectiveCreatorId),
+        String(req.userId),
+        newName,
+      );
+
+      console.log('[duplicateBoard][multi]', {
+        originalId:  boardId,
+        duplicateId: board?._id,
+        name:        board?.name,
+        requestedBy: req.userId,
+      });
+
+      return res.status(201).json({ board });
+    }
+
+    // ── Tablero normal: duplicado superficial (sin cambios) ───────────────────
     const originalObj = original.toObject();
 
     const duplicate = new Board({
@@ -583,7 +747,7 @@ exports.duplicateBoard = async (req, res) => {
       iaRows:                originalObj.iaRows,
       iaCols:                originalObj.iaCols,
       boardRole:             originalObj.boardRole,
-      cells:                 originalObj.cells,                 // plain objects, Mongoose los valida
+      cells:                 originalObj.cells,
       // NO copiados: _id, createdAt, updatedAt,
       //              visibleInProfile, profileName, profileImage, profileDescription
     });
@@ -644,6 +808,49 @@ exports.updateBoardSlots = async (req, res) => {
   } catch (err) {
     console.error('updateBoardSlots error:', err);
     res.status(500).json({ error: err.message || 'Internal server error' });
+  }
+};
+
+// ── PUT /api/boards/:boardId/favorite  — toggle favorito ─────────────────────
+exports.toggleFavorite = async (req, res) => {
+  try {
+    const { boardId } = req.params;
+    if (!validateObjectId(boardId)) {
+      return res.status(400).json({ error: 'Invalid boardId' });
+    }
+    const board = await Board.findById(boardId);
+    if (!board) return res.status(404).json({ error: 'Board not found' });
+    const { isFavorite } = req.body;
+    board.isFavorite = !!isFavorite;
+    await board.save();
+    res.json({ board });
+  } catch (err) {
+    console.error('toggleFavorite error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// ── PATCH /api/boards/:boardId/folder  — asignar/mover tablero a carpeta ─────
+exports.assignFolder = async (req, res) => {
+  try {
+    const { boardId } = req.params;
+    if (!validateObjectId(boardId)) {
+      return res.status(400).json({ error: 'Invalid boardId' });
+    }
+    const board = await Board.findById(boardId);
+    if (!board) return res.status(404).json({ error: 'Board not found' });
+
+    const { folderId } = req.body;
+    // null o string válido
+    if (folderId && !validateObjectId(folderId)) {
+      return res.status(400).json({ error: 'Invalid folderId' });
+    }
+    board.folderId = folderId || null;
+    await board.save();
+    res.json({ board });
+  } catch (err) {
+    console.error('assignFolder error:', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 };
 

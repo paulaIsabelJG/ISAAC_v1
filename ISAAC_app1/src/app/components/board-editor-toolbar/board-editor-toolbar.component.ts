@@ -50,6 +50,12 @@ export class BoardEditorToolbarComponent {
   @Output() goBack           = new EventEmitter<void>();
   /** Lanza la exportación OBZ del tablero activo. */
   @Output() exportOBZ        = new EventEmitter<void>();
+  /** Lanza la exportación PDF del tablero activo. */
+  @Output() exportPdf        = new EventEmitter<void>();
+
+  onDownloadOBZ(): void { this.exportOBZ.emit(); }
+  onDownloadPdf(): void { this.exportPdf.emit(); }
+
   /** Añade el tablero al perfil del usuario asignado. */
   @Output() addToProfile     = new EventEmitter<void>();
   /** Quita el tablero del perfil del usuario asignado. */

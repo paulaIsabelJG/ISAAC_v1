@@ -6,6 +6,7 @@ const phrasesRoutes = require('./routes/phrases');
 const userRoutes   = require('./routes/users');
 const placesRoutes = require('./routes/places');
 const boardRoutes  = require('./routes/boards');
+const folderRoutes = require('./routes/folders');
 const oblRoutes    = require('./routes/obl');
 
 const app = express();
@@ -23,7 +24,8 @@ app.use('/api/arasaac', arasaacRoutes);
 app.use('/api/users', userRoutes);
 
 // Board routes
-app.use('/api/boards', boardRoutes);
+app.use('/api/boards',  boardRoutes);
+app.use('/api/folders', folderRoutes);
 
 // OBL routes
 app.use('/api/obl', oblRoutes);

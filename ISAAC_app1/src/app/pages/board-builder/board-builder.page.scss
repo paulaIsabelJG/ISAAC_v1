@@ -1,4 +1,4 @@
-// ── Variables ────────────────────────────────────────────────────────────────
+// ── Variables ─────────────────────────────────────────────────────────────────
 $pink:         #ff69b4;
 $pink-dark:    #e91e8c;
 $pink-light:   #fff0f7;
@@ -12,20 +12,16 @@ $text-dark:    #222222;
 $text-muted:   #6b5462;
 $card-bg:      #ffffff;
 
-// ── Header (AppPageHeaderComponent) ──────────────────────────────────────────
-// bg/border = default del componente (#fdf5f9 / #ffb6c1)
-// Solo difiere el color del título (violeta) y se proyecta el botón Seleccionar
-app-page-header {
-  --aph-title-color: #{$violet};
-}
+// ── Header ────────────────────────────────────────────────────────────────────
+app-page-header { --aph-title-color: #{$violet}; }
 
-// ── Content ──────────────────────────────────────────────────────────────────
+// ── Content ───────────────────────────────────────────────────────────────────
 .bb-content { --background: #{$bg}; }
 
 .bb-container {
   max-width:  720px;
   margin:     0 auto;
-  padding:    24px 20px 48px;
+  padding:    24px 20px 80px;
   box-sizing: border-box;
 }
 
@@ -39,11 +35,19 @@ app-page-header {
   margin:         0 0 14px;
 }
 
-.bb-section-header {
+// ── Cabecera de lista ("MIS TABLEROS" + botón Seleccionar) ─────────────────────
+.bb-list-header {
   display:     flex;
   align-items: center;
   gap:         10px;
   margin:      28px 0 14px;
+}
+
+.bb-list-header-left {
+  display:     flex;
+  align-items: center;
+  gap:         10px;
+  flex:        1;
 }
 
 .bb-count {
@@ -55,6 +59,25 @@ app-page-header {
   padding:       2px 10px;
 }
 
+// ── Botón Seleccionar (ahora junto a "MIS TABLEROS") ─────────────────────────
+.bb-select-toggle {
+  font-size:     12px;
+  font-weight:   700;
+  color:         $violet;
+  background:    transparent;
+  border:        1.5px solid $violet;
+  padding:       5px 13px;
+  border-radius: 10px;
+  cursor:        pointer;
+  transition:    background 0.15s, color 0.15s;
+  font-family:   inherit;
+  flex:          0 0 auto;
+
+  &:hover   { background: $violet-light; }
+  &--active { color: #e74c3c; border-color: #e74c3c; }
+  &--active:hover { background: #fff0ee; }
+}
+
 // ── Botones de acción ─────────────────────────────────────────────────────────
 .bb-actions {
   display:   flex;
@@ -63,30 +86,24 @@ app-page-header {
 }
 
 .bb-action-btn {
-  display:         flex;
-  flex-direction:  column;
-  align-items:     center;
-  gap:             10px;
-  width:           140px;
-  padding:         20px 12px 16px;
-  border-radius:   20px;
-  border:          1.5px solid transparent;
-  cursor:          pointer;
-  font-family:     inherit;
-  transition:      transform 0.15s, box-shadow 0.15s;
-  box-shadow:      0 2px 8px rgba(0,0,0,0.07);
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            10px;
+  width:          140px;
+  padding:        20px 12px 16px;
+  border-radius:  20px;
+  border:         1.5px solid transparent;
+  cursor:         pointer;
+  font-family:    inherit;
+  transition:     transform 0.15s, box-shadow 0.15s;
+  box-shadow:     0 2px 8px rgba(0,0,0,0.07);
 
   &:hover  { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
   &:active { transform: translateY(0);   box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
 
-  &--violet {
-    background: $violet-light;
-    border-color: darken($violet-light, 8%);
-  }
-  &--blue {
-    background: $blue-light;
-    border-color: darken($blue-light, 8%);
-  }
+  &--violet { background: $violet-light; border-color: darken($violet-light, 8%); }
+  &--blue   { background: $blue-light;   border-color: darken($blue-light,   8%); }
 }
 
 .bb-action-icon {
@@ -97,15 +114,8 @@ app-page-header {
   align-items:     center;
   justify-content: center;
 
-  .bb-action-btn--violet & {
-    background: rgba($violet, 0.15);
-    svg { stroke: $violet; }
-  }
-  .bb-action-btn--blue & {
-    background: rgba($blue, 0.15);
-    svg { stroke: $blue; }
-  }
-
+  .bb-action-btn--violet & { background: rgba($violet, 0.15); svg { stroke: $violet; } }
+  .bb-action-btn--blue   & { background: rgba($blue,   0.15); svg { stroke: $blue; } }
   svg { width: 28px; height: 28px; }
 }
 
@@ -114,180 +124,71 @@ app-page-header {
   font-weight: 700;
   text-align:  center;
   line-height: 1.3;
-
   .bb-action-btn--violet & { color: $violet; }
   .bb-action-btn--blue   & { color: $blue; }
 }
 
-// ── Estado: cargando / error / vacío ─────────────────────────────────────────
-.bb-state {
-  display:         flex;
-  flex-direction:  column;
-  align-items:     center;
-  justify-content: center;
-  gap:             12px;
-  padding:         40px 20px;
-  color:           $text-muted;
-  font-size:       14px;
-
-  &--error {
-    color: #c0392b;
-    svg { stroke: #c0392b; }
-  }
-
-  svg { width: 36px; height: 36px; stroke: $text-muted; flex: 0 0 auto; }
+// ── Controles: filtros + orden ────────────────────────────────────────────────
+.bb-controls-row {
+  display:     flex;
+  align-items: flex-start;
+  gap:         12px;
+  margin:      0 0 18px;
+  flex-wrap:   wrap;
 }
 
-.bb-empty {
-  display:         flex;
-  flex-direction:  column;
-  align-items:     center;
-  justify-content: center;
-  gap:             8px;
-  padding:         40px 20px;
-  text-align:      center;
-
-  svg    { width: 48px; height: 48px; stroke: $border; margin-bottom: 4px; }
-  p      { font-size: 15px; font-weight: 700; color: $text-dark; margin: 0; }
-  span   { font-size: 13px; color: $text-muted; }
+.bb-filter-chips {
+  display:   flex;
+  flex-wrap: wrap;
+  gap:       6px;
+  flex:      1;
 }
 
-// ── Lista de tableros ─────────────────────────────────────────────────────────
-.bb-board-list {
-  display:        flex;
-  flex-direction: column;
-  gap:            10px;
-}
-
-.bb-board-card {
-  display:       flex;
-  align-items:   center;
-  gap:           14px;
-  background:    $card-bg;
-  border:        1.5px solid $border;
-  border-radius: 16px;
-  padding:       14px 16px;
-  cursor:        pointer;
-  transition:    transform 0.15s, border-color 0.15s, box-shadow 0.15s;
-  box-shadow:    0 2px 8px rgba(0,0,0,0.04);
-
-  &:hover {
-    transform:    translateY(-2px);
-    border-color: $violet;
-    box-shadow:   0 6px 18px rgba(0,0,0,0.08);
-  }
-}
-
-.bb-board-icon {
-  flex:            0 0 auto;
-  width:           42px;
-  height:          42px;
-  border-radius:   12px;
-  background:      $violet-light;
-  display:         flex;
-  align-items:     center;
-  justify-content: center;
-  overflow:        hidden;
-
-  svg { width: 22px; height: 22px; stroke: $violet; }
-
-  // cuando tiene imagen propia no se muestra el fondo morado
-  &--img { background: transparent; }
-}
-
-.bb-board-img {
-  width:      100%;
-  height:     100%;
-  object-fit: cover;
-  border-radius: 12px;
-}
-
-.bb-board-info {
-  flex:           1;
-  display:        flex;
-  flex-direction: column;
-  gap:            2px;
-  min-width:      0;
-}
-
-.bb-board-name {
-  font-size:     14px;
+.bb-chip {
+  font-size:     11px;
   font-weight:   700;
-  color:         $text-dark;
+  color:         $text-muted;
+  background:    #fff;
+  border:        1.5px solid $border;
+  border-radius: 20px;
+  padding:       4px 12px;
+  cursor:        pointer;
+  font-family:   inherit;
+  transition:    all 0.14s;
   white-space:   nowrap;
-  overflow:      hidden;
-  text-overflow: ellipsis;
+
+  &:hover { border-color: $violet; color: $violet; }
+
+  &--active {
+    background:   $violet;
+    border-color: $violet;
+    color:        #fff;
+  }
 }
 
-.bb-board-meta {
-  font-size: 12px;
-  color:     $text-muted;
-}
-
-.bb-board-actions {
+.bb-sort-wrap {
   display:     flex;
   align-items: center;
   gap:         6px;
   flex:        0 0 auto;
+  color:       $text-muted;
+
+  svg { width: 15px; height: 15px; stroke: $text-muted; flex: 0 0 auto; }
 }
 
-.bb-dup-btn {
-  width:           30px;
-  height:          30px;
-  border-radius:   8px;
-  background:      transparent;
-  border:          1px solid #b8d8f8;
-  display:         flex;
-  align-items:     center;
-  justify-content: center;
-  cursor:          pointer;
-  transition:      background 0.15s;
-
-  svg { width: 15px; height: 15px; stroke: $blue; }
-
-  &:hover { background: $blue-light; }
-}
-
-.bb-del-btn {
-  width:           30px;
-  height:          30px;
-  border-radius:   8px;
-  background:      transparent;
-  border:          1px solid #f8c4cf;
-  display:         flex;
-  align-items:     center;
-  justify-content: center;
-  cursor:          pointer;
-  transition:      background 0.15s;
-
-  svg { width: 15px; height: 15px; stroke: #d44; }
-
-  &:hover { background: #fff0f0; }
-}
-
-.bb-chevron {
-  width:  18px;
-  height: 18px;
-  stroke: #ccc;
-  flex:   0 0 auto;
-}
-
-// ── Botón "Seleccionar" en el header ──────────────────────────────────────────
-.bb-select-toggle {
-  font-size:     13px;
-  font-weight:   700;
-  color:         $violet;
-  background:    transparent;
-  border:        none;
-  padding:       6px 12px;
-  border-radius: 10px;
-  cursor:        pointer;
-  transition:    background 0.15s;
+.bb-sort-sel {
+  font-size:     12px;
+  font-weight:   600;
+  color:         $text-dark;
+  background:    #fff;
+  border:        1.5px solid $border;
+  border-radius: 8px;
+  padding:       4px 8px;
   font-family:   inherit;
+  cursor:        pointer;
+  outline:       none;
 
-  &:hover   { background: $violet-light; }
-  &--active { color: #e74c3c; }
-  &--active:hover { background: #fff0ee; }
+  &:focus { border-color: $violet; }
 }
 
 // ── Buscador ──────────────────────────────────────────────────────────────────
@@ -295,7 +196,7 @@ app-page-header {
   position:    relative;
   display:     flex;
   align-items: center;
-  margin:      0 0 18px;
+  margin:      0 0 10px;
 }
 
 .bb-search-icon {
@@ -320,7 +221,7 @@ app-page-header {
   box-sizing:    border-box;
   transition:    border-color 0.15s;
 
-  &:focus { border-color: $violet; }
+  &:focus       { border-color: $violet; }
   &::placeholder { color: #bbb; }
 }
 
@@ -340,55 +241,330 @@ app-page-header {
   &:hover svg { stroke: $text-dark; }
 }
 
-// ── Subsecciones ──────────────────────────────────────────────────────────────
-.bb-sub-header {
+// ── Estado vacío / error ──────────────────────────────────────────────────────
+.bb-empty {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  justify-content: center;
+  gap:            8px;
+  padding:        40px 20px;
+  text-align:     center;
+
+  svg  { width: 48px; height: 48px; stroke: $border; margin-bottom: 4px; }
+  p    { font-size: 15px; font-weight: 700; color: $text-dark; margin: 0; }
+  span { font-size: 13px; color: $text-muted; }
+}
+
+// ── Carpetas ──────────────────────────────────────────────────────────────────
+.bb-folder {
+  margin:        0 0 14px;
+  background:    #fff;
+  border:        1.5px solid #e8d8ff;
+  border-radius: 14px;
+  overflow:      hidden;
+  box-shadow:    0 2px 8px rgba(124, 77, 255, 0.06);
+}
+
+.bb-folder-header {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  padding:         10px 14px;
+  background:      $violet-light;
+  cursor:          pointer;
+  user-select:     none;
+  transition:      background 0.14s;
+
+  &:hover { background: darken($violet-light, 3%); }
+}
+
+.bb-folder-header-left {
   display:     flex;
   align-items: center;
   gap:         8px;
-  margin:      0 0 10px;
+  min-width:   0;
 }
 
-.bb-sub-label {
-  font-size:      11px;
-  font-weight:    800;
-  color:          $text-muted;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
+.bb-folder-icon {
+  width:    18px;
+  height:   18px;
+  color:    $violet;
+  flex:     0 0 auto;
+
+  &--open { color: darken($violet, 8%); }
 }
 
-.bb-sub-count {
+.bb-folder-name {
+  font-size:     13px;
+  font-weight:   800;
+  color:         $violet;
+  white-space:   nowrap;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+}
+
+.bb-folder-count {
   font-size:     11px;
   font-weight:   700;
   color:         $violet;
-  background:    $violet-light;
+  background:    rgba(124, 77, 255, 0.14);
   border-radius: 8px;
   padding:       1px 8px;
+  flex:          0 0 auto;
 }
 
-// ── Tarjeta secundaria ────────────────────────────────────────────────────────
-.bb-board-card--secondary {
-  opacity: 0.82;
-  border-color: #e0d4e8;
+.bb-folder-actions {
+  display:     flex;
+  align-items: center;
+  gap:         4px;
 }
 
-.bb-board-icon--secondary {
-  background: #f3ecff;
-  svg { stroke: #9b6dff; }
+.bb-folder-btn-icon {
+  width:           28px;
+  height:          28px;
+  border-radius:   7px;
+  background:      transparent;
+  border:          none;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  cursor:          pointer;
+  transition:      background 0.13s;
+
+  svg { width: 14px; height: 14px; stroke: $violet; }
+
+  &:hover { background: rgba(124, 77, 255, 0.12); }
+  &--del svg { stroke: #d44; }
+  &--del:hover { background: #fff0f0; }
 }
 
-// ── Tarjeta multitablero ──────────────────────────────────────────────────────
-.bb-board-card--multi {
-  border-color: #b2e8d8;
+.bb-folder-chevron {
+  width:      18px;
+  height:     18px;
+  stroke:     $violet;
+  transition: transform 0.2s;
+
+  &--collapsed { transform: rotate(-90deg); }
 }
 
-.bb-board-icon--multi {
-  background: #e0fff6;
+.bb-folder-boards {
+  padding: 8px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bb-folder-empty {
+  font-size:   12px;
+  color:       #bbb;
+  text-align:  center;
+  padding:     10px 0;
+}
+
+// ── Botón nueva carpeta ───────────────────────────────────────────────────────
+.bb-new-folder-btn {
+  display:       flex;
+  align-items:   center;
+  gap:           8px;
+  width:         100%;
+  padding:       10px 16px;
+  border:        1.5px dashed darken($violet-light, 14%);
+  border-radius: 12px;
+  background:    transparent;
+  color:         $violet;
+  font-size:     13px;
+  font-weight:   700;
+  font-family:   inherit;
+  cursor:        pointer;
+  transition:    background 0.13s, border-color 0.13s;
+  margin:        0 0 14px;
+
+  svg { width: 16px; height: 16px; stroke: $violet; }
+  &:hover { background: $violet-light; border-color: $violet; }
+}
+
+// ── Sección "Sin carpeta" ─────────────────────────────────────────────────────
+.bb-no-folder { margin: 0 0 10px; }
+
+.bb-no-folder-header {
+  display:     flex;
+  align-items: center;
+  gap:         10px;
+  margin:      0 0 10px;
+}
+
+.bb-no-folder-label {
+  font-size:      11px;
+  font-weight:    700;
+  color:          $text-muted;
+  letter-spacing: 1.2px;
+}
+
+// ── Lista de tableros ─────────────────────────────────────────────────────────
+.bb-board-list {
+  display:        flex;
+  flex-direction: column;
+  gap:            8px;
+}
+
+// ── Tarjeta de tablero ────────────────────────────────────────────────────────
+.bb-board-card {
+  display:       flex;
+  align-items:   center;
+  gap:           12px;
+  background:    $card-bg;
+  border:        1.5px solid $border;
+  border-radius: 14px;
+  padding:       12px 14px;
+  cursor:        pointer;
+  transition:    transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+  box-shadow:    0 2px 8px rgba(0,0,0,0.04);
+
+  &:hover {
+    transform:    translateY(-2px);
+    border-color: $violet;
+    box-shadow:   0 6px 18px rgba(0,0,0,0.08);
+  }
+
+  &--secondary { opacity: 0.82; border-color: #e0d4e8; }
+  &--multi     { border-color: #b2e8d8; }
+}
+
+.bb-board-icon {
+  flex:            0 0 auto;
+  width:           40px;
+  height:          40px;
+  border-radius:   10px;
+  background:      $violet-light;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  overflow:        hidden;
+
+  svg { width: 20px; height: 20px; stroke: $violet; }
+
+  &--img       { background: transparent; }
+  &--multi     { background: #e0fff6; svg { stroke: #17a682; } }
+  &--secondary { background: #f3ecff; svg { stroke: #9b6dff; } }
+}
+
+.bb-board-img {
+  width:         100%;
+  height:        100%;
+  object-fit:    cover;
+  border-radius: 10px;
+}
+
+.bb-board-info {
+  flex:           1;
+  display:        flex;
+  flex-direction: column;
+  gap:            2px;
+  min-width:      0;
+}
+
+.bb-board-name {
+  font-size:     14px;
+  font-weight:   700;
+  color:         $text-dark;
+  white-space:   nowrap;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+}
+
+.bb-board-meta {
+  font-size: 11px;
+  color:     $text-muted;
+}
+
+// ── Badges de la tarjeta ──────────────────────────────────────────────────────
+.bb-badge-row {
+  display:   flex;
+  flex-wrap: wrap;
+  gap:       4px;
+  margin-top: 3px;
+}
+
+.bb-badge {
+  display:       inline-block;
+  font-size:     9.5px;
+  font-weight:   800;
+  letter-spacing: .6px;
+  border-radius: 5px;
+  padding:       1px 6px;
+
+  &--main  { color: $violet;   background: $violet-light;       }
+  &--sec   { color: #7c3aed;   background: #f3ecff;             }
+  &--multi { color: #17a682;   background: #e0fff6;             }
+  &--pub   { color: #16a34a;   background: #dcfce7;             }
+  &--ia    { color: #d97706;   background: #fef3c7;             }
+}
+
+// ── Botones de acción de cada tarjeta ─────────────────────────────────────────
+.bb-board-actions {
+  display:     flex;
+  align-items: center;
+  gap:         3px;
+  flex:        0 0 auto;
+}
+
+%action-btn-base {
+  width:           28px;
+  height:          28px;
+  border-radius:   8px;
+  background:      transparent;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  cursor:          pointer;
+  transition:      background 0.14s;
+
+  svg { width: 14px; height: 14px; }
+}
+
+.bb-dup-btn {
+  @extend %action-btn-base;
+  border: 1px solid #b8d8f8;
+  svg { stroke: $blue; }
+  &:hover { background: $blue-light; }
+}
+
+.bb-move-btn {
+  @extend %action-btn-base;
+  border: 1px solid #d8caf8;
+  svg { stroke: $violet; }
+  &:hover { background: $violet-light; }
+}
+
+.bb-del-btn {
+  @extend %action-btn-base;
+  border: 1px solid #f8c4cf;
+  svg { stroke: #d44; }
+  &:hover { background: #fff0f0; }
+}
+
+.bb-fav-btn {
+  @extend %action-btn-base;
+  border: 1px solid #ffd6a5;
+  svg { stroke: #f59e0b; fill: none; transition: fill 0.15s; }
+  &:hover { background: #fef9ee; }
+
+  &--active svg { fill: #f59e0b; }
+}
+
+.bb-dl-btn {
+  @extend %action-btn-base;
+  border: 1px solid #a8e6d4;
   svg { stroke: #17a682; }
+  &:hover { background: #e0fff6; }
 }
 
-.bb-sub-count--multi {
-  color:      #17a682;
-  background: #e0fff6;
+.bb-chevron {
+  width:  16px;
+  height: 16px;
+  stroke: #ccc;
+  flex:   0 0 auto;
 }
 
 // ── Modo selección ────────────────────────────────────────────────────────────
@@ -421,26 +597,10 @@ app-page-header {
 
   svg { width: 14px; height: 14px; stroke: #fff; }
 
-  &--checked {
-    background:   $violet;
-    border-color: $violet;
-  }
+  &--checked { background: $violet; border-color: $violet; }
 }
 
-// ── Badge "En perfil" ─────────────────────────────────────────────────────────
-.bb-profile-badge {
-  display:       inline-block;
-  font-size:     10px;
-  font-weight:   700;
-  color:         #2ecc71;
-  background:    #eafaf1;
-  border:        1px solid #b9f0d0;
-  border-radius: 6px;
-  padding:       1px 6px;
-  margin-top:    2px;
-}
-
-// ── Barra de acciones (modo selección, fija abajo) ────────────────────────────
+// ── Barra de acciones modo selección (fija abajo) ─────────────────────────────
 .bb-select-bar {
   position:        fixed;
   bottom:          0;
@@ -449,38 +609,100 @@ app-page-header {
   display:         flex;
   align-items:     center;
   justify-content: space-between;
-  gap:             12px;
+  gap:             8px;
   background:      #fff;
   border-top:      2px solid $border;
-  padding:         12px 20px;
+  padding:         12px 16px;
   padding-bottom:  max(12px, env(safe-area-inset-bottom));
   z-index:         200;
   box-shadow:      0 -4px 16px rgba(0,0,0,0.08);
 }
 
 .bb-select-info {
-  font-size:   14px;
+  font-size:   13px;
   font-weight: 700;
   color:       $text-dark;
+  flex:        1;
+}
+
+.bb-select-move {
+  display:       flex;
+  align-items:   center;
+  gap:           6px;
+  background:    $violet;
+  color:         #fff;
+  border:        none;
+  border-radius: 12px;
+  padding:       10px 14px;
+  font-size:     12px;
+  font-weight:   700;
+  font-family:   inherit;
+  cursor:        pointer;
+  transition:    background 0.15s, opacity 0.15s;
+  white-space:   nowrap;
+
+  svg { width: 15px; height: 15px; stroke: #fff; }
+
+  &:hover    { background: darken($violet, 8%); }
+  &:disabled { opacity: 0.45; cursor: not-allowed; }
 }
 
 .bb-select-del {
-  display:         flex;
-  align-items:     center;
-  gap:             7px;
-  background:      #e74c3c;
-  color:           #fff;
-  border:          none;
-  border-radius:   12px;
-  padding:         10px 18px;
-  font-size:       13px;
-  font-weight:     700;
-  font-family:     inherit;
-  cursor:          pointer;
-  transition:      background 0.15s, opacity 0.15s;
+  display:       flex;
+  align-items:   center;
+  gap:           6px;
+  background:    #e74c3c;
+  color:         #fff;
+  border:        none;
+  border-radius: 12px;
+  padding:       10px 14px;
+  font-size:     12px;
+  font-weight:   700;
+  font-family:   inherit;
+  cursor:        pointer;
+  transition:    background 0.15s, opacity 0.15s;
+  white-space:   nowrap;
 
-  svg { width: 16px; height: 16px; stroke: #fff; }
+  svg { width: 15px; height: 15px; stroke: #fff; }
 
-  &:hover     { background: #c0392b; }
-  &:disabled  { opacity: 0.45; cursor: not-allowed; }
+  &:hover    { background: #c0392b; }
+  &:disabled { opacity: 0.45; cursor: not-allowed; }
+}
+
+// ── Drag & Drop ───────────────────────────────────────────────────────────────
+.bb-drag-placeholder {
+  background:    $violet-light;
+  border:        2px dashed $violet;
+  border-radius: 14px;
+  min-height:    64px;
+  opacity:       0.6;
+}
+
+.cdk-drag-preview {
+  border-radius: 14px;
+  box-shadow:    0 8px 28px rgba(0,0,0,0.18);
+  opacity:       0.96;
+  background:    #fff;
+  border:        1.5px solid $violet;
+}
+
+.cdk-drag-animating {
+  transition: transform 220ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.cdk-drop-list-dragging .bb-board-card:not(.cdk-drag-placeholder) {
+  transition: transform 220ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.bb-folder--drag-over {
+  border-color: $violet !important;
+  box-shadow:   0 0 0 2px rgba($violet, 0.22), 0 2px 8px rgba(124, 77, 255, 0.1) !important;
+
+  .bb-folder-header { background: darken($violet-light, 5%); }
+}
+
+.bb-no-folder--drag-over {
+  .bb-no-folder-header {
+    .bb-no-folder-label { color: $violet; font-weight: 800; }
+  }
 }
