@@ -19,6 +19,8 @@ import {
   CellPictogram,
   CellAction,
   ActionType,
+  CircularControlsConfig,
+  DEFAULT_CIRCULAR_CONTROLS_CONFIG,
 } from '../../services/board.service';
 import { WordType, FITZGERALD } from '../../shared/constants/fitzgerald';
 import { AacRuntimeService } from '../../services/aac-runtime.service';
@@ -48,6 +50,8 @@ import {
 import { MultiboardEditorComponent } from '../../components/multiboard-editor/multiboard-editor.component';
 import { MultiboardCommunicatorComponent } from '../../components/multiboard-communicator/multiboard-communicator.component';
 import { AacControlsBarComponent } from '../../components/aac-controls-bar/aac-controls-bar.component';
+import { AacCircularTopBarComponent } from '../../components/aac-circular-top-bar/aac-circular-top-bar.component';
+import { AacCircularRightBarComponent } from '../../components/aac-circular-right-bar/aac-circular-right-bar.component';
 import { IaPredictorColumnComponent } from '../../components/ia-predictor-column/ia-predictor-column.component';
 
 @Component({
@@ -69,6 +73,8 @@ import { IaPredictorColumnComponent } from '../../components/ia-predictor-column
     MultiboardEditorComponent,
     MultiboardCommunicatorComponent,
     AacControlsBarComponent,
+    AacCircularTopBarComponent,
+    AacCircularRightBarComponent,
     IaPredictorColumnComponent,
   ],
 })
@@ -113,11 +119,24 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
 
   /** Config en tiempo real desde el sidebar (antes de guardar). */
   previewControlsConfig: import('../../services/board.service').ControlsConfig | undefined;
+  /** Config circular en tiempo real desde el sidebar (antes de guardar). */
+  previewCircularControlsConfig: CircularControlsConfig | undefined;
   /** true = la preview de la barra AAC está colapsada en el editor. */
   controlsBarPreviewCollapsed = false;
 
   onControlsConfigChange(cfg: import('../../services/board.service').ControlsConfig): void {
     this.previewControlsConfig = cfg;
+  }
+
+  onCircularControlsConfigChange(cfg: CircularControlsConfig): void {
+    this.previewCircularControlsConfig = cfg;
+  }
+
+  /** Configuración circular efectiva para mostrar en el editor (edit + preview). */
+  get effectiveCircularEditConfig(): CircularControlsConfig {
+    return this.previewCircularControlsConfig
+      ?? this.board?.circularControlsConfig
+      ?? DEFAULT_CIRCULAR_CONTROLS_CONFIG;
   }
   /** true mientras se procesa el guardado de configuración del tablero. */
   sidebarSaving = false;
@@ -362,6 +381,9 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
       slotCount:       b.slotCount ?? 2,
       controlsConfig: b.controlsConfig
         ? { visibleButtons: [...b.controlsConfig.visibleButtons], order: [...b.controlsConfig.order] }
+        : undefined,
+      circularControlsConfig: b.circularControlsConfig
+        ? { topBar: [...b.circularControlsConfig.topBar], rightBar: [...b.circularControlsConfig.rightBar], visibleButtons: [...b.circularControlsConfig.visibleButtons] }
         : undefined,
     };
   }
@@ -839,6 +861,9 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
           // controlsConfig: solo para tableros principales
           ...(payload.boardRole === 'main' && payload.controlsConfig
             ? { controlsConfig: payload.controlsConfig } : {}),
+          // circularControlsConfig: solo para tableros circulares principales
+          ...(payload.boardRole === 'main' && payload.circularControlsConfig
+            ? { circularControlsConfig: payload.circularControlsConfig } : {}),
           // Dimensiones solo para tableros normales (no multi):
           ...(!isMulti && {
             rows:                  payload.rows,

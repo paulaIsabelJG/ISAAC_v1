@@ -25,6 +25,25 @@ export const DEFAULT_CONTROLS_CONFIG: ControlsConfig = {
   visibleButtons: ['home', 'back', 'speak', 'deleteLast', 'clearAll'],
   order:          ['home', 'back', 'speak', 'phraseBar', 'deleteLast', 'clearAll'],
 };
+
+// ─── Configuración específica para tableros circulares ─────────────────────────
+// Separa los controles en dos barras: una superior (horizontal, compacta)
+// y una derecha (vertical, botones grandes para eye-tracking).
+
+export interface CircularControlsConfig {
+  /** Items en la barra superior. Debe incluir siempre 'phraseBar'. */
+  topBar: ControlsBarItem[];
+  /** Items en la barra vertical derecha. */
+  rightBar: ControlButtonId[];
+  /** Qué botones están visibles (aplica en ambas barras). */
+  visibleButtons: ControlButtonId[];
+}
+
+export const DEFAULT_CIRCULAR_CONTROLS_CONFIG: CircularControlsConfig = {
+  topBar:         ['home', 'phraseBar'],
+  rightBar:       ['back', 'speak', 'deleteLast', 'clearAll'],
+  visibleButtons: ['home', 'back', 'speak', 'deleteLast', 'clearAll'],
+};
 export type PictSource  = 'arasaac' | 'custom' | 'new';
 
 // WordType, FITZGERALD, FITZGERALD_COLORS y WORD_TYPE_LABELS → shared/constants/fitzgerald.ts
@@ -99,7 +118,9 @@ export interface Board {
   multiBoardLayout?:      { widths: number[]; heights: number[] };
   multiBoardIaPosition?:  string;
   // Configuración de la barra AAC (solo en tableros principales)
-  controlsConfig?:     ControlsConfig;
+  controlsConfig?:            ControlsConfig;
+  // Configuración de barras superior + derecha para tableros circulares
+  circularControlsConfig?:    CircularControlsConfig;
   // Personalización automática al publicar
   autoPersonalize?:    boolean;
   // Carpeta a la que pertenece el tablero (opcional)
@@ -132,8 +153,9 @@ export interface CreateBoardPayload {
   multiBoardSlots?:       MultiBoardSlot[];
   multiBoardLayout?:      { widths: number[]; heights: number[] };
   multiBoardIaPosition?:  string;
-  controlsConfig?:        ControlsConfig;
-  autoPersonalize?:       boolean;
+  controlsConfig?:           ControlsConfig;
+  circularControlsConfig?:   CircularControlsConfig;
+  autoPersonalize?:          boolean;
 }
 
 export interface UpdateBoardPayload {
@@ -162,7 +184,8 @@ export interface UpdateBoardPayload {
   multiBoardSlots?:       MultiBoardSlot[];
   multiBoardLayout?:      { widths: number[]; heights: number[] };
   multiBoardIaPosition?:  string;
-  controlsConfig?:        ControlsConfig;
+  controlsConfig?:          ControlsConfig;
+  circularControlsConfig?:  CircularControlsConfig;
 }
 
 export interface UpdateCellPayload {

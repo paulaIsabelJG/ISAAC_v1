@@ -140,12 +140,63 @@ $panel-bg:     #faf5f8;
 //  EDITOR — tablero rellena bbe-comm-board-area
 // ─────────────────────────────────────────────────────────────────────────────
 
-// app-board-grid y app-board-circular rellenan el área de tablero.
-.bbe-comm-board-area app-board-grid,
-.bbe-comm-board-area app-board-circular {
+// app-board-grid rellena el área de tablero.
+.bbe-comm-board-area app-board-grid {
   flex: 1;
   min-height: 0;
   min-width:  0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  CIRCULAR EDIT — wrapper con barras simuladas
+//  Ocupa todo el espacio disponible dentro de bbe-comm-wrapper (flex column).
+// ─────────────────────────────────────────────────────────────────────────────
+
+.bbe-circ-edit-wrapper {
+  flex:           1;
+  min-height:     0;
+  display:        flex;
+  flex-direction: column;
+  overflow:       hidden;
+}
+
+// La barra superior no recibe interacciones del usuario en modo edición.
+.bbe-circ-edit-topbar {
+  flex:           0 0 auto;
+  pointer-events: none;
+  user-select:    none;
+  opacity:        0.85;
+}
+
+// Fila: tablero circular + barra derecha.
+.bbe-circ-edit-row {
+  flex:           1;
+  display:        flex;
+  flex-direction: row;
+  min-height:     0;
+  overflow:       hidden;
+
+  // El tablero circular ocupa el espacio sobrante.
+  app-board-circular {
+    flex:      1;
+    min-width: 0;
+    min-height: 0;
+  }
+}
+
+// La barra derecha no recibe interacciones en modo edición.
+.bbe-circ-edit-rightbar {
+  flex:           0 0 auto;
+  pointer-events: none;
+  user-select:    none;
+  opacity:        0.85;
+
+  // Ocupa toda la altura de la fila.
+  app-aac-circular-right-bar {
+    display:    block;
+    height:     100%;
+    align-self: stretch;
+  }
 }
 
 // .bbe-col-center .bbe-ia-col → eliminado (bgc-ia-col en BoardGridComponent)

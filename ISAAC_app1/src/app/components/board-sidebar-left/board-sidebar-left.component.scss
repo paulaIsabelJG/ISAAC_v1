@@ -742,3 +742,118 @@ $violet-l: #f0ebff;
   margin:      2px 0 6px;
   line-height: 1.4;
 }
+
+// ── Panel BARRAS CIRCULARES ───────────────────────────────────────────────────
+
+.bbe-cbar-hint {
+  font-size:   11px;
+  color:       $text-muted;
+  line-height: 1.45;
+  margin:      0 0 8px;
+}
+
+.bbe-cbar-section-title {
+  display:        flex;
+  align-items:    center;
+  gap:            5px;
+  font-size:      9px;
+  font-weight:    800;
+  color:          $text-muted;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  margin:         10px 0 4px;
+
+  svg { width: 12px; height: 12px; flex: 0 0 auto; stroke: $text-muted; }
+}
+
+.bbe-cbar-list {
+  display:       flex;
+  flex-direction: column;
+  gap:           3px;
+  margin-bottom: 4px;
+}
+
+.bbe-cbar-item {
+  display:       flex;
+  align-items:   center;
+  gap:           4px;
+  padding:       5px 6px;
+  border-radius: 8px;
+  border:        1.5px solid $border;
+  background:    #fff;
+  transition:    opacity 0.15s;
+
+  &--hidden { opacity: 0.45; }
+}
+
+.bbe-cbar-name {
+  flex:        1;
+  font-size:   11px;
+  font-weight: 600;
+  color:       $text-dark;
+  min-width:   0;
+  white-space: nowrap;
+  overflow:    hidden;
+  text-overflow: ellipsis;
+}
+
+.bbe-cbar-reorder {
+  display:        flex;
+  flex-direction: column;
+  gap:            1px;
+  flex:           0 0 auto;
+}
+
+.bbe-cbar-reorder-btn {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  width:           18px;
+  height:          13px;
+  border:          none;
+  border-radius:   3px;
+  background:      transparent;
+  cursor:          pointer;
+  padding:         0;
+
+  svg { width: 10px; height: 10px; stroke: $text-muted; }
+
+  &:hover:not([disabled]) { background: $violet-light; svg { stroke: $violet; } }
+  &[disabled] { opacity: 0.25; cursor: default; }
+}
+
+.bbe-cbar-eye,
+.bbe-cbar-move {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  width:           24px;
+  height:          24px;
+  border:          none;
+  border-radius:   6px;
+  background:      transparent;
+  cursor:          pointer;
+  flex:            0 0 auto;
+  transition:      background 0.12s;
+
+  svg { width: 13px; height: 13px; }
+}
+
+.bbe-cbar-eye {
+  svg { stroke: $text-muted; }
+  &:hover { background: $pink-light; }
+}
+
+.bbe-cbar-move {
+  &--right svg { stroke: $violet; }
+  &--left  svg { stroke: $violet; }
+  &:hover { background: $violet-light; }
+}
+
+.bbe-cbar-empty {
+  font-size:  10px;
+  color:      $text-muted;
+  font-style: italic;
+  margin:     2px 0 6px;
+}
+

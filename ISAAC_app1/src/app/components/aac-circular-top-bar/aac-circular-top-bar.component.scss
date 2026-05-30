@@ -1,0 +1,104 @@
+$violet:     #7c4dff;
+$violet-l:   #f0ebff;
+$orange:     #ff8c42;
+$orange-l:   #fff3eb;
+$red:        #e53935;
+$red-l:      #ffebee;
+$border:     #f4d0e4;
+$text-muted: #6b5462;
+
+:host {
+  display: block;
+  flex:    0 0 auto;
+}
+
+.actb-bar {
+  display:       flex;
+  align-items:   center;
+  gap:           6px;
+  padding:       4px 10px;
+  min-height:    62px;
+  background:    #ffffff;
+  border-bottom: 2px solid $border;
+  box-sizing:    border-box;
+}
+
+:host.actb--comm .actb-bar {
+  min-height: 78px;
+  gap:        10px;
+  padding:    6px 14px;
+}
+
+.actb-phrase {
+  flex:      1;
+  min-width: 0;
+  align-self: stretch;
+  --pb-item-width:  48px;
+  --pb-item-height: 52px;
+  --pb-strip-bg:    #fff;
+  --pb-strip-border: #f4d0e4;
+  --pb-item-border:  #f4d0e4;
+  --pb-placeholder-color: #9b6daa;
+}
+
+:host.actb--comm .actb-phrase {
+  --pb-item-width:  62px;
+  --pb-item-height: 68px;
+}
+
+.actb-btn {
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  gap:             2px;
+  width:           50px;
+  min-height:      50px;
+  border-radius:   12px;
+  border:          2px solid transparent;
+  cursor:          pointer;
+  font-family:     inherit;
+  transition:      background 0.12s, border-color 0.12s, transform 0.08s;
+  flex:            0 0 auto;
+
+  svg {
+    width:  20px;
+    height: 20px;
+    flex:   0 0 auto;
+  }
+
+  &:active:not([disabled]) { transform: scale(0.93); }
+
+  &--home  { background: $violet-l;  border-color: rgba($violet, 0.3); svg { stroke: $violet; }  }
+  &--back  { background: $violet-l;  border-color: rgba($violet, 0.3); svg { stroke: $violet; }  }
+  &--speak { background: $violet;    border-color: darken($violet, 8%); svg { stroke: #fff; }     }
+  &--erase { background: $orange-l;  border-color: rgba($orange, 0.35); svg { stroke: $orange; } }
+  &--clear { background: $red-l;     border-color: rgba($red, 0.3);    svg { stroke: $red; }     }
+
+  &--disabled,
+  &[disabled] { opacity: 0.35; cursor: not-allowed; }
+}
+
+:host.actb--comm .actb-btn {
+  width:      58px;
+  min-height: 58px;
+
+  svg { width: 22px; height: 22px; }
+}
+
+.actb-btn-label {
+  font-size:      8px;
+  font-weight:    700;
+  color:          $text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  line-height:    1;
+  white-space:    nowrap;
+}
+
+.actb-btn--speak .actb-btn-label { color: rgba(#fff, 0.9); }
+
+@media (max-width: 480px) {
+  .actb-btn { width: 42px; min-height: 42px; }
+  .actb-bar  { gap: 4px; padding: 4px 6px; }
+}

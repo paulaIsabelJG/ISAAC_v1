@@ -1,29 +1,33 @@
 <div class="comm-root">
 
-  <!-- ── Barra AAC ─────────────────────────────────────────────────────────── -->
-  <app-aac-controls-bar
-    mode="communicator"
-    [voiceEnabled]="voiceEnabled"
-    [gender]="gender"
-    [canGoBack]="canGoBack"
-    (homeClick)="onHome()"
-    (backClick)="onBack()">
-  </app-aac-controls-bar>
+  @if (isLoading) {
+    <div class="comm-loading">
+      <ion-spinner name="crescent" color="secondary"></ion-spinner>
+    </div>
 
-  <!-- ── Área del tablero ───────────────────────────────────────────────────── -->
-  <div class="comm-board">
+  } @else if (loadError) {
+    <p class="comm-error">{{ loadError }}</p>
 
-    @if (isLoading) {
-      <div class="comm-loading">
-        <ion-spinner name="crescent" color="secondary"></ion-spinner>
-      </div>
-    } @else if (loadError) {
-      <p class="comm-error">{{ loadError }}</p>
-    } @else if (board) {
+  } @else if (board) {
 
-      <div class="comm-board-row">
+    @if (isCircularBoard) {
 
-        <!-- Columna Predictor IA (heredada del tablero raíz, tableros no-multi) -->
+      <!-- ══════════════════════════════════════════════════════════════════
+           LAYOUT CIRCULAR: barra superior compacta + fila(tablero | barra derecha)
+           ══════════════════════════════════════════════════════════════════ -->
+      <app-aac-circular-top-bar
+        mode="communicator"
+        [config]="effectiveCircularConfig"
+        [voiceEnabled]="voiceEnabled"
+        [gender]="gender"
+        [canGoBack]="canGoBack"
+        (homeClick)="onHome()"
+        (backClick)="onBack()">
+      </app-aac-circular-top-bar>
+
+      <div class="comm-circular-row">
+
+        <!-- Columna Predictor IA (no para multi, ya filtrado por isCircularBoard) -->
         @if (showPredictor) {
           <app-ia-predictor-column
             [rows]="predictorIaRows"
@@ -31,33 +35,72 @@
           </app-ia-predictor-column>
         }
 
-        @if (isMultiBoard) {
-          <app-multiboard-communicator
-            [masterBoard]="board"
-            [gender]="gender"
-            [contextUserId]="rootAutoPersonalize ? userId : ''"
-            style="display:flex;flex:1;min-height:0;overflow:hidden">
-          </app-multiboard-communicator>
+        <!-- Tablero circular centrado -->
+        <app-board-circular
+          [board]="board"
+          mode="communicator"
+          [circularLayout]="true"
+          (cellClick)="onCellPress($event.row, $event.col)">
+        </app-board-circular>
 
-        } @else if (board.shape === 'grid' || !board.shape) {
-          <app-board-grid
-            [board]="board"
-            mode="communicator"
-            (cellClick)="onCellPress($event.row, $event.col)">
-          </app-board-grid>
+        <!-- Barra vertical derecha: Atrás + Hablar + Borrar + Limpiar -->
+        <app-aac-circular-right-bar
+          mode="communicator"
+          [config]="effectiveCircularConfig"
+          [voiceEnabled]="voiceEnabled"
+          [gender]="gender"
+          [canGoBack]="canGoBack"
+          (homeClick)="onHome()"
+          (backClick)="onBack()">
+        </app-aac-circular-right-bar>
 
-        } @else if (board.shape === 'circular') {
-          <app-board-circular
-            [board]="board"
-            mode="communicator"
-            (cellClick)="onCellPress($event.row, $event.col)">
-          </app-board-circular>
-        }
+      </div><!-- /comm-circular-row -->
 
-      </div><!-- /comm-board-row -->
+    } @else {
+
+      <!-- ══════════════════════════════════════════════════════════════════
+           LAYOUT ESTÁNDAR: barra AAC horizontal + tablero
+           ══════════════════════════════════════════════════════════════════ -->
+      <app-aac-controls-bar
+        mode="communicator"
+        [voiceEnabled]="voiceEnabled"
+        [gender]="gender"
+        [canGoBack]="canGoBack"
+        (homeClick)="onHome()"
+        (backClick)="onBack()">
+      </app-aac-controls-bar>
+
+      <div class="comm-board">
+        <div class="comm-board-row">
+
+          @if (showPredictor) {
+            <app-ia-predictor-column
+              [rows]="predictorIaRows"
+              [cols]="predictorIaCols">
+            </app-ia-predictor-column>
+          }
+
+          @if (isMultiBoard) {
+            <app-multiboard-communicator
+              [masterBoard]="board"
+              [gender]="gender"
+              [contextUserId]="rootAutoPersonalize ? userId : ''"
+              style="display:flex;flex:1;min-height:0;overflow:hidden">
+            </app-multiboard-communicator>
+
+          } @else {
+            <app-board-grid
+              [board]="board"
+              mode="communicator"
+              (cellClick)="onCellPress($event.row, $event.col)">
+            </app-board-grid>
+          }
+
+        </div><!-- /comm-board-row -->
+      </div><!-- /comm-board -->
 
     }
 
-  </div><!-- /comm-board -->
+  }
 
 </div><!-- /comm-root -->

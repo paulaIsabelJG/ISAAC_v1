@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, HostBinding, Input, Output } from '@angular/core';
 import { Board, CellPictogram } from '../../services/board.service';
 import { BoardLayoutService } from '../../services/board-layout.service';
 import {
@@ -49,6 +49,13 @@ export class BoardCircularComponent {
 
   // ── Modo ─────────────────────────────────────────────────────────────────
   @Input() mode: CellMode = 'communicator';
+
+  /**
+   * Activa el layout de dos barras (superior + derecha) para tableros circulares.
+   * Cuando true, el canvas usa container queries en lugar de la fórmula dvh/dvw.
+   */
+  @HostBinding('class.bcc--circular-layout')
+  @Input() circularLayout = false;
 
   // ── Estado de interacción (solo edit) ────────────────────────────────────
   @Input() selectedCell: CellCoord | null = null;

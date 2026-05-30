@@ -50,6 +50,7 @@
       [circularSimMode]="circularSimMode"
       [isCenterShowingLastPhrase]="isCenterShowingLastPhrase"
       [canGoBack]="canGoBackInPreview"
+      [circularControlsConfig]="previewCircularControlsConfig"
       (cellClick)="onCellClick($event.row, $event.col)"
       (homeClick)="onPreviewHome()"
       (backClick)="onPreviewBack()">
@@ -73,7 +74,8 @@
         (saveConfig)="onSaveConfigRequest($event)"
         (openBoard)="openBoard($event)"
         (selectSlot)="onSlotSelected($event)"
-        (controlsConfigChange)="onControlsConfigChange($event)">
+        (controlsConfigChange)="onControlsConfigChange($event)"
+        (circularControlsConfigChange)="onCircularControlsConfigChange($event)">
       </app-board-sidebar-left>
 
       <!-- ── COLUMNA CENTRAL ────────────────────────────────────────────── -->
@@ -112,8 +114,8 @@
         <div class="bbe-comm-outer">
           <div class="bbe-comm-wrapper">
 
-            <!-- ── Preview de la barra AAC (solo tableros principales) ─────── -->
-            @if (board?.boardRole === 'main') {
+            <!-- ── Preview de la barra AAC (tableros principales no circulares) ─ -->
+            @if (board?.boardRole === 'main' && !isCircular) {
               <div class="bbe-aac-preview-panel"
                    [class.bbe-aac-preview-panel--collapsed]="controlsBarPreviewCollapsed">
 
@@ -149,7 +151,51 @@
               </div>
             }
 
-            <!-- ── Área del tablero ─────────────────────────────────────────── -->
+            <!-- ── CIRCULAR edit: barras simuladas + tablero circular ──────── -->
+            @if (!isMultiBoard && isCircular) {
+              <div class="bbe-circ-edit-wrapper">
+
+                <!-- Barra superior simulada (sin interacción) -->
+                <div class="bbe-circ-edit-topbar">
+                  <app-aac-circular-top-bar
+                    mode="preview"
+                    [config]="effectiveCircularEditConfig">
+                  </app-aac-circular-top-bar>
+                </div>
+
+                <!-- Fila: tablero circular + barra derecha simulada -->
+                <div class="bbe-circ-edit-row">
+                  <app-board-circular
+                    [board]="board"
+                    mode="edit"
+                    [circularLayout]="true"
+                    [selectedCell]="selectedCell"
+                    [draggedCell]="draggedCell"
+                    [dragOverCell]="dragOverCell"
+                    [moveSrcCell]="moveSrcCell"
+                    (cellClick)="onCellClick($event.row, $event.col)"
+                    (cellDblClick)="onCellDblClick($event.row, $event.col)"
+                    (cellDragStart)="onCellDragStart($event.event, $event.row, $event.col)"
+                    (cellDragOver)="onCellDragOver($event.event, $event.row, $event.col)"
+                    (cellDragLeave)="onCellDragLeave($event.event, $event.row, $event.col)"
+                    (cellDrop)="onCellDrop($event.event, $event.row, $event.col)"
+                    (cellDragEnd)="onCellDragEnd()">
+                  </app-board-circular>
+
+                  <!-- Barra derecha simulada (sin interacción) -->
+                  <div class="bbe-circ-edit-rightbar">
+                    <app-aac-circular-right-bar
+                      mode="preview"
+                      [config]="effectiveCircularEditConfig">
+                    </app-aac-circular-right-bar>
+                  </div>
+                </div>
+
+              </div>
+            }
+
+            <!-- ── Área del tablero (grid + multi) ─────────────────────────── -->
+            @if (isMultiBoard || !isCircular) {
             <div class="bbe-comm-board-area" [style.aspect-ratio]="boardAspectRatio">
 
               <!-- ── MULTITABLERO editor: boards reales con resize ──────────── -->
@@ -331,26 +377,8 @@
                 </app-board-grid>
               }
 
-              <!-- ── CIRCULAR editor ────────────────────────────────────────── -->
-              @if (!isMultiBoard && isCircular) {
-                <app-board-circular
-                  [board]="board"
-                  mode="edit"
-                  [selectedCell]="selectedCell"
-                  [draggedCell]="draggedCell"
-                  [dragOverCell]="dragOverCell"
-                  [moveSrcCell]="moveSrcCell"
-                  (cellClick)="onCellClick($event.row, $event.col)"
-                  (cellDblClick)="onCellDblClick($event.row, $event.col)"
-                  (cellDragStart)="onCellDragStart($event.event, $event.row, $event.col)"
-                  (cellDragOver)="onCellDragOver($event.event, $event.row, $event.col)"
-                  (cellDragLeave)="onCellDragLeave($event.event, $event.row, $event.col)"
-                  (cellDrop)="onCellDrop($event.event, $event.row, $event.col)"
-                  (cellDragEnd)="onCellDragEnd()">
-                </app-board-circular>
-              }
-
             </div><!-- /bbe-comm-board-area -->
+            }<!-- /@if isMultiBoard || !isCircular -->
 
           </div><!-- /bbe-comm-wrapper -->
         </div><!-- /bbe-comm-outer -->

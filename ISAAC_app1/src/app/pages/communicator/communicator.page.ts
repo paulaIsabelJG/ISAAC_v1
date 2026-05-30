@@ -11,7 +11,10 @@ import { BoardGridComponent } from '../../components/board-grid/board-grid.compo
 import { BoardCircularComponent } from '../../components/board-circular/board-circular.component';
 import { MultiboardCommunicatorComponent } from '../../components/multiboard-communicator/multiboard-communicator.component';
 import { AacControlsBarComponent } from '../../components/aac-controls-bar/aac-controls-bar.component';
+import { AacCircularTopBarComponent } from '../../components/aac-circular-top-bar/aac-circular-top-bar.component';
+import { AacCircularRightBarComponent } from '../../components/aac-circular-right-bar/aac-circular-right-bar.component';
 import { IaPredictorColumnComponent } from '../../components/ia-predictor-column/ia-predictor-column.component';
+import { DEFAULT_CIRCULAR_CONTROLS_CONFIG } from '../../services/board.service';
 
 @Component({
   selector: 'app-communicator',
@@ -25,6 +28,8 @@ import { IaPredictorColumnComponent } from '../../components/ia-predictor-column
     BoardCircularComponent,
     MultiboardCommunicatorComponent,
     AacControlsBarComponent,
+    AacCircularTopBarComponent,
+    AacCircularRightBarComponent,
     IaPredictorColumnComponent,
   ],
 })
@@ -163,6 +168,14 @@ export class CommunicatorPage implements OnInit, OnDestroy {
 
   get isMultiBoard(): boolean {
     return this.board?.shape === 'multi' || this.board?.boardRole === 'multi';
+  }
+
+  get isCircularBoard(): boolean {
+    return this.board?.shape === 'circular';
+  }
+
+  get effectiveCircularConfig() {
+    return this.board?.circularControlsConfig ?? DEFAULT_CIRCULAR_CONTROLS_CONFIG;
   }
 
   get canGoBack(): boolean {

@@ -42,12 +42,24 @@ $card-bg: #ffffff;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-//  TABLERO CIRCULAR EN PREVIEW
-//  app-board-circular gestiona su propio layout vía :host (bcc-*).
-//  Ocupa el espacio sobrante como flex child de :host.
+//  LAYOUT CIRCULAR
+//  Fila que contiene el tablero circular + la barra derecha vertical.
+//  La barra superior compacta (actb-*) ocupa su altura natural (flex: 0 0 auto).
 // ══════════════════════════════════════════════════════════════════════════════
 
+.bpc-circular-row {
+  flex:       1;
+  display:    flex;
+  flex-direction: row;
+  min-height: 0;
+  overflow:   hidden;
+}
+
+// El tablero circular ocupa todo el espacio horizontal sobrante
 app-board-circular {
   flex:       1;
   min-height: 0;
+  min-width:  0;
 }
+
+// La barra derecha (app-aac-circular-right-bar) tiene ancho fijo propio

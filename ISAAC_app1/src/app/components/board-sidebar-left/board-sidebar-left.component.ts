@@ -14,6 +14,7 @@ import {
   Board,
   ControlsConfig, ControlButtonId, ControlsBarItem,
   DEFAULT_CONTROLS_CONFIG,
+  CircularControlsConfig, DEFAULT_CIRCULAR_CONTROLS_CONFIG,
 } from '../../services/board.service';
 import { BackendUser } from '../../services/user.service';
 import { buildSafeUrl as buildSafeUrlUtil } from '../../shared/utils/image.utils';
@@ -38,6 +39,8 @@ export interface BoardSidebarConfig {
   slotCount?: 2 | 3 | 4;
   /** Configuración de la barra AAC (solo relevante en tableros principales). */
   controlsConfig?: ControlsConfig;
+  /** Configuración de barras circular (solo tableros circulares principales). */
+  circularControlsConfig?: CircularControlsConfig;
 }
 
 /**
@@ -92,8 +95,10 @@ export class BoardSidebarLeftComponent implements OnChanges {
   @Output() openBoard = new EventEmitter<string>();
   /** Emite el slotId para seleccionar/asignar tablero a ese hueco (desde sidebar). */
   @Output() selectSlot = new EventEmitter<number>();
-  /** Emite en tiempo real cuando el usuario modifica la config de la barra AAC. */
+  /** Emite en tiempo real cuando el usuario modifica la config de la barra AAC (grid/multi). */
   @Output() controlsConfigChange = new EventEmitter<ControlsConfig>();
+  /** Emite en tiempo real cuando el usuario modifica la config de barras circulares. */
+  @Output() circularControlsConfigChange = new EventEmitter<CircularControlsConfig>();
 
   // ── Getters ────────────────────────────────────────────────────────────────
 
@@ -122,8 +127,15 @@ export class BoardSidebarLeftComponent implements OnChanges {
   localLocationSlots = 6;
   localAssignedUserIds: string[] = [];
 
-  // ── Estado local: configuración de la barra AAC ────────────────────────────
+  // ── Estado local: configuración de la barra AAC (grid/multi) ──────────────
   localControlsConfig: ControlsConfig = { ...DEFAULT_CONTROLS_CONFIG };
+
+  // ── Estado local: configuración de barras circulares ──────────────────────
+  localCircularControlsConfig: CircularControlsConfig = {
+    topBar:         [...DEFAULT_CIRCULAR_CONTROLS_CONFIG.topBar],
+    rightBar:       [...DEFAULT_CIRCULAR_CONTROLS_CONFIG.rightBar],
+    visibleButtons: [...DEFAULT_CIRCULAR_CONTROLS_CONFIG.visibleButtons],
+  };
 
   /** Metadatos de cada elemento (botones + phraseBar). */
   readonly allItemsMeta: Partial<Record<ControlsBarItem, { label: string; icon: string; canHide: boolean }>> = {
@@ -202,6 +214,11 @@ export class BoardSidebarLeftComponent implements OnChanges {
     this.localControlsConfig   = this.config.controlsConfig
       ? { visibleButtons: [...this.config.controlsConfig.visibleButtons], order: [...this.config.controlsConfig.order] }
       : { ...DEFAULT_CONTROLS_CONFIG };
+
+    const circ = this.config.circularControlsConfig;
+    this.localCircularControlsConfig = circ
+      ? { topBar: [...circ.topBar], rightBar: [...circ.rightBar], visibleButtons: [...circ.visibleButtons] }
+      : { topBar: [...DEFAULT_CIRCULAR_CONTROLS_CONFIG.topBar], rightBar: [...DEFAULT_CIRCULAR_CONTROLS_CONFIG.rightBar], visibleButtons: [...DEFAULT_CIRCULAR_CONTROLS_CONFIG.visibleButtons] };
   }
 
   // ── Acciones ───────────────────────────────────────────────────────────────
@@ -227,6 +244,9 @@ export class BoardSidebarLeftComponent implements OnChanges {
       assignedUserIds:  this.localAssignedUserIds,
       controlsConfig:   this.localBoardRole === 'main'
         ? { ...this.localControlsConfig }
+        : undefined,
+      circularControlsConfig: (this.localBoardRole === 'main' && this.isCircular)
+        ? { topBar: [...this.localCircularControlsConfig.topBar], rightBar: [...this.localCircularControlsConfig.rightBar], visibleButtons: [...this.localCircularControlsConfig.visibleButtons] }
         : undefined,
     });
   }
@@ -322,6 +342,136 @@ export class BoardSidebarLeftComponent implements OnChanges {
     this.controlsConfigChange.emit({
       visibleButtons: [...this.localControlsConfig.visibleButtons],
       order:          [...this.localControlsConfig.order],
+    });
+  }
+
+  // ── Configuración de barras circulares ────────────────────────────────────
+
+  /** Metadatos de los botones movibles entre barras circulares. */
+  readonly circularButtonsMeta: Record<ControlButtonId, { label: string }> = {
+    home:       { label: 'Inicio'        },
+    back:       { label: 'Atrás'         },
+    speak:      { label: 'Hablar'        },
+    deleteLast: { label: 'Borrar último' },
+    clearAll:   { label: 'Limpiar todo'  },
+  };
+
+  /** Items de la barra superior con sus metadatos. */
+  get circularTopBarMeta(): Array<{ id: ControlsBarItem; label: string; canEdit: boolean; visible: boolean }> {
+    return this.localCircularControlsConfig.topBar.map(id => ({
+      id,
+      label:   id === 'phraseBar' ? 'Barra de frase' : this.circularButtonsMeta[id as ControlButtonId].label,
+      canEdit: id !== 'phraseBar',
+      visible: id === 'phraseBar' || this.localCircularControlsConfig.visibleButtons.includes(id as ControlButtonId),
+    }));
+  }
+
+  /** Items de la barra derecha con sus metadatos. */
+  get circularRightBarMeta(): Array<{ id: ControlButtonId; label: string; visible: boolean }> {
+    return this.localCircularControlsConfig.rightBar.map(id => ({
+      id,
+      label:   this.circularButtonsMeta[id].label,
+      visible: this.localCircularControlsConfig.visibleButtons.includes(id),
+    }));
+  }
+
+  /** Reordena la barra superior por arrastre (ion-reorder-group). */
+  onCircularTopBarReorder(event: CustomEvent): void {
+    const { from, to } = (event as any).detail;
+    const order = [...this.localCircularControlsConfig.topBar];
+    const [moved] = order.splice(from, 1);
+    order.splice(to, 0, moved);
+    this.localCircularControlsConfig.topBar = order;
+    (event as any).detail.complete(false);
+    this.emitCircularControlsConfig();
+  }
+
+  /** Reordena la barra derecha por arrastre (ion-reorder-group). */
+  onCircularRightBarReorder(event: CustomEvent): void {
+    const { from, to } = (event as any).detail;
+    const order = [...this.localCircularControlsConfig.rightBar];
+    const [moved] = order.splice(from, 1);
+    order.splice(to, 0, moved);
+    this.localCircularControlsConfig.rightBar = order;
+    (event as any).detail.complete(false);
+    this.emitCircularControlsConfig();
+  }
+
+  /** Mueve un botón de la barra superior a la barra derecha. */
+  moveCircularToRightBar(id: ControlButtonId): void {
+    this.localCircularControlsConfig.topBar =
+      this.localCircularControlsConfig.topBar.filter(i => i !== id);
+    if (!this.localCircularControlsConfig.rightBar.includes(id)) {
+      this.localCircularControlsConfig.rightBar = [
+        ...this.localCircularControlsConfig.rightBar, id,
+      ];
+    }
+    this.emitCircularControlsConfig();
+  }
+
+  /** Mueve un botón de la barra derecha a la barra superior (antes de phraseBar). */
+  moveCircularToTopBar(id: ControlButtonId): void {
+    this.localCircularControlsConfig.rightBar =
+      this.localCircularControlsConfig.rightBar.filter(i => i !== id);
+    if (!this.localCircularControlsConfig.topBar.includes(id)) {
+      const idx = this.localCircularControlsConfig.topBar.indexOf('phraseBar');
+      const newTop = [...this.localCircularControlsConfig.topBar];
+      newTop.splice(idx >= 0 ? idx : newTop.length, 0, id);
+      this.localCircularControlsConfig.topBar = newTop;
+    }
+    this.emitCircularControlsConfig();
+  }
+
+  /** Alterna la visibilidad de un botón en las barras circulares. */
+  toggleCircularItemVisibility(id: ControlButtonId): void {
+    const isVisible = this.localCircularControlsConfig.visibleButtons.includes(id);
+    this.localCircularControlsConfig.visibleButtons = isVisible
+      ? this.localCircularControlsConfig.visibleButtons.filter(b => b !== id)
+      : [...this.localCircularControlsConfig.visibleButtons, id];
+    this.emitCircularControlsConfig();
+  }
+
+  /** Mueve un ítem de la barra superior una posición hacia arriba. */
+  moveCircularTopBarItemUp(index: number): void {
+    if (index <= 0) return;
+    const arr = [...this.localCircularControlsConfig.topBar];
+    [arr[index - 1], arr[index]] = [arr[index], arr[index - 1]];
+    this.localCircularControlsConfig.topBar = arr;
+    this.emitCircularControlsConfig();
+  }
+
+  /** Mueve un ítem de la barra superior una posición hacia abajo. */
+  moveCircularTopBarItemDown(index: number): void {
+    const arr = [...this.localCircularControlsConfig.topBar];
+    if (index >= arr.length - 1) return;
+    [arr[index], arr[index + 1]] = [arr[index + 1], arr[index]];
+    this.localCircularControlsConfig.topBar = arr;
+    this.emitCircularControlsConfig();
+  }
+
+  /** Mueve un ítem de la barra derecha una posición hacia arriba. */
+  moveCircularRightBarItemUp(index: number): void {
+    if (index <= 0) return;
+    const arr = [...this.localCircularControlsConfig.rightBar];
+    [arr[index - 1], arr[index]] = [arr[index], arr[index - 1]];
+    this.localCircularControlsConfig.rightBar = arr;
+    this.emitCircularControlsConfig();
+  }
+
+  /** Mueve un ítem de la barra derecha una posición hacia abajo. */
+  moveCircularRightBarItemDown(index: number): void {
+    const arr = [...this.localCircularControlsConfig.rightBar];
+    if (index >= arr.length - 1) return;
+    [arr[index], arr[index + 1]] = [arr[index + 1], arr[index]];
+    this.localCircularControlsConfig.rightBar = arr;
+    this.emitCircularControlsConfig();
+  }
+
+  private emitCircularControlsConfig(): void {
+    this.circularControlsConfigChange.emit({
+      topBar:         [...this.localCircularControlsConfig.topBar],
+      rightBar:       [...this.localCircularControlsConfig.rightBar],
+      visibleButtons: [...this.localCircularControlsConfig.visibleButtons],
     });
   }
 

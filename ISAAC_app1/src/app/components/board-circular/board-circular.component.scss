@@ -22,6 +22,19 @@ $mint:         #20c997;
   box-sizing:      border-box;
 }
 
+// ── Layout circular (dos barras: superior + derecha) ──────────────────────────
+// Cuando circularLayout=true el host tiene tamaño definido por flex, no por
+// el contenido. Container queries adaptan el canvas automáticamente.
+:host.bcc--circular-layout {
+  container-type: size;
+
+  .bcc-canvas {
+    // Cuadrado que cabe dentro del contenedor (menor de alto vs ancho).
+    // Máx 520px para que no crezca demasiado en pantallas grandes.
+    width: min(100cqb, 100cqi, 520px);
+  }
+}
+
 // ── Columna de ubicación ───────────────────────────────────────────────────────
 
 .bcc-loc-col {

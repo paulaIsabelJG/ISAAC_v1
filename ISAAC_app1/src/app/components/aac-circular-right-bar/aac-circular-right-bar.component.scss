@@ -1,0 +1,93 @@
+$violet:     #7c4dff;
+$violet-l:   #f0ebff;
+$orange:     #ff8c42;
+$orange-l:   #fff3eb;
+$red:        #e53935;
+$red-l:      #ffebee;
+$border:     #f4d0e4;
+$text-muted: #6b5462;
+
+:host {
+  display:    block;
+  flex:       0 0 auto;
+  align-self: stretch;
+  height:     100%;  // permite que .acrb-bar ocupe todo el alto disponible
+}
+
+// ── Contenedor vertical ───────────────────────────────────────────────────────
+.acrb-bar {
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: space-evenly; // botones ocupan todo el alto disponible
+  gap:             0;
+  padding:         10px 6px;
+  width:           76px;
+  height:          100%;
+  background:      #ffffff;
+  border-left:     2px solid $border;
+  box-sizing:      border-box;
+}
+
+:host.acrb--comm .acrb-bar {
+  width:   84px;
+  padding: 10px 8px;
+}
+
+// ── Botones grandes para eye-tracking ─────────────────────────────────────────
+.acrb-btn {
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  gap:             4px;
+  width:           62px;
+  min-height:      62px;
+  max-height:      120px; // evitar que crezcan demasiado en pantallas muy altas
+  border-radius:   16px;
+  border:          2px solid transparent;
+  cursor:          pointer;
+  font-family:     inherit;
+  transition:      background 0.12s, border-color 0.12s, transform 0.08s;
+
+  svg {
+    width:  28px;
+    height: 28px;
+    flex:   0 0 auto;
+  }
+
+  &:active:not([disabled]) { transform: scale(0.92); }
+
+  &--home  { background: $violet-l;  border-color: rgba($violet, 0.3); svg { stroke: $violet; }  }
+  &--back  { background: $violet-l;  border-color: rgba($violet, 0.3); svg { stroke: $violet; }  }
+  &--speak { background: $violet;    border-color: darken($violet, 8%); svg { stroke: #fff; }     }
+  &--erase { background: $orange-l;  border-color: rgba($orange, 0.35); svg { stroke: $orange; } }
+  &--clear { background: $red-l;     border-color: rgba($red, 0.3);    svg { stroke: $red; }     }
+
+  &--disabled,
+  &[disabled] { opacity: 0.35; cursor: not-allowed; }
+}
+
+:host.acrb--comm .acrb-btn {
+  width:      72px;
+  min-height: 72px;
+
+  svg { width: 32px; height: 32px; }
+}
+
+.acrb-btn-label {
+  font-size:      8px;
+  font-weight:    700;
+  color:          $text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  line-height:    1;
+  white-space:    nowrap;
+}
+
+.acrb-btn--speak .acrb-btn-label { color: rgba(#fff, 0.9); }
+
+@media (max-width: 600px) {
+  .acrb-bar  { width: 62px; gap: 8px; padding: 8px 4px; }
+  .acrb-btn  { width: 52px; min-height: 52px; svg { width: 24px; height: 24px; } }
+}

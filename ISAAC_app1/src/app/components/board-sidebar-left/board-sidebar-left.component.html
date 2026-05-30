@@ -254,8 +254,147 @@
   </button>
 </div>
 
-<!-- ── Panel BARRA AAC (solo tableros principales) ──────────────────────── -->
-@if (localBoardRole === 'main') {
+<!-- ── Panel BARRA CIRCULAR (tableros circulares principales) ───────────── -->
+@if (localBoardRole === 'main' && isCircular) {
+  <div class="bbe-panel">
+    <div class="bbe-panel-header">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="9"/>
+        <circle cx="12" cy="12" r="3"/>
+      </svg>
+      BARRAS CIRCULARES
+    </div>
+
+    <p class="bbe-cbar-hint">
+      Configura qué controles aparecen en la barra superior y en la barra lateral derecha.
+      Pulsa las flechas para mover botones entre barras.
+    </p>
+
+    <!-- BARRA SUPERIOR -->
+    <p class="bbe-cbar-section-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="3" y1="6" x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+      </svg>
+      Barra superior
+    </p>
+    <div class="bbe-cbar-list">
+      @for (item of circularTopBarMeta; track item.id) {
+        <div class="bbe-cbar-item" [class.bbe-cbar-item--hidden]="!item.visible">
+
+          <!-- Reordenar ↑↓ -->
+          <div class="bbe-cbar-reorder">
+            <button class="bbe-cbar-reorder-btn"
+                    [disabled]="item.index === 0"
+                    title="Subir"
+                    (click)="moveCircularTopBarItemUp(item.index)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+            </button>
+            <button class="bbe-cbar-reorder-btn"
+                    [disabled]="item.index === circularTopBarMeta.length - 1"
+                    title="Bajar"
+                    (click)="moveCircularTopBarItemDown(item.index)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+          </div>
+
+          <span class="bbe-cbar-name">{{ item.label }}</span>
+
+          @if (item.canEdit) {
+            <!-- Ocultar/mostrar -->
+            <button class="bbe-cbar-eye" title="{{ item.visible ? 'Ocultar' : 'Mostrar' }}"
+                    (click)="toggleCircularItemVisibility($any(item.id))">
+              @if (item.visible) {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              } @else {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                  <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+              }
+            </button>
+            <!-- Mover a barra derecha -->
+            <button class="bbe-cbar-move bbe-cbar-move--right" title="Mover a barra derecha"
+                    (click)="moveCircularToRightBar($any(item.id))">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </button>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- BARRA DERECHA -->
+    <p class="bbe-cbar-section-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="3" x2="18" y2="21"/>
+        <line x1="12" y1="9" x2="18" y2="3"/>
+        <line x1="12" y1="15" x2="18" y2="21"/>
+      </svg>
+      Barra derecha
+    </p>
+    @if (circularRightBarMeta.length === 0) {
+      <p class="bbe-cbar-empty">Sin botones en la barra derecha.</p>
+    } @else {
+      <div class="bbe-cbar-list">
+        @for (item of circularRightBarMeta; track item.id) {
+          <div class="bbe-cbar-item" [class.bbe-cbar-item--hidden]="!item.visible">
+
+            <!-- Mover a barra superior -->
+            <button class="bbe-cbar-move bbe-cbar-move--left" title="Mover a barra superior"
+                    (click)="moveCircularToTopBar(item.id)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
+            </button>
+
+            <!-- Reordenar ↑↓ -->
+            <div class="bbe-cbar-reorder">
+              <button class="bbe-cbar-reorder-btn"
+                      [disabled]="item.index === 0"
+                      title="Subir"
+                      (click)="moveCircularRightBarItemUp(item.index)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+              </button>
+              <button class="bbe-cbar-reorder-btn"
+                      [disabled]="item.index === circularRightBarMeta.length - 1"
+                      title="Bajar"
+                      (click)="moveCircularRightBarItemDown(item.index)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+            </div>
+
+            <span class="bbe-cbar-name">{{ item.label }}</span>
+
+            <!-- Ocultar/mostrar -->
+            <button class="bbe-cbar-eye" title="{{ item.visible ? 'Ocultar' : 'Mostrar' }}"
+                    (click)="toggleCircularItemVisibility(item.id)">
+              @if (item.visible) {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              } @else {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                  <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+              }
+            </button>
+          </div>
+        }
+      </div>
+    }
+
+  </div>
+}
+
+<!-- ── Panel BARRA AAC (tableros grid/multi principales) ─────────────────── -->
+@if (localBoardRole === 'main' && !isCircular) {
   <div class="bbe-panel">
     <div class="bbe-panel-header">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

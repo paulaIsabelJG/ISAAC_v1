@@ -1,13 +1,56 @@
-<!-- ── Barra AAC ─────────────────────────────────────────────────────────── -->
-<app-aac-controls-bar
-  mode="preview"
-  [canGoBack]="canGoBack"
-  (homeClick)="homeClick.emit()"
-  (backClick)="backClick.emit()">
-</app-aac-controls-bar>
+@if (isCircular) {
 
-<!-- ── Tablero GRID en preview ────────────────────────────────────────────── -->
-@if (!isCircular) {
+  <!-- ═══════════════════════════════════════════════════════════════════
+       LAYOUT CIRCULAR: barra superior compacta + fila(tablero | barra derecha)
+       ═══════════════════════════════════════════════════════════════════ -->
+
+  <!-- Barra superior: Inicio + Frase (+ otros botones si el usuario los movió) -->
+  <app-aac-circular-top-bar
+    mode="preview"
+    [config]="effectiveCircularConfig"
+    [canGoBack]="canGoBack"
+    (homeClick)="homeClick.emit()"
+    (backClick)="backClick.emit()">
+  </app-aac-circular-top-bar>
+
+  <!-- Fila central: tablero circular + barra derecha -->
+  <div class="bpc-circular-row">
+
+    <!-- El tablero circular ocupa el espacio sobrante -->
+    <app-board-circular
+      [board]="board"
+      mode="preview"
+      [circularLayout]="true"
+      [centerPict]="previewCenterPict"
+      [simMode]="circularSimMode"
+      [isCenterWaiting]="isCenterShowingLastPhrase"
+      (cellClick)="cellClick.emit($event)">
+    </app-board-circular>
+
+    <!-- Barra vertical: Atrás + Hablar + Borrar + Limpiar -->
+    <app-aac-circular-right-bar
+      mode="preview"
+      [config]="effectiveCircularConfig"
+      [canGoBack]="canGoBack"
+      (homeClick)="homeClick.emit()"
+      (backClick)="backClick.emit()">
+    </app-aac-circular-right-bar>
+
+  </div><!-- /bpc-circular-row -->
+
+} @else {
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       LAYOUT GRID: barra horizontal estándar arriba + tablero
+       ═══════════════════════════════════════════════════════════════════ -->
+
+  <app-aac-controls-bar
+    mode="preview"
+    [canGoBack]="canGoBack"
+    (homeClick)="homeClick.emit()"
+    (backClick)="backClick.emit()">
+  </app-aac-controls-bar>
+
   <div class="bpc-preview-board">
     <app-board-grid
       [board]="board"
@@ -15,16 +58,5 @@
       (cellClick)="cellClick.emit($event)">
     </app-board-grid>
   </div>
-}
 
-<!-- ── Tablero CIRCULAR en preview ───────────────────────────────────────── -->
-@if (isCircular) {
-  <app-board-circular
-    [board]="board"
-    mode="preview"
-    [centerPict]="previewCenterPict"
-    [simMode]="circularSimMode"
-    [isCenterWaiting]="isCenterShowingLastPhrase"
-    (cellClick)="cellClick.emit($event)">
-  </app-board-circular>
 }
