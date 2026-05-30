@@ -16,7 +16,7 @@ export function isCellDisabled(cell: BoardCell | null): boolean {
 }
 
 /** Color base (Fitzgerald o manual) de un pictograma. null si no hay pictograma. */
-function getCellBaseColor(pict: CellPictogram | null): string | null {
+export function getCellBaseColor(pict: CellPictogram | null): string | null {
   if (!pict) return null;
   return pict.fitzgeraldEnabled
     ? (FITZGERALD[pict.wordType as WordType] ?? '#f5f5f5')
@@ -48,5 +48,20 @@ export function getCellBorderColor(cell: BoardCell | null): string {
   const base = getCellBaseColor(cell?.pictogram ?? null);
   if (!base) return '#ffb6c1';                                    // rosa por defecto (celda vacía)
   if (base === '#ffffff' || base === '#f5f5f5') return '#cccccc'; // misc / near-white → borde gris visible
+  return `color-mix(in srgb, ${base} 55%, white)`;
+}
+
+/** Fondo derivado directamente de un CellPictogram (sin celda). */
+export function getPictBgColor(pict: CellPictogram | null): string {
+  const base = getCellBaseColor(pict);
+  if (!base) return '#ffffff';
+  return `color-mix(in srgb, ${base} 20%, white)`;
+}
+
+/** Borde derivado directamente de un CellPictogram (sin celda). */
+export function getPictBorderColor(pict: CellPictogram | null): string {
+  const base = getCellBaseColor(pict);
+  if (!base) return '#ffb6c1';
+  if (base === '#ffffff' || base === '#f5f5f5') return '#cccccc';
   return `color-mix(in srgb, ${base} 55%, white)`;
 }

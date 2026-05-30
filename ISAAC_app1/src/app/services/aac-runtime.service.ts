@@ -2,7 +2,15 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Subject, BehaviorSubject, firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { ControlsConfig, DEFAULT_CONTROLS_CONFIG } from './board.service';
+import { CellPictogram, ControlsConfig, DEFAULT_CONTROLS_CONFIG } from './board.service';
+import { getCellBaseColor } from '../shared/utils/board-color.utils';
+
+/** Evento emitido al navegar entre tableros. Incluye el pictograma que originó la navegación. */
+export interface BoardNavEvent {
+  boardId:    string;
+  /** Pictograma que activó la navegación (undefined = sin contexto, null = explícitamente vacío). */
+  sourcePict?: CellPictogram | null;
+}
 
 export type AacMode = 'edit' | 'preview' | 'communicator';
 
@@ -11,10 +19,12 @@ export interface AacPhraseItem {
   label:    string;
   imageUrl: string;
   sound:    string;
-  /** Color Fitzgerald del pictograma (hex). Mostrado en la phrase-band. */
+  /** Color efectivo del pictograma (Fitzgerald o manual, hex). Mostrado en la phrase-band y en OBL. */
   color?:   string;
   /** Categoría gramatical Fitzgerald. */
   wordType?: string;
+  /** true si el pictograma usa la paleta Fitzgerald (el color se deriva de wordType). */
+  fitzgeraldEnabled?: boolean;
 }
 
 /** Acción OBL estructurada (spec open-board-log-0.1). */
@@ -70,7 +80,7 @@ export class AacRuntimeService {
   aiRewriteEnabled  = false;
 
   private _currentBoardId = '';
-  readonly boardNavigated$ = new Subject<string>();
+  readonly boardNavigated$ = new Subject<BoardNavEvent>();
   readonly phraseChanged$  = new BehaviorSubject<AacPhraseItem[]>([]);
   readonly slotChanged$    = new Subject<{ slotId: number; boardId: string }>();
 
@@ -190,13 +200,17 @@ export class AacRuntimeService {
     if (action?.type === 'disabled') return;
 
     const type: string = action?.type ?? 'voice';
+    // Color efectivo: Fitzgerald (derivado de wordType) o manual.
+    // getCellBaseColor devuelve el hex real que se muestra en el tablero.
+    const effectiveColor = getCellBaseColor(pictogram as CellPictogram) ?? '';
     const item: AacPhraseItem = {
-      id:       pictogram.id       ?? '',
-      label:    pictogram.label    ?? '',
-      imageUrl: pictogram.imageUrl ?? '',
-      sound:    pictogram.sound    ?? pictogram.label ?? '',
-      color:    pictogram.color    ?? '',
-      wordType: pictogram.wordType ?? 'misc',
+      id:                pictogram.id       ?? '',
+      label:             pictogram.label    ?? '',
+      imageUrl:          pictogram.imageUrl ?? '',
+      sound:             pictogram.sound    ?? pictogram.label ?? '',
+      color:             effectiveColor,
+      wordType:          pictogram.wordType ?? 'misc',
+      fitzgeraldEnabled: !!(pictogram.fitzgeraldEnabled),
     };
 
     const spoken       = type === 'voice' || type === 'voice+navigate' || type === 'voice+setSlot';
@@ -217,7 +231,7 @@ export class AacRuntimeService {
     }
 
     if (navigates && action?.targetBoardId) {
-      this.navigateToBoard(action.targetBoardId);
+      this.navigateToBoard(action.targetBoardId, pictogram as CellPictogram);
     }
 
     if (setsSlot && action?.targetSlotId != null && action?.targetBoardId) {
@@ -246,10 +260,10 @@ export class AacRuntimeService {
 
   // ── Board navigation ──────────────────────────────────────────────────────
 
-  navigateToBoard(boardId: string): void {
+  navigateToBoard(boardId: string, sourcePict?: CellPictogram | null): void {
     this.boardStack.push(this._currentBoardId);
     this._currentBoardId = boardId;
-    this.boardNavigated$.next(boardId);
+    this.boardNavigated$.next({ boardId, sourcePict });
     this.logActionEvent(':open_board', boardId);
   }
 
@@ -257,7 +271,7 @@ export class AacRuntimeService {
     if (this.boardStack.length > 0) {
       const prev = this.boardStack.pop()!;
       this._currentBoardId = prev;
-      this.boardNavigated$.next(prev);
+      this.boardNavigated$.next({ boardId: prev });
     }
     this.logActionEvent(':back');
   }
@@ -266,7 +280,7 @@ export class AacRuntimeService {
   goHome(): void {
     this._currentBoardId = this.rootBoardId;
     this.boardStack = [];
-    this.boardNavigated$.next(this.rootBoardId);
+    this.boardNavigated$.next({ boardId: this.rootBoardId });
     this.logActionEvent(':home');
   }
 

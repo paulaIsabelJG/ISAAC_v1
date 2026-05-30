@@ -1,9 +1,11 @@
-import { Component, EventEmitter, HostBinding, Input, Output } from '@angular/core';
+import { Component, EventEmitter, HostBinding, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { Board, CellPictogram } from '../../services/board.service';
 import { BoardLayoutService } from '../../services/board-layout.service';
 import {
   getCellBgColor,
   getCellBorderColor,
+  getPictBgColor,
+  getPictBorderColor,
   isCellDisabled,
 } from '../../shared/utils/board-color.utils';
 import { PictCellContentComponent } from '../pict-cell-content/pict-cell-content.component';
@@ -42,7 +44,7 @@ import { CellCoord, CellDragPayload } from '../board-grid/board-grid.component';
     '[class.bcc--communicator]': "mode === 'communicator'",
   },
 })
-export class BoardCircularComponent {
+export class BoardCircularComponent implements OnChanges {
 
   // ── Datos ────────────────────────────────────────────────────────────────
   @Input() board: Board | null = null;
@@ -63,13 +65,19 @@ export class BoardCircularComponent {
   @Input() dragOverCell: CellCoord | null = null;
   @Input() moveSrcCell:  CellCoord | null = null;
 
-  // ── Estado especial preview ──────────────────────────────────────────────
+  // ── Estado especial preview / communicator ───────────────────────────────
   /** Override del pictograma del centro; undefined = leer del board. */
   @Input() centerPict: CellPictogram | null | undefined = undefined;
   /** true cuando hay simulación IA activa (preview). */
   @Input() simMode = false;
   /** true cuando showLastPhrase activo y frase vacía (icono de espera). */
   @Input() isCenterWaiting = false;
+  /** true en tableros circulares secundarios: el centro es automático, no editable. */
+  @Input() centerLocked = false;
+
+  /** Activa la animación de entrada del centro al recibir un centerPict nuevo. */
+  centerAnimating = false;
+  private animTimer?: ReturnType<typeof setTimeout>;
 
   // ── Eventos hacia la page ────────────────────────────────────────────────
   @Output() cellClick     = new EventEmitter<CellCoord>();
@@ -81,6 +89,18 @@ export class BoardCircularComponent {
   @Output() cellDragEnd   = new EventEmitter<void>();
 
   constructor(private layoutSvc: BoardLayoutService) {}
+
+  ngOnChanges(changes: SimpleChanges): void {
+    const cp = changes['centerPict'];
+    if (cp && cp.currentValue != null && cp.currentValue !== cp.previousValue) {
+      clearTimeout(this.animTimer);
+      this.centerAnimating = false;
+      this.animTimer = setTimeout(() => {
+        this.centerAnimating = true;
+        this.animTimer = setTimeout(() => { this.centerAnimating = false; }, 500);
+      }, 16);
+    }
+  }
 
   // ── Geometría ─────────────────────────────────────────────────────────────
 
@@ -135,6 +155,18 @@ export class BoardCircularComponent {
     return this.centerPict !== undefined
       ? this.centerPict
       : this.getCellPict(0, -1);
+  }
+
+  /** Fondo del centro en preview/communicator: color del pictograma efectivo. */
+  get effectiveCenterBg(): string {
+    const p = this.effectiveCenterPict;
+    return p ? getPictBgColor(p) : this.getCellBg(0, -1);
+  }
+
+  /** Borde del centro en preview/communicator: color del pictograma efectivo. */
+  get effectiveCenterBorder(): string {
+    const p = this.effectiveCenterPict;
+    return p ? getPictBorderColor(p) : this.getCellBorder(0, -1);
   }
 
   // ── Tamaño del canvas según modo ──────────────────────────────────────────

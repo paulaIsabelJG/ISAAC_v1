@@ -5,8 +5,8 @@
   } @else {
     @for (item of items; track $index) {
       <div class="pb-item"
-           [style.border-bottom-color]="item.color || null"
-           [style.border-bottom-width]="item.color ? '3px' : null">
+           [style.background]="itemBg(item)"
+           [style.border-color]="itemBorder(item)">
         <app-pict-cell-content
           [pict]="toCell(item)"
           emptyType="empty-div">

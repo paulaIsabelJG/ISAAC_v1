@@ -286,41 +286,46 @@
         </div>
       }
 
-      <!-- ── Opciones IA (solo tableros principales: grid y multi) ───────── -->
-      @if ((selectedShape === 'grid' || isMultiBoard) && cfgBoardRole !== 'secondary') {
-        <div class="bbc-toggles">
-          <div class="bbc-toggle-row" (click)="form.get('predictorEnabled')!.setValue(!form.get('predictorEnabled')!.value)">
-            <div class="bbc-toggle-info">
-              <span class="bbc-toggle-label">Activar predictor IA</span>
-              <span class="bbc-toggle-sub">Sugiere el siguiente pictograma (próx.)</span>
-            </div>
-            <div class="bbc-toggle-switch"
-                 [class.bbc-toggle-switch--on]="form.get('predictorEnabled')?.value">
-              <div class="bbc-toggle-thumb"></div>
-            </div>
-          </div>
+      <!-- ── Campos de tablero circular ────────────────────────────────── -->
+      @if (selectedShape === 'circular') {
+        <div class="bbc-field">
+          <label class="bbc-label">Nº ranuras exteriores</label>
+          <input class="bbc-input bbc-input--num"
+                 formControlName="circleSlots"
+                 type="number" min="3" max="20"/>
+          <span class="bbc-hint">Pictogramas alrededor del centro (3–20)</span>
+        </div>
+      }
 
-          <!-- Tamaño columna IA (visible solo cuando predictor activo, solo cuadrícula) -->
-          @if (predictorEnabled && selectedShape === 'grid') {
-            <div class="bbc-ia-size-panel">
-              <p class="bbc-ia-size-title">Tamaño de la columna IA</p>
-              <div class="bbc-row">
-                <div class="bbc-field bbc-field--half" style="margin-bottom:0">
-                  <label class="bbc-label">Filas IA</label>
-                  <input class="bbc-input bbc-input--num"
-                         formControlName="iaRows"
-                         type="number" min="1" max="20"/>
-                </div>
-                <div class="bbc-field bbc-field--half" style="margin-bottom:0">
-                  <label class="bbc-label">Columnas IA</label>
-                  <input class="bbc-input bbc-input--num"
-                         formControlName="iaCols"
-                         type="number" min="1" max="5"/>
-                </div>
+      <!-- ── Opciones tablero principal ────────────────────────────────────── -->
+      @if (cfgBoardRole !== 'secondary') {
+        <div class="bbc-toggles">
+
+          <!-- Columna ubicación: solo circular -->
+          @if (selectedShape === 'circular') {
+            <div class="bbc-toggle-row" (click)="form.get('locationColumnEnabled')!.setValue(!form.get('locationColumnEnabled')!.value)">
+              <div class="bbc-toggle-info">
+                <span class="bbc-toggle-label">Columna de ubicación</span>
+                <span class="bbc-toggle-sub">Ranuras laterales para contexto de lugar</span>
+              </div>
+              <div class="bbc-toggle-switch"
+                   [class.bbc-toggle-switch--on]="form.get('locationColumnEnabled')?.value">
+                <div class="bbc-toggle-thumb"></div>
               </div>
             </div>
+            @if (locationColumnEnabled) {
+              <div class="bbc-ia-size-panel">
+                <p class="bbc-ia-size-title">Nº ranuras de ubicación</p>
+                <div class="bbc-field" style="margin-bottom:0">
+                  <input class="bbc-input bbc-input--num"
+                         formControlName="locationColumnSlots"
+                         type="number" min="1" max="20"/>
+                </div>
+              </div>
+            }
           }
 
+          <!-- Corrector IA: todos los tipos de tablero principal -->
           <div class="bbc-toggle-row" (click)="form.get('aiRewriteEnabled')!.setValue(!form.get('aiRewriteEnabled')!.value)">
             <div class="bbc-toggle-info">
               <span class="bbc-toggle-label">Corrector IA</span>
@@ -331,47 +336,8 @@
               <div class="bbc-toggle-thumb"></div>
             </div>
           </div>
-        </div>
-      }
 
-      <!-- ── Campos de tablero circular ────────────────────────────────── -->
-      @if (selectedShape === 'circular') {
-        <div class="bbc-field">
-          <label class="bbc-label">Nº ranuras exteriores</label>
-          <input class="bbc-input bbc-input--num"
-                 formControlName="circleSlots"
-                 type="number" min="3" max="20"/>
-          <span class="bbc-hint">Pictogramas alrededor del centro (3–20)</span>
-        </div>
-
-        <div class="bbc-toggles">
-          <div class="bbc-toggle-row" (click)="form.get('locationColumnEnabled')!.setValue(!form.get('locationColumnEnabled')!.value)">
-            <div class="bbc-toggle-info">
-              <span class="bbc-toggle-label">Columna de ubicación</span>
-              <span class="bbc-toggle-sub">Ranuras laterales para contexto de lugar</span>
-            </div>
-            <div class="bbc-toggle-switch"
-                 [class.bbc-toggle-switch--on]="form.get('locationColumnEnabled')?.value">
-              <div class="bbc-toggle-thumb"></div>
-            </div>
-          </div>
-
-          @if (locationColumnEnabled) {
-            <div class="bbc-ia-size-panel">
-              <p class="bbc-ia-size-title">Nº ranuras de ubicación</p>
-              <div class="bbc-field" style="margin-bottom:0">
-                <input class="bbc-input bbc-input--num"
-                       formControlName="locationColumnSlots"
-                       type="number" min="1" max="20"/>
-              </div>
-            </div>
-          }
-        </div>
-      }
-
-      <!-- ── Personalización automática (solo tableros no secundarios) ──── -->
-      @if (cfgBoardRole !== 'secondary') {
-        <div class="bbc-toggles">
+          <!-- Personalización automática: todos los tipos de tablero principal -->
           <div class="bbc-toggle-row" (click)="form.get('autoPersonalize')!.setValue(!form.get('autoPersonalize')!.value)">
             <div class="bbc-toggle-info">
               <span class="bbc-toggle-label">Personalización automática</span>
@@ -382,6 +348,41 @@
               <div class="bbc-toggle-thumb"></div>
             </div>
           </div>
+
+          <!-- Predictor IA: solo grid y multi (columna lateral de predicción) -->
+          @if (selectedShape === 'grid' || isMultiBoard) {
+            <div class="bbc-toggle-row" (click)="form.get('predictorEnabled')!.setValue(!form.get('predictorEnabled')!.value)">
+              <div class="bbc-toggle-info">
+                <span class="bbc-toggle-label">Activar predictor IA</span>
+                <span class="bbc-toggle-sub">Sugiere el siguiente pictograma (próx.)</span>
+              </div>
+              <div class="bbc-toggle-switch"
+                   [class.bbc-toggle-switch--on]="form.get('predictorEnabled')?.value">
+                <div class="bbc-toggle-thumb"></div>
+              </div>
+            </div>
+
+            @if (predictorEnabled && selectedShape === 'grid') {
+              <div class="bbc-ia-size-panel">
+                <p class="bbc-ia-size-title">Tamaño de la columna IA</p>
+                <div class="bbc-row">
+                  <div class="bbc-field bbc-field--half" style="margin-bottom:0">
+                    <label class="bbc-label">Filas IA</label>
+                    <input class="bbc-input bbc-input--num"
+                           formControlName="iaRows"
+                           type="number" min="1" max="20"/>
+                  </div>
+                  <div class="bbc-field bbc-field--half" style="margin-bottom:0">
+                    <label class="bbc-label">Columnas IA</label>
+                    <input class="bbc-input bbc-input--num"
+                           formControlName="iaCols"
+                           type="number" min="1" max="5"/>
+                  </div>
+                </div>
+              </div>
+            }
+          }
+
         </div>
       }
 

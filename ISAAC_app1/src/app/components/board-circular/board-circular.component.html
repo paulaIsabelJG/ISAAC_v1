@@ -84,9 +84,11 @@
        [class.bcc--dragover]="isDragOver(0, -1)"
        [class.bcc--move-src]="isMoveSrc(0, -1)"
        [class.bcc--move-dst]="isMoveMode && !isMoveSrc(0, -1)"
-       [attr.draggable]="mode === 'edit' && !!getCellPict(0, -1) ? 'true' : null"
-       [style.background]="(mode === 'preview' && simMode) ? '#f0ebff' : getCellBg(0, -1)"
-       [style.border-color]="(mode === 'preview' && simMode) ? '#7c4dff' : getCellBorder(0, -1)"
+       [class.bcc--center-enter]="centerAnimating"
+       [class.bcc--center-locked]="mode === 'edit' && centerLocked"
+       [attr.draggable]="mode === 'edit' && !centerLocked && !!getCellPict(0, -1) ? 'true' : null"
+       [style.background]="mode === 'edit' ? getCellBg(0, -1) : effectiveCenterBg"
+       [style.border-color]="mode === 'edit' ? getCellBorder(0, -1) : effectiveCenterBorder"
        (click)="onSlotClick(0, -1)"
        (dblclick)="onSlotDblClick(0, -1)"
        (dragstart)="onSlotDragStart($event, 0, -1)"
@@ -95,15 +97,25 @@
        (drop)="onSlotDrop($event, 0, -1)"
        (dragend)="onSlotDragEnd()">
 
-    @if (mode === 'edit' || mode === 'communicator') {
-      <!-- Edit / communicator: render estándar via PictCellContent -->
-      <app-pict-cell-content
-        [pict]="getCellPict(0, -1)"
-        [emptyType]="emptyType">
-      </app-pict-cell-content>
+    @if (mode === 'edit') {
+      @if (centerLocked) {
+        <!-- Tablero circular secundario: centro automático, no editable -->
+        <div class="bcc-center-locked-hint"
+             title="El pictograma central se rellena automáticamente con el pictograma pulsado en el tablero anterior">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="3" y="11" width="18" height="11" rx="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <span>Auto</span>
+        </div>
+      } @else {
+        <!-- Edit normal: render estándar -->
+        <app-pict-cell-content [pict]="getCellPict(0, -1)" [emptyType]="emptyType">
+        </app-pict-cell-content>
+      }
 
     } @else {
-      <!-- Preview: centro complejo con simMode, waiting y plus -->
+      <!-- Preview / communicator: effectiveCenterPict (respeta override de centerPict) -->
       @if (effectiveCenterPict; as p) {
         <app-pict-cell-content [pict]="p" emptyType="empty-div">
         </app-pict-cell-content>

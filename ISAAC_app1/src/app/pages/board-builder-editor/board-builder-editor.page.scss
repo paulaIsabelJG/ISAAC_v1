@@ -88,8 +88,14 @@ $panel-bg:     #faf5f8;
   min-height:      0;
   overflow:        hidden;
   display:         flex;
-  align-items:     center;   // centra verticalmente el wrapper
+  align-items:     center;   // centra verticalmente el wrapper (grid)
   justify-content: center;
+}
+
+// Circulares en edición: el wrapper debe llenarse verticalmente para que el
+// tablero circular reciba toda la altura disponible (container queries).
+.bbe-comm-outer--circular {
+  align-items: stretch;
 }
 
 // flex: 1 → ocupa todo el ancho horizontal del outer (flex row).

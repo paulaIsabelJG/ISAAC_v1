@@ -3,6 +3,7 @@ import { CommonModule }     from '@angular/common';
 import { ReconstructedPhrase, PhraseInteraction } from '../../services/aac-statistics.service';
 import { PictCellContentComponent } from '../pict-cell-content/pict-cell-content.component';
 import { CellPictogram }  from '../../services/board.service';
+import { getPictBgColor, getPictBorderColor } from '../../shared/utils/board-color.utils';
 
 @Component({
   selector:    'app-phrase-log-card',
@@ -29,9 +30,21 @@ export class PhraseLogCardComponent {
       tags:              [],
       description:       '',
       wordType:          (inter.wordType || 'misc') as any,
-      fitzgeraldEnabled: !!(inter.color),
+      // inter.color ya almacena el hex efectivo (resuelto desde Fitzgerald o manual)
+      // — no volvemos a activar fitzgeraldEnabled para evitar doble resolución.
+      fitzgeraldEnabled: false,
       color:             inter.color || '',
     };
+  }
+
+  /** Fondo del pictograma: tinte 20% del color efectivo (igual que en el tablero). */
+  pictBg(inter: PhraseInteraction): string {
+    return getPictBgColor(this.toCell(inter));
+  }
+
+  /** Borde del pictograma: versión semisaturada del color efectivo. */
+  pictBorder(inter: PhraseInteraction): string {
+    return getPictBorderColor(this.toCell(inter));
   }
 
   /** Formatea ms en "Xm Ys" legible. */

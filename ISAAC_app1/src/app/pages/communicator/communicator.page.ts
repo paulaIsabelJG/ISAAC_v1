@@ -4,7 +4,7 @@ import { CommonModule }  from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription, firstValueFrom } from 'rxjs';
 import { AacRuntimeService } from '../../services/aac-runtime.service';
-import { BoardService, Board } from '../../services/board.service';
+import { BoardService, Board, CellPictogram } from '../../services/board.service';
 import { UserService, FullBackendUser } from '../../services/user.service';
 import { BoardLayoutService } from '../../services/board-layout.service';
 import { BoardGridComponent } from '../../components/board-grid/board-grid.component';
@@ -53,6 +53,10 @@ export class CommunicatorPage implements OnInit, OnDestroy {
   voiceEnabled = false;
 
   private navSub?: Subscription;
+  /** Mapa boardId → pictograma que originó la navegación hacia ese tablero. */
+  private boardSourcePicts = new Map<string, CellPictogram | null>();
+  /** Pictograma que originó la navegación al tablero actualmente visible. */
+  navSourcePict: CellPictogram | null | undefined;
 
   constructor(
     private route:          ActivatedRoute,
@@ -108,14 +112,20 @@ export class CommunicatorPage implements OnInit, OnDestroy {
     );
 
     // Suscripción a navegación de tableros (navigate actions, speakAndBack, etc.)
-    this.navSub = this.aac.boardNavigated$.subscribe((newBoardId) => {
-      void this.loadBoard(newBoardId);
+    this.navSub = this.aac.boardNavigated$.subscribe(({ boardId, sourcePict }) => {
+      if (sourcePict !== undefined) {
+        this.boardSourcePicts.set(boardId, sourcePict ?? null);
+      }
+      this.navSourcePict = this.boardSourcePicts.get(boardId);
+      void this.loadBoard(boardId);
     });
   }
 
   async ionViewWillLeave() {
     await this.aac.endSession();
     this.navSub?.unsubscribe();
+    this.boardSourcePicts.clear();
+    this.navSourcePict = undefined;
   }
 
   ngOnDestroy() {
@@ -152,6 +162,8 @@ export class CommunicatorPage implements OnInit, OnDestroy {
 
   /** Home: salir del comunicador y volver a la pantalla principal del usuario. */
   onHome(): void {
+    this.boardSourcePicts.clear();
+    this.navSourcePict = undefined;
     this.router.navigateByUrl(this.returnTo);
   }
 
@@ -172,6 +184,10 @@ export class CommunicatorPage implements OnInit, OnDestroy {
 
   get isCircularBoard(): boolean {
     return this.board?.shape === 'circular';
+  }
+
+  get isSecondaryCircular(): boolean {
+    return this.board?.shape === 'circular' && this.board?.boardRole === 'secondary';
   }
 
   get effectiveCircularConfig() {

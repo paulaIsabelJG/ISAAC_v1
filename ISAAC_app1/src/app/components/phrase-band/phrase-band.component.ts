@@ -3,6 +3,7 @@ import { CommonModule }     from '@angular/common';
 import { AacPhraseItem }    from '../../services/aac-runtime.service';
 import { CellPictogram }    from '../../services/board.service';
 import { PictCellContentComponent } from '../pict-cell-content/pict-cell-content.component';
+import { getPictBgColor, getPictBorderColor } from '../../shared/utils/board-color.utils';
 
 /**
  * PhraseBandComponent — tira de frase AAC, puramente presentacional.
@@ -37,8 +38,16 @@ export class PhraseBandComponent {
       tags:              [],
       description:       '',
       wordType:          (item.wordType ?? 'misc') as any,
-      fitzgeraldEnabled: false,
+      fitzgeraldEnabled: item.fitzgeraldEnabled ?? false,
       color:             item.color ?? '',
     };
+  }
+
+  itemBg(item: AacPhraseItem): string {
+    return getPictBgColor(this.toCell(item));
+  }
+
+  itemBorder(item: AacPhraseItem): string {
+    return getPictBorderColor(this.toCell(item));
   }
 }

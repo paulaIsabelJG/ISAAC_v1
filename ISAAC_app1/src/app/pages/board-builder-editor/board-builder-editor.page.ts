@@ -231,6 +231,9 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   // ── Simulación circular en preview ───────────────────────────────────────────
   circularSimMode = false;
   circularSimCenter: CellPictogram | null = null;
+  /** Mapa boardId → pictograma origen para preview de tableros secundarios circulares. */
+  private previewBoardSourcePicts = new Map<string, CellPictogram | null>();
+  private previewNavSourcePict: CellPictogram | null | undefined;
 
   // ── Datos del sidebar y panel de celda ───────────────────────────────────────
   userBoards: Board[] = [];
@@ -324,7 +327,14 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     this.loadError = '';
     try {
       const res = await firstValueFrom(this.boardSvc.getBoardById(this.boardId));
-      this.board = res.board;
+      // Prioridad: API (fuente de verdad guardada) > previewCircularControlsConfig
+      // (cambios en curso sin guardar) > nada.
+      // Así el formulario del sidebar nunca diverge de la representación visual.
+      this.board = {
+        ...res.board,
+        circularControlsConfig:
+          res.board.circularControlsConfig ?? this.previewCircularControlsConfig,
+      };
       this.syncConfigFromBoard();
       const assignedIds = this.board.assignedUserIds ?? [];
       this.loadUserBoards(assignedIds);
@@ -621,6 +631,9 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
       return;
     }
 
+    // Centro de tablero circular secundario: no editable (se rellena automáticamente)
+    if (this.isSecondaryCircular && row === 0 && col === -1) return;
+
     if (this.moveSrcCell) {
       const src = { ...this.moveSrcCell };
       this.moveSrcCell = null;
@@ -876,7 +889,12 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
           ...(isMulti && payload.slotCount && { slotCount: payload.slotCount }),
         }),
       );
-      this.board = res.board;
+      // Si el backend no devuelve circularControlsConfig, usamos el payload guardado.
+      const savedCircularConfig = res.board.circularControlsConfig ?? payload.circularControlsConfig;
+      this.board = { ...res.board, circularControlsConfig: savedCircularConfig };
+      // Sincronizamos previewCircularControlsConfig con lo recién guardado para que
+      // si el usuario navega y vuelve, loadBoard() lo use como fallback correcto.
+      this.previewCircularControlsConfig = savedCircularConfig;
       // Nuevo objeto → ngOnChanges en el sidebar resetea el formulario
       this.syncConfigFromBoard();
       if (isMulti) {
@@ -918,8 +936,12 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
 
       // Suscripción a boardNavigated$ para gestionar Back y navigate en preview.
       // Funciona tanto en tablero normal como en multitablero.
-      this.previewNavSub = this.aacRuntime.boardNavigated$.subscribe((newBoardId) => {
-        this.boardId = newBoardId;
+      this.previewNavSub = this.aacRuntime.boardNavigated$.subscribe(({ boardId, sourcePict }) => {
+        if (sourcePict !== undefined) {
+          this.previewBoardSourcePicts.set(boardId, sourcePict ?? null);
+        }
+        this.previewNavSourcePict = this.previewBoardSourcePicts.get(boardId);
+        this.boardId = boardId;
         this.circularSimMode   = false;
         this.circularSimCenter = null;
         void this.loadBoard();
@@ -927,6 +949,8 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     } else {
       this.previewNavSub?.unsubscribe();
       this.previewNavSub = undefined;
+      this.previewBoardSourcePicts.clear();
+      this.previewNavSourcePict = undefined;
       this.aacRuntime.reset();
     }
   }
@@ -2277,8 +2301,16 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     return this.selectedCell?.row === 0 && this.selectedCell?.col === -1;
   }
 
+  get isSecondaryCircular(): boolean {
+    return this.board?.shape === 'circular' && this.board?.boardRole === 'secondary';
+  }
+
   get previewCenterPict(): CellPictogram | null {
     if (this.circularSimMode) return this.circularSimCenter;
+    // Tablero circular secundario en preview: muestra el pictograma que originó la navegación
+    if (this.isSecondaryCircular && this.previewNavSourcePict !== undefined) {
+      return this.previewNavSourcePict ?? null;
+    }
     const centerCell = this.getCellData(0, -1);
     if (centerCell?.action?.showLastPhrase) {
       const arr = this.aacRuntime.phrase;

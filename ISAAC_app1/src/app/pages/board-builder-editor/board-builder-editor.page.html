@@ -111,7 +111,7 @@
         </div>
 
         <!-- ── Wrapper proporciones reales: barra AAC + tablero ────────────── -->
-        <div class="bbe-comm-outer">
+        <div class="bbe-comm-outer" [class.bbe-comm-outer--circular]="!isMultiBoard && isCircular">
           <div class="bbe-comm-wrapper">
 
             <!-- ── Preview de la barra AAC (tableros principales no circulares) ─ -->
@@ -155,13 +155,15 @@
             @if (!isMultiBoard && isCircular) {
               <div class="bbe-circ-edit-wrapper">
 
-                <!-- Barra superior simulada (sin interacción) -->
-                <div class="bbe-circ-edit-topbar">
-                  <app-aac-circular-top-bar
-                    mode="preview"
-                    [config]="effectiveCircularEditConfig">
-                  </app-aac-circular-top-bar>
-                </div>
+                <!-- Barra superior simulada: solo tableros principales -->
+                @if (board?.boardRole !== 'secondary') {
+                  <div class="bbe-circ-edit-topbar">
+                    <app-aac-circular-top-bar
+                      mode="preview"
+                      [config]="effectiveCircularEditConfig">
+                    </app-aac-circular-top-bar>
+                  </div>
+                }
 
                 <!-- Fila: tablero circular + barra derecha simulada -->
                 <div class="bbe-circ-edit-row">
@@ -169,6 +171,7 @@
                     [board]="board"
                     mode="edit"
                     [circularLayout]="true"
+                    [centerLocked]="isSecondaryCircular"
                     [selectedCell]="selectedCell"
                     [draggedCell]="draggedCell"
                     [dragOverCell]="dragOverCell"
@@ -182,13 +185,15 @@
                     (cellDragEnd)="onCellDragEnd()">
                   </app-board-circular>
 
-                  <!-- Barra derecha simulada (sin interacción) -->
-                  <div class="bbe-circ-edit-rightbar">
-                    <app-aac-circular-right-bar
-                      mode="preview"
-                      [config]="effectiveCircularEditConfig">
-                    </app-aac-circular-right-bar>
-                  </div>
+                  <!-- Barra derecha simulada: solo tableros principales -->
+                  @if (board?.boardRole !== 'secondary') {
+                    <div class="bbe-circ-edit-rightbar">
+                      <app-aac-circular-right-bar
+                        mode="preview"
+                        [config]="effectiveCircularEditConfig">
+                      </app-aac-circular-right-bar>
+                    </div>
+                  }
                 </div>
 
               </div>

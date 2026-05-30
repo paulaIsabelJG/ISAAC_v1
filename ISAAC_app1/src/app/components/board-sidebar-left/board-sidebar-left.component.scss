@@ -583,8 +583,8 @@ $violet-l: #f0ebff;
   --background-hover:   #{$violet-l};
   --border-radius:      10px;
   --padding-start:      4px;
-  --padding-end:        4px;
-  --inner-padding-end:  4px;
+  --padding-end:        2px;
+  --inner-padding-end:  2px;
   margin-bottom:        4px;
   border-radius:        10px;
   border:               1.5px solid rgba($violet, 0.15);
@@ -608,11 +608,11 @@ $violet-l: #f0ebff;
   display:         flex;
   align-items:     center;
   justify-content: center;
-  width:           32px;
-  height:          32px;
-  border-radius:   8px;
+  width:           26px;
+  height:          26px;
+  border-radius:   7px;
   background:      rgba($violet, 0.1);
-  margin-right:    8px;
+  margin-right:    6px;
   flex:            0 0 auto;
 
   .bbe-ctrl-item--phrase & { background: rgba(#f59e0b, 0.12); }
@@ -620,8 +620,8 @@ $violet-l: #f0ebff;
 }
 
 .bbe-ctrl-icon {
-  width:  16px;
-  height: 16px;
+  width:  14px;
+  height: 14px;
   flex:   0 0 auto;
   stroke: $violet;
 
@@ -633,12 +633,15 @@ $violet-l: #f0ebff;
   display:        flex;
   flex-direction: column;
   gap:            1px;
+  min-width:      0;
 }
 
 .bbe-ctrl-name {
-  font-size:   12px;
-  font-weight: 600;
-  color:       $text-dark;
+  font-size:    11px;
+  font-weight:  600;
+  color:        $text-dark;
+  white-space:  normal;
+  line-height:  1.25;
 
   .bbe-ctrl-item--hidden & { color: $text-muted; }
 }
@@ -651,43 +654,49 @@ $violet-l: #f0ebff;
   color:         #999;
 }
 
-.bbe-ctrl-eye {
+// Botones de acción del item: sin fondo ni borde, solo icono.
+// Agrupados en .bbe-ctrl-actions para un único slot="end" compacto.
+.bbe-ctrl-actions {
+  display:     flex;
+  align-items: center;
+  gap:         0;
+  flex:        0 0 auto;
+}
+
+.bbe-ctrl-eye,
+.bbe-ctrl-move-bar {
   display:         flex;
   align-items:     center;
   justify-content: center;
-  width:           28px;
-  height:          28px;
-  border:          1.5px solid rgba($violet, 0.35);
-  background:      rgba($violet, 0.08);
-  border-radius:   7px;
+  width:           26px;
+  height:          26px;
+  border:          none;
+  background:      transparent;
+  border-radius:   6px;
   cursor:          pointer;
-  color:           $violet;
-  transition:      background 0.12s, border-color 0.12s, transform 0.1s;
+  transition:      background 0.12s, transform 0.1s;
   flex:            0 0 auto;
+  padding:         0;
 
-  svg { width: 15px; height: 15px; flex: 0 0 auto; stroke: $violet; }
+  &:hover    { background: rgba($violet, 0.12); }
+  &:active   { transform: scale(0.85); }
+}
 
-  &:hover {
-    background:   rgba($violet, 0.18);
-    border-color: rgba($violet, 0.6);
-  }
+.bbe-ctrl-eye {
+  svg { width: 15px; height: 15px; stroke: $violet; }
 
-  &:active { transform: scale(0.88); }
+  .bbe-ctrl-item--hidden & svg { stroke: #aaa; }
+  .bbe-ctrl-item--hidden &:hover { background: rgba($violet, 0.1); svg { stroke: $violet; } }
+}
 
-  // Estado oculto: ojo apagado
-  .bbe-ctrl-item--hidden & {
-    border-color: rgba(#999, 0.3);
-    background:   rgba(#999, 0.08);
+// ── Botón mover entre barras (circular) ──────────────────────────────────────
+.bbe-ctrl-move-bar {
+  svg { width: 14px; height: 14px; stroke: $violet; }
 
-    svg { stroke: #aaa; }
+  &:hover { background: rgba($violet, 0.12); }
 
-    &:hover {
-      background:   rgba($violet, 0.1);
-      border-color: rgba($violet, 0.4);
-
-      svg { stroke: $violet; }
-    }
-  }
+  &--left svg          { stroke: $pink-dark; }
+  &--left:hover        { background: rgba($pink-dark, 0.12); }
 }
 
 // ── Chips de ayuda en panel BARRA AAC ─────────────────────────────────────────
@@ -713,6 +722,7 @@ $violet-l: #f0ebff;
 
   svg { width: 11px; height: 11px; flex: 0 0 auto; }
 }
+
 
 // ── Tablero secundario: usuario heredado ──────────────────────────────────────
 
@@ -744,13 +754,8 @@ $violet-l: #f0ebff;
 }
 
 // ── Panel BARRAS CIRCULARES ───────────────────────────────────────────────────
-
-.bbe-cbar-hint {
-  font-size:   11px;
-  color:       $text-muted;
-  line-height: 1.45;
-  margin:      0 0 8px;
-}
+// Usa los mismos estilos bbe-ctrl-* que el panel BARRA AAC.
+// Solo se añaden los estilos exclusivos de este panel.
 
 .bbe-cbar-section-title {
   display:        flex;
@@ -761,93 +766,9 @@ $violet-l: #f0ebff;
   color:          $text-muted;
   letter-spacing: 1.2px;
   text-transform: uppercase;
-  margin:         10px 0 4px;
+  margin:         4px 0 4px;
 
   svg { width: 12px; height: 12px; flex: 0 0 auto; stroke: $text-muted; }
-}
-
-.bbe-cbar-list {
-  display:       flex;
-  flex-direction: column;
-  gap:           3px;
-  margin-bottom: 4px;
-}
-
-.bbe-cbar-item {
-  display:       flex;
-  align-items:   center;
-  gap:           4px;
-  padding:       5px 6px;
-  border-radius: 8px;
-  border:        1.5px solid $border;
-  background:    #fff;
-  transition:    opacity 0.15s;
-
-  &--hidden { opacity: 0.45; }
-}
-
-.bbe-cbar-name {
-  flex:        1;
-  font-size:   11px;
-  font-weight: 600;
-  color:       $text-dark;
-  min-width:   0;
-  white-space: nowrap;
-  overflow:    hidden;
-  text-overflow: ellipsis;
-}
-
-.bbe-cbar-reorder {
-  display:        flex;
-  flex-direction: column;
-  gap:            1px;
-  flex:           0 0 auto;
-}
-
-.bbe-cbar-reorder-btn {
-  display:         flex;
-  align-items:     center;
-  justify-content: center;
-  width:           18px;
-  height:          13px;
-  border:          none;
-  border-radius:   3px;
-  background:      transparent;
-  cursor:          pointer;
-  padding:         0;
-
-  svg { width: 10px; height: 10px; stroke: $text-muted; }
-
-  &:hover:not([disabled]) { background: $violet-light; svg { stroke: $violet; } }
-  &[disabled] { opacity: 0.25; cursor: default; }
-}
-
-.bbe-cbar-eye,
-.bbe-cbar-move {
-  display:         flex;
-  align-items:     center;
-  justify-content: center;
-  width:           24px;
-  height:          24px;
-  border:          none;
-  border-radius:   6px;
-  background:      transparent;
-  cursor:          pointer;
-  flex:            0 0 auto;
-  transition:      background 0.12s;
-
-  svg { width: 13px; height: 13px; }
-}
-
-.bbe-cbar-eye {
-  svg { stroke: $text-muted; }
-  &:hover { background: $pink-light; }
-}
-
-.bbe-cbar-move {
-  &--right svg { stroke: $violet; }
-  &--left  svg { stroke: $violet; }
-  &:hover { background: $violet-light; }
 }
 
 .bbe-cbar-empty {

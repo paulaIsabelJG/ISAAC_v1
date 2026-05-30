@@ -40,6 +40,7 @@
           [board]="board"
           mode="communicator"
           [circularLayout]="true"
+          [centerPict]="isSecondaryCircular ? navSourcePict : undefined"
           (cellClick)="onCellPress($event.row, $event.col)">
         </app-board-circular>
 
