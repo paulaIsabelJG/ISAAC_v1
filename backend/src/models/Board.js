@@ -76,6 +76,8 @@ const boardSchema = new mongoose.Schema({
     boardId: { type: mongoose.Schema.Types.ObjectId, ref: 'Board', default: null },
     _id: false
   }],
+  // Posición visual de la columna IA en el editor/comunicador del multitablero
+  multiBoardIaPosition: { type: String, enum: ['left', 'right', 'between-1-2', 'between-2-3'], default: 'left' },
   // Proporciones de los huecos (widths = anchos %, heights = altos % para 4-huecos)
   multiBoardLayout: {
     widths:  { type: [Number], default: [] },

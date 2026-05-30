@@ -196,24 +196,43 @@ export class MultiboardCommunicatorComponent implements OnInit, OnDestroy, OnCha
     return `mbc-layout--${this.masterBoard?.slotCount ?? 2}`;
   }
 
-  /** CSS grid-template-columns: incluye columna predictor a la izquierda si aplica. */
+  /** Posición visual de la columna IA leída del tablero maestro. */
+  get iaPosition(): string {
+    return this.masterBoard?.multiBoardIaPosition ?? 'left';
+  }
+
+  /**
+   * Índice de columna (0-based) ANTES del cual se inserta el predictor.
+   * 'left'=0, 'between-1-2'=1, 'between-2-3'=2, 'right'=cols.
+   */
+  private get predictorInsertAfterSlot(): number {
+    const slotN = this.slotStates.length || (this.masterBoard?.slotCount ?? 2);
+    const cols  = slotN === 4 ? 2 : slotN;
+    const pos   = this.iaPosition;
+    if (pos === 'right')        return cols;
+    if (pos === 'between-1-2') return 1;
+    if (pos === 'between-2-3') return 2;
+    return 0; // left
+  }
+
+  /** CSS grid-template-columns: inserta la columna predictor en la posición correcta. */
   get gridTemplateColumns(): string {
-    const count  = this.masterBoard?.slotCount ?? 2;
-    const cols   = count === 4 ? 2 : count;
+    // Usar slotStates.length como fuente de verdad: evita errores si slotCount está
+    // indefinido en tableros legacy o recién migrados.
+    const slotN = this.slotStates.length || (this.masterBoard?.slotCount ?? 2);
+    const cols  = slotN === 4 ? 2 : slotN;
     const widths = this.masterBoard?.multiBoardLayout?.widths;
 
-    let boardCols: string;
-    if (widths && widths.length === cols && widths.every(v => v > 0)) {
-      boardCols = widths.map(w => w + 'fr').join(' ');
-    } else {
-      boardCols = `repeat(${cols}, 1fr)`;
-    }
+    const slotCols: string[] = (widths && widths.length === cols && widths.every(v => v > 0))
+      ? widths.map(w => w + 'fr')
+      : Array(cols).fill('1fr');
 
-    if (this.showPredictor) {
-      const predictorColWidth = `${this.aac.iaCols * 6.5}%`;
-      return `${predictorColWidth} ${boardCols}`;
-    }
-    return boardCols;
+    if (!this.showPredictor) return slotCols.join(' ');
+
+    const predictorCol = `${this.aac.iaCols * 6.5}%`;
+    const result = [...slotCols];
+    result.splice(this.predictorInsertAfterSlot, 0, predictorCol);
+    return result.join(' ');
   }
 
   /** CSS grid-template-rows calculado a partir de multiBoardLayout.heights (solo 4 huecos). */
@@ -224,6 +243,36 @@ export class MultiboardCommunicatorComponent implements OnInit, OnDestroy, OnCha
       return heights.map(h => h + 'fr').join(' ');
     }
     return 'repeat(2, 1fr)';
+  }
+
+  /** Columna CSS Grid del predictor (1-based). */
+  get predictorGridColumn(): number {
+    return this.predictorInsertAfterSlot + 1;
+  }
+
+  /** Filas CSS Grid del predictor (span 2 en layout 4 huecos). */
+  get predictorGridRow(): string {
+    return (this.masterBoard?.slotCount ?? 2) === 4 ? '1 / span 2' : '1';
+  }
+
+  /** Columna CSS Grid de un slot (1-based), desplazada según posición del predictor. */
+  getSlotGridColumn(slotId: number): number {
+    const slotN = this.slotStates.length || (this.masterBoard?.slotCount ?? 2);
+    if (slotN === 4) {
+      const naturalCol = ((slotId - 1) % 2) + 1;
+      if (!this.showPredictor) return naturalCol;
+      return this.iaPosition === 'left' ? naturalCol + 1 : naturalCol;
+    }
+    if (!this.showPredictor) return slotId;
+    const insertAfter = this.predictorInsertAfterSlot;
+    return slotId > insertAfter ? slotId + 1 : slotId;
+  }
+
+  /** Fila CSS Grid de un slot (solo relevante para 4 huecos). */
+  getSlotGridRow(slotId: number): number {
+    const slotN = this.slotStates.length || (this.masterBoard?.slotCount ?? 2);
+    if (slotN !== 4) return 1;
+    return slotId <= 2 ? 1 : 2;
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────────

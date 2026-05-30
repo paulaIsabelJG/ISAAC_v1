@@ -155,13 +155,30 @@
               <!-- ── MULTITABLERO editor: boards reales con resize ──────────── -->
               @if (isMultiBoard) {
 
-                <!-- Wrapper fila: slot predictor (izq.) + grids (resto) -->
-                <div class="bbe-multi-with-predictor">
+                <!-- Wrapper fila: slot predictor (izq./der.) + grids -->
+                <div class="bbe-multi-with-predictor"
+                     [class.bbe-multi-with-predictor--ia-right]="multiIaPosition === 'right'">
 
-                  <!-- Slot Predictor IA (solo si predictorEnabled en el tablero raíz) -->
-                  @if (showMultiPredictor) {
+                  <!-- Slot Predictor IA lateral (solo en posiciones izquierda/derecha) -->
+                  @if (showMultiPredictorOuter) {
                     <div class="bbe-multi-predictor-slot"
                          [style.width]="multiPredictorSlotWidth">
+
+                      <!-- Tira de toggle: cicla por todas las posiciones válidas -->
+                      <button class="bbe-multi-ia-toggle"
+                              [class.bbe-multi-ia-toggle--right]="multiIaPosition === 'right'"
+                              (click)="cycleMultiIaPosition()"
+                              title="Posición IA → {{ multiIaNextLabel }}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                             stroke-linecap="round" stroke-linejoin="round">
+                          @if (multiIaPosition === 'right') {
+                            <polyline points="15 18 9 12 15 6"/>
+                          } @else {
+                            <polyline points="9 18 15 12 9 6"/>
+                          }
+                        </svg>
+                      </button>
+
                       <app-ia-predictor-column
                         [rows]="multiPredictorIaRows"
                         [cols]="multiPredictorIaCols"
@@ -234,9 +251,38 @@
 
                         </div><!-- /bbe-multi-slot -->
 
-                        <!-- Handle de columna entre slots (no después del último) -->
-                        @if (colIdx < row.length - 1) {
+                        <!-- Barra IA inline (posición between-1-2 o between-2-3) -->
+                        @if (showMultiPredictor && multiIaBetweenColIndex === colIdx) {
+                          <div class="bbe-multi-ia-inline" [style.width]="multiPredictorSlotWidth">
+                            <!-- Strip de toggle inline: cicla hacia la siguiente posición -->
+                            <button class="bbe-multi-ia-toggle bbe-multi-ia-toggle--inline"
+                                    (click)="cycleMultiIaPosition()"
+                                    title="Posición IA → {{ multiIaNextLabel }}">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                   stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"/>
+                              </svg>
+                            </button>
+                            <app-ia-predictor-column
+                              [rows]="multiPredictorIaRows"
+                              [cols]="multiPredictorIaCols"
+                              [showHeader]="true"
+                              [embedded]="true">
+                            </app-ia-predictor-column>
+                          </div>
+                          <!-- Handle de resize entre la IA inline y el slot siguiente -->
                           <div class="bbe-resize-handle bbe-resize-handle--col"
+                               [class.bbe-resize-handle--active]="resizingCol === multiIaBetweenColIndex"
+                               (pointerdown)="onColHandleDown($event, multiIaBetweenColIndex)"
+                               title="Arrastrar para redimensionar">
+                            <div class="bbe-resize-handle-inner"></div>
+                          </div>
+                        }
+
+                        <!-- Handle de columna entre slots (no después del último, no en la posición IA) -->
+                        @if (colIdx < row.length - 1 && !(showMultiPredictor && multiIaBetweenColIndex === colIdx)) {
+                          <div class="bbe-resize-handle bbe-resize-handle--col"
+                               [class.bbe-resize-handle--active]="resizingCol === colIdx"
                                (pointerdown)="onColHandleDown($event, colIdx)"
                                title="Arrastrar para redimensionar">
                             <div class="bbe-resize-handle-inner"></div>
@@ -250,6 +296,7 @@
                     <!-- Handle de fila entre filas (solo para 4 huecos, no después de la última) -->
                     @if (rowIdx < slotsByRow.length - 1) {
                       <div class="bbe-resize-handle bbe-resize-handle--row"
+                           [class.bbe-resize-handle--active]="resizingRow === 0"
                            (pointerdown)="onRowHandleDown($event)"
                            title="Arrastrar para redimensionar altura">
                         <div class="bbe-resize-handle-inner"></div>
@@ -268,6 +315,8 @@
                 <app-board-grid
                   [board]="board"
                   mode="edit"
+                  [iaRight]="iaRight"
+                  (iaToggleClick)="toggleIaPosition()"
                   [selectedCell]="selectedCell"
                   [draggedCell]="draggedCell"
                   [dragOverCell]="dragOverCell"
@@ -353,6 +402,20 @@
           <!-- ── TAB: Configuración del tablero (asignación de huecos) ─── -->
           @if (multiPanelMode === 'tablero') {
             <div class="bbe-multi-slot-cfg">
+
+              <!-- Posición de la columna IA (solo si predictorEnabled) -->
+              @if (showMultiPredictor) {
+                <p class="bbe-multi-panel-title">POSICIÓN COLUMNA IA</p>
+                <div class="bbe-ia-pos-btns">
+                  @for (opt of multiIaValidPositions; track opt.value) {
+                    <button class="bbe-ia-pos-btn"
+                            [class.bbe-ia-pos-btn--active]="multiIaPosition === opt.value"
+                            (click)="setMultiIaPosition(opt.value)">
+                      {{ opt.label }}
+                    </button>
+                  }
+                </div>
+              }
 
               <!-- Sección TAMAÑOS: proporciones + grid del minitablero activo -->
               <p class="bbe-multi-panel-title">TAMAÑOS</p>
@@ -496,22 +559,36 @@
                   <p class="bbe-slot-picker-label">
                     Asignando tablero al hueco {{ selectedSlotId }}:
                   </p>
-                  @for (b of slotsAvailableBoards; track b._id) {
-                    <div class="bbe-board-item" (click)="onSlotBoardAssign(b._id)">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                        <rect x="3" y="3" width="7" height="7" rx="1.5"/>
-                        <rect x="14" y="3" width="7" height="7" rx="1.5"/>
-                        <rect x="3" y="14" width="7" height="7" rx="1.5"/>
-                        <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+                  @if (slotsAvailableBoards.length === 0) {
+                    <p class="bbe-multi-empty">Sin tableros secundarios disponibles.</p>
+                  } @else {
+                    <div class="bbe-slot-search-wrap">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                       </svg>
-                      <span>{{ b.name }}</span>
+                      <input type="text" class="bbe-slot-search-inp"
+                             placeholder="Buscar tablero…"
+                             [(ngModel)]="slotBoardSearchQ"/>
+                    </div>
+                    <div class="bbe-slot-board-list">
+                      @for (b of filteredSlotsAvailableBoards; track b._id) {
+                        <div class="bbe-board-item" (click)="onSlotBoardAssign(b._id)">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+                            <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+                            <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+                            <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+                          </svg>
+                          <span>{{ b.name }}</span>
+                        </div>
+                      }
+                      @if (filteredSlotsAvailableBoards.length === 0) {
+                        <p class="bbe-multi-empty">Sin resultados.</p>
+                      }
                     </div>
                   }
-                  @if (slotsAvailableBoards.length === 0) {
-                    <p class="bbe-multi-empty">Sin tableros principales disponibles.</p>
-                  }
                   <button class="bbe-slot-cancel-btn"
-                          (click)="selectedSlotId = null">
+                          (click)="selectedSlotId = null; slotBoardSearchQ = ''">
                     Cancelar
                   </button>
                 </div>

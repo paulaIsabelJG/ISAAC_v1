@@ -142,6 +142,19 @@ export class BoardCellPanelComponent implements OnChanges {
   newImgB64: string | null = null;
   newImgUrl: SafeUrl | null = null;
 
+  // ── Estado local: búsqueda tablero destino ────────────────────────────────
+  boardSearchQ = '';
+
+  get filteredSameShapeBoards(): Board[] {
+    const q = this.boardSearchQ.toLowerCase().trim();
+    return q ? this.sameShapeBoards.filter(b => b.name.toLowerCase().includes(q)) : this.sameShapeBoards;
+  }
+
+  get filteredBoardsUnassigned(): Board[] {
+    const q = this.boardSearchQ.toLowerCase().trim();
+    return q ? this.boardsUnassigned.filter(b => b.name.toLowerCase().includes(q)) : this.boardsUnassigned;
+  }
+
   // ── Estado local: búsqueda ARASAAC ─────────────────────────────────────────
   arasaacQuery    = '';
   arasaacResults: ArasaacResult[] = [];
@@ -193,6 +206,7 @@ export class BoardCellPanelComponent implements OnChanges {
     this.actionFormShowLastPhrase = false;
     this.newImgB64               = null;
     this.newImgUrl               = null;
+    this.boardSearchQ            = '';
   }
 
   private loadCellIntoForm(cell: BoardCell): void {
@@ -362,6 +376,7 @@ export class BoardCellPanelComponent implements OnChanges {
 
   onActionTypeSelect(event: Event): void {
     this.actionForm.type = (event as CustomEvent<{ value: ActionType }>).detail.value;
+    this.boardSearchQ = '';
   }
 
   onTargetBoardSelect(event: Event): void {

@@ -49,6 +49,7 @@ export interface CellDragPayload extends CellCoord {
     '[class.bgc--edit]':         "mode === 'edit'",
     '[class.bgc--preview]':      "mode === 'preview'",
     '[class.bgc--communicator]': "mode === 'communicator'",
+    '[class.bgc--ia-right]':     'iaRight',
   },
 })
 export class BoardGridComponent {
@@ -58,6 +59,12 @@ export class BoardGridComponent {
 
   // ── Modo ─────────────────────────────────────────────────────────────────
   @Input() mode: CellMode = 'communicator';
+
+  /** Mueve la columna IA a la derecha del grid (solo en edit). */
+  @Input() iaRight = false;
+
+  /** Emite cuando el usuario pulsa la tira de toggle de posición de la columna IA. */
+  @Output() iaToggleClick = new EventEmitter<void>();
 
   // ── Estado de interacción (gestionado por la page) ───────────────────────
   @Input() selectedCell: CellCoord | null = null;

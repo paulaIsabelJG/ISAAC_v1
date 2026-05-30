@@ -449,7 +449,7 @@ exports.updateBoard = async (req, res) => {
       boardRole, visibleInProfile, profileName, profileImage, profileDescription,
       autoPersonalize,  // personalización automática al publicar
       assignedUserIds,  // nuevo: array de usuarios asignados (1-N)
-      slotCount, multiBoardSlots, multiBoardLayout, // multitablero
+      slotCount, multiBoardSlots, multiBoardLayout, multiBoardIaPosition, // multitablero
     } = req.body;
     // (Si el body incluyese createdBy, se descarta silenciosamente al no desestructurarlo)
 
@@ -489,6 +489,10 @@ exports.updateBoard = async (req, res) => {
         heights: Array.isArray(multiBoardLayout.heights) ? multiBoardLayout.heights : [],
       };
       board.markModified('multiBoardLayout');
+    }
+    const validIaPositions = ['left', 'right', 'between-1-2', 'between-2-3'];
+    if (multiBoardIaPosition !== undefined && validIaPositions.includes(multiBoardIaPosition)) {
+      board.multiBoardIaPosition = multiBoardIaPosition;
     }
     if (autoPersonalize       !== undefined) board.autoPersonalize       = !!autoPersonalize;
     if (visibleInProfile      !== undefined) board.visibleInProfile      = !!visibleInProfile;

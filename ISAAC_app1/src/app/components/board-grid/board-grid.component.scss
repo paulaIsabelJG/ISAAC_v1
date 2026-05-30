@@ -22,9 +22,50 @@ $card-bg: #ffffff;
 // En el contexto flex de :host debe ser flex: 0 0 auto para no expandirse.
 
 app-ia-predictor-column {
-  flex:        0 0 6.5%;   // proporcional al ancho del tablero (≈90px en preview 1440px)
+  flex:        0 0 6.5%;
   align-self:  stretch;
+  order:       1;  // col IA izquierda: toggle(0) | ia(1) | grid(2)
 }
+
+// ── Tira de toggle de posición de la columna IA ───────────────────────────────
+// Tira vertical estrecha con flecha. Siempre en el borde interior entre IA y grid.
+
+.bgc-ia-toggle {
+  flex:            0 0 18px;
+  align-self:      stretch;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  order:           2;  // por defecto entre IA(1) y grid(3)
+  border:          none;
+  cursor:          pointer;
+  background:      rgba(#7c4dff, 0.07);
+  border-left:     2px solid rgba(#7c4dff, 0.15);
+  border-right:    none;
+  transition:      background 0.15s, border-color 0.15s;
+
+  svg { width: 14px; height: 14px; stroke: #7c4dff; flex-shrink: 0; }
+
+  &:hover {
+    background:   rgba(#7c4dff, 0.18);
+    border-color: rgba(#7c4dff, 0.5);
+  }
+
+  // Cuando IA está a la derecha: la flecha izquierda y la tira cambia de borde
+  &--right {
+    border-left:  none;
+    border-right: 2px solid rgba(#7c4dff, 0.15);
+
+    &:hover { border-color: rgba(#7c4dff, 0.5); }
+  }
+}
+
+.bgc-grid-wrap { order: 3; }
+
+// Cuando iaRight=true: grid(1) | toggle(2) | ia(3)
+:host(.bgc--ia-right) .bgc-grid-wrap          { order: 1; }
+:host(.bgc--ia-right) .bgc-ia-toggle          { order: 2; }
+:host(.bgc--ia-right) app-ia-predictor-column { order: 3; }
 
 // En modo edición: label proporcional a la celda pequeña del editor
 :host(.bgc--edit) app-ia-predictor-column {

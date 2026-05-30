@@ -1,5 +1,6 @@
 import { Component, HostListener, OnInit, OnDestroy } from '@angular/core';
 import { NgClass } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { IonicModule, ToastController, AlertController } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom, Subscription } from 'rxjs';
@@ -57,6 +58,7 @@ import { IaPredictorColumnComponent } from '../../components/ia-predictor-column
   imports: [
     IonicModule,
     NgClass,
+    FormsModule,
     LoadingErrorStateComponent,
     BoardGridComponent,
     BoardCircularComponent,
@@ -130,7 +132,77 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   cellData:     BoardCell | null = null;
   isEditingCell = false;
 
-  // ── Drag and drop ────────────────────────────────────────────────────────────
+  // ── Posición columna IA — tableros normales (preferencia local) ──────────────
+  iaRight = localStorage.getItem('bbe_ia_right') === '1';
+
+  toggleIaPosition(): void {
+    this.iaRight = !this.iaRight;
+    localStorage.setItem('bbe_ia_right', this.iaRight ? '1' : '0');
+  }
+
+  // ── Posición columna IA — multitablero (preferencia local) ───────────────────
+  multiIaPosition: 'left' | 'right' | 'between-1-2' | 'between-2-3' =
+    (() => {
+      const v = localStorage.getItem('bbe_multi_ia_pos');
+      if (v === 'right' || v === 'between-1-2' || v === 'between-2-3') return v;
+      return 'left';
+    })();
+
+  setMultiIaPosition(pos: string): void {
+    if (pos === 'left' || pos === 'right' || pos === 'between-1-2' || pos === 'between-2-3') {
+      this.multiIaPosition = pos;
+      localStorage.setItem('bbe_multi_ia_pos', pos);
+      // Persistir en el tablero para que el comunicador lo lea
+      if (this.isMultiBoard && this.boardId) {
+        void firstValueFrom(this.boardSvc.updateBoard(this.boardId, { multiBoardIaPosition: pos }))
+          .then(res => { if (res?.board) this.board = res.board; })
+          .catch(() => {});
+      }
+    }
+  }
+
+  /** Avanza a la siguiente posición válida (left → between-1-2 → … → right → left). */
+  cycleMultiIaPosition(): void {
+    const positions = this.multiIaValidPositions.map(p => p.value);
+    const idx = positions.indexOf(this.multiIaPosition);
+    this.setMultiIaPosition(positions[(idx + 1) % positions.length]);
+  }
+
+  /** Etiqueta de la próxima posición (para tooltips). */
+  get multiIaNextLabel(): string {
+    const positions = this.multiIaValidPositions;
+    const idx = positions.findIndex(p => p.value === this.multiIaPosition);
+    return positions[(idx + 1) % positions.length]?.label ?? '';
+  }
+
+  /** true cuando la barra IA se inserta inline entre slots (no como bloque lateral). */
+  get multiIaIsInline(): boolean {
+    return this.multiIaPosition === 'between-1-2' || this.multiIaPosition === 'between-2-3';
+  }
+
+  /** Índice de columna (0-based) tras el que insertar la barra IA inline. -1 si no aplica. */
+  get multiIaBetweenColIndex(): number {
+    if (this.multiIaPosition === 'between-1-2') return 0;
+    if (this.multiIaPosition === 'between-2-3') return 1;
+    return -1;
+  }
+
+  /** Posiciones válidas según slotCount (between-* solo para ≤ 3 slots en fila única). */
+  get multiIaValidPositions(): Array<{ value: string; label: string }> {
+    const count = this.board?.slotCount ?? 2;
+    const opts: Array<{ value: string; label: string }> = [{ value: 'left', label: 'Izquierda' }];
+    if (count <= 3) opts.push({ value: 'between-1-2', label: '1 ↔ 2' });
+    if (count === 3) opts.push({ value: 'between-2-3', label: '2 ↔ 3' });
+    opts.push({ value: 'right', label: 'Derecha' });
+    return opts;
+  }
+
+  /** Muestra el predictor lateral (exterior) solo en posiciones left/right. */
+  get showMultiPredictorOuter(): boolean {
+    return this.showMultiPredictor && !this.multiIaIsInline;
+  }
+
+  // ── Drag and drop — celdas ───────────────────────────────────────────────────
   draggedCell:  { row: number; col: number } | null = null;
   dragOverCell: { row: number; col: number } | null = null;
 
@@ -153,8 +225,10 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   // ── Estado del multitablero ──────────────────────────────────────────────────
   /** ID del hueco seleccionado en el editor multi (1-based). */
   selectedSlotId: number | null = null;
-  /** Tableros disponibles para asignar a huecos (solo boardRole=main). */
-  mainBoards: Board[] = [];
+  /** Texto de búsqueda en el selector de tablero para un hueco. */
+  slotBoardSearchQ = '';
+  /** Tableros disponibles para asignar a huecos (solo boardRole=secondary). */
+  secondaryBoards: Board[] = [];
   /** Modo del panel derecho en el editor multi. */
   multiPanelMode: 'pictogram' | 'tablero' = 'pictogram';
 
@@ -244,6 +318,11 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
         this.initProportions();
         this.loadMainBoards();
         void this.loadSlotBoards();
+        // Sincronizar posición IA desde el tablero (fuente de verdad para comunicador)
+        const boardPos = this.board.multiBoardIaPosition ?? this.multiIaPosition;
+        const validPos = this.multiIaValidPositions.map(p => p.value);
+        this.multiIaPosition = (validPos.includes(boardPos) ? boardPos : 'left') as typeof this.multiIaPosition;
+        localStorage.setItem('bbe_multi_ia_pos', this.multiIaPosition);
       }
     } catch {
       this.loadError = 'Error al cargar el tablero.';
@@ -280,6 +359,7 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
         ? [...b.assignedUserIds]
         : (b.userId ? [b.userId] : []),
       autoPersonalize: b.autoPersonalize ?? false,
+      slotCount:       b.slotCount ?? 2,
       controlsConfig: b.controlsConfig
         ? { visibleButtons: [...b.controlsConfig.visibleButtons], order: [...b.controlsConfig.order] }
         : undefined,
@@ -767,11 +847,17 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
             locationColumnEnabled: payload.locationEnabled,
             locationColumnSlots:   payload.locationSlots,
           }),
+          // slotCount solo para multitablero
+          ...(isMulti && payload.slotCount && { slotCount: payload.slotCount }),
         }),
       );
       this.board = res.board;
       // Nuevo objeto → ngOnChanges en el sidebar resetea el formulario
       this.syncConfigFromBoard();
+      if (isMulti) {
+        this.initProportions();
+        void this.loadSlotBoards();
+      }
       const assignedIds = this.board.assignedUserIds ?? [];
       this.loadUserBoards(assignedIds);
       this.loadPersonalPicts(assignedIds[0] || this.board.userId);
@@ -1415,7 +1501,12 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
 
   /** Tableros main disponibles para asignar a slots (excluye el propio multitablero). */
   get slotsAvailableBoards(): Board[] {
-    return this.mainBoards.filter((b) => b._id !== this.boardId);
+    return this.secondaryBoards.filter((b) => b._id !== this.boardId);
+  }
+
+  get filteredSlotsAvailableBoards(): Board[] {
+    const q = this.slotBoardSearchQ.toLowerCase().trim();
+    return q ? this.slotsAvailableBoards.filter(b => b.name.toLowerCase().includes(q)) : this.slotsAvailableBoards;
   }
 
   // ── Proporciones de los huecos ────────────────────────────────────────────────
@@ -1436,8 +1527,8 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   savingSlotGrid      = false;
 
   private readonly MIN_PCT = 15;    // mínimo % por slot
-  private resizingCol: number | null = null;
-  private resizingRow: number | null = null;
+  resizingCol: number | null = null;
+  resizingRow: number | null = null;
   private resizeStartX = 0;
   private resizeStartY = 0;
   private resizeContainerW = 0;
@@ -1705,8 +1796,9 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   }
 
   onSlotSelected(slotId: number): void {
-    this.selectedSlotId = slotId;
-    this.multiPanelMode = 'tablero';
+    this.selectedSlotId  = slotId;
+    this.slotBoardSearchQ = '';
+    this.multiPanelMode  = 'tablero';
   }
 
   async onSlotBoardAssign(boardId: string): Promise<void> {
@@ -1771,8 +1863,8 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
       const res = await firstValueFrom(
         this.boardSvc.getBoardsByCreator(this.contextCreatorId || this.authSvc.getCurrentUser()?.id || '')
       );
-      this.mainBoards = res.boards.filter(
-        (b) => (b.boardRole === 'main' || !b.boardRole) && b.shape !== 'multi',
+      this.secondaryBoards = res.boards.filter(
+        (b) => b.boardRole === 'secondary' && b.shape !== 'multi',
       );
     } catch { /* silencioso */ }
   }

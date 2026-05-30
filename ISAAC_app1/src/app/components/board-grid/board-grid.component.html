@@ -8,8 +8,27 @@
                └── .bgc-grid  (CSS Grid N×M con app-pictogram-cell)
      ══════════════════════════════════════════════════════════════════════ -->
 
-<!-- ── Columna Predictor IA (edit/preview, hereda config del raíz en preview) -->
+<!-- ── Columna Predictor IA + tira de toggle de posición ────────────────────── -->
 @if (iaColumnVisible) {
+  <!-- Tira de toggle: solo en modo edit. Aparece entre la columna IA y el grid.
+       Con iaRight=true se reordena via CSS para quedar siempre en el borde interior. -->
+  @if (mode === 'edit') {
+    <button class="bgc-ia-toggle"
+            [class.bgc-ia-toggle--right]="iaRight"
+            (click)="iaToggleClick.emit()"
+            title="{{ iaRight ? 'Mover columna IA a la izquierda' : 'Mover columna IA a la derecha' }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+           stroke-linecap="round" stroke-linejoin="round">
+        @if (iaRight) {
+          <!-- flecha izquierda -->
+          <polyline points="15 18 9 12 15 6"/>
+        } @else {
+          <!-- flecha derecha -->
+          <polyline points="9 18 15 12 9 6"/>
+        }
+      </svg>
+    </button>
+  }
   <app-ia-predictor-column
     [rows]="iaRows"
     [cols]="iaCols">

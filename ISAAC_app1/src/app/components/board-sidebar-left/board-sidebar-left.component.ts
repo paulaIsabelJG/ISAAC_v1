@@ -35,6 +35,7 @@ export interface BoardSidebarConfig {
   locationSlots: number;
   assignedUserIds: string[];
   autoPersonalize: boolean;
+  slotCount?: 2 | 3 | 4;
   /** Configuración de la barra AAC (solo relevante en tableros principales). */
   controlsConfig?: ControlsConfig;
 }
@@ -113,6 +114,9 @@ export class BoardSidebarLeftComponent implements OnChanges {
   localIaRows = 5;
   localIaCols = 1;
   localBoardRole: 'main' | 'secondary' | 'multi' = 'main';
+  localSlotCount: 2 | 3 | 4 = 2;
+  userSearchQ  = '';
+  boardSearchQ = '';
   localCircleSlots = 8;
   localLocationEnabled = false;
   localLocationSlots = 6;
@@ -188,6 +192,9 @@ export class BoardSidebarLeftComponent implements OnChanges {
     this.localIaRows           = this.config.iaRows;
     this.localIaCols           = this.config.iaCols;
     this.localBoardRole        = this.config.boardRole;
+    this.localSlotCount        = this.config.slotCount ?? 2;
+    this.userSearchQ           = '';
+    this.boardSearchQ          = '';
     this.localCircleSlots      = this.config.circleSlots;
     this.localLocationEnabled  = this.config.locationEnabled;
     this.localLocationSlots    = this.config.locationSlots;
@@ -213,6 +220,7 @@ export class BoardSidebarLeftComponent implements OnChanges {
       iaCols:              isSecondary ? 1     : this.localIaCols,
       autoPersonalize:     isSecondary ? false : this.localAutoPersonalize,
       boardRole:        this.localBoardRole,
+      slotCount:        this.localSlotCount,
       circleSlots:      this.localCircleSlots,
       locationEnabled:  this.localLocationEnabled,
       locationSlots:    this.localLocationSlots,
@@ -223,7 +231,34 @@ export class BoardSidebarLeftComponent implements OnChanges {
     });
   }
 
-  // ── Configuración de la barra AAC ─────────────────────────────────────────
+  // ── Asignación de usuarios (solo tableros principales) ───────────────────
+
+  get filteredCenterUsers(): BackendUser[] {
+    const q = this.userSearchQ.toLowerCase().trim();
+    return q ? this.centerUsers.filter(u => u.name.toLowerCase().includes(q)) : this.centerUsers;
+  }
+
+  toggleUser(id: string): void {
+    this.localAssignedUserIds = this.localAssignedUserIds.includes(id)
+      ? this.localAssignedUserIds.filter(x => x !== id)
+      : [...this.localAssignedUserIds, id];
+  }
+
+  selectAllUsers(): void {
+    this.localAssignedUserIds = this.centerUsers.map(u => u._id);
+  }
+
+  // ── Filtro lista de tableros ──────────────────────────────────────────────
+
+  get filteredGridBoards(): Board[] {
+    const q = this.boardSearchQ.toLowerCase().trim();
+    return q ? this.gridBoards.filter(b => b.name.toLowerCase().includes(q)) : this.gridBoards;
+  }
+
+  get filteredCircularBoards(): Board[] {
+    const q = this.boardSearchQ.toLowerCase().trim();
+    return q ? this.circularBoards.filter(b => b.name.toLowerCase().includes(q)) : this.circularBoards;
+  }
 
   // ── Configuración de la barra AAC ─────────────────────────────────────────
 

@@ -94,9 +94,10 @@ export interface Board {
   profileImage?:       string;
   profileDescription?: string;
   // Multitablero
-  slotCount?:          2 | 3 | 4;
-  multiBoardSlots?:    MultiBoardSlot[];
-  multiBoardLayout?:   { widths: number[]; heights: number[] };
+  slotCount?:             2 | 3 | 4;
+  multiBoardSlots?:       MultiBoardSlot[];
+  multiBoardLayout?:      { widths: number[]; heights: number[] };
+  multiBoardIaPosition?:  string;
   // Configuración de la barra AAC (solo en tableros principales)
   controlsConfig?:     ControlsConfig;
   // Personalización automática al publicar
@@ -130,6 +131,7 @@ export interface CreateBoardPayload {
   slotCount?:             2 | 3 | 4;
   multiBoardSlots?:       MultiBoardSlot[];
   multiBoardLayout?:      { widths: number[]; heights: number[] };
+  multiBoardIaPosition?:  string;
   controlsConfig?:        ControlsConfig;
   autoPersonalize?:       boolean;
 }
@@ -159,6 +161,7 @@ export interface UpdateBoardPayload {
   slotCount?:             2 | 3 | 4;
   multiBoardSlots?:       MultiBoardSlot[];
   multiBoardLayout?:      { widths: number[]; heights: number[] };
+  multiBoardIaPosition?:  string;
   controlsConfig?:        ControlsConfig;
 }
 

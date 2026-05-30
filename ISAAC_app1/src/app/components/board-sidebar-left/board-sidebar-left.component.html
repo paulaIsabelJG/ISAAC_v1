@@ -38,7 +38,7 @@
     </button>
   }
 
-  <!-- Usuario(s) asignado(s) — solo lectura, no editable desde aquí -->
+  <!-- Usuario(s) asignado(s) -->
   <label class="bbe-lbl">
     Usuario(s) asignado(s)
     @if (isSharedBoard) {
@@ -46,22 +46,64 @@
     }
   </label>
 
-  @if (localAssignedUserIds.length > 0) {
-    <div class="bbe-secondary-users">
-      @for (name of assignedUserNames; track name) {
-        <span class="bbe-secondary-user-chip">{{ name }}</span>
+  @if (localBoardRole !== 'secondary') {
+    <!-- Tableros principales: selector con búsqueda -->
+    @if (centerUsers.length === 0) {
+      <p class="bbe-secondary-user-hint">No hay usuarios finales en el centro.</p>
+    } @else {
+      <div class="bbe-search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" class="bbe-search-inp" placeholder="Buscar usuario…" [(ngModel)]="userSearchQ"/>
+      </div>
+      <div class="bbe-user-list">
+        @for (u of filteredCenterUsers; track u._id) {
+          <div class="bbe-user-row"
+               [class.bbe-user-row--on]="localAssignedUserIds.includes(u._id)"
+               (click)="toggleUser(u._id)">
+            <div class="bbe-user-check" [class.bbe-user-check--on]="localAssignedUserIds.includes(u._id)">
+              @if (localAssignedUserIds.includes(u._id)) {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              }
+            </div>
+            <span class="bbe-user-name">{{ u.name }}</span>
+          </div>
+        }
+        @if (filteredCenterUsers.length === 0) {
+          <p class="bbe-secondary-user-hint" style="padding:4px 6px">Sin resultados.</p>
+        }
+      </div>
+      <button type="button" class="bbe-all-users-btn" (click)="selectAllUsers()">
+        Seleccionar todos
+      </button>
+      @if (localAssignedUserIds.length > 0) {
+        <p class="bbe-secondary-user-hint" style="margin-top:2px">
+          {{ localAssignedUserIds.length === centerUsers.length
+              ? 'Todos los usuarios del centro'
+              : localAssignedUserIds.length + ' usuario(s) seleccionado(s)' }}
+        </p>
       }
-    </div>
-  } @else if (localBoardRole === 'secondary') {
-    <p class="bbe-secondary-user-hint">
-      Este tablero secundario heredará el usuario cuando se enlace desde un tablero principal.
-    </p>
+    }
   } @else {
-    <p class="bbe-secondary-user-hint">Sin usuario asignado.</p>
+    <!-- Tableros secundarios: solo lectura -->
+    @if (localAssignedUserIds.length > 0) {
+      <div class="bbe-secondary-users">
+        @for (name of assignedUserNames; track name) {
+          <span class="bbe-secondary-user-chip">{{ name }}</span>
+        }
+      </div>
+    } @else {
+      <p class="bbe-secondary-user-hint">
+        Este tablero secundario heredará el usuario cuando se enlace desde un tablero principal.
+      </p>
+    }
   }
 
-  <!-- Filas / Columnas (solo grid) -->
-  @if (!isCircular) {
+  <!-- Filas / Columnas (solo tableros grid no-multi) -->
+  @if (!isCircular && !isMultiBoard) {
     <div class="bbe-cfg-row">
       <div class="bbe-cfg-field">
         <label class="bbe-lbl">Filas</label>
@@ -71,6 +113,43 @@
         <label class="bbe-lbl">Columnas</label>
         <input class="bbe-inp bbe-inp--num" type="number" min="1" max="10" [(ngModel)]="localCols"/>
       </div>
+    </div>
+  }
+
+  <!-- Número de huecos (solo multitablero) — solo iconos -->
+  @if (isMultiBoard) {
+    <label class="bbe-lbl" style="margin-top:10px">Número de huecos</label>
+    <div class="bbe-role-selector">
+      <button type="button" class="bbe-role-btn"
+              [class.bbe-role-btn--active]="localSlotCount === 2"
+              (click)="localSlotCount = 2"
+              title="2 huecos en fila">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="4" width="9" height="16" rx="1.5"/>
+          <rect x="13" y="4" width="9" height="16" rx="1.5"/>
+        </svg>
+      </button>
+      <button type="button" class="bbe-role-btn"
+              [class.bbe-role-btn--active]="localSlotCount === 3"
+              (click)="localSlotCount = 3"
+              title="3 huecos en fila">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="1" y="4" width="6" height="16" rx="1.5"/>
+          <rect x="9" y="4" width="6" height="16" rx="1.5"/>
+          <rect x="17" y="4" width="6" height="16" rx="1.5"/>
+        </svg>
+      </button>
+      <button type="button" class="bbe-role-btn"
+              [class.bbe-role-btn--active]="localSlotCount === 4"
+              (click)="localSlotCount = 4"
+              title="4 huecos en cuadrícula 2×2">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2"  y="2"  width="9" height="9" rx="1.5"/>
+          <rect x="13" y="2"  width="9" height="9" rx="1.5"/>
+          <rect x="2"  y="13" width="9" height="9" rx="1.5"/>
+          <rect x="13" y="13" width="9" height="9" rx="1.5"/>
+        </svg>
+      </button>
     </div>
   }
 
@@ -118,8 +197,8 @@
     </button>
   </div>
 
-  <!-- IA: solo tableros principales (oculto en secundarios) -->
-  @if (localBoardRole !== 'secondary') {
+  <!-- IA: solo tableros principales y no circulares -->
+  @if (localBoardRole !== 'secondary' && !isCircular) {
     <!-- Toggle Predictor IA -->
     <div class="bbe-toggle-row" (click)="localPredictor = !localPredictor">
       <span class="bbe-toggle-lbl">Predictor IA</span>
@@ -313,10 +392,16 @@
   } @else if (userBoards.length === 0) {
     <span class="bbe-empty-msg">Sin otros tableros.</span>
   } @else {
+    <div class="bbe-search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="text" class="bbe-search-inp" placeholder="Buscar tablero…" [(ngModel)]="boardSearchQ"/>
+    </div>
     <!-- Sección grid -->
-    @if (gridBoards.length > 0) {
+    @if (filteredGridBoards.length > 0) {
       <span class="bbe-boards-sub">Cuadrícula</span>
-      @for (b of gridBoards; track b._id) {
+      @for (b of filteredGridBoards; track b._id) {
         <div class="bbe-board-item"
              [class.bbe-board-item--new]="b._id === highlightedBoardId"
              [id]="'board-item-' + b._id"
@@ -330,9 +415,9 @@
       }
     }
     <!-- Sección circular -->
-    @if (circularBoards.length > 0) {
+    @if (filteredCircularBoards.length > 0) {
       <span class="bbe-boards-sub">Circular</span>
-      @for (b of circularBoards; track b._id) {
+      @for (b of filteredCircularBoards; track b._id) {
         <div class="bbe-board-item"
              [class.bbe-board-item--new]="b._id === highlightedBoardId"
              [id]="'board-item-' + b._id"
@@ -344,6 +429,9 @@
           }
         </div>
       }
+    }
+    @if (filteredGridBoards.length === 0 && filteredCircularBoards.length === 0 && boardSearchQ) {
+      <span class="bbe-empty-msg">Sin resultados para "{{ boardSearchQ }}".</span>
     }
   }
 </div>

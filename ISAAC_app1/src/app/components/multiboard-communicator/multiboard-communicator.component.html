@@ -3,9 +3,11 @@
      [style.grid-template-columns]="gridTemplateColumns"
      [style.grid-template-rows]="gridTemplateRows">
 
-  <!-- Slot Predictor IA (siempre a la izquierda, hereda config del tablero raíz) -->
+  <!-- Slot Predictor IA: posición controlada por masterBoard.multiBoardIaPosition -->
   @if (showPredictor) {
-    <div class="mbc-predictor-slot">
+    <div class="mbc-predictor-slot"
+         [style.grid-column]="predictorGridColumn"
+         [style.grid-row]="predictorGridRow">
       <app-ia-predictor-column
         [rows]="predictorIaRows"
         [cols]="predictorIaCols"
@@ -16,7 +18,9 @@
   }
 
   @for (state of slotStates; track state.slotId) {
-    <div class="mbc-slot">
+    <div class="mbc-slot"
+         [style.grid-column]="getSlotGridColumn(state.slotId)"
+         [style.grid-row]="getSlotGridRow(state.slotId)">
 
       <!-- Indicador de hueco -->
       <div class="mbc-slot-header">

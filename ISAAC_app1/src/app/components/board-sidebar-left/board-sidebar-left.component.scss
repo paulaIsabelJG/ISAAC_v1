@@ -230,6 +230,94 @@ $panel-bg:     #faf5f8;
   text-transform: uppercase;
 }
 
+// ── Buscador genérico (usuarios + tableros) ───────────────────────────────────
+.bbe-search-wrap {
+  position:      relative;
+  display:       flex;
+  align-items:   center;
+  gap:           6px;
+  border:        1.5px solid $border;
+  border-radius: 8px;
+  background:    #faf6f8;
+  padding:       0 8px;
+  height:        32px;
+  margin-bottom: 6px;
+  transition:    border-color 0.15s;
+
+  &:focus-within { border-color: $violet; background: #fff; }
+
+  svg {
+    width:     13px;
+    height:    13px;
+    flex:      0 0 auto;
+    stroke:    $text-muted;
+    flex-shrink: 0;
+  }
+}
+
+.bbe-search-inp {
+  flex:        1 1 0;
+  border:      none;
+  background:  transparent;
+  font-size:   12px;
+  font-family: inherit;
+  color:       $text-dark;
+  outline:     none;
+  min-width:   0;
+
+  &::placeholder { color: $text-muted; }
+}
+
+// ── Lista de selección de usuarios ────────────────────────────────────────────
+.bbe-user-list {
+  max-height:      160px;
+  overflow-y:      auto;
+  border:          1.5px solid $border;
+  border-radius:   8px;
+  background:      #fff;
+  margin-bottom:   6px;
+  scrollbar-width: thin;
+  scrollbar-color: $border transparent;
+}
+
+.bbe-user-row {
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+  padding:     7px 8px;
+  cursor:      pointer;
+  transition:  background 0.12s;
+  border-bottom: 1px solid #f8eef4;
+
+  &:last-child { border-bottom: none; }
+  &:hover      { background: $pink-light; }
+
+  &--on { background: color-mix(in srgb, $violet 6%, white); }
+}
+
+.bbe-user-check {
+  width:           16px;
+  height:          16px;
+  flex:            0 0 auto;
+  border:          1.5px solid $border;
+  border-radius:   4px;
+  background:      #fff;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  transition:      border-color 0.15s, background 0.15s;
+
+  svg { width: 10px; height: 10px; display: none; stroke: #fff; }
+
+  &--on {
+    border-color: $violet;
+    background:   $violet;
+    svg { display: block; }
+  }
+}
+
+.bbe-user-name { font-size: 12px; font-weight: 600; color: $text-dark; }
+
 .bbe-all-users-btn {
   display:       block;
   width:         100%;

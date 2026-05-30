@@ -142,6 +142,52 @@ $panel-bg:     #faf5f8;
   height:    18px;
 }
 
+// ── Lista buscable de tableros destino ────────────────────────────────────────
+.bcp-board-list {
+  max-height:      200px;
+  overflow-y:      auto;
+  border:          1.5px solid $border;
+  border-radius:   8px;
+  background:      $card-bg;
+  margin-bottom:   6px;
+  scrollbar-width: thin;
+  scrollbar-color: $border transparent;
+}
+
+.bcp-board-group-lbl {
+  font-size:      9px;
+  font-weight:    800;
+  color:          $text-muted;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  padding:        6px 10px 4px;
+  background:     #faf6f8;
+  border-bottom:  1px solid $border;
+  position:       sticky;
+  top:            0;
+}
+
+.bcp-board-row {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  padding:         8px 10px;
+  cursor:          pointer;
+  border-bottom:   1px solid #f8eef4;
+  transition:      background 0.12s;
+
+  &:last-child { border-bottom: none; }
+  &:hover      { background: $violet-light; }
+
+  &--on {
+    background: color-mix(in srgb, $violet 8%, white);
+    .bcp-board-row-name { color: $violet; font-weight: 700; }
+  }
+}
+
+.bcp-board-row-name  { font-size: 12px; font-weight: 600; color: $text-dark; }
+.bcp-board-row-check { width: 14px; height: 14px; flex: 0 0 auto; stroke: $violet; }
+
 .bcp-arasaac-grid {
   display:               grid;
   grid-template-columns: repeat(3, 1fr);
