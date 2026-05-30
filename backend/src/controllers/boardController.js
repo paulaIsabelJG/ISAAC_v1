@@ -238,11 +238,59 @@ exports.getBoardById = async (req, res) => {
     if (!validateObjectId(boardId)) {
       return res.status(400).json({ error: 'Invalid boardId' });
     }
-    const board = await Board.findById(boardId);
-    console.log('[GET board by id]', boardId, board?._id?.toString(), board?.name);
+
+    // userId opcional para personalización en tiempo de carga (no modifica DB)
+    const contextUserId = req.query.userId && validateObjectId(String(req.query.userId))
+      ? String(req.query.userId)
+      : null;
+
+    const board = await Board.findById(boardId).lean();
+    console.log('[GET board by id]', boardId, board?._id?.toString(), board?.name,
+      contextUserId ? `userId=${contextUserId}` : '');
     if (!board) {
       return res.status(404).json({ error: 'Board not found' });
     }
+
+    // ── Personalización dinámica en memoria ───────────────────────────────────
+    // El comunicador controla si pasa userId basándose en el flag del tablero raíz.
+    // Aquí solo comprobamos que haya userId — no verificamos autoPersonalize de
+    // este tablero concreto, porque los sub-tableros y slots no lo tienen seteado.
+    // El editor nunca pasa userId, así que siempre ve el original.
+    if (contextUserId) {
+      const User = require('../models/User');
+      const user = await User.findById(contextUserId).select('customPictograms').lean();
+      const pictoMap = new Map();
+      for (const p of (user?.customPictograms ?? [])) {
+        pictoMap.set(p.label.toLowerCase().trim(), p);
+      }
+      console.debug('[getBoardById] personalización dinámica', {
+        boardId, userId: contextUserId,
+        customPictogramas: pictoMap.size,
+        labelsDisponibles: [...pictoMap.keys()],
+      });
+
+      if (pictoMap.size > 0) {
+        let replaced = 0;
+        const personalizedCells = (board.cells ?? []).map(cell => {
+          if (!cell.pictogram) return cell;
+          const key   = cell.pictogram.label.toLowerCase().trim();
+          const match = pictoMap.get(key);
+          if (match) {
+            replaced++;
+            console.debug('[getBoardById] match', { boardId, label: key, userId: contextUserId });
+            return {
+              ...cell,
+              pictogram: { ...cell.pictogram, imageUrl: match.imageUrl, source: 'custom', id: String(match.id) },
+            };
+          }
+          return cell;
+        });
+        if (replaced > 0) {
+          return res.json({ board: { ...board, cells: personalizedCells } });
+        }
+      }
+    }
+
     res.json({ board });
   } catch (err) {
     console.error('getBoardById error:', err);
@@ -258,6 +306,7 @@ exports.createBoard = async (req, res) => {
       locationColumnEnabled, locationColumnSlots,
       predictorEnabled, aiRewriteEnabled, iaRows, iaCols, imageUrl,
       boardRole,
+      autoPersonalize,    // personalización automática de pictogramas al cargar por usuario
       contextCreatorId,   // opcional: ID del creador de contexto (builder que se está editando)
       assignedUserIds,    // nuevo: array de IDs de usuarios asignados (1-N)
       slotCount,          // multitablero: número de huecos (2 | 3 | 4)
@@ -359,6 +408,7 @@ exports.createBoard = async (req, res) => {
       locationColumnSlots:   locationColumnSlots   || 6,
       predictorEnabled:      !!predictorEnabled,
       aiRewriteEnabled:      !!aiRewriteEnabled,
+      autoPersonalize:       !!autoPersonalize,
       iaRows:                iaRows                || 5,
       iaCols:                iaCols                || 1,
       boardRole:             finalBoardRole,
@@ -397,6 +447,7 @@ exports.updateBoard = async (req, res) => {
       locationColumnEnabled, locationColumnSlots,
       predictorEnabled, aiRewriteEnabled, iaRows, iaCols, cells,
       boardRole, visibleInProfile, profileName, profileImage, profileDescription,
+      autoPersonalize,  // personalización automática al publicar
       assignedUserIds,  // nuevo: array de usuarios asignados (1-N)
       slotCount, multiBoardSlots, multiBoardLayout, // multitablero
     } = req.body;
@@ -439,6 +490,7 @@ exports.updateBoard = async (req, res) => {
       };
       board.markModified('multiBoardLayout');
     }
+    if (autoPersonalize       !== undefined) board.autoPersonalize       = !!autoPersonalize;
     if (visibleInProfile      !== undefined) board.visibleInProfile      = !!visibleInProfile;
     if (profileName           !== undefined) board.profileName           = profileName;
     if (profileImage          !== undefined) board.profileImage          = profileImage;
@@ -806,6 +858,48 @@ exports.updateBoardSlots = async (req, res) => {
     board.markModified('multiBoardSlots');
 
     await board.save();
+
+    // Propagar assignedUserIds del multitablero a los slot boards asignados.
+    // Si el multitablero tiene usuarios, cada slot board (y sus sub-tableros
+    // navegables sin asignar) hereda esos usuarios de forma recursiva.
+    const multiIds = (board.assignedUserIds ?? []).map(String).filter(Boolean);
+    const multiUserId = board.userId ? String(board.userId) : null;
+    const effectiveMultiIds = multiIds.length > 0
+      ? multiIds
+      : (multiUserId ? [multiUserId] : []);
+
+    if (effectiveMultiIds.length > 0) {
+      const NAV_TYPES = new Set(['navigate', 'voice+navigate', 'setSlot', 'voice+setSlot']);
+      for (const slot of board.multiBoardSlots) {
+        if (!slot.boardId || !validateObjectId(String(slot.boardId))) continue;
+        // BFS desde este slot board: propaga usuarios a tableros sin asignar
+        const visited = new Set();
+        const queue   = [String(slot.boardId)];
+        while (queue.length > 0) {
+          const id = queue.shift();
+          if (visited.has(id)) continue;
+          visited.add(id);
+          const sb = await Board.findById(id).lean();
+          if (!sb) continue;
+          const sbIds = (sb.assignedUserIds ?? []).map(String).filter(Boolean);
+          if (sbIds.length === 0) {
+            const $setSlot = { assignedUserIds: effectiveMultiIds, userId: effectiveMultiIds[0] };
+            // Propagar autoPersonalize del multitablero si el slot no lo tiene ya activo
+            if (board.autoPersonalize && !sb.autoPersonalize) {
+              $setSlot.autoPersonalize = true;
+            }
+            await Board.updateOne({ _id: sb._id }, { $set: $setSlot });
+          }
+          for (const cell of (sb.cells ?? [])) {
+            const tId = cell.action?.targetBoardId;
+            if (tId && NAV_TYPES.has(cell.action?.type) && validateObjectId(String(tId)) && !visited.has(String(tId))) {
+              queue.push(String(tId));
+            }
+          }
+        }
+      }
+    }
+
     res.json({ board });
   } catch (err) {
     console.error('updateBoardSlots error:', err);
@@ -870,6 +964,199 @@ exports.deleteBoard = async (req, res) => {
     res.json({ message: 'Board deleted successfully' });
   } catch (err) {
     console.error('deleteBoard error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// ── POST /api/boards/:boardId/apply-personalization ──────────────────────────
+// Vista previa de la personalización: BFS desde boardId, cuenta cuántos
+// pictogramas coincidirían con los personales de cada usuario asignado.
+// NO modifica la DB — la sustitución real ocurre en getBoardById en tiempo de carga.
+// Sigue: cells[].action.targetBoardId (navigate/setSlot) Y multiBoardSlots[].boardId
+exports.applyPersonalization = async (req, res) => {
+  try {
+    const { boardId } = req.params;
+    if (!validateObjectId(boardId)) {
+      return res.status(400).json({ error: 'Invalid boardId' });
+    }
+
+    const NAV_TYPES = new Set(['navigate', 'voice+navigate', 'setSlot', 'voice+setSlot']);
+    const User = require('../models/User');
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    const userPictCache = new Map();
+    const getUserPicts = async (userId) => {
+      const key = String(userId);
+      if (userPictCache.has(key)) return userPictCache.get(key);
+      const user = await User.findById(userId).select('customPictograms').lean();
+      const byLabel = new Map();
+      for (const p of (user?.customPictograms ?? [])) {
+        byLabel.set(p.label.toLowerCase().trim(), p);
+      }
+      userPictCache.set(key, byLabel);
+      return byLabel;
+    };
+
+    const effectiveIds = (board) => {
+      const ids = (board.assignedUserIds ?? []).map(String).filter(Boolean);
+      if (ids.length > 0) return ids;
+      return board.userId ? [String(board.userId)] : [];
+    };
+
+    // ── Cargar tablero raíz ───────────────────────────────────────────────────
+    const rootBoard = await Board.findById(boardId).lean();
+    if (!rootBoard) {
+      return res.status(404).json({ error: 'Board not found' });
+    }
+
+    const rootIds = effectiveIds(rootBoard);
+    if (rootIds.length === 0) {
+      console.debug('[applyPersonalization] sin usuarios asignados en raíz', boardId);
+      return res.json({ boardsProcessed: 0, cellsReplaced: 0, reason: 'no_users' });
+    }
+
+    console.debug('[applyPersonalization] root', { boardId, rootIds,
+      boardRole: rootBoard.boardRole, multiBoardSlots: (rootBoard.multiBoardSlots ?? []).length });
+
+    // ── Verificar pictogramas de cada usuario ─────────────────────────────────
+    let totalUserPicts = 0;
+    for (const uid of rootIds) {
+      const picts = await getUserPicts(uid);
+      console.debug('[applyPersonalization] usuario', uid, 'pictogramas propios:', picts.size,
+        'labels:', [...picts.keys()]);
+      totalUserPicts += picts.size;
+    }
+    if (totalUserPicts === 0) {
+      return res.json({ boardsProcessed: 0, cellsReplaced: 0, reason: 'no_pictograms' });
+    }
+
+    // ── BFS: recorre cells + multiBoardSlots (no modifica DB) ─────────────────
+    const visited         = new Set();
+    const queue           = [boardId];
+    let   boardsProcessed = 0;
+    let   cellsReplaced   = 0;
+
+    while (queue.length > 0) {
+      const id = queue.shift();
+      if (visited.has(id)) continue;
+      visited.add(id);
+
+      const board = await Board.findById(id).lean();
+      if (!board) continue;
+      boardsProcessed++;
+
+      const ownIds = effectiveIds(board).length > 0 ? effectiveIds(board) : rootIds;
+
+      console.debug('[applyPersonalization] tablero', id, board.name,
+        'role:', board.boardRole, 'slots:', (board.multiBoardSlots ?? []).length,
+        'cells:', board.cells?.length, 'usuarios:', ownIds);
+
+      // Construir mapa unificado para este tablero (por-tablero, no global)
+      // La sustitución real la hace getBoardById por usuario — aquí solo contamos
+      for (const uid of ownIds) {
+        const pictoMap = await getUserPicts(uid);
+        for (const cell of (board.cells ?? [])) {
+          if (!cell.pictogram) continue;
+          const key = cell.pictogram.label.toLowerCase().trim();
+          if (pictoMap.has(key)) {
+            cellsReplaced++;
+            console.debug('[applyPersonalization] match', { boardId: id, label: key, userId: uid });
+          }
+        }
+      }
+
+      // Encolar destinos de navegación por acciones de celdas
+      for (const cell of (board.cells ?? [])) {
+        const tId = cell.action?.targetBoardId;
+        if (tId && NAV_TYPES.has(cell.action?.type) && validateObjectId(String(tId)) && !visited.has(String(tId))) {
+          queue.push(String(tId));
+        }
+      }
+
+      // Encolar tableros de slots (multitablero)
+      for (const slot of (board.multiBoardSlots ?? [])) {
+        const sId = slot.boardId ? String(slot.boardId) : null;
+        if (sId && validateObjectId(sId) && !visited.has(sId)) {
+          console.debug('[applyPersonalization] encolar slot', sId);
+          queue.push(sId);
+        }
+      }
+    }
+
+    console.debug('[applyPersonalization] resultado', { boardsProcessed, cellsReplaced });
+    res.json({ boardsProcessed, cellsReplaced, reason: cellsReplaced > 0 ? 'ok' : 'no_matches' });
+  } catch (err) {
+    console.error('applyPersonalization error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// ── POST /api/boards/:boardId/inherit-users ───────────────────────────────────
+// Propaga assignedUserIds de forma recursiva a todos los tableros secundarios
+// sin asignar conectados desde :boardId. Si alguno ya tiene IDs distintos → 409.
+exports.inheritAssignedUsers = async (req, res) => {
+  try {
+    const { boardId } = req.params;
+    const { assignedUserIds } = req.body;
+
+    if (!validateObjectId(boardId)) {
+      return res.status(400).json({ error: 'Invalid boardId' });
+    }
+    if (!Array.isArray(assignedUserIds) || assignedUserIds.length === 0) {
+      return res.status(400).json({ error: 'assignedUserIds required' });
+    }
+    const newIds = assignedUserIds.map(String);
+
+    const visited  = new Set();
+    const queue    = [boardId];
+    const toUpdate = [];
+    const conflicts = [];
+
+    while (queue.length > 0) {
+      const id = queue.shift();
+      if (visited.has(id)) continue;
+      visited.add(id);
+
+      const board = await Board.findById(id).lean();
+      if (!board) continue;
+
+      const existing = (board.assignedUserIds ?? []).map(String);
+      if (existing.length > 0) {
+        const same =
+          existing.length === newIds.length &&
+          newIds.every(uid => existing.includes(uid));
+        if (!same) {
+          conflicts.push({ boardId: String(board._id), name: board.name, assignedUserIds: existing });
+        }
+        // No profundizar más en tableros con contexto propio
+        continue;
+      }
+
+      toUpdate.push(String(board._id));
+
+      for (const cell of (board.cells ?? [])) {
+        const targetId = cell.action?.targetBoardId;
+        if (targetId && validateObjectId(String(targetId)) && !visited.has(String(targetId))) {
+          queue.push(String(targetId));
+        }
+      }
+    }
+
+    if (conflicts.length > 0) {
+      return res.status(409).json({ conflicts, updated: [] });
+    }
+
+    if (toUpdate.length > 0) {
+      await Board.updateMany(
+        { _id: { $in: toUpdate } },
+        { $set: { assignedUserIds: newIds, userId: newIds[0] } },
+      );
+    }
+
+    res.json({ updated: toUpdate, conflicts: [] });
+  } catch (err) {
+    console.error('inheritAssignedUsers error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

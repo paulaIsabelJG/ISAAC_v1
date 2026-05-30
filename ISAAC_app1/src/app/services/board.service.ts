@@ -99,6 +99,8 @@ export interface Board {
   multiBoardLayout?:   { widths: number[]; heights: number[] };
   // Configuración de la barra AAC (solo en tableros principales)
   controlsConfig?:     ControlsConfig;
+  // Personalización automática al publicar
+  autoPersonalize?:    boolean;
   // Carpeta a la que pertenece el tablero (opcional)
   folderId?:           string | null;
   isFavorite?:         boolean;
@@ -129,6 +131,7 @@ export interface CreateBoardPayload {
   multiBoardSlots?:       MultiBoardSlot[];
   multiBoardLayout?:      { widths: number[]; heights: number[] };
   controlsConfig?:        ControlsConfig;
+  autoPersonalize?:       boolean;
 }
 
 export interface UpdateBoardPayload {
@@ -147,6 +150,7 @@ export interface UpdateBoardPayload {
   iaCols?:                number;
   cells?:                 BoardCell[];
   boardRole?:             'main' | 'secondary' | 'multi';
+  autoPersonalize?:       boolean;
   visibleInProfile?:      boolean;
   profileName?:           string;
   profileImage?:          string;
@@ -211,11 +215,12 @@ export class BoardService {
     );
   }
 
-  /** GET /api/boards/:boardId — tablero completo con celdas */
-  getBoardById(boardId: string): Observable<{ board: Board }> {
-    return this.http.get<{ board: Board }>(
-      `${this.url}/${encodeURIComponent(boardId)}`
-    );
+  /** GET /api/boards/:boardId — tablero completo con celdas.
+   *  Si se pasa userId, el backend aplica personalización dinámica en memoria. */
+  getBoardById(boardId: string, userId?: string): Observable<{ board: Board }> {
+    const base = `${this.url}/${encodeURIComponent(boardId)}`;
+    const url  = userId ? `${base}?userId=${encodeURIComponent(userId)}` : base;
+    return this.http.get<{ board: Board }>(url);
   }
 
   /** POST /api/boards — crear tablero */
@@ -255,6 +260,31 @@ export class BoardService {
     return this.http.post<{ board: Board }>(
       `${this.url}/${encodeURIComponent(boardId)}/duplicate`,
       {}
+    );
+  }
+
+  /** POST /api/boards/:boardId/apply-personalization
+   *  BFS desde boardId: sustituye pictogramas cuyo label coincida (case-insensitive)
+   *  con pictogramas personales de los usuarios asignados.
+   */
+  applyPersonalization(boardId: string): Observable<{ boardsProcessed: number; cellsReplaced: number; reason: string }> {
+    return this.http.post<{ boardsProcessed: number; cellsReplaced: number; reason: string }>(
+      `${this.url}/${encodeURIComponent(boardId)}/apply-personalization`,
+      {},
+    );
+  }
+
+  /** POST /api/boards/:boardId/inherit-users
+   *  Propaga assignedUserIds recursivamente a los tableros secundarios sin asignar
+   *  conectados desde boardId. 409 si alguno tiene IDs distintos (conflicto).
+   */
+  inheritAssignedUsers(
+    boardId: string,
+    assignedUserIds: string[],
+  ): Observable<{ updated: string[]; conflicts: Array<{ boardId: string; name: string; assignedUserIds: string[] }> }> {
+    return this.http.post<{ updated: string[]; conflicts: Array<{ boardId: string; name: string; assignedUserIds: string[] }> }>(
+      `${this.url}/${encodeURIComponent(boardId)}/inherit-users`,
+      { assignedUserIds },
     );
   }
 

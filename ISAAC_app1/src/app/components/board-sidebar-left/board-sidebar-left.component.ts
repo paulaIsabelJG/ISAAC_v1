@@ -34,6 +34,7 @@ export interface BoardSidebarConfig {
   locationEnabled: boolean;
   locationSlots: number;
   assignedUserIds: string[];
+  autoPersonalize: boolean;
   /** Configuración de la barra AAC (solo relevante en tableros principales). */
   controlsConfig?: ControlsConfig;
 }
@@ -108,6 +109,7 @@ export class BoardSidebarLeftComponent implements OnChanges {
   localCols = 4;
   localPredictor = false;
   localAiRewrite = false;
+  localAutoPersonalize = false;
   localIaRows = 5;
   localIaCols = 1;
   localBoardRole: 'main' | 'secondary' | 'multi' = 'main';
@@ -182,6 +184,7 @@ export class BoardSidebarLeftComponent implements OnChanges {
     this.localCols             = this.config.cols;
     this.localPredictor        = this.config.predictor;
     this.localAiRewrite        = this.config.aiRewrite;
+    this.localAutoPersonalize  = this.config.autoPersonalize;
     this.localIaRows           = this.config.iaRows;
     this.localIaCols           = this.config.iaCols;
     this.localBoardRole        = this.config.boardRole;
@@ -204,10 +207,11 @@ export class BoardSidebarLeftComponent implements OnChanges {
       imageB64:         this.localImageB64,
       rows:             this.localRows,
       cols:             this.localCols,
-      predictor:        isSecondary ? false : this.localPredictor,
-      aiRewrite:        isSecondary ? false : this.localAiRewrite,
-      iaRows:           isSecondary ? 5     : this.localIaRows,
-      iaCols:           isSecondary ? 1     : this.localIaCols,
+      predictor:           isSecondary ? false : this.localPredictor,
+      aiRewrite:           isSecondary ? false : this.localAiRewrite,
+      iaRows:              isSecondary ? 5     : this.localIaRows,
+      iaCols:              isSecondary ? 1     : this.localIaCols,
+      autoPersonalize:     isSecondary ? false : this.localAutoPersonalize,
       boardRole:        this.localBoardRole,
       circleSlots:      this.localCircleSlots,
       locationEnabled:  this.localLocationEnabled,

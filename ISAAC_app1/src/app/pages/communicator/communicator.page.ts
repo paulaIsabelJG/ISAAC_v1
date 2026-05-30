@@ -38,6 +38,10 @@ export class CommunicatorPage implements OnInit, OnDestroy {
   isLoading = true;
   loadError = '';
 
+  /** true cuando el tablero raíz tiene autoPersonalize=true.
+   *  Controla si se pasa userId a todos los boards de la sesión. */
+  rootAutoPersonalize = false;
+
   /** true cuando el usuario autenticado ES el usuario final asignado. */
   canLog = false;
   /** true cuando el usuario tiene la opción de voz de controles activada. */
@@ -78,6 +82,14 @@ export class CommunicatorPage implements OnInit, OnDestroy {
     // Permite que teacher/org supervise y los eventos se asocien al usuario final.
     this.canLog = !!this.userId;
 
+    // Cargar raíz sin userId para leer el flag autoPersonalize del tablero.
+    // Si está activo, recargar con userId para aplicar personalización en el raíz.
+    // Esto evita personalizar tableros cuyo creador no activó la opción.
+    this.rootAutoPersonalize = false;
+    if (this.userId) {
+      const rootMeta = await firstValueFrom(this.boardSvc.getBoardById(boardId));
+      this.rootAutoPersonalize = !!rootMeta.board.autoPersonalize;
+    }
     // controlsConfig se carga en loadBoard → está disponible después de este await
     await this.loadBoard(boardId);
 
@@ -112,7 +124,9 @@ export class CommunicatorPage implements OnInit, OnDestroy {
     this.isLoading = true;
     this.loadError = '';
     try {
-      const res = await firstValueFrom(this.boardSvc.getBoardById(boardId));
+      // Pasar userId solo cuando el tablero raíz tiene autoPersonalize activo.
+      const uid = (this.rootAutoPersonalize && this.userId) ? this.userId : undefined;
+      const res = await firstValueFrom(this.boardSvc.getBoardById(boardId, uid));
       this.board = res.board;
     } catch {
       this.loadError = 'No se pudo cargar el tablero.';

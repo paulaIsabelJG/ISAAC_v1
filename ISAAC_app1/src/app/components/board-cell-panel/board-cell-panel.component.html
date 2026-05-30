@@ -183,14 +183,23 @@
     @if (!boardsReady) {
       <ion-spinner name="crescent" color="secondary" style="width:18px;height:18px;margin:6px 0;display:block"></ion-spinner>
     } @else {
-      @if (sameShapeBoards.length > 0) {
+      @if (sameShapeBoards.length > 0 || boardsUnassigned.length > 0) {
         <ion-select class="bcp-select-sm"
                     [value]="actionForm.targetBoardId"
                     (ionChange)="onTargetBoardSelect($event)"
                     interface="action-sheet"
                     placeholder="Selecciona tablero">
-          @for (b of sameShapeBoards; track b._id) {
-            <ion-select-option [value]="b._id">{{ b.name }}</ion-select-option>
+          @if (sameShapeBoards.length > 0) {
+            <ion-select-option disabled>── Tableros del usuario ──</ion-select-option>
+            @for (b of sameShapeBoards; track b._id) {
+              <ion-select-option [value]="b._id">{{ b.name }}</ion-select-option>
+            }
+          }
+          @if (boardsUnassigned.length > 0) {
+            <ion-select-option disabled>── Secundarios sin asignar ──</ion-select-option>
+            @for (b of boardsUnassigned; track b._id) {
+              <ion-select-option [value]="b._id">{{ b.name }}</ion-select-option>
+            }
           }
         </ion-select>
       } @else {
@@ -220,14 +229,23 @@
     <label class="bcp-lbl" style="margin-top:6px">Tablero a mostrar</label>
     @if (!boardsReady) {
       <ion-spinner name="crescent" color="secondary" style="width:18px;height:18px;margin:6px 0;display:block"></ion-spinner>
-    } @else if (sameShapeBoards.length > 0) {
+    } @else if (sameShapeBoards.length > 0 || boardsUnassigned.length > 0) {
       <ion-select class="bcp-select-sm"
                   [value]="actionForm.targetBoardId"
                   (ionChange)="onTargetBoardSelect($event)"
                   interface="action-sheet"
                   placeholder="Selecciona tablero">
-        @for (b of sameShapeBoards; track b._id) {
-          <ion-select-option [value]="b._id">{{ b.name }}</ion-select-option>
+        @if (sameShapeBoards.length > 0) {
+          <ion-select-option disabled>── Tableros del usuario ──</ion-select-option>
+          @for (b of sameShapeBoards; track b._id) {
+            <ion-select-option [value]="b._id">{{ b.name }}</ion-select-option>
+          }
+        }
+        @if (boardsUnassigned.length > 0) {
+          <ion-select-option disabled>── Secundarios sin asignar ──</ion-select-option>
+          @for (b of boardsUnassigned; track b._id) {
+            <ion-select-option [value]="b._id">{{ b.name }}</ion-select-option>
+          }
         }
       </ion-select>
     } @else {

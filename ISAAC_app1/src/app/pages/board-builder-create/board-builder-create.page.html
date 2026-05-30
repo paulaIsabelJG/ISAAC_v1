@@ -369,6 +369,22 @@
         </div>
       }
 
+      <!-- ── Personalización automática (solo tableros no secundarios) ──── -->
+      @if (cfgBoardRole !== 'secondary') {
+        <div class="bbc-toggles">
+          <div class="bbc-toggle-row" (click)="form.get('autoPersonalize')!.setValue(!form.get('autoPersonalize')!.value)">
+            <div class="bbc-toggle-info">
+              <span class="bbc-toggle-label">Personalización automática</span>
+              <span class="bbc-toggle-sub">Sustituye pictogramas por los personales del usuario cuando el nombre coincida</span>
+            </div>
+            <div class="bbc-toggle-switch"
+                 [class.bbc-toggle-switch--on]="form.get('autoPersonalize')?.value">
+              <div class="bbc-toggle-thumb"></div>
+            </div>
+          </div>
+        </div>
+      }
+
       <!-- ── Botón CREAR ────────────────────────────────────────────────── -->
       <button type="submit"
               class="bbc-submit"

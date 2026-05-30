@@ -43,6 +43,8 @@ export class MultiboardCommunicatorComponent implements OnInit, OnDestroy, OnCha
 
   @Input() masterBoard: Board | null = null;
   @Input() gender?: string;
+  /** ID del usuario final de la sesión — se pasa a getBoardById para personalización dinámica. */
+  @Input() contextUserId = '';
 
   slotStates: SlotState[] = [];
 
@@ -101,7 +103,7 @@ export class MultiboardCommunicatorComponent implements OnInit, OnDestroy, OnCha
     state.isLoading = true;
     state.loadError = '';
     try {
-      const res   = await firstValueFrom(this.boardSvc.getBoardById(state.boardId));
+      const res   = await firstValueFrom(this.boardSvc.getBoardById(state.boardId, this.contextUserId || undefined));
       state.board = res.board;
     } catch {
       state.loadError = 'No se pudo cargar el tablero.';

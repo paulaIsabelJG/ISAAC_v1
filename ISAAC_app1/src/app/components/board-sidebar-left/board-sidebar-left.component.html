@@ -151,6 +151,19 @@
         <div class="bbe-toggle-thumb"></div>
       </div>
     </div>
+
+    <!-- Toggle Personalización automática -->
+    <div class="bbe-toggle-row" (click)="localAutoPersonalize = !localAutoPersonalize">
+      <span class="bbe-toggle-lbl">Personalización automática</span>
+      <div class="bbe-toggle" [class.bbe-toggle--on]="localAutoPersonalize">
+        <div class="bbe-toggle-thumb"></div>
+      </div>
+    </div>
+    @if (localAutoPersonalize) {
+      <p class="bbe-secondary-user-hint" style="margin-top:2px">
+        Al publicar, los pictogramas del tablero (y subtableros) se sustituirán automáticamente por los personales del usuario asignado cuando el nombre coincida.
+      </p>
+    }
   }
 
   <!-- Botón guardar -->

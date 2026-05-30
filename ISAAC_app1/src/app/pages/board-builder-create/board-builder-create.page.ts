@@ -120,6 +120,7 @@ export class BoardBuilderCreatePage implements OnInit {
       locationColumnSlots:    [6,  [Validators.min(1), Validators.max(20)]],
       predictorEnabled:       [false],
       aiRewriteEnabled:       [false],
+      autoPersonalize:        [false],
       iaRows:                 [5,  [Validators.min(1), Validators.max(20)]],
       iaCols:                 [1,  [Validators.min(1), Validators.max(5)]],
     });
@@ -205,6 +206,7 @@ export class BoardBuilderCreatePage implements OnInit {
       locationColumnSlots:   6,
       predictorEnabled:      false,
       aiRewriteEnabled:      false,
+      autoPersonalize:       false,
       iaRows:                5,
       iaCols:                1,
     });
@@ -289,7 +291,7 @@ export class BoardBuilderCreatePage implements OnInit {
     const {
       name, shape, rows, columns,
       circleSlots, locationColumnEnabled, locationColumnSlots,
-      predictorEnabled, aiRewriteEnabled, iaRows, iaCols,
+      predictorEnabled, aiRewriteEnabled, autoPersonalize, iaRows, iaCols,
     } = this.form.value;
 
     const userId = this.cfgAssignedUserIds[0];
@@ -306,7 +308,7 @@ export class BoardBuilderCreatePage implements OnInit {
           circleSlots,
           locationColumnEnabled,
           locationColumnSlots,
-          predictorEnabled, aiRewriteEnabled,
+          predictorEnabled, aiRewriteEnabled, autoPersonalize,
           iaRows, iaCols,
           imageUrl:         this.imageB64 ?? '',
           assignedUserIds:  this.cfgAssignedUserIds,

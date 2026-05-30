@@ -104,7 +104,7 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     name: '', imageB64: null, rows: 3, cols: 4,
     predictor: false, aiRewrite: false, iaRows: 5, iaCols: 1,
     boardRole: 'main', circleSlots: 8, locationEnabled: false,
-    locationSlots: 6, assignedUserIds: [],
+    locationSlots: 6, assignedUserIds: [], autoPersonalize: false,
   };
   /** Configuración de la barra AAC del tablero actual (solo main). */
   get currentControlsConfig() { return this.board?.controlsConfig; }
@@ -143,6 +143,7 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
 
   // ── Datos del sidebar y panel de celda ───────────────────────────────────────
   userBoards: Board[] = [];
+  allCreatorBoards: Board[] = [];
   userBoardsLoading = false;
   boardsReady = false;
   highlightedBoardId = '';
@@ -278,6 +279,7 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
       assignedUserIds: b.assignedUserIds?.length
         ? [...b.assignedUserIds]
         : (b.userId ? [b.userId] : []),
+      autoPersonalize: b.autoPersonalize ?? false,
       controlsConfig: b.controlsConfig
         ? { visibleButtons: [...b.controlsConfig.visibleButtons], order: [...b.controlsConfig.order] }
         : undefined,
@@ -285,17 +287,20 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   }
 
   private async loadUserBoards(assignedUserIds: string[]): Promise<void> {
-    if (assignedUserIds.length === 0) {
-      this.userBoards = [];
-      this.userBoardsLoading = false;
-      this.boardsReady = true;
-      return;
-    }
     this.userBoardsLoading = true;
     this.boardsReady = false;
+    const creatorId = this.contextCreatorId || this.authSvc.getCurrentUser()?.id || '';
     try {
-      const res = await firstValueFrom(this.boardSvc.getAvailableTargets(assignedUserIds));
-      this.userBoards = res.boards.filter((b) => b._id !== this.boardId);
+      const [targetsRes, creatorRes] = await Promise.all([
+        assignedUserIds.length > 0
+          ? firstValueFrom(this.boardSvc.getAvailableTargets(assignedUserIds))
+          : Promise.resolve({ boards: [] as Board[] }),
+        creatorId
+          ? firstValueFrom(this.boardSvc.getBoardsByCreator(creatorId))
+          : Promise.resolve({ boards: [] as Board[] }),
+      ]);
+      this.userBoards       = targetsRes.boards.filter(b => b._id !== this.boardId);
+      this.allCreatorBoards = creatorRes.boards;
     } catch {
       /* silencioso */
     } finally {
@@ -548,11 +553,50 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
       (payload.action.type === 'navigate' || payload.action.type === 'voice+navigate') &&
       payload.action.targetBoardId
     ) {
-      const target = this.userBoards.find(b => b._id === payload.action.targetBoardId);
+      const target = this.userBoards.find(b => b._id === payload.action.targetBoardId)
+                  ?? this.allCreatorBoards.find(b => b._id === payload.action.targetBoardId);
       if (target && (target.shape ?? 'grid') !== (this.board.shape ?? 'grid')) {
         (await this.toastCtrl.create({
           message:  'No se pueden enlazar tableros de distinto tipo.',
           duration: 2800, color: 'danger', position: 'top',
+        })).present();
+        return;
+      }
+    }
+
+    // Si el destino es un secundario sin usuarios asignados y el tablero actual tiene
+    // assignedUserIds, propagar recursivamente antes de guardar la celda.
+    const isNavOrSlot =
+      payload.action.type === 'navigate'       || payload.action.type === 'voice+navigate' ||
+      payload.action.type === 'setSlot'        || payload.action.type === 'voice+setSlot';
+    if (
+      isNavOrSlot &&
+      payload.action.targetBoardId &&
+      (this.board.assignedUserIds?.length ?? 0) > 0 &&
+      this.boardsUnassigned.some(b => b._id === payload.action.targetBoardId)
+    ) {
+      try {
+        const inheritRes = await firstValueFrom(
+          this.boardSvc.inheritAssignedUsers(
+            payload.action.targetBoardId,
+            this.board.assignedUserIds!,
+          ),
+        );
+        if (inheritRes.conflicts?.length > 0) {
+          const names = inheritRes.conflicts.map(c => `• ${c.name}`).join('\n');
+          (await this.alertCtrl.create({
+            header:  'Conflicto de usuarios',
+            message: `Algunos tableros conectados ya tienen usuarios distintos asignados y no pueden heredar el contexto actual:\n\n${names}`,
+            buttons: ['Aceptar'],
+          })).present();
+          return;
+        }
+        // Recargar tableros para reflejar los cambios de assignedUserIds
+        void this.loadUserBoards(this.board.assignedUserIds!);
+      } catch {
+        (await this.toastCtrl.create({
+          message:  'Error al asignar usuarios a los tableros secundarios.',
+          duration: 2500, color: 'danger', position: 'top',
         })).present();
         return;
       }
@@ -707,6 +751,7 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
           aiRewriteEnabled:      payload.aiRewrite,
           iaRows:                payload.iaRows,
           iaCols:                payload.iaCols,
+          autoPersonalize:       payload.autoPersonalize,
           cells:                 remainingCells,
           // boardRole: los boards legados (boardRole=multi) no lo modificamos;
           // los nuevos multi (shape=multi) y los normales sí admiten cambio.
@@ -1271,10 +1316,39 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
                 }),
               );
               this.board = res.board;
-              (await this.toastCtrl.create({
-                message: '✓ Tablero añadido al perfil del usuario',
-                duration: 2500, color: 'success', position: 'top',
-              })).present();
+              // Personalización automática: comprueba cuántos pictogramas coincidirán
+              // La sustitución real ocurre en tiempo de carga (por usuario, no en DB)
+              if (this.board.autoPersonalize) {
+                try {
+                  const pRes = await firstValueFrom(
+                    this.boardSvc.applyPersonalization(this.boardId),
+                  );
+                  let msg: string;
+                  if (pRes.reason === 'no_pictograms') {
+                    msg = '✓ Publicado · El usuario aún no tiene pictogramas personales. Añádelos desde su perfil para activar la personalización.';
+                  } else if (pRes.cellsReplaced === 0) {
+                    msg = '✓ Publicado · Sin coincidencias: ningún label del tablero coincide con los pictogramas personales del usuario.';
+                  } else {
+                    msg = `✓ Publicado · ${pRes.cellsReplaced} pictograma(s) se personalizarán automáticamente en ${pRes.boardsProcessed} tablero(s)`;
+                  }
+                  (await this.toastCtrl.create({
+                    message: msg,
+                    duration: 4000,
+                    color: pRes.cellsReplaced > 0 ? 'success' : 'warning',
+                    position: 'top',
+                  })).present();
+                } catch {
+                  (await this.toastCtrl.create({
+                    message: '✓ Publicado · Error al verificar personalización automática.',
+                    duration: 3000, color: 'warning', position: 'top',
+                  })).present();
+                }
+              } else {
+                (await this.toastCtrl.create({
+                  message: '✓ Tablero añadido al perfil del usuario',
+                  duration: 2500, color: 'success', position: 'top',
+                })).present();
+              }
             } catch {
               (await this.toastCtrl.create({
                 message: 'Error al actualizar el perfil.', duration: 2500, color: 'danger', position: 'top',
@@ -1914,26 +1988,49 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     return this.board?.name ?? '';
   }
 
-  /** Tableros disponibles para navegación o setSlot en el panel de celda.
-   *  En modo multitablero usa el shape del slot activo (los mini-boards son grid/circular,
-   *  nunca 'multi'), no el shape del tablero maestro.
-   *  Los tableros principales solo pueden enlazar con tableros secundarios. */
-  get sameShapeBoards(): Board[] {
-    let shape: string;
+  /** Shape activo para filtrar tableros destino (usa el slot activo en multi). */
+  private get _targetShape(): string {
     if (this.isMultiBoard && this.activeCellSlotId != null) {
-      shape = this.getSlotBoard(this.activeCellSlotId)?.shape ?? 'grid';
-    } else {
-      shape = this.board?.shape ?? 'grid';
+      return this.getSlotBoard(this.activeCellSlotId)?.shape ?? 'grid';
     }
-    const byShape = this.userBoards.filter(
-      (b) => (b.shape ?? 'grid') === shape && b.shape !== 'multi',
+    return this.board?.shape ?? 'grid';
+  }
+
+  /** Tableros del mismo usuario contexto, creados por el creador del contexto actual,
+   *  filtrando por shape y respetando la regla main→secondary. */
+  get boardsSameUser(): Board[] {
+    const creatorId = this.contextCreatorId || this.authSvc.getCurrentUser()?.id || '';
+    const shape = this._targetShape;
+    const byShape = this.userBoards.filter(b =>
+      (b.shape ?? 'grid') === shape &&
+      b.shape !== 'multi' &&
+      (!creatorId || b.createdBy === creatorId || b.creatorId === creatorId),
     );
-    // Un tablero principal solo puede enlazar a tableros secundarios.
     const currentRole = this.board?.boardRole ?? 'main';
     if (currentRole === 'main') {
       return byShape.filter(b => b.boardRole === 'secondary');
     }
     return byShape;
+  }
+
+  /** Tableros secundarios sin usuarios asignados, del creador del contexto actual,
+   *  del mismo shape. Son candidatos a heredar assignedUserIds al enlazarse. */
+  get boardsUnassigned(): Board[] {
+    const creatorId = this.contextCreatorId || this.authSvc.getCurrentUser()?.id || '';
+    const shape = this._targetShape;
+    return this.allCreatorBoards.filter(b =>
+      b._id !== this.boardId &&
+      b.boardRole === 'secondary' &&
+      (!b.assignedUserIds || b.assignedUserIds.length === 0) &&
+      (b.shape ?? 'grid') === shape &&
+      b.shape !== 'multi' &&
+      (!creatorId || b.createdBy === creatorId || b.creatorId === creatorId),
+    );
+  }
+
+  /** Unión de ambos grupos; se usa para validación de shape en onSaveCellRequest. */
+  get sameShapeBoards(): Board[] {
+    return [...this.boardsSameUser, ...this.boardsUnassigned];
   }
 
   // ── Navegación ────────────────────────────────────────────────────────────────

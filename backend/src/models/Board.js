@@ -88,6 +88,7 @@ const boardSchema = new mongoose.Schema({
     order:          { type: [String], default: ['home','back','speak','phraseBar','deleteLast','clearAll'] },
     _id: false,
   },
+  autoPersonalize:    { type: Boolean, default: false },
   visibleInProfile:   { type: Boolean, default: false },
   profileName:        { type: String,  default: '' },
   profileImage:       { type: String,  default: '' },

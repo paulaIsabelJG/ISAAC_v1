@@ -108,8 +108,10 @@ export class BoardCellPanelComponent implements OnChanges {
   @Input() isCircular:        boolean = false;
   /** true cuando la celda seleccionada es la celda central del circulares. */
   @Input() isCenterSelected:  boolean = false;
-  /** Tableros del mismo shape disponibles como destino de navegación. */
+  /** Tableros del usuario contexto disponibles como destino de navegación. */
   @Input() sameShapeBoards:   Board[] = [];
+  /** Tableros secundarios sin usuarios asignados (heredarán assignedUserIds al enlazarse). */
+  @Input() boardsUnassigned:  Board[] = [];
   /** Evita bug de ion-select: solo renderiza el selector cuando los datos están listos. */
   @Input() boardsReady:       boolean = false;
   /** Pictogramas personales del usuario asignado al tablero. */
