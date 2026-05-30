@@ -1,6 +1,6 @@
 import {
   Component, Input, Output, EventEmitter,
-  OnInit, OnDestroy, ChangeDetectorRef,
+  OnInit, OnDestroy, ChangeDetectorRef, HostBinding,
 } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { AacRuntimeService, AacPhraseItem } from '../../services/aac-runtime.service';
@@ -20,6 +20,9 @@ import { PhraseBandComponent } from '../phrase-band/phrase-band.component';
 export class AacControlsBarComponent implements OnInit, OnDestroy {
 
   // ── Inputs ─────────────────────────────────────────────────────────────────
+
+  @HostBinding('class.acb--comm')
+  get isComm(): boolean { return this.mode === 'communicator'; }
 
   @Input() mode: 'preview' | 'communicator' = 'preview';
   @Input() voiceEnabled  = false;

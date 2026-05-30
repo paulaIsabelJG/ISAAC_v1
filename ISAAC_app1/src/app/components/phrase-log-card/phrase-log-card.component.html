@@ -1,0 +1,64 @@
+<div class="plc-card" [class.plc-card--expanded]="expanded">
+
+  <!-- ── Cabecera ────────────────────────────────────────────────────────── -->
+  <div class="plc-header" (click)="toggleExpanded()">
+
+    <div class="plc-meta">
+      <span class="plc-user">{{ phrase.userName }}</span>
+      <span class="plc-date">{{ phrase.startedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+      <span class="plc-duration">{{ formatDuration(phrase.durationMs) }}</span>
+    </div>
+
+    <p class="plc-text">"{{ phrase.finalText }}"</p>
+
+    <button class="plc-toggle" [attr.aria-expanded]="expanded">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+           [style.transform]="expanded ? 'rotate(180deg)' : 'none'">
+        <polyline points="6 9 12 15 18 9"/>
+      </svg>
+    </button>
+
+  </div>
+
+  <!-- ── Secuencia de interacciones (colapsable) ─────────────────────────── -->
+  @if (expanded) {
+    <div class="plc-interactions">
+
+      @for (inter of phrase.interactions; track $index) {
+
+        <!-- Acción de sistema: backspace, clear, speak, etc. -->
+        @if (inter.isSystemAction) {
+          <div class="plc-action-chip"
+               [class.plc-action-chip--backspace]="inter.actionType === ':backspace'"
+               [class.plc-action-chip--clear]="inter.actionType === ':clear'"
+               [class.plc-action-chip--speak]="inter.actionType === ':speak'">
+            {{ actionLabel(inter) }}
+          </div>
+        }
+
+        <!-- Pictograma (spoken o navigate sin voz) -->
+        @else if (inter.type === 'button') {
+          <div class="plc-pict-wrap"
+               [class.plc-pict-wrap--inactive]="!inter.activeInFinalPhrase"
+               [style.background]="inter.color || null"
+               [title]="inter.activeInFinalPhrase ? inter.label : inter.label + ' (eliminado)'">
+            <div class="plc-pict-cell">
+              <app-pict-cell-content
+                [pict]="toCell(inter)"
+                emptyType="empty-div">
+              </app-pict-cell-content>
+            </div>
+            @if (!inter.activeInFinalPhrase) {
+              <div class="plc-removed-badge">
+                {{ inter.removedByAction === 'backspace' ? '←' : '✕' }}
+              </div>
+            }
+          </div>
+        }
+
+      }
+
+    </div>
+  }
+
+</div>

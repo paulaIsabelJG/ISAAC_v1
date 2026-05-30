@@ -1,0 +1,28 @@
+<div class="scc-card">
+
+  <div class="scc-header">
+    <h3 class="scc-title">{{ title }}</h3>
+    @if (subtitle) {
+      <p class="scc-subtitle">{{ subtitle }}</p>
+    }
+  </div>
+
+  @if (loading) {
+    <div class="scc-placeholder">
+      <ion-spinner name="crescent" color="secondary"></ion-spinner>
+    </div>
+  } @else if (!options) {
+    <div class="scc-placeholder scc-empty">
+      <svg viewBox="0 0 40 36" fill="none" stroke="#d8c8e8" stroke-width="1.5" width="36" height="32">
+        <rect x="1" y="20" width="8" height="15" rx="2"/>
+        <rect x="16" y="10" width="8" height="25" rx="2"/>
+        <rect x="31" y="15" width="8" height="20" rx="2"/>
+        <line x1="0" y1="35" x2="40" y2="35"/>
+      </svg>
+      <span>{{ emptyMessage }}</span>
+    </div>
+  } @else {
+    <div echarts [options]="options" [style.height]="height" class="scc-chart"></div>
+  }
+
+</div>

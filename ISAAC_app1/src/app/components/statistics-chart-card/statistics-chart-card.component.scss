@@ -1,0 +1,53 @@
+.scc-card {
+  background:     #ffffff;
+  border:         1.5px solid #f0d8ea;
+  border-radius:  16px;
+  padding:        16px 16px 12px;
+  display:        flex;
+  flex-direction: column;
+  gap:            10px;
+  height:         100%;
+  box-sizing:     border-box;
+}
+
+.scc-header {
+  display:        flex;
+  flex-direction: column;
+  gap:            2px;
+}
+
+.scc-title {
+  font-size:   13px;
+  font-weight: 700;
+  color:       #1a1a2e;
+  margin:      0;
+}
+
+.scc-subtitle {
+  font-size:  11px;
+  color:      #8b7490;
+  margin:     0;
+}
+
+.scc-placeholder {
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  gap:             8px;
+  min-height:      140px;
+  flex:            1;
+}
+
+.scc-empty {
+  span {
+    font-size:  11px;
+    color:      #8b7490;
+    text-align: center;
+  }
+}
+
+.scc-chart {
+  width: 100%;
+  flex:  1;
+}

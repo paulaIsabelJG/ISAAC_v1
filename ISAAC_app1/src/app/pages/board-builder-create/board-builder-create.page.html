@@ -59,7 +59,10 @@
 
       <!-- ── Usuarios asignados ─────────────────────────────────────────── -->
       <div class="bbc-field">
-        <label class="bbc-label">Usuarios asignados *</label>
+        <label class="bbc-label">
+          Usuarios asignados
+          @if (cfgBoardRole !== 'secondary') { <span style="color:#e53935">*</span> }
+        </label>
 
         @if (lockAssignedUsers) {
           <!-- Usuarios bloqueados: vienen heredados del editor, no son modificables -->
@@ -71,6 +74,11 @@
             <span>{{ lockedUserNames }}</span>
           </div>
           <span class="bbc-hint">Usuarios heredados del tablero origen · no modificables</span>
+        } @else if (cfgBoardRole === 'secondary') {
+          <p class="bbc-hint" style="font-style:italic;margin:4px 0 0">
+            Los tableros secundarios heredan el usuario al enlazarse desde un tablero principal.
+            No es necesario asignar usuario ahora.
+          </p>
         } @else if (usersLoading) {
           <div class="bbc-loading">
             <ion-spinner name="crescent" color="secondary"></ion-spinner>

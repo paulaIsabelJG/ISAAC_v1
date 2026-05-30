@@ -305,7 +305,7 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   }
 
   private async loadPersonalPicts(userId: string): Promise<void> {
-    if (this.isSharedBoard) {
+    if (!userId || this.isSharedBoard) {
       this.personalPicts = [];
       this.personalLoading = false;
       return;
@@ -701,7 +701,7 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
         this.boardSvc.updateBoard(this.boardId, {
           name:                  payload.name,
           imageUrl:              payload.imageB64 ?? '',
-          userId:                payload.assignedUserIds[0] || '',
+          userId:                payload.assignedUserIds[0] || undefined,
           assignedUserIds:       payload.assignedUserIds,
           predictorEnabled:      payload.predictor,
           aiRewriteEnabled:      payload.aiRewrite,
@@ -1872,7 +1872,23 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
 
   /** true cuando el tablero está asignado a más de un usuario. */
   get isSharedBoard(): boolean {
-    return (this.board?.assignedUserIds?.length ?? 1) > 1;
+    return (this.board?.assignedUserIds?.length ?? 0) > 1;
+  }
+
+  /**
+   * Razón por la que los pictogramas personales están bloqueados.
+   * Cadena vacía = permitidos.
+   */
+  get personalPictsBlockedReason(): string {
+    const ids  = this.board?.assignedUserIds ?? [];
+    const role = this.board?.boardRole ?? 'main';
+    if (role === 'secondary' && ids.length === 0) {
+      return 'Para utilizar pictogramas personales en este tablero secundario, primero debes enlazarlo desde un tablero principal. Al enlazarlo, heredará el usuario asignado.';
+    }
+    if (ids.length > 1) {
+      return 'Los pictogramas personales no están disponibles en tableros asignados a varios usuarios.';
+    }
+    return '';
   }
 
   get canAddToProfile(): boolean {
@@ -1900,7 +1916,8 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
 
   /** Tableros disponibles para navegación o setSlot en el panel de celda.
    *  En modo multitablero usa el shape del slot activo (los mini-boards son grid/circular,
-   *  nunca 'multi'), no el shape del tablero maestro. */
+   *  nunca 'multi'), no el shape del tablero maestro.
+   *  Los tableros principales solo pueden enlazar con tableros secundarios. */
   get sameShapeBoards(): Board[] {
     let shape: string;
     if (this.isMultiBoard && this.activeCellSlotId != null) {
@@ -1908,9 +1925,15 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     } else {
       shape = this.board?.shape ?? 'grid';
     }
-    return this.userBoards.filter(
+    const byShape = this.userBoards.filter(
       (b) => (b.shape ?? 'grid') === shape && b.shape !== 'multi',
     );
+    // Un tablero principal solo puede enlazar a tableros secundarios.
+    const currentRole = this.board?.boardRole ?? 'main';
+    if (currentRole === 'main') {
+      return byShape.filter(b => b.boardRole === 'secondary');
+    }
+    return byShape;
   }
 
   // ── Navegación ────────────────────────────────────────────────────────────────

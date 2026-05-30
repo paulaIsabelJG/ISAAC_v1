@@ -66,13 +66,14 @@
 
   <!-- ── Tab Personal ─────────────────────────────────────────────────────── -->
   @if (rightMode === 'personal') {
-    @if (isSharedBoard) {
+    @if (personalPictsBlockedReason) {
       <div class="bcp-personal-blocked">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <circle cx="12" cy="12" r="10"/>
-          <path d="M8 12h8M12 8v8"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <circle cx="12" cy="16" r="1" fill="currentColor"/>
         </svg>
-        <span>Los pictogramas personales no están disponibles en tableros asignados a varios usuarios.</span>
+        <span>{{ personalPictsBlockedReason }}</span>
       </div>
     } @else if (personalLoading) {
       <ion-spinner name="crescent" color="secondary" style="margin:10px auto;display:block"></ion-spinner>
@@ -93,23 +94,35 @@
 
   <!-- ── Tab Nuevo ─────────────────────────────────────────────────────────── -->
   @if (rightMode === 'new') {
-    <div class="bcp-new-form">
-      <div class="bcp-new-img-row">
-        <div class="bcp-new-img-wrap" (click)="pickImage()">
-          @if (newImgUrl) {
-            <img [src]="newImgUrl" class="bcp-new-img"/>
-          } @else {
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <rect x="3" y="3" width="18" height="18" rx="3"/>
-              <circle cx="8.5" cy="8.5" r="1.5"/>
-              <polyline points="21 15 16 10 5 21"/>
-            </svg>
-            <span>Foto</span>
-          }
-        </div>
-        <div class="bcp-new-img-hint">Pulsa para subir imagen (máx. 2 MB)</div>
+    @if (personalPictsBlockedReason) {
+      <div class="bcp-personal-blocked">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <circle cx="12" cy="16" r="1" fill="currentColor"/>
+        </svg>
+        <span>{{ personalPictsBlockedReason }}</span>
       </div>
-    </div>
+    }
+    @if (!personalPictsBlockedReason) {
+      <div class="bcp-new-form">
+        <div class="bcp-new-img-row">
+          <div class="bcp-new-img-wrap" (click)="pickImage()">
+            @if (newImgUrl) {
+              <img [src]="newImgUrl" class="bcp-new-img"/>
+            } @else {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="3" y="3" width="18" height="18" rx="3"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <span>Foto</span>
+            }
+          </div>
+          <div class="bcp-new-img-hint">Pulsa para subir imagen (máx. 2 MB)</div>
+        </div>
+      </div>
+    }
   }
 
   <!-- ── Campos comunes ─────────────────────────────────────────────────────── -->

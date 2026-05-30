@@ -17,6 +17,14 @@ export interface AacPhraseItem {
   wordType?: string;
 }
 
+/** Acción OBL estructurada (spec open-board-log-0.1). */
+export interface OblAction {
+  action:                string;          // ':open_board' | 'ext_isaac_set_slot' | '+speak' | ':back'
+  destination_board_id?: string;
+  ext_isaac_slot_id?:    number;
+  ext_isaac_multi_board_id?: string;
+}
+
 export interface OblEvent {
   id:                   string;
   type:                 'button' | 'action' | 'utterance';
@@ -27,7 +35,9 @@ export interface OblEvent {
   button_id?:           string;
   board_id?:            string;
   image_url?:           string;
-  actions?:             string[];
+  actions?:             OblAction[];
+  color?:               string;
+  wordType?:            string;
   action?:              string;
   destination_board_id?: string;
   text?:                string;
@@ -215,11 +225,11 @@ export class AacRuntimeService {
       this.logActionEvent(`:setSlot(${action.targetSlotId},${action.targetBoardId})`);
     }
 
-    const actions: string[] = [];
-    if (spoken)       actions.push('+speak');
-    if (speakAndBack) actions.push('+speak', ':back');
-    if (navigates)    actions.push(`:open_board(${action?.targetBoardId ?? ''})`);
-    if (setsSlot)     actions.push(`:setSlot(${action?.targetSlotId ?? ''},${action?.targetBoardId ?? ''})`);
+    const oblActions: OblAction[] = [];
+    if (spoken || speakAndBack) oblActions.push({ action: '+speak' });
+    if (speakAndBack)           oblActions.push({ action: ':back' });
+    if (navigates)              oblActions.push({ action: ':open_board', destination_board_id: action?.targetBoardId ?? undefined });
+    if (setsSlot)               oblActions.push({ action: 'ext_isaac_set_slot', ext_isaac_slot_id: action?.targetSlotId ?? undefined, destination_board_id: action?.targetBoardId ?? undefined });
 
     this.logButtonEvent({
       label:        item.label,
@@ -228,7 +238,9 @@ export class AacRuntimeService {
       button_id:    pictogram.id ?? '',
       board_id:     boardId,
       image_url:    item.imageUrl,
-      actions,
+      actions:      oblActions,
+      color:        item.color    || undefined,
+      wordType:     item.wordType || undefined,
     });
   }
 
@@ -356,7 +368,8 @@ export class AacRuntimeService {
 
   logButtonEvent(data: {
     label: string; vocalization: string; spoken: boolean;
-    button_id: string; board_id: string; image_url: string; actions: string[];
+    button_id: string; board_id: string; image_url: string; actions: OblAction[];
+    color?: string; wordType?: string;
   }): void {
     this.pushEvent({
       id:        this.uuid(),

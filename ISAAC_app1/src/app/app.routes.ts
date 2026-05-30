@@ -120,6 +120,16 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
 
+  // ── Estadísticas de organización ────────────────────────────────────────────
+  {
+    path: 'organization-statistics',
+    loadComponent: () =>
+      import('./pages/organization-statistics/organization-statistics.page').then(
+        (m) => m.OrganizationStatisticsPage
+      ),
+    canActivate: [authGuard],
+  },
+
   // ── Placeholder Estadísticas ─────────────────────────────────────────────────
   {
     path: 'statistics-placeholder',

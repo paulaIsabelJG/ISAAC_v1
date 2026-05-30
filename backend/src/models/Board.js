@@ -49,7 +49,8 @@ const boardSchema = new mongoose.Schema({
   creatorName:      { type: String, default: '' },
   // userId: usuario final ASIGNADO al tablero (puede ser distinto del creador)
   // Mantenido como campo legacy/primer usuario para compatibilidad con código antiguo.
-  userId:           { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  // No required: los tableros secundarios no enlazados pueden no tener usuario todavía.
+  userId:           { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false },
   // assignedUserIds: lista de usuarios a los que está asignado el tablero (1-N).
   // Si se envía desde frontend, userId se sincroniza con assignedUserIds[0].
   // Boards creados antes de este campo no tendrán este array → fallan hacia userId.

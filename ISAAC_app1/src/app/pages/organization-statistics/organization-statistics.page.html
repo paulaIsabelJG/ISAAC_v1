@@ -1,0 +1,300 @@
+<ion-content class="os-content">
+
+  <!-- ════════════════════ CABECERA ════════════════════ -->
+  <div class="os-header">
+    <button class="os-back-btn" (click)="goBack()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </button>
+    <div class="os-header-text">
+      <h1 class="os-title">Estadísticas</h1>
+      <p class="os-subtitle">{{ orgName }}</p>
+    </div>
+  </div>
+
+  <!-- ════════════════════ BARRA DE FILTROS ════════════════════ -->
+  <div class="os-filters-bar">
+
+    <div class="os-filter-field">
+      <label class="os-filter-label">Desde</label>
+      <input class="os-filter-input" type="date" [(ngModel)]="filterFrom"/>
+    </div>
+
+    <div class="os-filter-field">
+      <label class="os-filter-label">Hasta</label>
+      <input class="os-filter-input" type="date" [(ngModel)]="filterTo"/>
+    </div>
+
+    <div class="os-filter-field">
+      <label class="os-filter-label">Ámbito</label>
+      <select class="os-filter-input os-filter-select" [(ngModel)]="filterScope">
+        @for (opt of scopeOptions; track opt.value) {
+          <option [value]="opt.value">{{ opt.value === 'all' ? orgName : opt.label }}</option>
+        }
+      </select>
+    </div>
+
+    <button class="os-apply-btn" (click)="applyFilters()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+      Aplicar
+    </button>
+
+  </div>
+
+  <!-- ════════════════════ TARJETAS KPI ════════════════════ -->
+  <div class="os-kpis">
+    <app-statistics-summary-cards
+      [summary]="summary"
+      [isLoading]="loadingSummary">
+    </app-statistics-summary-cards>
+  </div>
+
+  <!-- ════════════════════ NAVEGACIÓN INTERNA ════════════════════ -->
+  <ion-segment [(ngModel)]="activeSection" class="os-segment">
+    <ion-segment-button value="resumen">
+      <ion-label>Resumen</ion-label>
+    </ion-segment-button>
+    <ion-segment-button value="tableros">
+      <ion-label>Tableros</ion-label>
+    </ion-segment-button>
+    <ion-segment-button value="frases">
+      <ion-label>Frases</ion-label>
+    </ion-segment-button>
+  </ion-segment>
+
+  <!-- ════════════════════ SECCIÓN: RESUMEN ════════════════════ -->
+  @if (activeSection === 'resumen') {
+    <div class="os-section">
+
+      @if (errorMsg) {
+        <div class="os-error">{{ errorMsg }}</div>
+      }
+
+      <ion-grid class="os-charts-grid">
+
+        <!-- Actividad temporal — fila completa -->
+        <ion-row>
+          <ion-col size="12">
+            <app-statistics-chart-card
+              title="Actividad temporal"
+              subtitle="Interacciones por día (últimos 30 días)"
+              [options]="temporalChartOpts"
+              [loading]="loadingCharts"
+              height="200px">
+            </app-statistics-chart-card>
+          </ion-col>
+        </ion-row>
+
+        <!-- Pictogramas y Acciones -->
+        <ion-row>
+          <ion-col size="12" sizeMd="6">
+            <app-statistics-chart-card
+              title="Pictogramas más usados"
+              subtitle="Top 10 por frecuencia de uso"
+              [options]="topPictogramsOpts"
+              [loading]="loadingCharts"
+              height="260px">
+            </app-statistics-chart-card>
+          </ion-col>
+          <ion-col size="12" sizeMd="6">
+            <app-statistics-chart-card
+              title="Distribución de acciones"
+              subtitle="Tipo de interacción realizada"
+              [options]="actionDistOpts"
+              [loading]="loadingCharts"
+              height="260px">
+            </app-statistics-chart-card>
+          </ion-col>
+        </ion-row>
+
+        <!-- Usuarios y Tableros -->
+        <ion-row>
+          <ion-col size="12" sizeMd="6">
+            <app-statistics-chart-card
+              title="Usuarios más activos"
+              subtitle="Top 10 por número de interacciones"
+              [options]="userActivityOpts"
+              [loading]="loadingCharts"
+              height="260px">
+            </app-statistics-chart-card>
+          </ion-col>
+          <ion-col size="12" sizeMd="6">
+            <app-statistics-chart-card
+              title="Tableros más usados"
+              subtitle="Top 10 por interacciones"
+              [options]="topBoardsChartOpts"
+              [loading]="loadingCharts"
+              height="260px">
+            </app-statistics-chart-card>
+          </ion-col>
+        </ion-row>
+
+      </ion-grid>
+
+    </div>
+  }
+
+  <!-- ════════════════════ SECCIÓN: TABLEROS ════════════════════ -->
+  @if (activeSection === 'tableros') {
+    <div class="os-section">
+
+      @if (loadingBoards) {
+        <div class="os-spinner-row">
+          <ion-spinner name="crescent" color="secondary"></ion-spinner>
+        </div>
+      } @else if (boards.length === 0) {
+        <div class="os-empty-state">
+          <svg viewBox="0 0 64 64" fill="none" stroke="#e0d0f0" stroke-width="2" width="56" height="56">
+            <rect x="8" y="8" width="48" height="48" rx="8"/>
+            <line x1="8" y1="24" x2="56" y2="24"/>
+            <line x1="8" y1="40" x2="56" y2="40"/>
+            <line x1="24" y1="8" x2="24" y2="56"/>
+            <line x1="40" y1="8" x2="40" y2="56"/>
+          </svg>
+          <p>Aún no hay datos de uso de tableros.</p>
+          <span>Usa el comunicador para generar estadísticas.</span>
+        </div>
+      } @else {
+        <div class="os-boards-grid">
+          @for (board of boards; track board.boardId) {
+            <div class="os-board-card">
+
+              <div class="os-board-card-header">
+                <div class="os-board-name">{{ board.name || board.boardId }}</div>
+                <span class="os-board-badge">{{ boardShapeLabel(board) }}</span>
+              </div>
+
+              <div class="os-board-stats">
+                <div class="os-board-stat">
+                  <span class="os-board-stat-value">{{ board.interactions }}</span>
+                  <span class="os-board-stat-label">Interacciones</span>
+                </div>
+                <div class="os-board-stat">
+                  <span class="os-board-stat-value">{{ board.phrases }}</span>
+                  <span class="os-board-stat-label">Frases</span>
+                </div>
+                <div class="os-board-stat">
+                  <span class="os-board-stat-value">{{ board.voiceActions }}</span>
+                  <span class="os-board-stat-label">Con voz</span>
+                </div>
+                <div class="os-board-stat">
+                  <span class="os-board-stat-value">{{ board.navActions }}</span>
+                  <span class="os-board-stat-label">Navegación</span>
+                </div>
+              </div>
+
+              <!-- Barra de uso relativa -->
+              <div class="os-board-bar-track">
+                <div class="os-board-bar-fill"
+                     [style.width.%]="boards[0].interactions > 0
+                       ? (board.interactions / boards[0].interactions * 100) : 0">
+                </div>
+              </div>
+
+            </div>
+          }
+        </div>
+      }
+
+    </div>
+  }
+
+  <!-- ════════════════════ SECCIÓN: FRASES ════════════════════ -->
+  @if (activeSection === 'frases') {
+    <div class="os-section">
+
+      <!-- Frases de la organización -->
+      <div class="os-subsection-header">
+        <h3 class="os-subsection-title">
+          Frases de {{ scopeLabel }}
+          @if (orgTotalPhrases > 0) {
+            <span class="os-count">{{ orgTotalPhrases }}</span>
+          }
+        </h3>
+      </div>
+
+      @if (loadingPhrases) {
+        <div class="os-spinner-row">
+          <ion-spinner name="crescent" color="secondary"></ion-spinner>
+        </div>
+      } @else if (orgPhrases.length === 0) {
+        <div class="os-empty-state">
+          <svg viewBox="0 0 64 64" fill="none" stroke="#e0d0f0" stroke-width="2" width="56" height="56">
+            <path d="M8 48 Q8 56 16 56 L48 56 Q56 56 56 48 L56 20 Q56 12 48 12 L32 12"/>
+            <path d="M8 28 Q8 20 16 20 L28 20"/>
+            <circle cx="20" cy="36" r="2" fill="#e0d0f0" stroke="none"/>
+            <circle cx="32" cy="36" r="2" fill="#e0d0f0" stroke="none"/>
+            <circle cx="44" cy="36" r="2" fill="#e0d0f0" stroke="none"/>
+          </svg>
+          <p>No hay frases registradas todavía.</p>
+          <span>Las frases aparecerán aquí después de usar el comunicador.</span>
+        </div>
+      } @else {
+        <div class="os-phrase-list">
+          @for (phrase of orgPhrases; track phrase.phraseId) {
+            <app-phrase-log-card [phrase]="phrase"></app-phrase-log-card>
+          }
+        </div>
+        @if (orgTotalPages > 1) {
+          <div class="os-pagination">
+            <button class="os-page-btn" [disabled]="orgPage === 1" (click)="onOrgPrevPage()">
+              &#8249; Anterior
+            </button>
+            <span class="os-page-info">{{ orgPage }} / {{ orgTotalPages }}</span>
+            <button class="os-page-btn" [disabled]="orgPage === orgTotalPages" (click)="onOrgNextPage()">
+              Siguiente &#8250;
+            </button>
+          </div>
+        }
+      }
+
+      <!-- Frases por usuario concreto -->
+      <div class="os-subsection-header" style="margin-top: 28px;">
+        <h3 class="os-subsection-title">Frases por usuario</h3>
+      </div>
+
+      <div class="os-user-select-row">
+        <select class="os-filter-input os-user-select" [(ngModel)]="selectedUserId" (ngModelChange)="onUserSelected()">
+          <option value="">— Selecciona un usuario final —</option>
+          @for (u of allFinalUsers; track u._id) {
+            <option [value]="u._id">{{ u.name }}</option>
+          }
+        </select>
+      </div>
+
+      @if (selectedUserId) {
+        @if (loadingUser) {
+          <div class="os-spinner-row">
+            <ion-spinner name="crescent" color="secondary"></ion-spinner>
+          </div>
+        } @else if (userPhrases.length === 0) {
+          <p class="os-empty">Este usuario aún no tiene frases registradas.</p>
+        } @else {
+          <div class="os-phrase-list">
+            @for (phrase of userPhrases; track phrase.phraseId) {
+              <app-phrase-log-card [phrase]="phrase"></app-phrase-log-card>
+            }
+          </div>
+          @if (userTotalPages > 1) {
+            <div class="os-pagination">
+              <button class="os-page-btn" [disabled]="userPage === 1" (click)="onUserPrevPage()">
+                &#8249; Anterior
+              </button>
+              <span class="os-page-info">{{ userPage }} / {{ userTotalPages }}</span>
+              <button class="os-page-btn" [disabled]="userPage === userTotalPages" (click)="onUserNextPage()">
+                Siguiente &#8250;
+              </button>
+            </div>
+          }
+        }
+      }
+
+    </div>
+  }
+
+  <div class="os-bottom-spacer"></div>
+
+</ion-content>

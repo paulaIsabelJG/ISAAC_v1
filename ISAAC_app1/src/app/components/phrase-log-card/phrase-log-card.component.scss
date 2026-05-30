@@ -1,0 +1,159 @@
+:host { display: block; }
+
+// ── Tarjeta ───────────────────────────────────────────────────────────────────
+.plc-card {
+  background:    #ffffff;
+  border:        1.5px solid #f4d0e4;
+  border-radius: 14px;
+  overflow:      hidden;
+  transition:    box-shadow 0.15s;
+
+  &--expanded { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+}
+
+// ── Cabecera ──────────────────────────────────────────────────────────────────
+.plc-header {
+  display:    flex;
+  align-items: flex-start;
+  gap:         10px;
+  padding:     12px 14px;
+  cursor:      pointer;
+  user-select: none;
+
+  &:hover { background: #fdf5f9; }
+}
+
+.plc-meta {
+  display:        flex;
+  flex-direction: column;
+  gap:            2px;
+  flex:           0 0 auto;
+  min-width:      0;
+}
+
+.plc-user {
+  font-size:   12px;
+  font-weight: 700;
+  color:       #7c4dff;
+  white-space: nowrap;
+}
+
+.plc-date {
+  font-size: 10px;
+  color:     #9b6daa;
+}
+
+.plc-duration {
+  font-size:   10px;
+  color:       #aaa;
+  font-style:  italic;
+}
+
+.plc-text {
+  flex:        1;
+  font-size:   14px;
+  font-weight: 600;
+  color:       #222;
+  margin:      0;
+  line-height: 1.4;
+  word-break:  break-word;
+}
+
+.plc-toggle {
+  flex:        0 0 auto;
+  background:  none;
+  border:      none;
+  cursor:      pointer;
+  padding:     0;
+  color:       #9b6daa;
+
+  svg {
+    width:      20px;
+    height:     20px;
+    transition: transform 0.2s;
+  }
+}
+
+// ── Secuencia de interacciones ────────────────────────────────────────────────
+.plc-interactions {
+  display:     flex;
+  flex-wrap:   wrap;
+  gap:         6px;
+  padding:     8px 14px 14px;
+  border-top:  1px solid #f4d0e4;
+  background:  #fdf5f9;
+  align-items: flex-end;
+}
+
+// ── Pictograma ────────────────────────────────────────────────────────────────
+.plc-pict-wrap {
+  position:   relative;
+  width:       60px;
+  height:      72px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1.5px solid #f4d0e4;
+  background: #fff;
+  container-type: inline-size; // para cqi de pict-cell-content
+
+  &--inactive {
+    opacity:  0.4;
+    filter:   grayscale(0.6);
+    border-color: #ccc;
+  }
+}
+
+.plc-pict-cell {
+  display:        flex;
+  flex-direction: column;
+  width:          100%;
+  height:         100%;
+}
+
+.plc-removed-badge {
+  position:   absolute;
+  top:        2px;
+  right:      2px;
+  background: rgba(229, 57, 53, 0.85);
+  color:      #fff;
+  font-size:  9px;
+  font-weight: 800;
+  border-radius: 4px;
+  padding:    1px 3px;
+  line-height: 1;
+}
+
+// ── Chip de acción de sistema ─────────────────────────────────────────────────
+.plc-action-chip {
+  display:       flex;
+  align-items:   center;
+  height:        28px;
+  padding:       0 10px;
+  border-radius: 14px;
+  font-size:     11px;
+  font-weight:   600;
+  border:        1.5px solid;
+  white-space:   nowrap;
+
+  // Default (navegación, home, etc.)
+  background:   #f0ebff;
+  border-color: #cdb8ff;
+  color:        #5c35cc;
+
+  &--backspace {
+    background:   #fff3eb;
+    border-color: #ffc89a;
+    color:        #b05a00;
+  }
+  &--clear {
+    background:   #ffebee;
+    border-color: #ffb8c2;
+    color:        #c62828;
+  }
+  &--speak {
+    background:   #e0fff6;
+    border-color: #a8eeda;
+    color:        #00796b;
+  }
+}

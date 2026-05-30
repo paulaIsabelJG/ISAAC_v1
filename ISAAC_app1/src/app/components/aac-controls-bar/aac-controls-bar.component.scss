@@ -26,6 +26,31 @@ $text-muted:  #6b5462;
   box-sizing:   border-box;
 }
 
+// En modo comunicador la barra es más alta para que los items de frase
+// sean usables en táctil y tengan tamaño suficiente.
+:host.acb--comm .acb-bar {
+  min-height: 120px;
+}
+
+// Tamaño de los items de frase según el contexto.
+:host.acb--comm .acb-phrase {
+  --pb-item-width:  72px;
+  --pb-item-height: 90px;
+  --pb-strip-bg:    #fff;
+  --pb-strip-border: #f4d0e4;
+  --pb-item-border:  #f4d0e4;
+  --pb-placeholder-color: #9b6daa;
+}
+
+:host:not(.acb--comm) .acb-phrase {
+  --pb-item-width:  52px;
+  --pb-item-height: 64px;
+  --pb-strip-bg:    #fff;
+  --pb-strip-border: #f4d0e4;
+  --pb-item-border:  #f4d0e4;
+  --pb-placeholder-color: #9b6daa;
+}
+
 // ── Grupos laterales ─────────────────────────────────────────────────────────
 .acb-group {
   display:    flex;

@@ -38,28 +38,27 @@
     </button>
   }
 
-  <!-- Usuario(s) asignado(s) -->
+  <!-- Usuario(s) asignado(s) — solo lectura, no editable desde aquí -->
   <label class="bbe-lbl">
     Usuario(s) asignado(s)
     @if (isSharedBoard) {
       <span class="bbe-shared-badge">Compartido</span>
     }
   </label>
-  <ion-select class="bbe-select"
-              [multiple]="true"
-              [value]="localAssignedUserIds"
-              (ionChange)="onUserSelect($event)"
-              interface="alert"
-              placeholder="Selecciona usuario(s)"
-              cancelText="Cancelar"
-              okText="Aceptar">
-    @for (u of centerUsers; track u._id) {
-      <ion-select-option [value]="u._id">{{ u.name }}</ion-select-option>
-    }
-  </ion-select>
-  <button type="button" class="bbe-all-users-btn" (click)="selectAllUsers()">
-    Seleccionar todos
-  </button>
+
+  @if (localAssignedUserIds.length > 0) {
+    <div class="bbe-secondary-users">
+      @for (name of assignedUserNames; track name) {
+        <span class="bbe-secondary-user-chip">{{ name }}</span>
+      }
+    </div>
+  } @else if (localBoardRole === 'secondary') {
+    <p class="bbe-secondary-user-hint">
+      Este tablero secundario heredará el usuario cuando se enlace desde un tablero principal.
+    </p>
+  } @else {
+    <p class="bbe-secondary-user-hint">Sin usuario asignado.</p>
+  }
 
   <!-- Filas / Columnas (solo grid) -->
   @if (!isCircular) {

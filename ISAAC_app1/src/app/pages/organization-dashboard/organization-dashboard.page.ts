@@ -168,6 +168,8 @@ export class OrganizationDashboardPage implements OnInit {
   goToAddUser()      { this.router.navigate(['/add-user']);             }
 
   /** Abre el board builder del propio usuario de sesión (la organización) */
+  goToStatistics()   { this.router.navigate(['/organization-statistics']); }
+
   goToBoardBuilder() {
     this.router.navigate(['/board-builder'], {
       queryParams: {

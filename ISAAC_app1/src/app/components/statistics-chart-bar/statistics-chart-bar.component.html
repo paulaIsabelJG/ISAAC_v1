@@ -1,0 +1,26 @@
+<div class="cb-card">
+
+  @if (title) {
+    <h3 class="cb-title">{{ title }}</h3>
+  }
+
+  @if (displayData.length === 0) {
+    <p class="cb-empty">{{ emptyText }}</p>
+  } @else {
+    <div class="cb-bars">
+      @for (item of displayData; track item.label) {
+        <div class="cb-row">
+          <span class="cb-label" [title]="item.label">{{ item.label }}</span>
+          <div class="cb-bar-track">
+            <div class="cb-bar-fill"
+                 [style.width.%]="item.pct"
+                 [style.background]="color">
+            </div>
+          </div>
+          <span class="cb-count">{{ item.value }}</span>
+        </div>
+      }
+    </div>
+  }
+
+</div>

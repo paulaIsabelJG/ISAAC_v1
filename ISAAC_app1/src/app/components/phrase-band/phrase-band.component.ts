@@ -1,35 +1,44 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule }     from '@angular/common';
-import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { AacPhraseItem }    from '../../services/aac-runtime.service';
-import { buildSafeUrl }     from '../../shared/utils/image.utils';
+import { CellPictogram }    from '../../services/board.service';
+import { PictCellContentComponent } from '../pict-cell-content/pict-cell-content.component';
 
 /**
  * PhraseBandComponent — tira de frase AAC, puramente presentacional.
  *
- * Inputs:
- *   items       — AacPhraseItem[] (la frase actual)
- *   placeholder — texto vacío (opcional, hay valor por defecto)
+ * Delega el renderizado de cada item a PictCellContentComponent
+ * para no duplicar la lógica de imagen+label.
  *
- * Sin Outputs. Toda la lógica (speak, delete, nav) queda en la página.
- *
- * Tematización: CSS custom properties con fallback al tema editor (gris).
- * Para el tema communicator, la página establece las variables en el elemento host.
+ * Tematización: CSS custom properties con fallback al tema editor.
+ *   --pb-item-width  / --pb-item-height  controlan el tamaño de cada item.
+ *   --pb-strip-bg    / --pb-strip-border  controlan el contenedor.
+ *   --pb-item-border  borde de cada item.
+ *   --pb-placeholder-color
  */
 @Component({
   selector:    'app-phrase-band',
   templateUrl: './phrase-band.component.html',
   styleUrls:   ['./phrase-band.component.scss'],
   standalone:  true,
-  imports:     [CommonModule],
+  imports:     [CommonModule, PictCellContentComponent],
 })
 export class PhraseBandComponent {
   @Input() items: AacPhraseItem[] = [];
   @Input() placeholder = 'Pulsa un pictograma…';
 
-  constructor(private sanitizer: DomSanitizer) {}
-
-  buildUrl(url?: string | null): SafeUrl | string {
-    return buildSafeUrl(url, this.sanitizer);
+  toCell(item: AacPhraseItem): CellPictogram {
+    return {
+      source:            'arasaac',
+      id:                item.id,
+      label:             item.label,
+      imageUrl:          item.imageUrl,
+      sound:             item.sound,
+      tags:              [],
+      description:       '',
+      wordType:          (item.wordType ?? 'misc') as any,
+      fitzgeraldEnabled: false,
+      color:             item.color ?? '',
+    };
   }
 }

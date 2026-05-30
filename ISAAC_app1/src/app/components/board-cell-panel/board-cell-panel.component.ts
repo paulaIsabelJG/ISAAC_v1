@@ -99,8 +99,11 @@ export class BoardCellPanelComponent implements OnChanges {
   @Input() isEditingCell:     boolean = false;
   /** true mientras se procesa el guardado de celda. */
   @Input() isSaving:          boolean = false;
-  /** true cuando el tablero está asignado a más de un usuario. */
-  @Input() isSharedBoard:     boolean = false;
+  /**
+   * Si no está vacío, los pictogramas personales están bloqueados.
+   * El valor es el mensaje explicativo que se mostrará al usuario.
+   */
+  @Input() personalPictsBlockedReason: string = '';
   /** true cuando el tablero es de tipo circular. */
   @Input() isCircular:        boolean = false;
   /** true cuando la celda seleccionada es la celda central del circulares. */

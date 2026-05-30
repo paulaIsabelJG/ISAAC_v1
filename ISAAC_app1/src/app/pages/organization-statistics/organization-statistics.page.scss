@@ -1,0 +1,398 @@
+// ── Variables ─────────────────────────────────────────────────────────────────
+$bg:         #fdf5f9;
+$surface:    #ffffff;
+$border:     #f0d8ea;
+$border-mid: #e8c8dc;
+$text-dark:  #1a1a2e;
+$text-mid:   #4a3f55;
+$text-muted: #8b7490;
+$violet:     #7c4dff;
+$violet-l:   #f0ebff;
+$violet-m:   #d8ccff;
+$pink:       #ff69b4;
+$pink-l:     #fff0f7;
+$mint:       #20c997;
+$mint-l:     #e0fff6;
+$blue:       #4a9eff;
+$blue-l:     #e8f4ff;
+$orange:     #ff8c42;
+$orange-l:   #fff3eb;
+
+// ── Host ──────────────────────────────────────────────────────────────────────
+.os-content {
+  --background: #{$bg};
+}
+
+// ── Cabecera ──────────────────────────────────────────────────────────────────
+.os-header {
+  display:     flex;
+  align-items: center;
+  gap:         14px;
+  padding:     20px 20px 0;
+}
+
+.os-back-btn {
+  width:         38px;
+  height:        38px;
+  flex-shrink:   0;
+  display:       flex;
+  align-items:   center;
+  justify-content: center;
+  background:    $surface;
+  border:        1.5px solid $border;
+  border-radius: 12px;
+  cursor:        pointer;
+  color:         $text-mid;
+  transition:    all 0.15s;
+
+  svg { width: 18px; height: 18px; }
+
+  &:hover { background: $pink-l; border-color: $pink; color: $pink; }
+}
+
+.os-header-text { display: flex; flex-direction: column; gap: 1px; }
+
+.os-title {
+  font-size:   22px;
+  font-weight: 800;
+  color:       $text-dark;
+  margin:      0;
+  line-height: 1.1;
+}
+
+.os-subtitle {
+  font-size:  12px;
+  color:      $text-muted;
+  margin:     0;
+  font-weight: 500;
+}
+
+// ── Barra de filtros ──────────────────────────────────────────────────────────
+.os-filters-bar {
+  display:     flex;
+  gap:         10px;
+  align-items: flex-end;
+  flex-wrap:   wrap;
+  padding:     16px 20px;
+  background:  $surface;
+  border-bottom: 1.5px solid $border;
+  margin-top:  16px;
+}
+
+.os-filter-field {
+  display:        flex;
+  flex-direction: column;
+  gap:            4px;
+}
+
+.os-filter-label {
+  font-size:      9px;
+  font-weight:    700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color:          $text-muted;
+}
+
+.os-filter-input {
+  height:        34px;
+  padding:       0 10px;
+  border:        1.5px solid $border;
+  border-radius: 10px;
+  font-size:     13px;
+  color:         $text-dark;
+  background:    #fff;
+  font-family:   inherit;
+  outline:       none;
+  transition:    border-color 0.15s;
+
+  &:focus { border-color: $violet; }
+}
+
+.os-filter-select { padding-right: 6px; min-width: 180px; cursor: pointer; }
+
+.os-apply-btn {
+  display:       flex;
+  align-items:   center;
+  gap:           5px;
+  height:        34px;
+  padding:       0 16px;
+  background:    $violet-l;
+  border:        1.5px solid $violet-m;
+  border-radius: 10px;
+  color:         $violet;
+  font-size:     12px;
+  font-weight:   700;
+  cursor:        pointer;
+  font-family:   inherit;
+  transition:    all 0.15s;
+
+  &:hover { background: $violet-m; }
+}
+
+// ── KPIs ──────────────────────────────────────────────────────────────────────
+.os-kpis {
+  padding: 16px 20px 0;
+}
+
+// ── Segmento de navegación ────────────────────────────────────────────────────
+.os-segment {
+  margin:  16px 20px 0;
+  --background: #{$surface};
+  border:       1.5px solid $border;
+  border-radius: 14px;
+  overflow:     hidden;
+
+  ion-segment-button {
+    --color:          #{$text-muted};
+    --color-checked:  #{$violet};
+    --indicator-color: #{$violet};
+    --background-checked: #{$violet-l};
+    font-size:  13px;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0;
+    min-height: 42px;
+  }
+}
+
+// ── Sección general ───────────────────────────────────────────────────────────
+.os-section {
+  padding: 20px 20px 0;
+}
+
+// ── Grid de gráficas (ion-grid) ───────────────────────────────────────────────
+.os-charts-grid {
+  --ion-grid-padding:        0;
+  --ion-grid-column-padding: 6px;
+  padding:   0;
+  margin-top: 4px;
+
+  ion-row { margin-bottom: 0; }
+
+  ion-col {
+    padding-top:    6px;
+    padding-bottom: 6px;
+  }
+}
+
+// ── Estado vacío rico ─────────────────────────────────────────────────────────
+.os-empty-state {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            8px;
+  padding:        40px 20px;
+  text-align:     center;
+
+  p {
+    font-size:   14px;
+    font-weight: 600;
+    color:       $text-mid;
+    margin:      0;
+  }
+  span {
+    font-size:  12px;
+    color:      $text-muted;
+  }
+}
+
+// ── Estado vacío simple ───────────────────────────────────────────────────────
+.os-empty {
+  font-size:  13px;
+  color:      $text-muted;
+  font-style: italic;
+  padding:    16px 0;
+  margin:     0;
+}
+
+// ── Error ─────────────────────────────────────────────────────────────────────
+.os-error {
+  background:    #ffebee;
+  border:        1px solid #ffcdd2;
+  border-radius: 10px;
+  color:         #c62828;
+  font-size:     13px;
+  padding:       12px 16px;
+  margin-bottom: 16px;
+}
+
+// ── Spinner ───────────────────────────────────────────────────────────────────
+.os-spinner-row {
+  display:         flex;
+  justify-content: center;
+  padding:         40px 0;
+}
+
+// ── Subsección ───────────────────────────────────────────────────────────────
+.os-subsection-header { margin-bottom: 12px; }
+
+.os-subsection-title {
+  font-size:   15px;
+  font-weight: 700;
+  color:       $text-dark;
+  margin:      0;
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+}
+
+.os-count {
+  background:    $pink-l;
+  color:         $pink;
+  font-size:     11px;
+  font-weight:   700;
+  border-radius: 10px;
+  padding:       2px 10px;
+}
+
+// ── Grid de tableros ──────────────────────────────────────────────────────────
+.os-boards-grid {
+  display:               grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap:                   14px;
+}
+
+.os-board-card {
+  background:    $surface;
+  border:        1.5px solid $border;
+  border-radius: 16px;
+  padding:       16px;
+  display:       flex;
+  flex-direction: column;
+  gap:           12px;
+  transition:    box-shadow 0.15s;
+
+  &:hover { box-shadow: 0 4px 18px rgba(124, 77, 255, 0.1); }
+}
+
+.os-board-card-header {
+  display:     flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap:         8px;
+}
+
+.os-board-name {
+  font-size:   14px;
+  font-weight: 700;
+  color:       $text-dark;
+  line-height: 1.3;
+  flex:        1;
+  min-width:   0;
+  overflow:    hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.os-board-badge {
+  flex-shrink:   0;
+  font-size:     9px;
+  font-weight:   700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  background:    $violet-l;
+  color:         $violet;
+  border-radius: 6px;
+  padding:       2px 7px;
+}
+
+.os-board-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+.os-board-stat {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            2px;
+  background:     $bg;
+  border-radius:  8px;
+  padding:        6px 2px;
+}
+
+.os-board-stat-value {
+  font-size:   16px;
+  font-weight: 800;
+  color:       $text-dark;
+  line-height: 1;
+}
+
+.os-board-stat-label {
+  font-size:      8px;
+  font-weight:    600;
+  color:          $text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  text-align:     center;
+  line-height:    1.2;
+}
+
+.os-board-bar-track {
+  height:        6px;
+  background:    $border;
+  border-radius: 3px;
+  overflow:      hidden;
+}
+
+.os-board-bar-fill {
+  height:        100%;
+  background:    linear-gradient(90deg, $violet, $blue);
+  border-radius: 3px;
+  min-width:     4px;
+  transition:    width 0.4s ease;
+}
+
+// ── Lista de frases ───────────────────────────────────────────────────────────
+.os-phrase-list {
+  display:        flex;
+  flex-direction: column;
+  gap:            10px;
+}
+
+// ── Selector de usuario ───────────────────────────────────────────────────────
+.os-user-select-row { margin-bottom: 14px; }
+
+.os-user-select { min-width: 240px; }
+
+// ── Paginación ────────────────────────────────────────────────────────────────
+.os-pagination {
+  display:         flex;
+  align-items:     center;
+  gap:             12px;
+  justify-content: center;
+  margin-top:      16px;
+}
+
+.os-page-btn {
+  padding:       6px 16px;
+  background:    $surface;
+  border:        1.5px solid $border;
+  border-radius: 10px;
+  font-size:     12px;
+  font-weight:   600;
+  color:         $text-muted;
+  cursor:        pointer;
+  font-family:   inherit;
+  transition:    all 0.15s;
+
+  &:hover:not([disabled]) { background: $pink-l; border-color: $pink; color: $pink; }
+  &[disabled]              { opacity: 0.4; cursor: not-allowed; }
+}
+
+.os-page-info {
+  font-size:   12px;
+  color:       $text-muted;
+  white-space: nowrap;
+}
+
+// ── Espaciado final ───────────────────────────────────────────────────────────
+.os-bottom-spacer { height: 40px; }
+
+// ── Responsive ───────────────────────────────────────────────────────────────
+@media (max-width: 480px) {
+  .os-filters-bar   { gap: 8px; }
+  .os-filter-select { min-width: 140px; }
+  .os-boards-grid   { grid-template-columns: 1fr; }
+}

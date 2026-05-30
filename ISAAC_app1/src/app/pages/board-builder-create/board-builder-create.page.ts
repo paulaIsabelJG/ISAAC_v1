@@ -277,8 +277,8 @@ export class BoardBuilderCreatePage implements OnInit {
   async create(): Promise<void> {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
 
-    // Validar que hay al menos un usuario asignado
-    if (this.cfgAssignedUserIds.length === 0) {
+    // Los tableros secundarios pueden crearse sin usuario asignado (lo heredarán al enlazarse)
+    if (this.cfgBoardRole !== 'secondary' && this.cfgAssignedUserIds.length === 0) {
       (await this.toastCtrl.create({
         message: 'Selecciona al menos un usuario asignado.',
         duration: 2200, color: 'warning', position: 'top',

@@ -146,7 +146,7 @@ export class MultiboardCommunicatorComponent implements OnInit, OnDestroy, OnCha
         button_id:    cell.pictogram.id,
         board_id:     state.board._id,
         image_url:    cell.pictogram.imageUrl,
-        actions:      ['+speak'],
+        actions:      [{ action: '+speak' }],
       });
     }
 

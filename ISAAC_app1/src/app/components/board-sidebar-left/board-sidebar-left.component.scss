@@ -625,3 +625,32 @@ $violet-l: #f0ebff;
 
   svg { width: 11px; height: 11px; flex: 0 0 auto; }
 }
+
+// ── Tablero secundario: usuario heredado ──────────────────────────────────────
+
+.bbe-secondary-users {
+  display:   flex;
+  flex-wrap: wrap;
+  gap:       4px;
+  margin:    4px 0 6px;
+}
+
+.bbe-secondary-user-chip {
+  display:       inline-flex;
+  align-items:   center;
+  padding:       3px 10px;
+  border-radius: 20px;
+  background:    $violet-light;
+  border:        1px solid rgba($violet, 0.25);
+  color:         $violet;
+  font-size:     11px;
+  font-weight:   600;
+}
+
+.bbe-secondary-user-hint {
+  font-size:   10px;
+  color:       $text-muted;
+  font-style:  italic;
+  margin:      2px 0 6px;
+  line-height: 1.4;
+}

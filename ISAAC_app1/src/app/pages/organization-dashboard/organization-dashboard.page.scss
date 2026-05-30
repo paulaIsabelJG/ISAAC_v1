@@ -122,6 +122,11 @@ $card-bg:      #ffffff;
     color: $violet;
     border: 1.5px solid darken($violet-light, 9%);
   }
+  &--blue {
+    background: $blue-light;
+    color: $blue;
+    border: 1.5px solid darken($blue-light, 9%);
+  }
 }
 
 // Imagen dentro del botón-pictograma
@@ -131,6 +136,12 @@ $card-bg:      #ffffff;
   object-fit: contain;
   display: block;
   flex: 0 0 auto;
+}
+
+// Icono SVG inline (sin img): mismo tamaño que action-icon
+.action-icon--svg {
+  width: 58px;
+  height: 58px;
 }
 
 // Responsive: pantallas estrechas → tarjetas algo más pequeñas

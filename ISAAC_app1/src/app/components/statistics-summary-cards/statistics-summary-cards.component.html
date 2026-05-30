@@ -1,0 +1,51 @@
+@if (isLoading) {
+  <div class="sc-skeleton-row">
+    @for (i of [1,2,3,4,5,6,7,8]; track i) {
+      <div class="sc-skeleton"></div>
+    }
+  </div>
+} @else if (summary) {
+  <div class="sc-grid">
+
+    <div class="sc-card sc-card--blue">
+      <span class="sc-value">{{ summary.totalFinalUsers }}</span>
+      <span class="sc-label">Usuarios finales</span>
+    </div>
+
+    <div class="sc-card sc-card--mint">
+      <span class="sc-value">{{ summary.totalProfessionals }}</span>
+      <span class="sc-label">Profesionales</span>
+    </div>
+
+    <div class="sc-card sc-card--pink">
+      <span class="sc-value">{{ summary.totalParents }}</span>
+      <span class="sc-label">Familiares</span>
+    </div>
+
+    <div class="sc-card sc-card--violet">
+      <span class="sc-value">{{ summary.totalSessions }}</span>
+      <span class="sc-label">Sesiones AAC</span>
+    </div>
+
+    <div class="sc-card sc-card--orange">
+      <span class="sc-value">{{ summary.totalInteractions }}</span>
+      <span class="sc-label">Interacciones</span>
+    </div>
+
+    <div class="sc-card sc-card--teal">
+      <span class="sc-value">{{ summary.totalPhrases }}</span>
+      <span class="sc-label">Frases construidas</span>
+    </div>
+
+    <div class="sc-card sc-card--indigo">
+      <span class="sc-value">{{ summary.avgInteractionsPerPhrase }}</span>
+      <span class="sc-label">Interacciones / frase</span>
+    </div>
+
+    <div class="sc-card sc-card--rose">
+      <span class="sc-value">{{ summary.avgSessionDurationLabel }}</span>
+      <span class="sc-label">Duración media sesión</span>
+    </div>
+
+  </div>
+}

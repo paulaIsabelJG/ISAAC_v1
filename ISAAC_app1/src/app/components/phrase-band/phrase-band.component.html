@@ -7,12 +7,10 @@
       <div class="pb-item"
            [style.border-bottom-color]="item.color || null"
            [style.border-bottom-width]="item.color ? '3px' : null">
-        @if (item.imageUrl) {
-          <img [src]="buildUrl(item.imageUrl)"
-               [alt]="item.label"
-               class="pb-img" />
-        }
-        <span class="pb-label">{{ item.label }}</span>
+        <app-pict-cell-content
+          [pict]="toCell(item)"
+          emptyType="empty-div">
+        </app-pict-cell-content>
       </div>
     }
   }

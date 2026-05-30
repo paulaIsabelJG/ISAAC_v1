@@ -273,10 +273,12 @@ exports.createBoard = async (req, res) => {
     // Primer usuario = userId efectivo (campo legacy)
     const effectiveUserId = effectiveAssignedUserIds[0] || userId;
 
-    if (!name || !effectiveUserId) {
+    // Los tableros secundarios pueden crearse sin usuario asignado (lo heredarán al enlazarse).
+    const isSecondary = boardRole === 'secondary';
+    if (!name || (!effectiveUserId && !isSecondary)) {
       return res.status(400).json({ error: 'name and userId are required' });
     }
-    if (!validateObjectId(effectiveUserId)) {
+    if (effectiveUserId && !validateObjectId(effectiveUserId)) {
       return res.status(400).json({ error: 'Invalid userId' });
     }
     // Si sólo se envió userId sin assignedUserIds, usarlo como primer elemento
@@ -347,7 +349,7 @@ exports.createBoard = async (req, res) => {
       creatorId:             req.userId,           // campo legacy = sesión real
       createdBy:             effectiveCreatorId,   // creador de contexto (builder)
       creatorName,
-      userId:                effectiveUserId,
+      userId:                effectiveUserId || undefined,
       assignedUserIds:       effectiveAssignedUserIds,
       shape:                 shape                 || 'grid',
       rows:                  rows                  || 3,

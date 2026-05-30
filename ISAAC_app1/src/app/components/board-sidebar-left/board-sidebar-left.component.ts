@@ -141,6 +141,12 @@ export class BoardSidebarLeftComponent implements OnChanges {
     return this.localAssignedUserIds.length > 1;
   }
 
+  /** Nombres de los usuarios actualmente asignados (para mostrar en tableros secundarios). */
+  get assignedUserNames(): string[] {
+    return this.localAssignedUserIds
+      .map(id => this.centerUsers.find(u => u._id === id)?.name || id);
+  }
+
   /** Tableros grid del usuario (para la sección "Cuadrícula" de la lista). */
   get gridBoards(): Board[] {
     return this.userBoards.filter((b) => (b.shape ?? 'grid') === 'grid');
@@ -282,18 +288,6 @@ export class BoardSidebarLeftComponent implements OnChanges {
 
   onOpenBoard(boardId: string): void {
     this.openBoard.emit(boardId);
-  }
-
-  // ── Usuario(s) ─────────────────────────────────────────────────────────────
-
-  onUserSelect(event: Event): void {
-    const values: string[] =
-      (event as CustomEvent<{ value: string[] }>).detail.value ?? [];
-    this.localAssignedUserIds = values;
-  }
-
-  selectAllUsers(): void {
-    this.localAssignedUserIds = this.centerUsers.map((u) => u._id);
   }
 
   // ── Imagen de portada ─────────────────────────────────────────────────────

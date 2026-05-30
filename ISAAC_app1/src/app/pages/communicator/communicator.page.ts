@@ -6,7 +6,6 @@ import { Subscription, firstValueFrom } from 'rxjs';
 import { AacRuntimeService } from '../../services/aac-runtime.service';
 import { BoardService, Board } from '../../services/board.service';
 import { UserService, FullBackendUser } from '../../services/user.service';
-import { AuthService } from '../../services/auth.service';
 import { BoardLayoutService } from '../../services/board-layout.service';
 import { BoardGridComponent } from '../../components/board-grid/board-grid.component';
 import { BoardCircularComponent } from '../../components/board-circular/board-circular.component';
@@ -52,7 +51,6 @@ export class CommunicatorPage implements OnInit, OnDestroy {
     private aac:            AacRuntimeService,
     private boardSvc:       BoardService,
     private userSvc:        UserService,
-    private authSvc:        AuthService,
     private boardLayoutSvc: BoardLayoutService,
   ) {}
 
@@ -75,10 +73,10 @@ export class CommunicatorPage implements OnInit, OnDestroy {
       } catch { /* silencioso */ }
     }
 
-    // Determinar si debemos guardar OBL:
-    // solo cuando el autenticado ES el usuario final (no teacher/parent/professional)
-    const authUser = this.authSvc.getCurrentUser();
-    this.canLog = authUser?.type === 'user' && authUser?.id === this.userId;
+    // Guardar OBL siempre que haya un usuario final identificado.
+    // El userId del log es el del usuario final (query param), no el del autenticado.
+    // Permite que teacher/org supervise y los eventos se asocien al usuario final.
+    this.canLog = !!this.userId;
 
     // controlsConfig se carga en loadBoard → está disponible después de este await
     await this.loadBoard(boardId);

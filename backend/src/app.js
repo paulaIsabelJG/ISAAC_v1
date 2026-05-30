@@ -7,7 +7,8 @@ const userRoutes   = require('./routes/users');
 const placesRoutes = require('./routes/places');
 const boardRoutes  = require('./routes/boards');
 const folderRoutes = require('./routes/folders');
-const oblRoutes    = require('./routes/obl');
+const oblRoutes         = require('./routes/obl');
+const aacStatisticsRoutes = require('./routes/aacStatistics');
 
 const app = express();
 
@@ -29,6 +30,9 @@ app.use('/api/folders', folderRoutes);
 
 // OBL routes
 app.use('/api/obl', oblRoutes);
+
+// AAC Statistics routes
+app.use('/api/aac-statistics', aacStatisticsRoutes);
 
 // Phrase routes
 app.use('/api/phrases', phrasesRoutes);

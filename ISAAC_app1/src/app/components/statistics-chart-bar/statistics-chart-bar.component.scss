@@ -1,0 +1,73 @@
+:host { display: block; }
+
+.cb-card {
+  background:    #ffffff;
+  border:        1.5px solid #f4d0e4;
+  border-radius: 16px;
+  padding:       16px 18px;
+}
+
+.cb-title {
+  font-size:      13px;
+  font-weight:    700;
+  color:          #222;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin:         0 0 14px;
+}
+
+.cb-empty {
+  font-size:  13px;
+  color:      #9b6daa;
+  font-style: italic;
+  text-align: center;
+  padding:    20px 0;
+  margin:     0;
+}
+
+.cb-bars {
+  display:        flex;
+  flex-direction: column;
+  gap:            8px;
+}
+
+.cb-row {
+  display:     grid;
+  grid-template-columns: 140px 1fr 42px;
+  align-items: center;
+  gap:         8px;
+
+  @media (max-width: 480px) {
+    grid-template-columns: 100px 1fr 36px;
+  }
+}
+
+.cb-label {
+  font-size:     12px;
+  font-weight:   600;
+  color:         #444;
+  white-space:   nowrap;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+}
+
+.cb-bar-track {
+  height:        18px;
+  background:    #f4f0ff;
+  border-radius: 9px;
+  overflow:      hidden;
+}
+
+.cb-bar-fill {
+  height:        100%;
+  border-radius: 9px;
+  min-width:     4px;
+  transition:    width 0.4s ease;
+}
+
+.cb-count {
+  font-size:   12px;
+  font-weight: 700;
+  color:       #555;
+  text-align:  right;
+}
