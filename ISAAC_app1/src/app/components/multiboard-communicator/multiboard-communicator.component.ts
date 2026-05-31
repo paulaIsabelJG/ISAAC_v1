@@ -11,7 +11,7 @@ import { IonicModule } from '@ionic/angular';
 import { firstValueFrom, Subscription } from 'rxjs';
 import { Board, BoardCell, CellPictogram } from '../../services/board.service';
 import { BoardService } from '../../services/board.service';
-import { AacRuntimeService } from '../../services/aac-runtime.service';
+import { AacRuntimeService, UndoEntry } from '../../services/aac-runtime.service';
 import { getCellBaseColor } from '../../shared/utils/board-color.utils';
 import { BoardLayoutService } from '../../services/board-layout.service';
 import { BoardGridComponent } from '../board-grid/board-grid.component';
@@ -51,8 +51,10 @@ export class MultiboardCommunicatorComponent implements OnInit, OnDestroy, OnCha
   slotStates:  SlotState[]         = [];
   predictions: PredictedPictogram[] = [];
 
-  private slotSub?:   Subscription;
-  private phraseSub?: Subscription;
+  private slotSub?:         Subscription;
+  private phraseSub?:       Subscription;
+  private restoreSlotSub?:  Subscription;
+  private undoSlotNavSub?:  Subscription;
 
   constructor(
     private boardSvc:       BoardService,
@@ -69,11 +71,27 @@ export class MultiboardCommunicatorComponent implements OnInit, OnDestroy, OnCha
     this.phraseSub = this.aac.phraseChanged$.subscribe(() => {
       this.loadPredictions();
     });
+    // Borrar último: restaurar el board de un slot al estado previo al cambio.
+    this.restoreSlotSub = this.aac.restoreSlot$.subscribe(({ slotId, boardId }) => {
+      const st = this.slotStates.find(s => s.slotId === slotId);
+      if (!st) return;
+      st.boardStack = [];
+      st.boardId    = boardId;
+      if (boardId) { void this.loadSlotBoard(st); }
+      else         { st.board = null; }
+    });
+    // Borrar último: deshacer la navegación intra-slot (voice+navigate dentro de un slot).
+    this.undoSlotNavSub = this.aac.undoSlotNavigate$.subscribe(({ slotId }) => {
+      const st = this.slotStates.find(s => s.slotId === slotId);
+      if (st && st.boardStack.length > 0) { this.goBackInSlot(st); }
+    });
   }
 
   ngOnDestroy(): void {
     this.slotSub?.unsubscribe();
     this.phraseSub?.unsubscribe();
+    this.restoreSlotSub?.unsubscribe();
+    this.undoSlotNavSub?.unsubscribe();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -144,6 +162,18 @@ export class MultiboardCommunicatorComponent implements OnInit, OnDestroy, OnCha
 
     // Voz
     if (type === 'voice' || type === 'voice+navigate' || type === 'voice+setSlot') {
+      // Calcular la entrada de undo ANTES de cualquier cambio de estado.
+      let undo: UndoEntry;
+      if (type === 'voice+navigate') {
+        // La navegación intra-slot usa state.boardStack; registramos el slotId para deshacerla.
+        undo = { type: 'slotNavigate', slotId: state.slotId };
+      } else if (type === 'voice+setSlot' && action?.targetSlotId != null) {
+        // Capturar el board actual del slot destino ANTES de cambiarlo.
+        const targetSt = this.slotStates.find(s => s.slotId === action.targetSlotId);
+        undo = { type: 'setSlot', slotId: action.targetSlotId, prevSlotBoardId: targetSt?.boardId ?? null };
+      } else {
+        undo = { type: 'none' };
+      }
       this.aac.addToPhrase({
         id:                cell.pictogram.id,
         label:             cell.pictogram.label,
@@ -152,7 +182,7 @@ export class MultiboardCommunicatorComponent implements OnInit, OnDestroy, OnCha
         color:             getCellBaseColor(cell.pictogram as CellPictogram) ?? '',
         wordType:          cell.pictogram.wordType  ?? 'misc',
         fitzgeraldEnabled: !!(cell.pictogram.fitzgeraldEnabled),
-      });
+      }, undo);
       this.aac.speakText(cell.pictogram.sound || cell.pictogram.label, this.gender);
       this.aac.logButtonEvent({
         label:        cell.pictogram.label,

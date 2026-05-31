@@ -165,14 +165,17 @@ export class BoardSidebarLeftComponent implements OnChanges {
       .map(id => this.centerUsers.find(u => u._id === id)?.name || id);
   }
 
-  /** Tableros grid del usuario (para la sección "Cuadrícula" de la lista). */
-  get gridBoards(): Board[] {
-    return this.userBoards.filter((b) => (b.shape ?? 'grid') === 'grid');
+  get mainBoards(): Board[] {
+    return this.userBoards.filter(b => b.shape !== 'circular' && (b.boardRole ?? 'main') === 'main');
   }
-
-  /** Tableros circulares del usuario. */
+  get multiBoards(): Board[] {
+    return this.userBoards.filter(b => b.boardRole === 'multi');
+  }
   get circularBoards(): Board[] {
-    return this.userBoards.filter((b) => b.shape === 'circular');
+    return this.userBoards.filter(b => b.shape === 'circular');
+  }
+  get secondaryBoards(): Board[] {
+    return this.userBoards.filter(b => b.boardRole === 'secondary');
   }
 
   /** URL segura de la imagen de portada local (data: o https:). */
@@ -270,14 +273,22 @@ export class BoardSidebarLeftComponent implements OnChanges {
 
   // ── Filtro lista de tableros ──────────────────────────────────────────────
 
-  get filteredGridBoards(): Board[] {
+  private filterBoards(list: Board[]): Board[] {
     const q = this.boardSearchQ.toLowerCase().trim();
-    return q ? this.gridBoards.filter(b => b.name.toLowerCase().includes(q)) : this.gridBoards;
+    return q ? list.filter(b => b.name.toLowerCase().includes(q)) : list;
   }
 
-  get filteredCircularBoards(): Board[] {
-    const q = this.boardSearchQ.toLowerCase().trim();
-    return q ? this.circularBoards.filter(b => b.name.toLowerCase().includes(q)) : this.circularBoards;
+  get filteredMainBoards():      Board[] { return this.filterBoards(this.mainBoards);      }
+  get filteredMultiBoards():     Board[] { return this.filterBoards(this.multiBoards);     }
+  get filteredCircularBoards():  Board[] { return this.filterBoards(this.circularBoards);  }
+  get filteredSecondaryBoards(): Board[] { return this.filterBoards(this.secondaryBoards); }
+
+  get noFilteredResults(): boolean {
+    return !!this.boardSearchQ &&
+      this.filteredMainBoards.length === 0 &&
+      this.filteredMultiBoards.length === 0 &&
+      this.filteredCircularBoards.length === 0 &&
+      this.filteredSecondaryBoards.length === 0;
   }
 
   // ── Configuración de la barra AAC ─────────────────────────────────────────

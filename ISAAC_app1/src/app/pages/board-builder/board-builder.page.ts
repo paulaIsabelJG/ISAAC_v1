@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { NgTemplateOutlet, NgClass } from '@angular/common';
+import { NgClass } from '@angular/common';
 import {
   IonicModule,
   ToastController,
@@ -46,7 +46,7 @@ export const FILTER_OPTIONS: { value: FilterKey; label: string }[] = [
   standalone: true,
   imports: [
     IonicModule, FormsModule, DragDropModule,
-    NgTemplateOutlet, NgClass,
+    NgClass,
     LoadingErrorStateComponent, AppPageHeaderComponent,
   ],
 })
@@ -178,13 +178,6 @@ export class BoardBuilderPage implements OnInit {
     return this.filteredBoards.filter(b => !b.folderId);
   }
 
-  get allDropListIds(): string[] {
-    return [
-      ...this.folders.map(f => `folder-list-${f._id}`),
-      'folder-list-null',
-    ];
-  }
-
   get visibleFolders(): BoardFolder[] {
     if (this.activeFilter === 'all' && !this.searchQuery) return this.folders;
     return this.folders.filter(f => this.getBoardsInFolder(f._id).length > 0);
@@ -207,15 +200,52 @@ export class BoardBuilderPage implements OnInit {
 
   // ── Drag & Drop ─────────────────────────────────────────────────────────────
 
+  // Registra cuándo terminó el último drag para ignorar el click que el
+  // browser dispara justo después de soltar. cdkDragEnded se emite DESPUÉS
+  // del drop, cuando CDK ya terminó — no dispara CD durante el arrastre.
+  private lastDragEndMs = 0;
+
+  onDragStarted(): void {
+    console.log('[DnD] ▶ cdkDragStarted');
+  }
+
+  onDragEnded(): void {
+    console.log('[DnD] ■ cdkDragEnded — drag finalizado');
+    this.lastDragEndMs = Date.now();
+  }
+
+  onCardClick(boardId: string): void {
+    if (Date.now() - this.lastDragEndMs < 300) return;
+    if (this.selectMode) {
+      this.toggleSelect(boardId);
+    } else {
+      this.openEditor(boardId);
+    }
+  }
+
   onBoardDropped(event: CdkDragDrop<string | null>): void {
+    const board: Board   = event.item.data;
+    const targetFolderId = event.container.data ?? null;
+    const sourceFolderId = board.folderId ?? null;
+
+    console.log('[DnD] ✓ cdkDropListDropped', {
+      previousContainer: event.previousContainer.id,
+      container:         event.container.id,
+      previousIndex:     event.previousIndex,
+      currentIndex:      event.currentIndex,
+      board:             board?.name,
+      from:              sourceFolderId ?? 'sin-carpeta',
+      to:                targetFolderId ?? 'sin-carpeta',
+    });
+
     this.dragOverFolderId = undefined;
-    const board: Board        = event.item.data;
-    const targetFolderId      = event.container.data ?? null;
-    const sourceFolderId      = board.folderId ?? null;
 
-    if (targetFolderId === sourceFolderId) return;
+    if (targetFolderId === sourceFolderId) {
+      console.log('[DnD] mismo destino — nada que hacer');
+      return;
+    }
 
-    // Auto-expandir la carpeta destino si estaba colapsada
+    // Expandir la carpeta destino solo DESPUÉS del drop (CDK ya terminó)
     if (targetFolderId && this.collapsedFolders.has(targetFolderId)) {
       this.collapsedFolders.delete(targetFolderId);
       this.collapsedFolders = new Set(this.collapsedFolders);
@@ -225,15 +255,15 @@ export class BoardBuilderPage implements OnInit {
   }
 
   onDragEnterFolder(folderId: string | null): void {
+    console.log('[DnD] entered drop list:', folderId ?? 'sin-carpeta');
     this.dragOverFolderId = folderId;
-    // Auto-expandir al entrar con drag
-    if (folderId && this.collapsedFolders.has(folderId)) {
-      this.collapsedFolders.delete(folderId);
-      this.collapsedFolders = new Set(this.collapsedFolders);
-    }
+    // NO se expanden carpetas colapsadas durante el drag.
+    // Expandir una carpeta crea un nuevo cdkDropList mientras CDK tiene una drag
+    // activa — esto corrompe el estado interno de CDK y deja el preview flotando.
   }
 
   onDragExitFolder(): void {
+    console.log('[DnD] exited drop list');
     this.dragOverFolderId = undefined;
   }
 

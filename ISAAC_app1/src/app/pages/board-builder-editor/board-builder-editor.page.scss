@@ -76,6 +76,7 @@ $panel-bg:     #faf5f8;
   &:hover { border-color: $violet; color: $violet; svg { stroke: $violet; } }
 }
 
+
 // ── Wrapper de proporciones reales: barra AAC + tablero ──────────────────────
 // .bbe-comm-outer: centra verticalmente el wrapper (align-items: center).
 // .bbe-comm-wrapper: columna flex que apila barra AAC + tablero; flex:1 para
@@ -710,6 +711,7 @@ $panel-bg:     #faf5f8;
     letter-spacing: 0.3px;
     &:hover { background: rgba($violet, 0.18); }
   }
+
 }
 
 .bbe-multi-slot-body {

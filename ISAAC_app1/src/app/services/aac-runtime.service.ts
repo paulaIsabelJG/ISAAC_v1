@@ -60,6 +60,23 @@ export interface OblEvent {
   ext_isaac_ai_tokens?:         any[];
 }
 
+/**
+ * Estado mínimo para deshacer la transición causada por un ítem de la frase
+ * cuando el usuario pulsa "Borrar último".
+ */
+export interface UndoEntry {
+  /** 'none' = sin transición; 'navigate' = navegación global de tablero;
+   *  'slotNavigate' = navegación intra-slot en multitablero;
+   *  'setSlot' = cambio de tablero asignado a un hueco. */
+  type: 'none' | 'navigate' | 'slotNavigate' | 'setSlot';
+  /** Para 'navigate': board desde el que se navegó (se restaura al hacer undo). */
+  prevBoardId?: string;
+  /** Para 'slotNavigate' y 'setSlot': slotId del hueco afectado. */
+  slotId?: number;
+  /** Para 'setSlot': board que tenía ese slot antes del cambio. */
+  prevSlotBoardId?: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AacRuntimeService {
   private readonly apiUrl = environment.apiUrl;
@@ -86,9 +103,17 @@ export class AacRuntimeService {
   aiRewriteEnabled  = false;
 
   private _currentBoardId = '';
-  readonly boardNavigated$ = new Subject<BoardNavEvent>();
-  readonly phraseChanged$  = new BehaviorSubject<AacPhraseItem[]>([]);
-  readonly slotChanged$    = new Subject<{ slotId: number; boardId: string }>();
+  readonly boardNavigated$    = new Subject<BoardNavEvent>();
+  readonly phraseChanged$     = new BehaviorSubject<AacPhraseItem[]>([]);
+  readonly slotChanged$       = new Subject<{ slotId: number; boardId: string }>();
+  /** Emite cuando borrar-último necesita restaurar un slot a su board anterior. */
+  readonly restoreSlot$       = new Subject<{ slotId: number; boardId: string | null }>();
+  /** Emite cuando borrar-último necesita deshacer la navegación intra-slot. */
+  readonly undoSlotNavigate$  = new Subject<{ slotId: number }>();
+
+  /** Pila de deshacer paralela a `phrase`: cada entrada describe qué restaurar
+   *  si el usuario elimina el ítem correspondiente con "Borrar último". */
+  private undoStack: UndoEntry[] = [];
 
   get currentBoardId(): string { return this._currentBoardId; }
 
@@ -136,6 +161,7 @@ export class AacRuntimeService {
     this._currentBoardId = rootBoardId;
     this.boardStack  = [];
     this.phrase      = [];
+    this.undoStack   = [];
     this.pendingEvents = [];
     this.canLog         = mode === 'communicator' && canLog;
     this.controlsConfig  = controlsConfig ?? { ...DEFAULT_CONTROLS_CONFIG };
@@ -183,6 +209,7 @@ export class AacRuntimeService {
     this.sessionId  = '';
     this.canLog     = false;
     this.phrase     = [];
+    this.undoStack  = [];
     this.boardStack = [];
     this.pendingEvents    = [];
     this.predictorEnabled = false;
@@ -194,19 +221,47 @@ export class AacRuntimeService {
 
   // ── Phrase ────────────────────────────────────────────────────────────────
 
-  addToPhrase(item: AacPhraseItem): void {
+  /**
+   * Añade un ítem a la frase. El parámetro `undo` describe qué estado
+   * debe restaurarse si el usuario pulsa "Borrar último" sobre este ítem.
+   */
+  addToPhrase(item: AacPhraseItem, undo: UndoEntry = { type: 'none' }): void {
     this.phrase.push(item);
+    this.undoStack.push(undo);
     this.phraseChanged$.next([...this.phrase]);
   }
 
+  /**
+   * Elimina el último ítem de la frase y, si ese ítem causó una transición
+   * de tablero o de slot, la deshace.
+   */
   deleteLast(): void {
+    if (this.phrase.length === 0) return;
     this.phrase.pop();
+    const undo = this.undoStack.pop() ?? { type: 'none' };
     this.phraseChanged$.next([...this.phrase]);
     this.logActionEvent(':backspace');
+
+    if (undo.type === 'navigate' && undo.prevBoardId) {
+      // Deshacer la navegación global: limpiar la pila hasta el punto de partida.
+      const idx = this.boardStack.lastIndexOf(undo.prevBoardId);
+      if (idx >= 0) {
+        this.boardStack.splice(idx);
+      } else {
+        this.boardStack = [];
+      }
+      this._currentBoardId = undo.prevBoardId;
+      this.boardNavigated$.next({ boardId: undo.prevBoardId });
+    } else if (undo.type === 'slotNavigate' && undo.slotId != null) {
+      this.undoSlotNavigate$.next({ slotId: undo.slotId });
+    } else if (undo.type === 'setSlot' && undo.slotId != null) {
+      this.restoreSlot$.next({ slotId: undo.slotId, boardId: undo.prevSlotBoardId ?? null });
+    }
   }
 
   clearPhrase(): void {
-    this.phrase = [];
+    this.phrase    = [];
+    this.undoStack = [];
     this.phraseChanged$.next([]);
     this.logActionEvent(':clear');
   }
@@ -218,7 +273,8 @@ export class AacRuntimeService {
    * con timestamp tardío desplace el phraseStart del reconstructor.
    */
   clearPhraseSilent(): void {
-    this.phrase = [];
+    this.phrase    = [];
+    this.undoStack = [];
     this.phraseChanged$.next([]);
   }
 
@@ -230,7 +286,8 @@ export class AacRuntimeService {
    * No cierra sesión OBL, no resetea userId ni configuración de tablero.
    */
   clearPhraseAndGoRoot(): void {
-    this.phrase = [];
+    this.phrase    = [];
+    this.undoStack = [];
     this.phraseChanged$.next([]);
     this.logActionEvent(':clear');
     this.boardStack = [];
@@ -268,14 +325,19 @@ export class AacRuntimeService {
     const speakAndBack = type === 'speakAndBack';
 
     if (spoken) {
-      this.addToPhrase(item);
+      // Para voice+navigate: registrar el board actual ANTES de navegar,
+      // para que deleteLast() pueda restaurarlo si se borra este ítem.
+      const undo: UndoEntry = navigates
+        ? { type: 'navigate', prevBoardId: this._currentBoardId }
+        : { type: 'none' };
+      this.addToPhrase(item, undo);
       this.speakText(item.sound || item.label);
     }
 
     // speakAndBack: reproduce el pictograma y luego vuelve al tablero anterior.
     // La vuelta se produce al terminar el speech para respetar el orden.
     if (speakAndBack) {
-      this.addToPhrase(item);
+      this.addToPhrase(item); // undo = 'none': el back ya sucedió vía speech
       this.speakTextAndThen(item.sound || item.label, undefined, () => this.goBack());
     }
 

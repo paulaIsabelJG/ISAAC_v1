@@ -679,11 +679,12 @@ app-page-header { --aph-title-color: #{$violet}; }
 }
 
 .cdk-drag-preview {
-  border-radius: 14px;
-  box-shadow:    0 8px 28px rgba(0,0,0,0.18);
-  opacity:       0.96;
-  background:    #fff;
-  border:        1.5px solid $violet;
+  pointer-events: none; // evita :hover del bb-board-card sobre el clone
+  border-radius:  14px;
+  box-shadow:     0 8px 28px rgba(0,0,0,0.18);
+  opacity:        0.96;
+  background:     #fff;
+  border:         1.5px solid $violet;
 }
 
 .cdk-drag-animating {

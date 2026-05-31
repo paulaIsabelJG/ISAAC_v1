@@ -641,7 +641,7 @@
       <rect x="3" y="14" width="7" height="7" rx="1"/>
       <rect x="14" y="14" width="7" height="7" rx="1"/>
     </svg>
-    TABLEROS DEL USUARIO
+    TODOS MIS TABLEROS
   </div>
 
   @if (userBoardsLoading) {
@@ -655,41 +655,71 @@
       </svg>
       <input type="text" class="bbe-search-inp" placeholder="Buscar tablero…" [(ngModel)]="boardSearchQ"/>
     </div>
-    <!-- Sección grid -->
-    @if (filteredGridBoards.length > 0) {
-      <span class="bbe-boards-sub">Cuadrícula</span>
-      @for (b of filteredGridBoards; track b._id) {
-        <div class="bbe-board-item"
-             [class.bbe-board-item--new]="b._id === highlightedBoardId"
-             [id]="'board-item-' + b._id"
-             (click)="onOpenBoard(b._id)">
-          <span class="bbe-board-item-name">{{ b.name }}</span>
-          <span class="bbe-board-item-meta">{{ b.rows }}×{{ b.columns }}</span>
-          @if (b._id === highlightedBoardId) {
-            <span class="bbe-board-item-new-badge">Nuevo</span>
-          }
-        </div>
+    <div class="bbe-board-scroll">
+      @if (filteredMainBoards.length > 0) {
+        <span class="bbe-boards-sub">Principales</span>
+        @for (b of filteredMainBoards; track b._id) {
+          <div class="bbe-board-item"
+               [class.bbe-board-item--new]="b._id === highlightedBoardId"
+               [id]="'board-item-' + b._id"
+               (click)="onOpenBoard(b._id)">
+            <span class="bbe-board-item-name">{{ b.name }}</span>
+            <span class="bbe-board-item-meta">{{ b.rows }}×{{ b.columns }}</span>
+            @if (b._id === highlightedBoardId) {
+              <span class="bbe-board-item-new-badge">Nuevo</span>
+            }
+          </div>
+        }
       }
-    }
-    <!-- Sección circular -->
-    @if (filteredCircularBoards.length > 0) {
-      <span class="bbe-boards-sub">Circular</span>
-      @for (b of filteredCircularBoards; track b._id) {
-        <div class="bbe-board-item"
-             [class.bbe-board-item--new]="b._id === highlightedBoardId"
-             [id]="'board-item-' + b._id"
-             (click)="onOpenBoard(b._id)">
-          <span class="bbe-board-item-name">{{ b.name }}</span>
-          <span class="bbe-board-item-meta">⊙ {{ b.circleSlots || 8 }}</span>
-          @if (b._id === highlightedBoardId) {
-            <span class="bbe-board-item-new-badge">Nuevo</span>
-          }
-        </div>
+      @if (filteredCircularBoards.length > 0) {
+        <span class="bbe-boards-sub">Circulares</span>
+        @for (b of filteredCircularBoards; track b._id) {
+          <div class="bbe-board-item"
+               [class.bbe-board-item--new]="b._id === highlightedBoardId"
+               [id]="'board-item-' + b._id"
+               (click)="onOpenBoard(b._id)">
+            <span class="bbe-board-item-name">{{ b.name }}</span>
+            <span class="bbe-board-item-meta">⊙ {{ b.circleSlots || 8 }}</span>
+            @if (b._id === highlightedBoardId) {
+              <span class="bbe-board-item-new-badge">Nuevo</span>
+            }
+          </div>
+        }
       }
-    }
-    @if (filteredGridBoards.length === 0 && filteredCircularBoards.length === 0 && boardSearchQ) {
-      <span class="bbe-empty-msg">Sin resultados para "{{ boardSearchQ }}".</span>
-    }
+      @if (filteredMultiBoards.length > 0) {
+        <span class="bbe-boards-sub">Multitableros</span>
+        @for (b of filteredMultiBoards; track b._id) {
+          <div class="bbe-board-item"
+               [class.bbe-board-item--new]="b._id === highlightedBoardId"
+               [id]="'board-item-' + b._id"
+               (click)="onOpenBoard(b._id)">
+            <span class="bbe-board-item-name">{{ b.name }}</span>
+            <span class="bbe-board-item-meta">Multi</span>
+            @if (b._id === highlightedBoardId) {
+              <span class="bbe-board-item-new-badge">Nuevo</span>
+            }
+          </div>
+        }
+      }
+      @if (filteredSecondaryBoards.length > 0) {
+        <span class="bbe-boards-sub">Secundarios</span>
+        @for (b of filteredSecondaryBoards; track b._id) {
+          <div class="bbe-board-item"
+               [class.bbe-board-item--new]="b._id === highlightedBoardId"
+               [id]="'board-item-' + b._id"
+               (click)="onOpenBoard(b._id)">
+            <span class="bbe-board-item-name">{{ b.name }}</span>
+            <span class="bbe-board-item-meta">{{ b.rows }}×{{ b.columns }}</span>
+            @if (b._id === highlightedBoardId) {
+              <span class="bbe-board-item-new-badge">Nuevo</span>
+            }
+          </div>
+        }
+      }
+      @if (noFilteredResults) {
+        <span class="bbe-empty-msg">Sin resultados para "{{ boardSearchQ }}".</span>
+      }
+    </div>
   }
 </div>
 

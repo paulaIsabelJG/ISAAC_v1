@@ -459,8 +459,8 @@ exports.updateBoard = async (req, res) => {
     if (assignedUserIds !== undefined && Array.isArray(assignedUserIds)) {
       const validIds = assignedUserIds.filter(validateObjectId);
       board.assignedUserIds = validIds;
-      // Sincronizar userId con el primer elemento del array
-      if (validIds.length > 0) board.userId = validIds[0];
+      // Sincronizar userId: primer elemento si hay usuarios, null si se vacía explícitamente
+      board.userId = validIds.length > 0 ? validIds[0] : null;
     } else if (userId !== undefined) {
       board.userId = userId;
       // Si no vienen assignedUserIds pero sí userId, asegura que el array contenga al menos ese ID

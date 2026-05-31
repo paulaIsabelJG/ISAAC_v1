@@ -85,6 +85,11 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   /** Contexto del builder: se propaga al volver para que la lista filtre correctamente. */
   contextCreatorId   = '';
   contextCreatorName = '';
+  /** ID del tablero que enlaza al actual via acción navigate (botón Atrás en editor). */
+  previousBoardId   = '';
+  previousBoardName = '';
+  /** boardId → ID del tablero que tiene navigate hacia ese boardId (para slots de multitablero). */
+  previousByBoardId: Record<string, string> = {};
 
   /** Suscripción al observable paramMap para detectar cambios de :boardId
    *  cuando Ionic reutiliza el componente (el snapshot no se actualiza en ese caso). */
@@ -295,6 +300,9 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     const qCreatorName = this.route.snapshot.queryParamMap.get('creatorName');
     if (qCreatorId)   { this.contextCreatorId   = qCreatorId; }
     if (qCreatorName) { this.contextCreatorName = qCreatorName; }
+
+    const prevId = this.route.snapshot.queryParamMap.get('previousBoardId');
+    if (prevId) { this.previousBoardId = prevId; }
   }
 
   ngOnDestroy(): void {
@@ -389,7 +397,7 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
       locationSlots:   b.locationColumnSlots ?? 6,
       assignedUserIds: b.assignedUserIds?.length
         ? [...b.assignedUserIds]
-        : (b.userId ? [b.userId] : []),
+        : ((b.boardRole ?? 'main') !== 'secondary' && b.userId ? [b.userId] : []),
       autoPersonalize: b.autoPersonalize ?? false,
       slotCount:       b.slotCount ?? 2,
       controlsConfig: b.controlsConfig
@@ -401,21 +409,17 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     };
   }
 
-  private async loadUserBoards(assignedUserIds: string[]): Promise<void> {
+  private async loadUserBoards(_assignedUserIds?: string[]): Promise<void> {
     this.userBoardsLoading = true;
     this.boardsReady = false;
     const creatorId = this.contextCreatorId || this.authSvc.getCurrentUser()?.id || '';
     try {
-      const [targetsRes, creatorRes] = await Promise.all([
-        assignedUserIds.length > 0
-          ? firstValueFrom(this.boardSvc.getAvailableTargets(assignedUserIds))
-          : Promise.resolve({ boards: [] as Board[] }),
-        creatorId
-          ? firstValueFrom(this.boardSvc.getBoardsByCreator(creatorId))
-          : Promise.resolve({ boards: [] as Board[] }),
-      ]);
-      this.userBoards       = targetsRes.boards.filter(b => b._id !== this.boardId);
+      const creatorRes = await (creatorId
+        ? firstValueFrom(this.boardSvc.getBoardsByCreator(creatorId))
+        : Promise.resolve({ boards: [] as Board[] }));
+      this.userBoards       = creatorRes.boards.filter(b => b._id !== this.boardId);
       this.allCreatorBoards = creatorRes.boards;
+      this.computePreviousBoards();
     } catch {
       /* silencioso */
     } finally {
@@ -822,6 +826,16 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
    */
   async onSaveConfigRequest(payload: BoardSidebarConfig): Promise<void> {
     if (!this.board) return;
+
+    if (payload.boardRole === 'main' && payload.assignedUserIds.length === 0) {
+      const alert = await this.alertCtrl.create({
+        header:  'Usuario requerido',
+        message: 'Los tableros principales deben estar asignados al menos a un usuario.',
+        buttons: ['Aceptar'],
+      });
+      await alert.present();
+      return;
+    }
 
     const willLoseCells =
       !this.isCircular &&
@@ -2195,9 +2209,10 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     if (!boardId) return;
     this.router.navigate(['/board-builder-editor', boardId], {
       queryParams: {
-        returnTo:    this.returnTo,
-        creatorId:   this.contextCreatorId   || undefined,
-        creatorName: this.contextCreatorName || undefined,
+        returnTo:        this.returnTo,
+        creatorId:       this.contextCreatorId   || undefined,
+        creatorName:     this.contextCreatorName || undefined,
+        previousBoardId: this.boardId || undefined,
       },
     });
   }
@@ -2209,6 +2224,51 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
         creatorName: this.contextCreatorName || undefined,
       },
     });
+  }
+
+  /** Abre en el editor el tablero que enlaza al actual (o a un slot) via acción navigate. */
+  goToPreviousBoard(boardId?: string): void {
+    const target = boardId ?? this.previousBoardId;
+    if (!target) return;
+    this.router.navigate(['/board-builder-editor', target], {
+      queryParams: {
+        returnTo:    this.returnTo,
+        creatorId:   this.contextCreatorId   || undefined,
+        creatorName: this.contextCreatorName || undefined,
+      },
+    });
+  }
+
+  /** Nombre del tablero que enlaza a boardId via navigate (para etiqueta del botón en slots). */
+  getPreviousBoardName(boardId: string | null): string {
+    if (!boardId) return '';
+    const prevId = this.previousByBoardId[boardId];
+    if (!prevId) return '';
+    return this.allCreatorBoards.find(b => b._id === prevId)?.name ?? '';
+  }
+
+  /** Escanea allCreatorBoards y construye el mapa boardId → parentBoardId para navigate. */
+  private computePreviousBoards(): void {
+    const navTypes = new Set<string>(['navigate', 'voice+navigate', 'setSlot', 'voice+setSlot']);
+    this.previousByBoardId = {};
+    for (const board of this.allCreatorBoards) {
+      for (const cell of board.cells ?? []) {
+        const tid = cell.action?.targetBoardId;
+        if (!tid || !navTypes.has(cell.action.type)) continue;
+        if (!(tid in this.previousByBoardId)) {
+          this.previousByBoardId[tid] = board._id;
+        }
+      }
+    }
+    // Si no vino por query param, derivar del mapa para el tablero actual
+    if (!this.previousBoardId && this.previousByBoardId[this.boardId]) {
+      this.previousBoardId = this.previousByBoardId[this.boardId];
+    }
+    // Resolver nombre del tablero anterior
+    if (this.previousBoardId) {
+      this.previousBoardName =
+        this.allCreatorBoards.find(b => b._id === this.previousBoardId)?.name ?? '';
+    }
   }
 
   /**
