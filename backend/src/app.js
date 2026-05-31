@@ -9,6 +9,7 @@ const boardRoutes  = require('./routes/boards');
 const folderRoutes = require('./routes/folders');
 const oblRoutes         = require('./routes/obl');
 const aacStatisticsRoutes = require('./routes/aacStatistics');
+const aiRoutes            = require('./routes/ai');
 
 const app = express();
 
@@ -36,6 +37,9 @@ app.use('/api/aac-statistics', aacStatisticsRoutes);
 
 // Phrase routes
 app.use('/api/phrases', phrasesRoutes);
+
+// AI (reformulación de frases AAC con OpenAI)
+app.use('/api/ai', aiRoutes);
 
 // Places / geocoding routes
 app.use('/api/places', placesRoutes);

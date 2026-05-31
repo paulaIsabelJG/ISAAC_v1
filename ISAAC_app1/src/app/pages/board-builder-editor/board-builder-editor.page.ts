@@ -91,6 +91,8 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   private routeSub?: Subscription;
   /** Suscripción a boardNavigated$ activa en modo preview (gestiona Back y navigate). */
   private previewNavSub?: Subscription;
+  /** Suscripción a returnToRoot$ activa en modo preview (gestiona "Borrar todo"). */
+  private previewRootSub?: Subscription;
 
   // ── Pending link (vuelta desde "Crear nuevo tablero") ────────────────────────
   private pendingLinkBoardId    = '';
@@ -298,6 +300,7 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.routeSub?.unsubscribe();
     this.previewNavSub?.unsubscribe();
+    this.previewRootSub?.unsubscribe();
     document.removeEventListener('pointermove', this._boundColMove);
     document.removeEventListener('pointerup',   this._boundColUp);
     document.removeEventListener('pointermove', this._boundRowMove);
@@ -946,9 +949,21 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
         this.circularSimCenter = null;
         void this.loadBoard();
       });
+
+      // Suscripción a returnToRoot$ para gestionar "Borrar todo" en preview.
+      // No usa boardNavigated$ para no contaminar navSourcePict/boardSourcePicts.
+      this.previewRootSub = this.aacRuntime.returnToRoot$.subscribe(rootBoardId => {
+        this.previewNavSourcePict = undefined;
+        this.boardId = rootBoardId;
+        this.circularSimMode   = false;
+        this.circularSimCenter = null;
+        void this.loadBoard();
+      });
     } else {
       this.previewNavSub?.unsubscribe();
       this.previewNavSub = undefined;
+      this.previewRootSub?.unsubscribe();
+      this.previewRootSub = undefined;
       this.previewBoardSourcePicts.clear();
       this.previewNavSourcePict = undefined;
       this.aacRuntime.reset();
@@ -2338,9 +2353,13 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
       const type = cell.action?.type ?? 'voice';
       if (type === 'voice' || type === 'voice+navigate') {
         this.aacRuntime.addToPhrase({
-          id: cell.pictogram.id, label: cell.pictogram.label,
-          imageUrl: cell.pictogram.imageUrl, sound: cell.pictogram.sound ?? cell.pictogram.label,
-          color: cell.pictogram.color, wordType: cell.pictogram.wordType,
+          id:                cell.pictogram.id,
+          label:             cell.pictogram.label,
+          imageUrl:          cell.pictogram.imageUrl,
+          sound:             cell.pictogram.sound ?? cell.pictogram.label,
+          color:             cell.pictogram.color,
+          wordType:          cell.pictogram.wordType,
+          fitzgeraldEnabled: !!(cell.pictogram.fitzgeraldEnabled),
         });
         this.aacRuntime.speakText(cell.pictogram.sound || cell.pictogram.label);
       }

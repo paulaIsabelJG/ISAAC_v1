@@ -1,9 +1,9 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { IonicModule }   from '@ionic/angular';
+import { IonicModule, ModalController }   from '@ionic/angular';
 import { CommonModule }  from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription, firstValueFrom } from 'rxjs';
-import { AacRuntimeService } from '../../services/aac-runtime.service';
+import { AacRuntimeService, AacPhraseItem } from '../../services/aac-runtime.service';
 import { BoardService, Board, CellPictogram } from '../../services/board.service';
 import { UserService, FullBackendUser } from '../../services/user.service';
 import { BoardLayoutService } from '../../services/board-layout.service';
@@ -15,6 +15,8 @@ import { AacCircularTopBarComponent } from '../../components/aac-circular-top-ba
 import { AacCircularRightBarComponent } from '../../components/aac-circular-right-bar/aac-circular-right-bar.component';
 import { IaPredictorColumnComponent } from '../../components/ia-predictor-column/ia-predictor-column.component';
 import { DEFAULT_CIRCULAR_CONTROLS_CONFIG } from '../../services/board.service';
+import { AiPhraseResultModalComponent } from '../../components/ai-phrase-result-modal/ai-phrase-result-modal.component';
+import { AiReformulationResponse } from '../../services/ai-assistant.service';
 
 @Component({
   selector: 'app-communicator',
@@ -52,7 +54,9 @@ export class CommunicatorPage implements OnInit, OnDestroy {
   /** true cuando el usuario tiene la opción de voz de controles activada. */
   voiceEnabled = false;
 
-  private navSub?: Subscription;
+  private navSub?:  Subscription;
+  private rootSub?: Subscription;
+  private aiSub?:   Subscription;
   /** Mapa boardId → pictograma que originó la navegación hacia ese tablero. */
   private boardSourcePicts = new Map<string, CellPictogram | null>();
   /** Pictograma que originó la navegación al tablero actualmente visible. */
@@ -65,6 +69,7 @@ export class CommunicatorPage implements OnInit, OnDestroy {
     private boardSvc:       BoardService,
     private userSvc:        UserService,
     private boardLayoutSvc: BoardLayoutService,
+    private modalCtrl:      ModalController,
   ) {}
 
   ngOnInit() {
@@ -119,13 +124,62 @@ export class CommunicatorPage implements OnInit, OnDestroy {
       this.navSourcePict = this.boardSourcePicts.get(boardId);
       void this.loadBoard(boardId);
     });
+
+    // Suscripción al módulo IA: se activa cuando aiRewriteEnabled y el usuario pulsa HABLAR.
+    // t1 (speakTimestamp) se pasa al modal para que el evento OBL de IA use el tiempo de HABLAR.
+    this.aiSub = this.aac.phraseSpoken$.subscribe(({ phrase, timestamp }) => {
+      void this.openAiModal(phrase, timestamp);
+    });
+
+    // "Borrar todo": recarga el tablero raíz sin pasar por el navSub (evita
+    // efectos secundarios sobre navSourcePict/boardSourcePicts).
+    this.rootSub = this.aac.returnToRoot$.subscribe(rootBoardId => {
+      this.navSourcePict = undefined;
+      void this.loadBoard(rootBoardId);
+    });
   }
 
   async ionViewWillLeave() {
     await this.aac.endSession();
     this.navSub?.unsubscribe();
+    this.rootSub?.unsubscribe();
+    this.aiSub?.unsubscribe();
     this.boardSourcePicts.clear();
     this.navSourcePict = undefined;
+  }
+
+  // ── Módulo IA ─────────────────────────────────────────────────────────────
+
+  private async openAiModal(phrase: AacPhraseItem[], speakTimestamp: string): Promise<void> {
+    const modal = await this.modalCtrl.create({
+      component:      AiPhraseResultModalComponent,
+      componentProps: { originalPhrase: phrase, speakTimestamp },
+      cssClass:       'ai-result-modal',
+      breakpoints:    [0, 0.85, 1],
+      initialBreakpoint: 0.85,
+    });
+    await modal.present();
+    const { data } = await modal.onWillDismiss<{
+      clear:           boolean;
+      result?:         AiReformulationResponse | null;
+      speakTimestamp?: string;
+    }>();
+    if (data?.clear) {
+      // Registrar evento OBL de IA solo al aceptar (nunca al pulsar ESCUCHAR).
+      // Usa speakTimestamp (t1) para que el tiempo del evento sea el de HABLAR, no el de OK.
+      if (data.result) {
+        const originalText = phrase.map(p => p.label).join(' ');
+        this.aac.logAiReformulationEvent(
+          originalText,
+          data.result.reformulatedText,
+          data.speakTimestamp ?? speakTimestamp,
+          data.result.tokens ?? [],
+        );
+      }
+      // clearPhraseSilent: la frase ya fue cerrada por :speak en t1.
+      // No registrar :clear para no desplazar phraseStart al momento de OK.
+      this.aac.clearPhraseSilent();
+    }
   }
 
   ngOnDestroy() {

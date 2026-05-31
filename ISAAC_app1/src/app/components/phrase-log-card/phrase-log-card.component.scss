@@ -59,6 +59,30 @@
   word-break:  break-word;
 }
 
+.plc-ai-text {
+  flex:        1;
+  font-size:   13px;
+  font-weight: 500;
+  color:       #5c35cc;
+  margin:      2px 0 0;
+  line-height: 1.4;
+  word-break:  break-word;
+  font-style:  italic;
+}
+
+.plc-ai-badge {
+  display:       inline-block;
+  background:    #7c4dff;
+  color:         #fff;
+  font-size:     9px;
+  font-weight:   800;
+  border-radius: 4px;
+  padding:       1px 5px;
+  margin-right:  4px;
+  vertical-align: middle;
+  font-style:    normal;
+}
+
 .plc-toggle {
   flex:        0 0 auto;
   background:  none;

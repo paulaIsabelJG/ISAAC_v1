@@ -52,6 +52,10 @@ export interface OblEvent {
   destination_board_id?: string;
   text?:                string;
   buttons?:             string[];
+  // extensión ISAAC: reformulación IA (solo en action 'ext_isaac_ai_reformulation')
+  ext_isaac_original_text?:     string;
+  ext_isaac_reformulated_text?: string;
+  ext_isaac_ai_tokens?:         any[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -85,6 +89,19 @@ export class AacRuntimeService {
   readonly slotChanged$    = new Subject<{ slotId: number; boardId: string }>();
 
   get currentBoardId(): string { return this._currentBoardId; }
+
+  /** Emite la frase y el timestamp t1 de HABLAR cuando el usuario pulsa HABLAR en modo
+   *  comunicador con aiRewriteEnabled activo. El timestamp t1 se usa para el evento OBL
+   *  de reformulación IA (el tiempo debe ser el de HABLAR, no el de aceptar el modal). */
+  readonly phraseSpoken$ = new Subject<{ phrase: AacPhraseItem[]; timestamp: string }>();
+
+  /**
+   * Emite el rootBoardId cuando el usuario pulsa "Borrar todo" y hay que volver
+   * al tablero raíz. Usa un Subject dedicado en lugar de boardNavigated$ para
+   * evitar efectos secundarios sobre navSourcePict / boardSourcePicts.
+   * El comunicador y el editor en preview escuchan este Subject por separado.
+   */
+  readonly returnToRoot$ = new Subject<string>();
 
   private pendingEvents: OblEvent[] = [];
   private sessionStarted = '';
@@ -190,6 +207,35 @@ export class AacRuntimeService {
     this.phrase = [];
     this.phraseChanged$.next([]);
     this.logActionEvent(':clear');
+  }
+
+  /**
+   * Limpia la frase sin registrar evento OBL.
+   * Usar cuando la frase ya fue cerrada/consumida por un :speak anterior
+   * (p.ej. tras aceptar la reformulación IA) para evitar que un :clear
+   * con timestamp tardío desplace el phraseStart del reconstructor.
+   */
+  clearPhraseSilent(): void {
+    this.phrase = [];
+    this.phraseChanged$.next([]);
+  }
+
+  /**
+   * Limpia la frase y vuelve al tablero raíz de la sesión.
+   * NO emite boardNavigated$ (canal de navegación del usuario) para evitar
+   * efectos secundarios sobre navSourcePict/boardSourcePicts. En su lugar
+   * emite returnToRoot$ que los suscriptores manejan de forma explícita.
+   * No cierra sesión OBL, no resetea userId ni configuración de tablero.
+   */
+  clearPhraseAndGoRoot(): void {
+    this.phrase = [];
+    this.phraseChanged$.next([]);
+    this.logActionEvent(':clear');
+    this.boardStack = [];
+    if (this.rootBoardId && this._currentBoardId !== this.rootBoardId) {
+      this._currentBoardId = this.rootBoardId;
+      this.returnToRoot$.next(this.rootBoardId);
+    }
   }
 
   // ── Pictogram press ───────────────────────────────────────────────────────
@@ -376,6 +422,11 @@ export class AacRuntimeService {
     this.speakText(text, gender);
     this.logActionEvent(':speak');
     this.logUtteranceEvent(text, this.phrase.map(p => p.id));
+    // Si el tablero tiene IA de reescritura activa, notificar para abrir el modal.
+    // Se emite también el timestamp t1 para que el evento OBL de IA use el tiempo de HABLAR.
+    if (this.aiRewriteEnabled && this.mode === 'communicator') {
+      this.phraseSpoken$.next({ phrase: [...this.phrase], timestamp: new Date().toISOString() });
+    }
   }
 
   // ── OBL Logging ───────────────────────────────────────────────────────────
@@ -410,6 +461,35 @@ export class AacRuntimeService {
       timestamp: new Date().toISOString(),
       text,
       buttons:   buttonIds,
+    });
+  }
+
+  /**
+   * Registra en OBL la reformulación IA de una frase.
+   * Debe llamarse solo cuando el usuario acepta (OK) en el modal, nunca al pulsar ESCUCHAR.
+   *
+   * @param originalText     Texto original (labels de la frase del usuario).
+   * @param reformulatedText Texto reformulado por la IA.
+   * @param speakTimestamp   Timestamp ISO del momento en que el usuario pulsó HABLAR (t1).
+   *                         Se usa como timestamp del evento para que el tiempo de la
+   *                         reformulación coincida con el de la frase original, no con OK.
+   * @param tokens           Tokens resueltos (pictogramas) de la respuesta IA.
+   */
+  logAiReformulationEvent(
+    originalText:     string,
+    reformulatedText: string,
+    speakTimestamp:   string,
+    tokens:           any[] = [],
+  ): void {
+    this.pushEvent({
+      id:                           this.uuid(),
+      type:                         'action',
+      timestamp:                    speakTimestamp,
+      action:                       'ext_isaac_ai_reformulation',
+      text:                         reformulatedText,
+      ext_isaac_original_text:      originalText,
+      ext_isaac_reformulated_text:  reformulatedText,
+      ext_isaac_ai_tokens:          tokens,
     });
   }
 

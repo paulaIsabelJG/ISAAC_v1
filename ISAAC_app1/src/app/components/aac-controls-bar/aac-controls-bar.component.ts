@@ -111,7 +111,7 @@ export class AacControlsBarComponent implements OnInit, OnDestroy {
   }
 
   onClear(): void {
-    this.voiceAction('Borrar todo', () => this.aac.clearPhrase());
+    this.voiceAction('Borrar todo', () => this.aac.clearPhraseAndGoRoot());
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────────

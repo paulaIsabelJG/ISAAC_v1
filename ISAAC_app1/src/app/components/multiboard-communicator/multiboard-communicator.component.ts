@@ -9,9 +9,10 @@ import {
 import { NgClass } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { firstValueFrom, Subscription } from 'rxjs';
-import { Board, BoardCell } from '../../services/board.service';
+import { Board, BoardCell, CellPictogram } from '../../services/board.service';
 import { BoardService } from '../../services/board.service';
 import { AacRuntimeService } from '../../services/aac-runtime.service';
+import { getCellBaseColor } from '../../shared/utils/board-color.utils';
 import { BoardLayoutService } from '../../services/board-layout.service';
 import { BoardGridComponent } from '../board-grid/board-grid.component';
 import { LoadingErrorStateComponent } from '../loading-error-state/loading-error-state.component';
@@ -135,10 +136,13 @@ export class MultiboardCommunicatorComponent implements OnInit, OnDestroy, OnCha
     // Voz
     if (type === 'voice' || type === 'voice+navigate' || type === 'voice+setSlot') {
       this.aac.addToPhrase({
-        id:       cell.pictogram.id,
-        label:    cell.pictogram.label,
-        imageUrl: cell.pictogram.imageUrl,
-        sound:    cell.pictogram.sound || cell.pictogram.label,
+        id:                cell.pictogram.id,
+        label:             cell.pictogram.label,
+        imageUrl:          cell.pictogram.imageUrl,
+        sound:             cell.pictogram.sound || cell.pictogram.label,
+        color:             getCellBaseColor(cell.pictogram as CellPictogram) ?? '',
+        wordType:          cell.pictogram.wordType  ?? 'misc',
+        fitzgeraldEnabled: !!(cell.pictogram.fitzgeraldEnabled),
       });
       this.aac.speakText(cell.pictogram.sound || cell.pictogram.label, this.gender);
       this.aac.logButtonEvent({
@@ -149,6 +153,8 @@ export class MultiboardCommunicatorComponent implements OnInit, OnDestroy, OnCha
         board_id:     state.board._id,
         image_url:    cell.pictogram.imageUrl,
         actions:      [{ action: '+speak' }],
+        color:        getCellBaseColor(cell.pictogram as CellPictogram) ?? undefined,
+        wordType:     cell.pictogram.wordType ?? 'misc',
       });
     }
 

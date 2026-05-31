@@ -29,6 +29,10 @@ const oblEventSchema = new mongoose.Schema({
   // utterance fields
   text:                 String,
   buttons:              [String],
+  // extensión ISAAC: reformulación IA (action 'ext_isaac_ai_reformulation')
+  ext_isaac_original_text:     String,
+  ext_isaac_reformulated_text: String,
+  ext_isaac_ai_tokens:         [mongoose.Schema.Types.Mixed],
 }, { _id: false });
 
 const oblLogSchema = new mongoose.Schema({

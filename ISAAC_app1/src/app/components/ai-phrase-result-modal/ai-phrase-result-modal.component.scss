@@ -1,0 +1,105 @@
+$primary:  #7c4dff;
+$border:   #e8dff5;
+$text:     #2d1b4e;
+$muted:    #7a6e8a;
+$bg:       #faf8ff;
+$error-bg: #fff4f4;
+
+// ── Contenedor principal ───────────────────────────────────────────────────
+
+.apm-content {
+  --background:    #{$bg};
+  --padding-top:    20px;
+  --padding-bottom: 32px;
+  --padding-start:  16px;
+  --padding-end:    16px;
+}
+
+ion-header ion-toolbar { --background: #ffffff; --border-color: #{$border}; }
+ion-title { font-weight: 700; font-size: 17px; color: $text; }
+
+// ── Loading ────────────────────────────────────────────────────────────────
+
+.apm-loading {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 16px; padding-top: 60px;
+  p { color: $muted; font-size: 15px; margin: 0; }
+}
+
+// ── Error ──────────────────────────────────────────────────────────────────
+
+.apm-error {
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  background: $error-bg; border-radius: 16px; padding: 24px 20px; margin: 8px 0;
+  &-icon  { font-size: 36px; }
+  &-msg   { color: #c0392b; font-size: 15px; text-align: center; margin: 0; }
+  &-original { color: $muted; font-size: 14px; text-align: center; margin: 0; }
+}
+
+// ── Resultado ──────────────────────────────────────────────────────────────
+
+.apm-result-text {
+  font-size: 22px; font-weight: 700; color: $text;
+  text-align: center; line-height: 1.35;
+  padding: 12px 8px 20px;
+  border-bottom: 1px solid $border;
+  margin-bottom: 20px;
+}
+
+// ── Tira de pictogramas ────────────────────────────────────────────────────
+
+.apm-tokens {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  justify-content: center; margin-bottom: 20px;
+}
+
+.apm-token {
+  border-radius: 10px;
+  border: 2px solid $border;
+  overflow: hidden;
+  container-type: inline-size;
+  flex-shrink: 0;
+
+  // Token con imagen (original o ARASAAC)
+  &--pict {
+    width: 72px;
+    height: 82px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  // Token textual (sin imagen) — background/border-color vienen del binding Fitzgerald
+  &--text {
+    width: 64px;
+    min-height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+  }
+}
+
+.apm-token-label {
+  font-size: 13px; font-weight: 600; color: $text;
+  text-align: center; line-height: 1.2; word-break: break-word;
+}
+
+// ── Frase original ─────────────────────────────────────────────────────────
+
+.apm-original-label {
+  font-size: 13px; color: $muted; text-align: center; margin: 0 0 24px;
+  em { font-style: italic; }
+}
+
+// ── Botones ────────────────────────────────────────────────────────────────
+
+.apm-actions {
+  display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+  ion-button {
+    --border-radius: 12px;
+    font-weight: 700; font-size: 15px;
+    min-width: 130px; height: 48px;
+  }
+}

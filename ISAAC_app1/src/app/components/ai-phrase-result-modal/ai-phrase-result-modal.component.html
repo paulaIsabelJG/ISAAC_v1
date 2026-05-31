@@ -1,0 +1,96 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Frase sugerida</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="closeWithoutClear()" fill="clear" aria-label="Cerrar sin limpiar">
+        <svg slot="icon-only" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="apm-content">
+
+  <!-- ── Cargando ────────────────────────────────────────────────── -->
+  @if (loading) {
+    <div class="apm-loading">
+      <ion-spinner name="crescent" color="primary"></ion-spinner>
+      <p>Procesando con IA…</p>
+    </div>
+  }
+
+  <!-- ── Error ───────────────────────────────────────────────────── -->
+  @if (!loading && error) {
+    <div class="apm-error">
+      <div class="apm-error-icon">⚠️</div>
+      <p class="apm-error-msg">{{ error }}</p>
+      <p class="apm-error-original">Frase original: <strong>{{ originalText }}</strong></p>
+      <div class="apm-actions">
+        <ion-button fill="outline" color="medium" (click)="closeWithoutClear()">Cerrar</ion-button>
+      </div>
+    </div>
+  }
+
+  <!-- ── Resultado ───────────────────────────────────────────────── -->
+  @if (!loading && result) {
+
+    <!-- Frase reformulada destacada -->
+    <div class="apm-result-text">{{ result.reformulatedText }}</div>
+
+    <!-- Secuencia de pictogramas de la frase reformulada -->
+    <div class="apm-tokens">
+      @for (token of result.tokens; track $index) {
+
+        @if (token.imageUrl) {
+          <!-- Token con pictograma (original reutilizado o ARASAAC) -->
+          <div class="apm-token apm-token--pict"
+               [style.background]="tokenBg(token)"
+               [style.border-color]="tokenBorder(token)"
+               [title]="cleanLabel(token.text)">
+            <app-pict-cell-content
+              [pict]="toCell(token)"
+              emptyType="empty-div">
+            </app-pict-cell-content>
+          </div>
+        } @else {
+          <!-- Token sin imagen: celda textual con color Fitzgerald -->
+          <div class="apm-token apm-token--text"
+               [style.background]="tokenBg(token)"
+               [style.border-color]="tokenBorder(token)"
+               [title]="cleanLabel(token.text)">
+            <span class="apm-token-label">{{ cleanLabel(token.text) }}</span>
+          </div>
+        }
+
+      }
+    </div>
+
+    <!-- Frase original pequeña -->
+    <p class="apm-original-label">
+      Frase original: <em>{{ originalText }}</em>
+    </p>
+
+    <!-- Botones de acción -->
+    <div class="apm-actions">
+      <ion-button fill="outline" color="primary" (click)="speakReformulated()">
+        <svg slot="start" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+        </svg>
+        Escuchar
+      </ion-button>
+      <ion-button color="primary" (click)="accept()">
+        <svg slot="start" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        OK — Aceptar
+      </ion-button>
+    </div>
+
+  }
+
+</ion-content>

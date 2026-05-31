@@ -78,7 +78,7 @@ export class AacCircularTopBarComponent implements OnInit, OnDestroy {
   onBack(): void  { this.voiceAction('Atrás',         () => this.backClick.emit()); }
   onSpeak(): void { this.aac.speakPhrase(this.gender); }
   onErase(): void { this.voiceAction('Borrar último', () => this.aac.deleteLast()); }
-  onClear(): void { this.voiceAction('Borrar todo',   () => this.aac.clearPhrase()); }
+  onClear(): void { this.voiceAction('Borrar todo',   () => this.aac.clearPhraseAndGoRoot()); }
 
   private voiceAction(label: string, action: () => void): void {
     if (this.mode === 'preview' || (this.mode === 'communicator' && this.voiceEnabled)) {

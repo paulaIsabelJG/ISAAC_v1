@@ -76,6 +76,8 @@ export interface ReconstructedPhrase {
   endedAt:      string;
   durationMs:   number;
   interactions: PhraseInteraction[];
+  /** Texto reformulado por IA. Presente solo si el usuario aceptó la sugerencia IA. */
+  aiReformulatedText?: string | null;
 }
 
 export interface PhrasesPage {

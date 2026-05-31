@@ -10,6 +10,12 @@
     </div>
 
     <p class="plc-text">"{{ phrase.finalText }}"</p>
+    @if (phrase.aiReformulatedText) {
+      <p class="plc-ai-text">
+        <span class="plc-ai-badge">IA</span>
+        "{{ phrase.aiReformulatedText }}"
+      </p>
+    }
 
     <button class="plc-toggle" [attr.aria-expanded]="expanded">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"

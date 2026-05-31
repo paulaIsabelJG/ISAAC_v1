@@ -130,6 +130,15 @@ exports.reconstructPhrases = function reconstructPhrases(session) {
           closePhrase(ev.timestamp, text.trim() || null);
           break;
         }
+        case 'ext_isaac_ai_reformulation': {
+          // Reformulación IA aceptada por el usuario.
+          // Se adjunta a la última frase cerrada (cuyo :speak tuvo el mismo timestamp t1).
+          // NO se añade al buffer para no crear una frase nueva ni alterar el recuento.
+          if (phrases.length > 0) {
+            phrases[phrases.length - 1].aiReformulatedText = ev.ext_isaac_reformulated_text || ev.text || null;
+          }
+          break;
+        }
         // home/:back/:open_board/etc. → solo registrar como contexto, no cierran frase
         default:
           buffer.push({ event: ev, activeInFinalPhrase: false, isSystemAction: true });
