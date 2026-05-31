@@ -18,14 +18,18 @@ import { AppPageHeaderComponent } from '../../components/app-page-header/app-pag
 
 // ─── Fila de la tabla (estado local mutable) ──────────────────────────────────
 export interface ProfRow {
-  professionalId:     string;
-  name:               string;
-  surname:            string;
-  email:              string;
-  image?:             string | null;
-  canViewStats:       boolean;
-  canEditBoards:      boolean;
-  canEditPersonalData: boolean;
+  professionalId:         string;
+  name:                   string;
+  surname:                string;
+  email:                  string;
+  image?:                 string | null;
+  canViewStats:           boolean;
+  canEditBoards:          boolean;
+  canEditPersonalData:    boolean;
+  canAddPictograms:       boolean;
+  canAssignProfessionals: boolean;
+  canAssignFamilies:      boolean;
+  canViewAssignedBoards:  boolean;
 }
 
 @Component({
@@ -36,6 +40,11 @@ export interface ProfRow {
   imports: [IonicModule, FormsModule, LoadingErrorStateComponent, AppPageHeaderComponent],
 })
 export class AssignedProfessionalsPlaceholderPage {
+
+  // ── Selector de usuario (cuando no viene preseleccionado) ────────────────────
+  selectableUsers: Array<{ id: string; name: string }> = [];
+  selectableUsersLoading = false;
+  selectedUserId = '';
 
   // ── Contexto ──────────────────────────────────────────────────────────────────
   userId: string | null = null;
@@ -80,16 +89,49 @@ export class AssignedProfessionalsPlaceholderPage {
 
   ionViewWillEnter(): void {
     this.userId = this.state.userId;
-    this.loadData();
+    if (this.userId) {
+      this.loadData();
+    } else {
+      this.loadSelectableUsers();
+    }
   }
 
   goBack(): void {
-    if (this.userId) {
-      this.router.navigate(['/user-final-form', this.userId]);
-    } else {
-      this.router.navigate(['/add-user']);
+    this.router.navigateByUrl(this.state.returnTo);
+  }
+
+  // ── Selector de usuario ───────────────────────────────────────────────────────
+
+  private async loadSelectableUsers(): Promise<void> {
+    if (this.state.allowedUsers !== null) {
+      this.selectableUsers = this.state.allowedUsers;
+      return;
+    }
+
+    const me = this.authService.getCurrentUser();
+    if (!me) return;
+
+    this.selectableUsersLoading = true;
+    try {
+      const res = await firstValueFrom(this.userService.getUsersByCenter(me.centro ?? ''));
+      this.selectableUsers = res.users
+        .filter((u) => u.type === 'user')
+        .map((u) => ({ id: u._id, name: u.name }));
+    } catch {
+      // Lista vacía
+    } finally {
+      this.selectableUsersLoading = false;
     }
   }
+
+  onUserSelect(event: Event): void {
+    const userId = (event as CustomEvent<{ value: string }>).detail.value;
+    if (!userId) return;
+    this.userId = userId;
+    this.state.userId = userId;
+    this.loadData();
+  }
+
 
   // ── Carga inicial ─────────────────────────────────────────────────────────────
 
@@ -143,14 +185,18 @@ export class AssignedProfessionalsPlaceholderPage {
 
     const parts = prof.name.trim().split(/\s+/);
     this.rows.push({
-      professionalId:     prof._id,
-      name:               parts[0] ?? '',
-      surname:            parts.slice(1).join(' '),
-      email:              prof.email,
-      image:              prof.image ?? null,
-      canViewStats:       false,
-      canEditBoards:      false,
-      canEditPersonalData: false,
+      professionalId:         prof._id,
+      name:                   parts[0] ?? '',
+      surname:                parts.slice(1).join(' '),
+      email:                  prof.email,
+      image:                  prof.image ?? null,
+      canViewStats:           false,
+      canEditBoards:          false,
+      canEditPersonalData:    false,
+      canAddPictograms:       false,
+      canAssignProfessionals: false,
+      canAssignFamilies:      false,
+      canViewAssignedBoards:  false,
     });
 
     this.selectedProfId = '';
@@ -176,10 +222,14 @@ export class AssignedProfessionalsPlaceholderPage {
     this.isSaving = true;
 
     const payload: AssignedProfessionalPayload[] = this.rows.map((r) => ({
-      professionalId:     r.professionalId,
-      canViewStats:       r.canViewStats,
-      canEditBoards:      r.canEditBoards,
-      canEditPersonalData: r.canEditPersonalData,
+      professionalId:         r.professionalId,
+      canViewStats:           r.canViewStats,
+      canEditBoards:          r.canEditBoards,
+      canEditPersonalData:    r.canEditPersonalData,
+      canAddPictograms:       r.canAddPictograms,
+      canAssignProfessionals: r.canAssignProfessionals,
+      canAssignFamilies:      r.canAssignFamilies,
+      canViewAssignedBoards:  r.canViewAssignedBoards,
     }));
 
     try {
@@ -206,14 +256,18 @@ export class AssignedProfessionalsPlaceholderPage {
 
   private entryToRow(ap: AssignedProfessionalEntry): ProfRow {
     return {
-      professionalId:     ap.professionalId,
-      name:               ap.name,
-      surname:            ap.surname,
-      email:              ap.email,
-      image:              ap.image ?? null,
-      canViewStats:       ap.canViewStats,
-      canEditBoards:      ap.canEditBoards,
-      canEditPersonalData: ap.canEditPersonalData,
+      professionalId:         ap.professionalId,
+      name:                   ap.name,
+      surname:                ap.surname,
+      email:                  ap.email,
+      image:                  ap.image ?? null,
+      canViewStats:           ap.canViewStats,
+      canEditBoards:          ap.canEditBoards,
+      canEditPersonalData:    ap.canEditPersonalData,
+      canAddPictograms:       ap.canAddPictograms,
+      canAssignProfessionals: ap.canAssignProfessionals,
+      canAssignFamilies:      ap.canAssignFamilies,
+      canViewAssignedBoards:  ap.canViewAssignedBoards,
     };
   }
 

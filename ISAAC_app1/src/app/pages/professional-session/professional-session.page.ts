@@ -6,6 +6,7 @@ import { buildSafeUrl as buildSafeUrlUtil } from '../../shared/utils/image.utils
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { UserService, FullBackendUser, AssignedUserEntry } from '../../services/user.service';
+import { PictogramStateService } from '../../services/pictogram-state.service';
 import { LoadingErrorStateComponent } from '../../components/loading-error-state/loading-error-state.component';
 import { AppPageHeaderComponent } from '../../components/app-page-header/app-page-header.component';
 
@@ -35,6 +36,7 @@ export class ProfessionalSessionPage implements OnInit {
     private authService: AuthService,
     private userService: UserService,
     private sanitizer:   DomSanitizer,
+    private state:       PictogramStateService,
   ) {}
 
   ngOnInit() {
@@ -137,5 +139,15 @@ export class ProfessionalSessionPage implements OnInit {
 
   goToUserSession(userId: string) {
     this.router.navigate(['/user-session', userId]);
+  }
+
+  goOwnPictograms() {
+    this.state.userId       = null;
+    this.state.returnTo     = '/professional-session/' + this.professionalId;
+    this.state.allowedUsers = this.assignedUsers.map((u) => ({
+      id:   u.userId,
+      name: [u.name, u.surname].filter(Boolean).join(' '),
+    }));
+    this.router.navigate(['/own-pictograms-placeholder']);
   }
 }

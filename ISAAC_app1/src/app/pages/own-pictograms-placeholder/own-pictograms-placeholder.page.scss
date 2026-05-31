@@ -46,6 +46,42 @@ app-page-header {
   margin: 16px 0;
 }
 
+// ── Selector de usuario ───────────────────────────────────────────────────────
+.user-select-card {
+  @extend .card-section;
+  margin-bottom: 16px;
+}
+
+.user-select-hint {
+  font-size: 14px;
+  color: $text-muted;
+  margin: 4px 0 16px;
+}
+
+.user-select-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
+  color: $text-muted;
+  font-size: 14px;
+}
+
+.user-select-input {
+  width: 100%;
+  border: 1.5px solid $border;
+  border-radius: 10px;
+  padding: 4px 8px;
+  font-size: 15px;
+  --placeholder-color: #{$text-muted};
+}
+
+.user-select-empty {
+  font-size: 14px;
+  color: $text-muted;
+  padding: 8px 0;
+}
+
 // Cabecera de sección
 .sec-head {
   display: flex;

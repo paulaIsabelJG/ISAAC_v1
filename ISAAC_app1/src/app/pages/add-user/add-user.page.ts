@@ -15,14 +15,18 @@ const MAX_IMG = 2 * 1024 * 1024; // 2 MB
 
 // ─── Fila de la tabla de usuarios a cargo del familiar ────────────────────────
 interface FamUserRow {
-  childId:            string;
-  name:               string;
-  surname:            string;
-  infoLabel:          string;   // género traducido o "Sin información"
-  image?:             string | null;
-  canViewStats:       boolean;
-  canEditBoards:      boolean;
-  canEditPersonalData: boolean;
+  childId:                string;
+  name:                   string;
+  surname:                string;
+  infoLabel:              string;
+  image?:                 string | null;
+  canViewStats:           boolean;
+  canEditBoards:          boolean;
+  canEditPersonalData:    boolean;
+  canAddPictograms:       boolean;
+  canAssignProfessionals: boolean;
+  canAssignFamilies:      boolean;
+  canViewAssignedBoards:  boolean;
 }
 
 @Component({
@@ -55,7 +59,14 @@ export class AddUserPage implements OnInit {
 
   // ── Usuario final: extras ────────────────────────────────────────────
   soundEnabled = true;
-  perms = { editData: false, editBoards: false, editStats: false };
+  perms = {
+    editData:            false,
+    editBoards:          false,
+    editStats:           false,
+    addPictograms:       false,
+    assignProfessionals: false,
+    assignFamilies:      false,
+  };
 
   // ── Autocompletado de dirección ──────────────────────────────────────
   suggestions:     AddressSuggestion[] = [];
@@ -143,11 +154,15 @@ export class AddUserPage implements OnInit {
   }
 
   goOwnPictograms() {
-    this.state.userId = null;   // modo creación: sin userId → goBack() volverá a /add-user
+    this.state.userId       = null;
+    this.state.returnTo     = '/add-user';
+    this.state.allowedUsers = null; // org: la página carga todos los usuarios del centro
     this.router.navigate(['/own-pictograms-placeholder']);
   }
   goAssignedProfessionals() {
-    this.state.userId = null;   // modo creación: sin userId → goBack() volverá a /add-user
+    this.state.userId       = null;
+    this.state.returnTo     = '/add-user';
+    this.state.allowedUsers = null;
     this.router.navigate(['/assigned-professionals-placeholder']);
   }
 
@@ -264,11 +279,15 @@ export class AddUserPage implements OnInit {
       );
 
       // 2. Si hay algún permiso activo, guardarlo en selfPermissions del usuario creado
-      if (this.perms.editData || this.perms.editBoards || this.perms.editStats) {
+      if (this.perms.editData || this.perms.editBoards || this.perms.editStats ||
+          this.perms.addPictograms || this.perms.assignProfessionals || this.perms.assignFamilies) {
         const selfPerms: SelfPermissions = {
-          canEditPersonalData: this.perms.editData,
-          canEditBoards:       this.perms.editBoards,
-          canViewStats:        this.perms.editStats,
+          canEditPersonalData:    this.perms.editData,
+          canEditBoards:          this.perms.editBoards,
+          canViewStats:           this.perms.editStats,
+          canAddPictograms:       this.perms.addPictograms,
+          canAssignProfessionals: this.perms.assignProfessionals,
+          canAssignFamilies:      this.perms.assignFamilies,
         };
         await firstValueFrom(
           this.userSvc.updateUserById(regRes.user.id, { selfPermissions: selfPerms })
@@ -285,7 +304,7 @@ export class AddUserPage implements OnInit {
       this.finalForm.reset({ gender: 'prefer_not_to_say' });
       this.finalImgB64 = null; this.finalImgUrl = null;
       this._lat = this._lng = null;
-      this.perms = { editData: false, editBoards: false, editStats: false };
+      this.perms = { editData: false, editBoards: false, editStats: false, addPictograms: false, assignProfessionals: false, assignFamilies: false };
       this.centerFinalUsers = []; // Invalidar caché para el familiar
 
     } catch (err: any) {
@@ -319,10 +338,14 @@ export class AddUserPage implements OnInit {
       // Paso 2: Guardar childrenAccess si hay filas en la tabla
       if (this.famRows.length > 0 && parentId) {
         const entries: ChildrenAccessEntry[] = this.famRows.map((r) => ({
-          childId:            r.childId,
-          canViewStats:       r.canViewStats,
-          canEditBoards:      r.canEditBoards,
-          canEditPersonalData: r.canEditPersonalData,
+          childId:                r.childId,
+          canViewStats:           r.canViewStats,
+          canEditBoards:          r.canEditBoards,
+          canEditPersonalData:    r.canEditPersonalData,
+          canAddPictograms:       r.canAddPictograms,
+          canAssignProfessionals: r.canAssignProfessionals,
+          canAssignFamilies:      r.canAssignFamilies,
+          canViewAssignedBoards:  r.canViewAssignedBoards,
         }));
         await firstValueFrom(
           this.userSvc.updateChildrenAccess(parentId, entries)
@@ -388,14 +411,18 @@ export class AddUserPage implements OnInit {
 
     const parts = user.name.trim().split(/\s+/);
     this.famRows.push({
-      childId:            user._id,
-      name:               parts[0] ?? '',
-      surname:            parts.slice(1).join(' '),
-      infoLabel:          this.genderLabel(user.gender),
-      image:              user.image ?? null,
-      canViewStats:       false,
-      canEditBoards:      false,
-      canEditPersonalData: false,
+      childId:                user._id,
+      name:                   parts[0] ?? '',
+      surname:                parts.slice(1).join(' '),
+      infoLabel:              this.genderLabel(user.gender),
+      image:                  user.image ?? null,
+      canViewStats:           false,
+      canEditBoards:          false,
+      canEditPersonalData:    false,
+      canAddPictograms:       false,
+      canAssignProfessionals: false,
+      canAssignFamilies:      false,
+      canViewAssignedBoards:  false,
     });
     this.selectedChildId = '';
   }

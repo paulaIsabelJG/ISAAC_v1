@@ -15,9 +15,12 @@ export interface BackendUser {
 
 /** Permisos propios del usuario final (lo que puede ver al loguearse como él mismo) */
 export interface SelfPermissions {
-  canEditPersonalData: boolean;
-  canEditBoards:       boolean;
-  canViewStats:        boolean;
+  canEditPersonalData:    boolean;
+  canEditBoards:          boolean;
+  canViewStats:           boolean;
+  canAddPictograms:       boolean;
+  canAssignProfessionals: boolean;
+  canAssignFamilies:      boolean;
 }
 
 /** Usuario completo devuelto por GET /api/users/:userId */
@@ -31,16 +34,24 @@ export interface FullBackendUser {
   gender?: string | null;
   selfPermissions?: SelfPermissions;
   assignedProfessionals?: Array<{
-    professionalId: string;          // ObjectId serializado como string
-    canViewStats:       boolean;
-    canEditBoards:      boolean;
-    canEditPersonalData: boolean;
+    professionalId:         string;
+    canViewStats:           boolean;
+    canEditBoards:          boolean;
+    canEditPersonalData:    boolean;
+    canAddPictograms:       boolean;
+    canAssignProfessionals: boolean;
+    canAssignFamilies:      boolean;
+    canViewAssignedBoards:  boolean;
   }>;
   childrenAccess?: Array<{
-    childId:            string;      // ObjectId serializado como string
-    canViewStats:       boolean;
-    canEditBoards:      boolean;
-    canEditPersonalData: boolean;
+    childId:                string;
+    canViewStats:           boolean;
+    canEditBoards:          boolean;
+    canEditPersonalData:    boolean;
+    canAddPictograms:       boolean;
+    canAssignProfessionals: boolean;
+    canAssignFamilies:      boolean;
+    canViewAssignedBoards:  boolean;
   }>;
 }
 
@@ -58,10 +69,14 @@ export interface UpdateUserPayload {
 
 /** Entrada que se envía al PUT children-access */
 export interface ChildrenAccessEntry {
-  childId:            string;
-  canViewStats:       boolean;
-  canEditBoards:      boolean;
-  canEditPersonalData: boolean;
+  childId:                string;
+  canViewStats:           boolean;
+  canEditBoards:          boolean;
+  canEditPersonalData:    boolean;
+  canAddPictograms:       boolean;
+  canAssignProfessionals: boolean;
+  canAssignFamilies:      boolean;
+  canViewAssignedBoards:  boolean;
 }
 
 export interface BackendPictogram {
@@ -86,34 +101,46 @@ export type AddPictogramPayload = {
 
 /** Entrada que devuelve el GET (profesional populado + permisos) */
 export interface AssignedProfessionalEntry {
-  professionalId:     string;
-  name:               string;
-  surname:            string;
-  email:              string;
-  image?:             string | null;
-  canViewStats:       boolean;
-  canEditBoards:      boolean;
-  canEditPersonalData: boolean;
+  professionalId:         string;
+  name:                   string;
+  surname:                string;
+  email:                  string;
+  image?:                 string | null;
+  canViewStats:           boolean;
+  canEditBoards:          boolean;
+  canEditPersonalData:    boolean;
+  canAddPictograms:       boolean;
+  canAssignProfessionals: boolean;
+  canAssignFamilies:      boolean;
+  canViewAssignedBoards:  boolean;
 }
 
 /** Entrada que envía el PUT (solo ids + permisos) */
 export interface AssignedProfessionalPayload {
-  professionalId:     string;
-  canViewStats:       boolean;
-  canEditBoards:      boolean;
-  canEditPersonalData: boolean;
+  professionalId:         string;
+  canViewStats:           boolean;
+  canEditBoards:          boolean;
+  canEditPersonalData:    boolean;
+  canAddPictograms:       boolean;
+  canAssignProfessionals: boolean;
+  canAssignFamilies:      boolean;
+  canViewAssignedBoards:  boolean;
 }
 
 /** Usuario final asignado a un profesional (devuelto por GET /:professionalId/assigned-users) */
 export interface AssignedUserEntry {
-  userId:              string;
-  name:                string;
-  surname:             string;
-  email:               string;
-  image?:              string | null;
-  canEditPersonalData: boolean;
-  canEditBoards:       boolean;
-  canViewStats:        boolean;
+  userId:                 string;
+  name:                   string;
+  surname:                string;
+  email:                  string;
+  image?:                 string | null;
+  canEditPersonalData:    boolean;
+  canEditBoards:          boolean;
+  canViewStats:           boolean;
+  canAddPictograms:       boolean;
+  canAssignProfessionals: boolean;
+  canAssignFamilies:      boolean;
+  canViewAssignedBoards:  boolean;
 }
 
 @Injectable({ providedIn: 'root' })

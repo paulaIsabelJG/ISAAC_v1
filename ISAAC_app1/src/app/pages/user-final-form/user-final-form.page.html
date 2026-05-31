@@ -176,29 +176,33 @@
                 <input type="checkbox" class="perm-check"
                        [checked]="perms.editBoards"
                        (change)="perms.editBoards = $any($event.target).checked"/>
-                <span class="perm-text">Editar tableros</span>
+                <span class="perm-text">Crear tableros</span>
               </label>
               <label class="perm-item">
                 <input type="checkbox" class="perm-check"
                        [checked]="perms.editStats"
                        (change)="perms.editStats = $any($event.target).checked"/>
-                <span class="perm-text">Editar estadísticas</span>
+                <span class="perm-text">Ver estadísticas</span>
+              </label>
+              <label class="perm-item">
+                <input type="checkbox" class="perm-check"
+                       [checked]="perms.addPictograms"
+                       (change)="perms.addPictograms = $any($event.target).checked"/>
+                <span class="perm-text">Añadir pictogramas</span>
+              </label>
+              <label class="perm-item">
+                <input type="checkbox" class="perm-check"
+                       [checked]="perms.assignProfessionals"
+                       (change)="perms.assignProfessionals = $any($event.target).checked"/>
+                <span class="perm-text">Asignar profesionales</span>
+              </label>
+              <label class="perm-item">
+                <input type="checkbox" class="perm-check"
+                       [checked]="perms.assignFamilies"
+                       (change)="perms.assignFamilies = $any($event.target).checked"/>
+                <span class="perm-text">Asignar familiares</span>
               </label>
             </div>
-          </div>
-
-          <!-- Accesos rápidos -->
-          <div class="extra-btns">
-            <button type="button" class="extra-btn" (click)="goOwnPictograms()">
-              <img src="assets/pictograms/custom-pictograms.png"
-                   class="extra-img" alt="Pictogramas propios"/>
-              <span>Pictogramas propios</span>
-            </button>
-            <button type="button" class="extra-btn" (click)="goAssignedProfessionals()">
-              <img src="assets/pictograms/assigned-professionals.png"
-                   class="extra-img" alt="Profesionales encargados"/>
-              <span>Profesionales encargados</span>
-            </button>
           </div>
 
           <!-- Botón guardar -->

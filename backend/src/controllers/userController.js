@@ -356,9 +356,12 @@ const updateUserInternal = async (req, res) => {
     // selfPermissions: se maneja fuera de validateUserPayload (campo propio de usuario final)
     if (payload.selfPermissions !== undefined) {
       user.selfPermissions = {
-        canEditPersonalData: !!payload.selfPermissions?.canEditPersonalData,
-        canEditBoards:       !!payload.selfPermissions?.canEditBoards,
-        canViewStats:        !!payload.selfPermissions?.canViewStats,
+        canEditPersonalData:    !!payload.selfPermissions?.canEditPersonalData,
+        canEditBoards:          !!payload.selfPermissions?.canEditBoards,
+        canViewStats:           !!payload.selfPermissions?.canViewStats,
+        canAddPictograms:       !!payload.selfPermissions?.canAddPictograms,
+        canAssignProfessionals: !!payload.selfPermissions?.canAssignProfessionals,
+        canAssignFamilies:      !!payload.selfPermissions?.canAssignFamilies,
       };
     }
 
@@ -543,10 +546,14 @@ exports.updateChildrenAccess = async (req, res) => {
 
     // Actualizar childrenAccess y hijos[] en el familiar (compatibilidad)
     parent.childrenAccess = childrenAccess.map((e) => ({
-      childId:            e.childId,
-      canViewStats:       !!e.canViewStats,
-      canEditBoards:      !!e.canEditBoards,
-      canEditPersonalData: !!e.canEditPersonalData,
+      childId:               e.childId,
+      canViewStats:          !!e.canViewStats,
+      canEditBoards:         !!e.canEditBoards,
+      canEditPersonalData:   !!e.canEditPersonalData,
+      canAddPictograms:      !!e.canAddPictograms,
+      canAssignProfessionals: !!e.canAssignProfessionals,
+      canAssignFamilies:     !!e.canAssignFamilies,
+      canViewAssignedBoards: !!e.canViewAssignedBoards,
     }));
     parent.hijos = newChildIds;
 
@@ -604,14 +611,18 @@ exports.getAssignedProfessionals = async (req, res) => {
         const prof  = ap.professionalId;
         const parts = (prof.name || '').trim().split(/\s+/);
         return {
-          professionalId:     prof._id.toString(),
-          name:               parts[0] ?? '',
-          surname:            parts.slice(1).join(' '),
-          email:              prof.email,
-          image:              prof.image || null,
-          canViewStats:       ap.canViewStats,
-          canEditBoards:      ap.canEditBoards,
-          canEditPersonalData: ap.canEditPersonalData,
+          professionalId:         prof._id.toString(),
+          name:                   parts[0] ?? '',
+          surname:                parts.slice(1).join(' '),
+          email:                  prof.email,
+          image:                  prof.image || null,
+          canViewStats:           ap.canViewStats,
+          canEditBoards:          ap.canEditBoards,
+          canEditPersonalData:    ap.canEditPersonalData,
+          canAddPictograms:       ap.canAddPictograms       ?? false,
+          canAssignProfessionals: ap.canAssignProfessionals ?? false,
+          canAssignFamilies:      ap.canAssignFamilies      ?? false,
+          canViewAssignedBoards:  ap.canViewAssignedBoards  ?? false,
         };
       });
 
@@ -663,10 +674,14 @@ exports.updateAssignedProfessionals = async (req, res) => {
 
     // Reemplazar lista completa
     user.assignedProfessionals = assignedProfessionals.map((ap) => ({
-      professionalId:     ap.professionalId,
-      canViewStats:       !!ap.canViewStats,
-      canEditBoards:      !!ap.canEditBoards,
-      canEditPersonalData: !!ap.canEditPersonalData,
+      professionalId:         ap.professionalId,
+      canViewStats:           !!ap.canViewStats,
+      canEditBoards:          !!ap.canEditBoards,
+      canEditPersonalData:    !!ap.canEditPersonalData,
+      canAddPictograms:       !!ap.canAddPictograms,
+      canAssignProfessionals: !!ap.canAssignProfessionals,
+      canAssignFamilies:      !!ap.canAssignFamilies,
+      canViewAssignedBoards:  !!ap.canViewAssignedBoards,
     }));
 
     await user.save();
@@ -704,14 +719,18 @@ exports.getAssignedUsers = async (req, res) => {
       );
       const parts = (user.name || '').trim().split(/\s+/);
       return {
-        userId:             user._id.toString(),
-        name:               parts[0] ?? '',
-        surname:            parts.slice(1).join(' '),
-        email:              user.email,
-        image:              user.image || null,
-        canEditPersonalData: ap?.canEditPersonalData ?? false,
-        canEditBoards:       ap?.canEditBoards       ?? false,
-        canViewStats:        ap?.canViewStats         ?? false,
+        userId:                 user._id.toString(),
+        name:                   parts[0] ?? '',
+        surname:                parts.slice(1).join(' '),
+        email:                  user.email,
+        image:                  user.image || null,
+        canEditPersonalData:    ap?.canEditPersonalData    ?? false,
+        canEditBoards:          ap?.canEditBoards           ?? false,
+        canViewStats:           ap?.canViewStats            ?? false,
+        canAddPictograms:       ap?.canAddPictograms        ?? false,
+        canAssignProfessionals: ap?.canAssignProfessionals  ?? false,
+        canAssignFamilies:      ap?.canAssignFamilies       ?? false,
+        canViewAssignedBoards:  ap?.canViewAssignedBoards   ?? false,
       };
     });
 

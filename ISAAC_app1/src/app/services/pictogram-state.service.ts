@@ -19,11 +19,21 @@ export interface OwnPictogram {
 export class PictogramStateService {
   /**
    * userId del usuario final seleccionado/editado.
-   * null → modo memoria (usuario aún no guardado en backend).
-   * string → modo backend (pictogramas se cargan y persisten contra la API).
+   * null → sin usuario seleccionado aún (muestra selector).
+   * string → usuario cargado desde backend.
    */
   userId: string | null = null;
 
-  /** Lista en memoria; usada cuando userId === null */
+  /** Lista en memoria; usada cuando userId === null en flujo de creación */
   pictograms: OwnPictogram[] = [];
+
+  /** Ruta a la que volver al presionar "Atrás" en los placeholders */
+  returnTo = '/add-user';
+
+  /**
+   * Usuarios permitidos en el selector.
+   * null → la página carga todos los usuarios del centro (rol org).
+   * Array → lista predefinida (rol profesional con sus usuarios asignados).
+   */
+  allowedUsers: Array<{ id: string; name: string }> | null = null;
 }

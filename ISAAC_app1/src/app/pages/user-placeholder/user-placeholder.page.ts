@@ -1,11 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { IonicModule } from '@ionic/angular';
+import { Router } from '@angular/router';
 import { AuthService, User } from '../../services/auth.service';
+import { PictogramStateService } from '../../services/pictogram-state.service';
 
 // Etiqueta legible por tipo de usuario (valor backend → texto UI)
 const TYPE_LABELS: Record<string, string> = {
   teacher: 'Organización',
-  parent:  'Profesional / Familiar',
+  parent:  'Familiar',
   user:    'Usuario final',
 };
 
@@ -17,16 +19,27 @@ const TYPE_LABELS: Record<string, string> = {
   imports: [IonicModule],
 })
 export class UserPlaceholderPage implements OnInit {
-  user: User | null   = null;
+  user: User | null = null;
   typeLabel = 'Usuario';
 
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private router:      Router,
+    private state:       PictogramStateService,
+  ) {}
 
   ngOnInit() {
     this.user = this.authService.getCurrentUser();
     if (this.user?.type) {
       this.typeLabel = TYPE_LABELS[this.user.type] ?? this.user.type;
     }
+  }
+
+  goOwnPictograms() {
+    this.state.userId       = null;
+    this.state.returnTo     = '/user-placeholder';
+    this.state.allowedUsers = null; // own-pictograms detecta rol 'parent' y carga los hijos
+    this.router.navigate(['/own-pictograms-placeholder']);
   }
 
   logout() { this.authService.logout(); }

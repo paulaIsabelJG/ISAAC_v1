@@ -57,7 +57,7 @@ app-page-header {
 
 // ── Contenedor principal ─────────────────────────────────────────────────────
 .ps-container {
-  max-width:  720px;
+  max-width:  1150px;
   margin:     0 auto;
   padding:    24px 20px 48px;
   box-sizing: border-box;
@@ -256,7 +256,6 @@ app-page-header {
 
 // ── Tabla de usuarios asignados ───────────────────────────────────────────────
 .ps-table-wrap {
-  overflow-x: auto;
   border-radius: 14px;
   border:        1.5px solid $border;
   background:    $card-bg;
@@ -285,8 +284,8 @@ app-page-header {
   white-space:    nowrap;
 }
 
-.ps-th-user { width: 45%; }
-.ps-th-perm { width: 18%; text-align: center; }
+.ps-th-user { width: 26%; }
+.ps-th-perm { text-align: center; }
 
 .ps-row {
   border-bottom: 1px solid rgba($border, 0.5);

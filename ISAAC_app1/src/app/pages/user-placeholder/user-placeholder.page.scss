@@ -102,6 +102,35 @@ $text-muted: #7a5163;
   }
 }
 
+.placeholder-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.placeholder-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  background: $mint-light;
+  border: 1.5px solid $mint;
+  border-radius: 16px;
+  padding: 12px 20px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: darken(#20c997, 10%);
+  transition: background 0.2s;
+
+  img { width: 32px; height: 32px; object-fit: contain; }
+
+  &:hover { background: darken(#e0fff6, 4%); }
+}
+
 .logout-btn {
   display: flex;
   align-items: center;

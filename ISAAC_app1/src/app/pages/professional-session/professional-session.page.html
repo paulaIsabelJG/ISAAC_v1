@@ -60,12 +60,17 @@
         </div>
       </div>
 
-      <!-- ── Botón Board Builder ────────────────────────────────────────────── -->
+      <!-- ── Botones de acción ─────────────────────────────────────────────── -->
       <div class="ps-controls">
         <button class="ps-ctrl-btn ps-ctrl-btn--violet" (click)="goToBoardBuilder()">
           <img src="assets/user-session/board-builder.png"
                class="ps-ctrl-icon" alt="Tablero Builder"/>
           <span>Tablero Builder</span>
+        </button>
+        <button class="ps-ctrl-btn" (click)="goOwnPictograms()">
+          <img src="assets/pictograms/custom-pictograms.png"
+               class="ps-ctrl-icon" alt="Pictogramas propios"/>
+          <span>Pictogramas propios</span>
         </button>
       </div>
 
@@ -110,6 +115,10 @@
                   <th class="ps-th-perm">Datos pers.</th>
                   <th class="ps-th-perm">Tableros</th>
                   <th class="ps-th-perm">Estadísticas</th>
+                  <th class="ps-th-perm">Pictogramas</th>
+                  <th class="ps-th-perm">As. prof.</th>
+                  <th class="ps-th-perm">As. fam.</th>
+                  <th class="ps-th-perm">Tb. asig.</th>
                 </tr>
               </thead>
 
@@ -175,6 +184,54 @@
                           </svg>
                         }
                         {{ user.canViewStats ? 'Sí' : 'No' }}
+                      </span>
+                    </td>
+
+                    <!-- Permiso: Pictogramas -->
+                    <td class="ps-td-perm">
+                      <span class="ps-perm-chip" [class.ps-perm-chip--on]="user.canAddPictograms">
+                        @if (user.canAddPictograms) {
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="20 6 9 17 4 12"/>
+                          </svg>
+                        }
+                        {{ user.canAddPictograms ? 'Sí' : 'No' }}
+                      </span>
+                    </td>
+
+                    <!-- Permiso: Asignar profesionales -->
+                    <td class="ps-td-perm">
+                      <span class="ps-perm-chip" [class.ps-perm-chip--on]="user.canAssignProfessionals">
+                        @if (user.canAssignProfessionals) {
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="20 6 9 17 4 12"/>
+                          </svg>
+                        }
+                        {{ user.canAssignProfessionals ? 'Sí' : 'No' }}
+                      </span>
+                    </td>
+
+                    <!-- Permiso: Asignar familiares -->
+                    <td class="ps-td-perm">
+                      <span class="ps-perm-chip" [class.ps-perm-chip--on]="user.canAssignFamilies">
+                        @if (user.canAssignFamilies) {
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="20 6 9 17 4 12"/>
+                          </svg>
+                        }
+                        {{ user.canAssignFamilies ? 'Sí' : 'No' }}
+                      </span>
+                    </td>
+
+                    <!-- Permiso: Ver tableros asignados -->
+                    <td class="ps-td-perm">
+                      <span class="ps-perm-chip" [class.ps-perm-chip--on]="user.canViewAssignedBoards">
+                        @if (user.canViewAssignedBoards) {
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="20 6 9 17 4 12"/>
+                          </svg>
+                        }
+                        {{ user.canViewAssignedBoards ? 'Sí' : 'No' }}
                       </span>
                     </td>
 

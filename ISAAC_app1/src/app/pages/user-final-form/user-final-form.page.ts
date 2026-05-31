@@ -14,7 +14,6 @@ import { buildSafeUrl as buildSafeUrlUtil } from '../../shared/utils/image.utils
 import { firstValueFrom } from 'rxjs';
 import { AuthService, AddressSuggestion } from '../../services/auth.service';
 import { UserService, UpdateUserPayload, SelfPermissions } from '../../services/user.service';
-import { PictogramStateService } from '../../services/pictogram-state.service';
 import { LoadingErrorStateComponent } from '../../components/loading-error-state/loading-error-state.component';
 import { AppPageHeaderComponent } from '../../components/app-page-header/app-page-header.component';
 
@@ -51,8 +50,15 @@ export class UserFinalFormPage implements OnInit {
   // ── Sonido ───────────────────────────────────────────────────────────────────
   soundEnabled = true;
 
-  // ── Permisos (visuales, sin backend por ahora) ───────────────────────────────
-  perms = { editData: false, editBoards: false, editStats: false };
+  // ── Permisos del usuario final ───────────────────────────────────────────────
+  perms = {
+    editData:           false,
+    editBoards:         false,
+    editStats:          false,
+    addPictograms:      false,
+    assignProfessionals: false,
+    assignFamilies:     false,
+  };
 
   // ── Autocompletado de dirección ──────────────────────────────────────────────
   suggestions:    AddressSuggestion[] = [];
@@ -74,7 +80,6 @@ export class UserFinalFormPage implements OnInit {
     private fb:         FormBuilder,
     private authSvc:    AuthService,
     private userSvc:    UserService,
-    private state:      PictogramStateService,
     private toastCtrl:  ToastController,
     private sanitizer:  DomSanitizer,
   ) {}
@@ -92,14 +97,9 @@ export class UserFinalFormPage implements OnInit {
       address:  [''],                     // visual — geocodificación
     });
 
-    // Establecer userId en el servicio de estado desde el inicio
-    this.state.userId = this.userId || null;
   }
 
   ionViewWillEnter() {
-    // Refrescar por si se volvió de pictogramas/profesionales
-    this.state.userId = this.userId || null;
-
     if (this.userId && this.isLoading) {
       this.loadUser();
     }
@@ -136,9 +136,12 @@ export class UserFinalFormPage implements OnInit {
       // Precargar selfPermissions en los checkboxes
       const sp = u.selfPermissions;
       this.perms = {
-        editData:   sp?.canEditPersonalData ?? false,
-        editBoards: sp?.canEditBoards       ?? false,
-        editStats:  sp?.canViewStats        ?? false,
+        editData:            sp?.canEditPersonalData    ?? false,
+        editBoards:          sp?.canEditBoards          ?? false,
+        editStats:           sp?.canViewStats           ?? false,
+        addPictograms:       sp?.canAddPictograms       ?? false,
+        assignProfessionals: sp?.canAssignProfessionals ?? false,
+        assignFamilies:      sp?.canAssignFamilies      ?? false,
       };
     } catch {
       this.loadError = 'Error al cargar los datos del usuario.';
@@ -216,9 +219,12 @@ export class UserFinalFormPage implements OnInit {
     const fullName = [name?.trim(), surname?.trim()].filter(Boolean).join(' ');
 
     const selfPerms: SelfPermissions = {
-      canEditPersonalData: this.perms.editData,
-      canEditBoards:       this.perms.editBoards,
-      canViewStats:        this.perms.editStats,
+      canEditPersonalData:    this.perms.editData,
+      canEditBoards:          this.perms.editBoards,
+      canViewStats:           this.perms.editStats,
+      canAddPictograms:       this.perms.addPictograms,
+      canAssignProfessionals: this.perms.assignProfessionals,
+      canAssignFamilies:      this.perms.assignFamilies,
     };
 
     const payload: UpdateUserPayload = {
@@ -259,24 +265,6 @@ export class UserFinalFormPage implements OnInit {
   /** Siempre vuelve al perfil/sesión del usuario final */
   goBack() {
     this.router.navigate(['/user-session', this.userId]);
-  }
-
-  /**
-   * Antes de ir a pictogramas, asegurar que el servicio tiene el userId correcto.
-   * Own-pictograms lo leerá en ionViewWillEnter y cargará desde backend.
-   */
-  goOwnPictograms() {
-    this.state.userId = this.userId;
-    this.router.navigate(['/own-pictograms-placeholder']);
-  }
-
-  /**
-   * Antes de ir a profesionales encargados, establecer el userId.
-   * Assigned-professionals lo leerá en ionViewWillEnter.
-   */
-  goAssignedProfessionals() {
-    this.state.userId = this.userId;
-    this.router.navigate(['/assigned-professionals-placeholder']);
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────────

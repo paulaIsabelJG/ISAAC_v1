@@ -27,7 +27,7 @@ app-page-header {
 .ap-content { --background: #{$bg}; }
 
 .ap-container {
-  max-width: 860px;
+  max-width: 1150px;
   margin: 0 auto;
   padding: 20px 16px 56px;
   display: flex;
@@ -36,28 +36,37 @@ app-page-header {
 }
 
 // ── Banner: usuario sin userId ────────────────────────────────────────────────
-.no-user-banner {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 14px 18px;
-  background: $yellow-light;
-  border: 1.5px solid #fcd34d;
-  border-radius: 14px;
-  font-size: 13px;
-  color: #92400e;
-  line-height: 1.55;
+// ── Selector de usuario ───────────────────────────────────────────────────────
+.user-select-card { margin-bottom: 16px; }
 
-  strong { display: block; font-weight: 700; margin-bottom: 2px; }
-  em     { font-style: italic; }
+.user-select-hint {
+  font-size: 14px;
+  color: $text-muted;
+  margin: 4px 0 16px;
 }
 
-.no-user-icon {
-  width: 22px;
-  height: 22px;
-  flex: 0 0 22px;
-  stroke: #f59e0b;
-  margin-top: 1px;
+.user-select-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
+  color: $text-muted;
+  font-size: 14px;
+}
+
+.user-select-input {
+  width: 100%;
+  border: 1.5px solid $border;
+  border-radius: 10px;
+  padding: 4px 8px;
+  font-size: 15px;
+  --placeholder-color: #{$text-muted};
+}
+
+.user-select-empty {
+  font-size: 14px;
+  color: $text-muted;
+  padding: 8px 0;
 }
 
 // ── Card blanca principal ─────────────────────────────────────────────────────
@@ -129,20 +138,12 @@ app-page-header {
 
 // ── Tabla ─────────────────────────────────────────────────────────────────────
 .table-scroll-wrap {
-  overflow-x: auto;
   margin-bottom: 4px;
-
-  scrollbar-width: thin;
-  scrollbar-color: #d5dde5 transparent;
-  &::-webkit-scrollbar       { height: 4px; }
-  &::-webkit-scrollbar-track { background: transparent; }
-  &::-webkit-scrollbar-thumb { background: #d5dde5; border-radius: 4px; }
 }
 
 .prof-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 560px;
 }
 
 .prof-table thead tr {
@@ -162,7 +163,7 @@ app-page-header {
   white-space: nowrap;
 }
 
-.th-prof   { text-align: left; width: 38%; }
+.th-prof   { text-align: left; width: 24%; }
 .th-center { text-align: center; }
 .th-del    { width: 40px; }
 

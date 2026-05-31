@@ -19,6 +19,7 @@ import {
   FITZGERALD_COLORS,
 } from '../../shared/constants/fitzgerald';
 import { UserService, BackendPictogram } from '../../services/user.service';
+import { AuthService } from '../../services/auth.service';
 import { LoadingErrorStateComponent } from '../../components/loading-error-state/loading-error-state.component';
 import { AppPageHeaderComponent } from '../../components/app-page-header/app-page-header.component';
 
@@ -42,6 +43,11 @@ const VALID_WORD_TYPES: WordType[] = [
 export class OwnPictogramsPlaceholderPage {
   // Expuesta con el mismo nombre para que el template no cambie
   readonly FITZGERALD = FITZGERALD_COLORS;
+
+  // ── Selector de usuario (cuando no viene preseleccionado) ────────────────────
+  selectableUsers: Array<{ id: string; name: string }> = [];
+  selectableUsersLoading = false;
+  selectedUserId = '';
 
   // ── Estado de carga ──────────────────────────────────────────────────────────
   userId: string | null = null;
@@ -87,6 +93,7 @@ export class OwnPictogramsPlaceholderPage {
     private sanitizer: DomSanitizer,
     private state: PictogramStateService,
     private userSvc: UserService,
+    private authSvc: AuthService,
     private actionSheet: ActionSheetController,
     private alertCtrl: AlertController,
     private toastCtrl: ToastController,
@@ -98,16 +105,61 @@ export class OwnPictogramsPlaceholderPage {
     this.userId = this.state.userId;
     if (this.userId) {
       this.loadFromBackend();
+    } else {
+      this.loadSelectableUsers();
     }
-    // Sin userId → state.pictograms ya contiene los datos en memoria
   }
 
   goBack(): void {
-    if (this.userId) {
-      this.router.navigate(['/user-final-form', this.userId]);
-    } else {
-      this.router.navigate(['/add-user']);
+    this.router.navigateByUrl(this.state.returnTo);
+  }
+
+  // ── Selector de usuario ───────────────────────────────────────────────────────
+
+  private async loadSelectableUsers(): Promise<void> {
+    // Si se pasó una lista predefinida (profesional con sus usuarios), usarla directamente
+    if (this.state.allowedUsers !== null) {
+      this.selectableUsers = this.state.allowedUsers;
+      return;
     }
+
+    const me = this.authSvc.getCurrentUser();
+    if (!me) return;
+
+    this.selectableUsersLoading = true;
+    try {
+      if (me.type === 'teacher') {
+        // Organización: todos los usuarios finales del centro
+        const res = await firstValueFrom(this.userSvc.getUsersByCenter(me.centro ?? ''));
+        this.selectableUsers = res.users
+          .filter((u) => u.type === 'user')
+          .map((u) => ({ id: u._id, name: u.name }));
+      } else if (me.type === 'parent') {
+        // Familiar: hijos asignados
+        const res = await firstValueFrom(this.userSvc.getUserById(me.id));
+        const childrenAccess: Array<{ childId: string }> = (res.user as any).childrenAccess ?? [];
+        const childUsers = await Promise.all(
+          childrenAccess.map((c) =>
+            firstValueFrom(this.userSvc.getUserById(c.childId))
+              .then((r) => ({ id: c.childId, name: r.user.name }))
+              .catch(() => null),
+          ),
+        );
+        this.selectableUsers = childUsers.filter(Boolean) as Array<{ id: string; name: string }>;
+      }
+    } catch {
+      // Lista vacía — el template muestra estado vacío
+    } finally {
+      this.selectableUsersLoading = false;
+    }
+  }
+
+  onUserSelect(event: Event): void {
+    const userId = (event as CustomEvent<{ value: string }>).detail.value;
+    if (!userId) return;
+    this.userId = userId;
+    this.state.userId = userId;
+    this.loadFromBackend();
   }
 
   // ── Carga desde backend ───────────────────────────────────────────────────────

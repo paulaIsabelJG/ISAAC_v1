@@ -37,6 +37,16 @@
             <span class="type-label">Familiar</span>
           </button>
 
+          <button class="type-card" (click)="goOwnPictograms()">
+            <img src="assets/pictograms/custom-pictograms.png" class="type-img" alt="Pictogramas propios"/>
+            <span class="type-label">Pictogramas propios</span>
+          </button>
+
+          <button class="type-card" (click)="goAssignedProfessionals()">
+            <img src="assets/pictograms/assigned-professionals.png" class="type-img" alt="Asignar profesionales"/>
+            <span class="type-label">Asignar profesionales</span>
+          </button>
+
         </div>
       </div>
     }
@@ -315,26 +325,29 @@
               <label class="perm-item">
                 <input type="checkbox" class="perm-check" [checked]="perms.editBoards"
                        (change)="perms.editBoards = $any($event.target).checked"/>
-                <span class="perm-text">Editar tableros</span>
+                <span class="perm-text">Crear tableros</span>
               </label>
               <label class="perm-item">
                 <input type="checkbox" class="perm-check" [checked]="perms.editStats"
                        (change)="perms.editStats = $any($event.target).checked"/>
-                <span class="perm-text">Editar estadísticas</span>
+                <span class="perm-text">Ver estadísticas</span>
+              </label>
+              <label class="perm-item">
+                <input type="checkbox" class="perm-check" [checked]="perms.addPictograms"
+                       (change)="perms.addPictograms = $any($event.target).checked"/>
+                <span class="perm-text">Añadir pictogramas</span>
+              </label>
+              <label class="perm-item">
+                <input type="checkbox" class="perm-check" [checked]="perms.assignProfessionals"
+                       (change)="perms.assignProfessionals = $any($event.target).checked"/>
+                <span class="perm-text">Asignar profesionales</span>
+              </label>
+              <label class="perm-item">
+                <input type="checkbox" class="perm-check" [checked]="perms.assignFamilies"
+                       (change)="perms.assignFamilies = $any($event.target).checked"/>
+                <span class="perm-text">Asignar familiares</span>
               </label>
             </div>
-          </div>
-
-          <!-- Accesos rápidos -->
-          <div class="extra-btns">
-            <button type="button" class="extra-btn" (click)="goOwnPictograms()">
-              <img src="assets/pictograms/custom-pictograms.png" class="extra-img" alt="Pictogramas"/>
-              <span>Pictogramas propios</span>
-            </button>
-            <button type="button" class="extra-btn" (click)="goAssignedProfessionals()">
-              <img src="assets/pictograms/assigned-professionals.png" class="extra-img" alt="Profesionales"/>
-              <span>Profesionales encargados</span>
-            </button>
           </div>
 
           <button type="submit" class="submit-btn" [disabled]="!finalForm.valid || isSaving">
@@ -447,9 +460,13 @@
                     <tr>
                       <th class="fth-user">Usuario final</th>
                       <th class="fth-info">Info</th>
-                      <th class="fth-perm">Estadísticas</th>
-                      <th class="fth-perm">Tableros</th>
                       <th class="fth-perm">Datos pers.</th>
+                      <th class="fth-perm">Tableros</th>
+                      <th class="fth-perm">Estadísticas</th>
+                      <th class="fth-perm">Pictogramas</th>
+                      <th class="fth-perm">As. prof.</th>
+                      <th class="fth-perm">As. fam.</th>
+                      <th class="fth-perm">Tb. asig.</th>
                       <th class="fth-del"></th>
                     </tr>
                   </thead>
@@ -481,17 +498,17 @@
                           <span class="fam-info-tag">{{ row.infoLabel }}</span>
                         </td>
 
-                        <!-- Permiso: Estadísticas -->
+                        <!-- Permiso: Datos personales -->
                         <td class="ftd-perm">
                           <button type="button" class="fam-chip"
-                                  [class.fam-chip--on]="row.canViewStats"
-                                  (click)="row.canViewStats = !row.canViewStats">
-                            @if (row.canViewStats) {
+                                  [class.fam-chip--on]="row.canEditPersonalData"
+                                  (click)="row.canEditPersonalData = !row.canEditPersonalData">
+                            @if (row.canEditPersonalData) {
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                 <polyline points="20 6 9 17 4 12"/>
                               </svg>
                             }
-                            {{ row.canViewStats ? 'Activado' : 'Inactivo' }}
+                            {{ row.canEditPersonalData ? 'Sí' : 'No' }}
                           </button>
                         </td>
 
@@ -505,21 +522,77 @@
                                 <polyline points="20 6 9 17 4 12"/>
                               </svg>
                             }
-                            {{ row.canEditBoards ? 'Activado' : 'Inactivo' }}
+                            {{ row.canEditBoards ? 'Sí' : 'No' }}
                           </button>
                         </td>
 
-                        <!-- Permiso: Datos personales -->
+                        <!-- Permiso: Estadísticas -->
                         <td class="ftd-perm">
                           <button type="button" class="fam-chip"
-                                  [class.fam-chip--on]="row.canEditPersonalData"
-                                  (click)="row.canEditPersonalData = !row.canEditPersonalData">
-                            @if (row.canEditPersonalData) {
+                                  [class.fam-chip--on]="row.canViewStats"
+                                  (click)="row.canViewStats = !row.canViewStats">
+                            @if (row.canViewStats) {
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                 <polyline points="20 6 9 17 4 12"/>
                               </svg>
                             }
-                            {{ row.canEditPersonalData ? 'Activado' : 'Inactivo' }}
+                            {{ row.canViewStats ? 'Sí' : 'No' }}
+                          </button>
+                        </td>
+
+                        <!-- Permiso: Pictogramas -->
+                        <td class="ftd-perm">
+                          <button type="button" class="fam-chip"
+                                  [class.fam-chip--on]="row.canAddPictograms"
+                                  (click)="row.canAddPictograms = !row.canAddPictograms">
+                            @if (row.canAddPictograms) {
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="20 6 9 17 4 12"/>
+                              </svg>
+                            }
+                            {{ row.canAddPictograms ? 'Sí' : 'No' }}
+                          </button>
+                        </td>
+
+                        <!-- Permiso: Asignar profesionales -->
+                        <td class="ftd-perm">
+                          <button type="button" class="fam-chip"
+                                  [class.fam-chip--on]="row.canAssignProfessionals"
+                                  (click)="row.canAssignProfessionals = !row.canAssignProfessionals">
+                            @if (row.canAssignProfessionals) {
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="20 6 9 17 4 12"/>
+                              </svg>
+                            }
+                            {{ row.canAssignProfessionals ? 'Sí' : 'No' }}
+                          </button>
+                        </td>
+
+                        <!-- Permiso: Asignar familiares -->
+                        <td class="ftd-perm">
+                          <button type="button" class="fam-chip"
+                                  [class.fam-chip--on]="row.canAssignFamilies"
+                                  (click)="row.canAssignFamilies = !row.canAssignFamilies">
+                            @if (row.canAssignFamilies) {
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="20 6 9 17 4 12"/>
+                              </svg>
+                            }
+                            {{ row.canAssignFamilies ? 'Sí' : 'No' }}
+                          </button>
+                        </td>
+
+                        <!-- Permiso: Ver tableros asignados -->
+                        <td class="ftd-perm">
+                          <button type="button" class="fam-chip"
+                                  [class.fam-chip--on]="row.canViewAssignedBoards"
+                                  (click)="row.canViewAssignedBoards = !row.canViewAssignedBoards">
+                            @if (row.canViewAssignedBoards) {
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="20 6 9 17 4 12"/>
+                              </svg>
+                            }
+                            {{ row.canViewAssignedBoards ? 'Sí' : 'No' }}
                           </button>
                         </td>
 
@@ -548,9 +621,13 @@
                           </div>
                         </td>
                         <td class="ftd-info"><span class="fam-info-tag fam-ghost-text">Sin información</span></td>
-                        <td class="ftd-perm"><span class="fam-chip">Inactivo</span></td>
-                        <td class="ftd-perm"><span class="fam-chip">Inactivo</span></td>
-                        <td class="ftd-perm"><span class="fam-chip">Inactivo</span></td>
+                        <td class="ftd-perm"><span class="fam-chip">No</span></td>
+                        <td class="ftd-perm"><span class="fam-chip">No</span></td>
+                        <td class="ftd-perm"><span class="fam-chip">No</span></td>
+                        <td class="ftd-perm"><span class="fam-chip">No</span></td>
+                        <td class="ftd-perm"><span class="fam-chip">No</span></td>
+                        <td class="ftd-perm"><span class="fam-chip">No</span></td>
+                        <td class="ftd-perm"><span class="fam-chip">No</span></td>
                         <td class="ftd-del"></td>
                       </tr>
                     }

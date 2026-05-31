@@ -7,26 +7,45 @@
 <ion-content class="ap-content">
   <div class="ap-container">
 
-    <!-- ── Aviso: usuario sin userId (aún no guardado en BD) ─────────────────── -->
-    @if (!hasUserId) {
-      <div class="no-user-banner">
-        <svg class="no-user-icon" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="12" y1="8" x2="12" y2="12"/>
-          <line x1="12" y1="16" x2="12.01" y2="16"/>
-        </svg>
-        <div class="no-user-text">
-          <strong>Usuario no registrado aún</strong><br/>
-          Puedes preparar la lista, pero los cambios <em>no se guardarán</em> hasta
-          que el usuario exista en el sistema. Regístralo primero desde el formulario.
+    <!-- ══════════════════════════════════════════════════════════════════════════
+         SELECTOR DE USUARIO (cuando no viene preseleccionado)
+    ══════════════════════════════════════════════════════════════════════════════ -->
+    @if (!userId) {
+      <div class="user-select-card card-section">
+        <div class="sec-head">
+          <div class="sec-head-left">
+            <div class="sec-dot sec-dot--mint"></div>
+            <h2 class="sec-title">SELECCIONAR USUARIO</h2>
+          </div>
         </div>
+        <p class="user-select-hint">Selecciona un usuario para gestionar sus profesionales encargados</p>
+
+        @if (selectableUsersLoading) {
+          <div class="user-select-loading">
+            <ion-spinner name="crescent"></ion-spinner>
+            <span>Cargando usuarios…</span>
+          </div>
+        } @else if (selectableUsers.length > 0) {
+          <ion-select
+            class="user-select-input"
+            [value]="selectedUserId"
+            placeholder="Seleccionar usuario…"
+            (ionChange)="onUserSelect($event)"
+            interface="action-sheet">
+            @for (u of selectableUsers; track u.id) {
+              <ion-select-option [value]="u.id">{{ u.name }}</ion-select-option>
+            }
+          </ion-select>
+        } @else {
+          <p class="user-select-empty">No hay usuarios disponibles.</p>
+        }
       </div>
     }
 
     <!-- ══════════════════════════════════════════════════════════════════════════
-         CARD: TABLA PROFESIONALES
+         CARD: TABLA PROFESIONALES (solo cuando hay usuario seleccionado)
     ══════════════════════════════════════════════════════════════════════════════ -->
+    @if (userId) {
     <div class="card-section">
 
       <!-- Cabecera -->
@@ -56,9 +75,13 @@
             <thead>
               <tr>
                 <th class="th-prof">Profesional</th>
-                <th class="th-center">Estadísticas</th>
-                <th class="th-center">Tableros</th>
                 <th class="th-center">Datos pers.</th>
+                <th class="th-center">Tableros</th>
+                <th class="th-center">Estadísticas</th>
+                <th class="th-center">Pictogramas</th>
+                <th class="th-center">As. prof.</th>
+                <th class="th-center">As. fam.</th>
+                <th class="th-center">Tb. asig.</th>
                 <th class="th-del"></th>
               </tr>
             </thead>
@@ -86,20 +109,18 @@
                     </div>
                   </td>
 
-                  <!-- Permiso: Estadísticas -->
+                  <!-- Permiso: Datos personales -->
                   <td class="td-center">
                     <button class="perm-chip"
-                            [class.perm-chip--on]="row.canViewStats"
-                            (click)="row.canViewStats = !row.canViewStats"
-                            [title]="row.canViewStats ? 'Desactivar' : 'Activar'">
-                      @if (row.canViewStats) {
+                            [class.perm-chip--on]="row.canEditPersonalData"
+                            (click)="row.canEditPersonalData = !row.canEditPersonalData"
+                            [title]="row.canEditPersonalData ? 'Desactivar' : 'Activar'">
+                      @if (row.canEditPersonalData) {
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                           <polyline points="20 6 9 17 4 12"/>
                         </svg>
-                        Activado
-                      } @else {
-                        Inactivo
-                      }
+                        Sí
+                      } @else { No }
                     </button>
                   </td>
 
@@ -113,27 +134,83 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                           <polyline points="20 6 9 17 4 12"/>
                         </svg>
-                        Activado
-                      } @else {
-                        Inactivo
-                      }
+                        Sí
+                      } @else { No }
                     </button>
                   </td>
 
-                  <!-- Permiso: Datos personales -->
+                  <!-- Permiso: Estadísticas -->
                   <td class="td-center">
                     <button class="perm-chip"
-                            [class.perm-chip--on]="row.canEditPersonalData"
-                            (click)="row.canEditPersonalData = !row.canEditPersonalData"
-                            [title]="row.canEditPersonalData ? 'Desactivar' : 'Activar'">
-                      @if (row.canEditPersonalData) {
+                            [class.perm-chip--on]="row.canViewStats"
+                            (click)="row.canViewStats = !row.canViewStats"
+                            [title]="row.canViewStats ? 'Desactivar' : 'Activar'">
+                      @if (row.canViewStats) {
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                           <polyline points="20 6 9 17 4 12"/>
                         </svg>
-                        Activado
-                      } @else {
-                        Inactivo
-                      }
+                        Sí
+                      } @else { No }
+                    </button>
+                  </td>
+
+                  <!-- Permiso: Pictogramas -->
+                  <td class="td-center">
+                    <button class="perm-chip"
+                            [class.perm-chip--on]="row.canAddPictograms"
+                            (click)="row.canAddPictograms = !row.canAddPictograms"
+                            [title]="row.canAddPictograms ? 'Desactivar' : 'Activar'">
+                      @if (row.canAddPictograms) {
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        Sí
+                      } @else { No }
+                    </button>
+                  </td>
+
+                  <!-- Permiso: Asignar profesionales -->
+                  <td class="td-center">
+                    <button class="perm-chip"
+                            [class.perm-chip--on]="row.canAssignProfessionals"
+                            (click)="row.canAssignProfessionals = !row.canAssignProfessionals"
+                            [title]="row.canAssignProfessionals ? 'Desactivar' : 'Activar'">
+                      @if (row.canAssignProfessionals) {
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        Sí
+                      } @else { No }
+                    </button>
+                  </td>
+
+                  <!-- Permiso: Asignar familiares -->
+                  <td class="td-center">
+                    <button class="perm-chip"
+                            [class.perm-chip--on]="row.canAssignFamilies"
+                            (click)="row.canAssignFamilies = !row.canAssignFamilies"
+                            [title]="row.canAssignFamilies ? 'Desactivar' : 'Activar'">
+                      @if (row.canAssignFamilies) {
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        Sí
+                      } @else { No }
+                    </button>
+                  </td>
+
+                  <!-- Permiso: Ver tableros asignados -->
+                  <td class="td-center">
+                    <button class="perm-chip"
+                            [class.perm-chip--on]="row.canViewAssignedBoards"
+                            (click)="row.canViewAssignedBoards = !row.canViewAssignedBoards"
+                            [title]="row.canViewAssignedBoards ? 'Desactivar' : 'Activar'">
+                      @if (row.canViewAssignedBoards) {
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        Sí
+                      } @else { No }
                     </button>
                   </td>
 
@@ -162,15 +239,13 @@
                       </div>
                     </div>
                   </td>
-                  <td class="td-center">
-                    <span class="perm-chip perm-chip--example">Inactivo</span>
-                  </td>
-                  <td class="td-center">
-                    <span class="perm-chip perm-chip--example">Inactivo</span>
-                  </td>
-                  <td class="td-center">
-                    <span class="perm-chip perm-chip--example">Inactivo</span>
-                  </td>
+                  <td class="td-center"><span class="perm-chip perm-chip--example">No</span></td>
+                  <td class="td-center"><span class="perm-chip perm-chip--example">No</span></td>
+                  <td class="td-center"><span class="perm-chip perm-chip--example">No</span></td>
+                  <td class="td-center"><span class="perm-chip perm-chip--example">No</span></td>
+                  <td class="td-center"><span class="perm-chip perm-chip--example">No</span></td>
+                  <td class="td-center"><span class="perm-chip perm-chip--example">No</span></td>
+                  <td class="td-center"><span class="perm-chip perm-chip--example">No</span></td>
                   <td class="td-del"></td>
                 </tr>
               }
@@ -247,6 +322,8 @@
       }
       Guardar profesionales encargados
     </button>
+
+    }<!-- /if userId -->
 
   </div><!-- /ap-container -->
 </ion-content>
