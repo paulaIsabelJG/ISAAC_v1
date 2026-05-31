@@ -281,7 +281,7 @@ app-page-header {
   letter-spacing: 0.6px;
   text-transform: uppercase;
   border-bottom:  1.5px solid $border;
-  white-space:    nowrap;
+  vertical-align: top;
 }
 
 .ps-th-user { width: 26%; }

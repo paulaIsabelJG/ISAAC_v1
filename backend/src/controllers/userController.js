@@ -116,13 +116,14 @@ const validateUserPayload = async (payload, existingUser = null, isCreate = fals
   return {
     type,
     centro,
-    hijos: validatedHijos,
+    hijos:    validatedHijos,
     parentId: validatedParentId,
-    name: payload.name,
-    email: payload.email,
+    name:     payload.name,
+    email:    payload.email,
     password: payload.password,
-    gender: payload.gender,
-    image: payload.image
+    gender:   payload.gender,
+    image:    payload.image,
+    age:      payload.age !== undefined ? (payload.age === null ? null : Number(payload.age)) : undefined,
   };
 };
 
@@ -308,14 +309,15 @@ exports.createUser = async (req, res) => {
 };
 
 const applyUserUpdates = (user, updates) => {
-  if (updates.name !== undefined) user.name = updates.name;
-  if (updates.email !== undefined) user.email = updates.email;
+  if (updates.name !== undefined)     user.name     = updates.name;
+  if (updates.email !== undefined)    user.email    = updates.email;
   if (updates.password !== undefined) user.password = updates.password;
-  if (updates.type !== undefined) user.type = updates.type;
-  if (updates.gender !== undefined) user.gender = updates.gender;
-  if (updates.image !== undefined) user.image = updates.image;
-  if (updates.centro !== undefined) user.centro = updates.centro;
-  if (updates.hijos !== undefined) user.hijos = updates.hijos;
+  if (updates.type !== undefined)     user.type     = updates.type;
+  if (updates.gender !== undefined)   user.gender   = updates.gender;
+  if (updates.age !== undefined)      user.age      = updates.age;
+  if (updates.image !== undefined)    user.image    = updates.image;
+  if (updates.centro !== undefined)   user.centro   = updates.centro;
+  if (updates.hijos !== undefined)    user.hijos    = updates.hijos;
   if (updates.parentId !== undefined) user.parentId = updates.parentId;
 };
 

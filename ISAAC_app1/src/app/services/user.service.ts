@@ -32,6 +32,7 @@ export interface FullBackendUser {
   image?:  string | null;
   centro?: string | null;
   gender?: string | null;
+  age?:    number | null;
   selfPermissions?: SelfPermissions;
   assignedProfessionals?: Array<{
     professionalId:         string;
@@ -59,8 +60,9 @@ export interface FullBackendUser {
 export interface UpdateUserPayload {
   name?:             string;
   email?:            string;
-  password?:         string;        // solo se incluye si el usuario quiere cambiarla
+  password?:         string;
   gender?:           string;
+  age?:              number | null;
   image?:            string | null;
   selfPermissions?:  SelfPermissions;
 }

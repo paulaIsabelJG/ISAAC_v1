@@ -503,7 +503,7 @@ $text-muted:  #7a5163;
   text-transform: uppercase;
   letter-spacing: 0.6px;
   color: $pink-dark;
-  white-space: nowrap;
+  vertical-align: top;
 }
 
 .fth-user  { text-align: left; width: 20%; }

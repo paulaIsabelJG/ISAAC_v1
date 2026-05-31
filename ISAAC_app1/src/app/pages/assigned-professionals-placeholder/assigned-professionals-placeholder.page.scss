@@ -160,7 +160,7 @@ app-page-header {
   text-transform: uppercase;
   letter-spacing: 0.7px;
   color: $mint-dark;
-  white-space: nowrap;
+  vertical-align: top;
 }
 
 .th-prof   { text-align: left; width: 24%; }

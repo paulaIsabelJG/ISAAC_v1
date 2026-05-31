@@ -123,9 +123,10 @@ export class UserFinalFormPage implements OnInit {
         email:   u.email,
         name,
         surname,
-        gender: u.gender ?? 'prefer_not_to_say',
+        gender:  u.gender ?? 'prefer_not_to_say',
+        age:     u.age ?? null,
         // password vacío → no cambia
-        // age y address vacíos (no persisten en backend)
+        // address: sólo se usa para geocodificación, no se almacena como texto
       });
 
       if (u.image) {
@@ -215,7 +216,7 @@ export class UserFinalFormPage implements OnInit {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.isSaving = true;
 
-    const { email, password, name, surname, gender } = this.form.value;
+    const { email, password, name, surname, gender, age } = this.form.value;
     const fullName = [name?.trim(), surname?.trim()].filter(Boolean).join(' ');
 
     const selfPerms: SelfPermissions = {
@@ -228,11 +229,12 @@ export class UserFinalFormPage implements OnInit {
     };
 
     const payload: UpdateUserPayload = {
-      name:             fullName,
-      email:            email?.trim(),
-      gender:           gender || 'prefer_not_to_say',
-      image:            this.imgB64 ?? undefined,
-      selfPermissions:  selfPerms,
+      name:            fullName,
+      email:           email?.trim(),
+      gender:          gender || 'prefer_not_to_say',
+      age:             age != null && age !== '' ? Number(age) : null,
+      image:           this.imgB64 ?? undefined,
+      selfPermissions: selfPerms,
     };
 
     // Solo incluir contraseña si el usuario escribió algo

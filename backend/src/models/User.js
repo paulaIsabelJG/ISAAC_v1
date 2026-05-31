@@ -34,6 +34,10 @@ const userSchema = new mongoose.Schema({
     enum: ['male', 'female', 'other', 'prefer_not_to_say'],
     default: 'prefer_not_to_say'
   },
+  age: {
+    type: Number,
+    default: null
+  },
   image: {
     type: String,
     default: null
