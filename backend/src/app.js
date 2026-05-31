@@ -10,6 +10,7 @@ const folderRoutes = require('./routes/folders');
 const oblRoutes         = require('./routes/obl');
 const aacStatisticsRoutes = require('./routes/aacStatistics');
 const aiRoutes            = require('./routes/ai');
+const aacPredictionRoutes = require('./routes/aacPrediction');
 
 const app = express();
 
@@ -40,6 +41,9 @@ app.use('/api/phrases', phrasesRoutes);
 
 // AI (reformulación de frases AAC con OpenAI)
 app.use('/api/ai', aiRoutes);
+
+// Predictor IA (scoring por pesos sobre historial OBL)
+app.use('/api/aac-prediction', aacPredictionRoutes);
 
 // Places / geocoding routes
 app.use('/api/places', placesRoutes);

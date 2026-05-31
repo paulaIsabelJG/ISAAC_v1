@@ -14,6 +14,8 @@ export interface AiResolvedToken {
   color:             string;
   wordType:          string;
   fitzgeraldEnabled: boolean;
+  /** Acción original del pictograma (solo para source='original'). Permite ejecutar navigate/setSlot desde el modal. */
+  action?:           { type: string; targetBoardId?: string; targetSlotId?: number } | null;
 }
 
 export interface AiReformulationResponse {
@@ -51,6 +53,7 @@ export class AiAssistantService {
           color:             p.color             ?? '',
           wordType:          p.wordType          ?? 'misc',
           fitzgeraldEnabled: p.fitzgeraldEnabled ?? false,
+          action:            p.action            ?? null,
         })),
       },
     );

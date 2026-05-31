@@ -127,8 +127,9 @@ exports.resolveTokens = async (canonicals, displays, originalTokens) => {
     let resolvedWordType  = wordType;
     let fitzgeraldEnabled = true;
     let originalLabel     = null;
+    let action            = null;
 
-    // ── 1: token original → preservar color/wordType del pictograma del usuario ────
+    // ── 1: token original → preservar color/wordType/action del pictograma del usuario ────
     const orig = origByLabel.get(canonNorm);
     if (orig) {
       source            = 'original';
@@ -138,6 +139,7 @@ exports.resolveTokens = async (canonicals, displays, originalTokens) => {
       resolvedWordType  = orig.wordType  || 'misc';
       fitzgeraldEnabled = !!orig.fitzgeraldEnabled;
       originalLabel     = orig.label;
+      action            = orig.action    ?? null;
     }
 
     // ── 2: ARASAAC — canonical primero; display como fallback de resiliencia ────────
@@ -174,6 +176,7 @@ exports.resolveTokens = async (canonicals, displays, originalTokens) => {
       color,
       wordType:          resolvedWordType,
       fitzgeraldEnabled,
+      action,
     });
   }
 

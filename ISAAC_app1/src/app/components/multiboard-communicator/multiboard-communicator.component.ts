@@ -17,6 +17,7 @@ import { BoardLayoutService } from '../../services/board-layout.service';
 import { BoardGridComponent } from '../board-grid/board-grid.component';
 import { LoadingErrorStateComponent } from '../loading-error-state/loading-error-state.component';
 import { IaPredictorColumnComponent } from '../ia-predictor-column/ia-predictor-column.component';
+import { AacPredictionService, PredictedPictogram } from '../../services/aac-prediction.service';
 
 interface SlotState {
   slotId:      number;
@@ -47,24 +48,32 @@ export class MultiboardCommunicatorComponent implements OnInit, OnDestroy, OnCha
   /** ID del usuario final de la sesión — se pasa a getBoardById para personalización dinámica. */
   @Input() contextUserId = '';
 
-  slotStates: SlotState[] = [];
+  slotStates:  SlotState[]         = [];
+  predictions: PredictedPictogram[] = [];
 
-  private slotSub?: Subscription;
+  private slotSub?:   Subscription;
+  private phraseSub?: Subscription;
 
   constructor(
     private boardSvc:       BoardService,
     private aac:            AacRuntimeService,
     private boardLayoutSvc: BoardLayoutService,
+    private predictionSvc:  AacPredictionService,
   ) {}
 
   ngOnInit(): void {
     this.slotSub = this.aac.slotChanged$.subscribe(({ slotId, boardId }) => {
       this.setSlotBoard(slotId, boardId);
     });
+    // BehaviorSubject emite inmediatamente → carga inicial de predicciones incluida
+    this.phraseSub = this.aac.phraseChanged$.subscribe(() => {
+      this.loadPredictions();
+    });
   }
 
   ngOnDestroy(): void {
     this.slotSub?.unsubscribe();
+    this.phraseSub?.unsubscribe();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -189,12 +198,44 @@ export class MultiboardCommunicatorComponent implements OnInit, OnDestroy, OnCha
 
   // ── Predictor IA (heredado del tablero raíz vía AacRuntimeService) ───────────
 
-  get showPredictor(): boolean {
-    return this.aac.predictorEnabled;
-  }
-
+  get showPredictor(): boolean { return this.aac.predictorEnabled; }
   get predictorIaRows(): number { return this.aac.iaRows; }
   get predictorIaCols(): number { return this.aac.iaCols; }
+
+  loadPredictions(): void {
+    if (!this.showPredictor || !this.aac.userId || !this.masterBoard) return;
+    const limit = this.aac.iaRows * this.aac.iaCols;
+    this.predictionSvc.getSuggestions({
+      userId:            this.aac.userId,
+      boardId:           this.masterBoard._id,
+      limit,
+      currentPhrase:     this.aac.phrase.map(p => ({ label: p.label, wordType: p.wordType })),
+      currentBoardRole:  'multi',
+      currentBoardShape: 'multi',
+    }).subscribe({
+      next:  res => { this.predictions = res.predictions; },
+      error: ()  => { /* silencioso */ },
+    });
+  }
+
+  onPredictorCellPress(pict: PredictedPictogram): void {
+    this.aac.handlePictogramPress(
+      {
+        pictogram: {
+          id:                pict.label,
+          label:             pict.label,
+          imageUrl:          pict.imageUrl,
+          sound:             pict.label,
+          color:             pict.color,   // color resuelto desde la celda real del tablero
+          wordType:          pict.wordType,
+          fitzgeraldEnabled: false,
+        },
+        // Usar la acción original del tablero: navigate, setSlot, voice+navigate…
+        action: pict.action ?? { type: 'voice' },
+      },
+      this.masterBoard!._id,
+    );
+  }
 
   // ── Layout ────────────────────────────────────────────────────────────────────
 

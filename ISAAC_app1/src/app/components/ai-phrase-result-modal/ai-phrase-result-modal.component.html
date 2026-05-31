@@ -46,23 +46,25 @@
 
         @if (token.imageUrl) {
           <!-- Token con pictograma (original reutilizado o ARASAAC) -->
-          <div class="apm-token apm-token--pict"
+          <button type="button" class="apm-token apm-token--pict"
                [style.background]="tokenBg(token)"
                [style.border-color]="tokenBorder(token)"
-               [title]="cleanLabel(token.text)">
+               [title]="cleanLabel(token.text)"
+               (click)="onTokenPress(token)">
             <app-pict-cell-content
               [pict]="toCell(token)"
               emptyType="empty-div">
             </app-pict-cell-content>
-          </div>
+          </button>
         } @else {
           <!-- Token sin imagen: celda textual con color Fitzgerald -->
-          <div class="apm-token apm-token--text"
+          <button type="button" class="apm-token apm-token--text"
                [style.background]="tokenBg(token)"
                [style.border-color]="tokenBorder(token)"
-               [title]="cleanLabel(token.text)">
+               [title]="cleanLabel(token.text)"
+               (click)="onTokenPress(token)">
             <span class="apm-token-label">{{ cleanLabel(token.text) }}</span>
-          </div>
+          </button>
         }
 
       }

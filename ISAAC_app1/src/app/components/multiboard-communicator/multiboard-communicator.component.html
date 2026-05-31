@@ -12,7 +12,9 @@
         [rows]="predictorIaRows"
         [cols]="predictorIaCols"
         [showHeader]="true"
-        [embedded]="true">
+        [embedded]="true"
+        [predictions]="predictions"
+        (cellPress)="onPredictorCellPress($event)">
       </app-ia-predictor-column>
     </div>
   }

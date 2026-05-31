@@ -17,6 +17,7 @@ import { IaPredictorColumnComponent } from '../../components/ia-predictor-column
 import { DEFAULT_CIRCULAR_CONTROLS_CONFIG } from '../../services/board.service';
 import { AiPhraseResultModalComponent } from '../../components/ai-phrase-result-modal/ai-phrase-result-modal.component';
 import { AiReformulationResponse } from '../../services/ai-assistant.service';
+import { AacPredictionService, PredictedPictogram } from '../../services/aac-prediction.service';
 
 @Component({
   selector: 'app-communicator',
@@ -54,9 +55,12 @@ export class CommunicatorPage implements OnInit, OnDestroy {
   /** true cuando el usuario tiene la opción de voz de controles activada. */
   voiceEnabled = false;
 
-  private navSub?:  Subscription;
-  private rootSub?: Subscription;
-  private aiSub?:   Subscription;
+  predictions: PredictedPictogram[] = [];
+
+  private navSub?:     Subscription;
+  private rootSub?:    Subscription;
+  private aiSub?:      Subscription;
+  private phraseSub?:  Subscription;
   /** Mapa boardId → pictograma que originó la navegación hacia ese tablero. */
   private boardSourcePicts = new Map<string, CellPictogram | null>();
   /** Pictograma que originó la navegación al tablero actualmente visible. */
@@ -70,6 +74,7 @@ export class CommunicatorPage implements OnInit, OnDestroy {
     private userSvc:        UserService,
     private boardLayoutSvc: BoardLayoutService,
     private modalCtrl:      ModalController,
+    private predictionSvc:  AacPredictionService,
   ) {}
 
   ngOnInit() {
@@ -122,7 +127,7 @@ export class CommunicatorPage implements OnInit, OnDestroy {
         this.boardSourcePicts.set(boardId, sourcePict ?? null);
       }
       this.navSourcePict = this.boardSourcePicts.get(boardId);
-      void this.loadBoard(boardId);
+      void this.loadBoard(boardId).then(() => this.loadPredictions());
     });
 
     // Suscripción al módulo IA: se activa cuando aiRewriteEnabled y el usuario pulsa HABLAR.
@@ -131,11 +136,16 @@ export class CommunicatorPage implements OnInit, OnDestroy {
       void this.openAiModal(phrase, timestamp);
     });
 
-    // "Borrar todo": recarga el tablero raíz sin pasar por el navSub (evita
-    // efectos secundarios sobre navSourcePict/boardSourcePicts).
+    // "Borrar todo": recarga el tablero raíz sin pasar por el navSub.
     this.rootSub = this.aac.returnToRoot$.subscribe(rootBoardId => {
       this.navSourcePict = undefined;
-      void this.loadBoard(rootBoardId);
+      void this.loadBoard(rootBoardId).then(() => this.loadPredictions());
+    });
+
+    // Predictor IA: refrescar predicciones cada vez que cambia la frase.
+    // BehaviorSubject emite inmediatamente al suscribirse → carga inicial incluida.
+    this.phraseSub = this.aac.phraseChanged$.subscribe(() => {
+      this.loadPredictions();
     });
   }
 
@@ -144,8 +154,50 @@ export class CommunicatorPage implements OnInit, OnDestroy {
     this.navSub?.unsubscribe();
     this.rootSub?.unsubscribe();
     this.aiSub?.unsubscribe();
+    this.phraseSub?.unsubscribe();
     this.boardSourcePicts.clear();
     this.navSourcePict = undefined;
+    this.predictions = [];
+  }
+
+  // ── Predictor IA ──────────────────────────────────────────────────────────
+
+  /** Solicita predicciones al backend. No lanza error si falla (el predictor no bloquea). */
+  loadPredictions(): void {
+    if (!this.showPredictor || !this.userId || !this.board) return;
+    const limit = this.aac.iaRows * this.aac.iaCols;
+    this.predictionSvc.getSuggestions({
+      userId:            this.userId,
+      boardId:           this.board._id,
+      limit,
+      currentPhrase:     this.aac.phrase.map(p => ({ label: p.label, wordType: p.wordType })),
+      currentBoardRole:  this.board.boardRole  ?? 'main',
+      currentBoardShape: this.board.shape ?? 'grid',
+    }).subscribe({
+      next:  res  => { this.predictions = res.predictions; },
+      error: ()   => { /* silencioso: el predictor no bloquea el comunicador */ },
+    });
+  }
+
+  /** Pulsar un pictograma del predictor: actúa como acción de voz y registra OBL. */
+  onPredictorCellPress(pict: PredictedPictogram): void {
+    this.aac.handlePictogramPress(
+      {
+        pictogram: {
+          id:                pict.label,
+          label:             pict.label,
+          imageUrl:          pict.imageUrl,
+          sound:             pict.label,
+          color:             pict.color,   // color resuelto desde la celda real del tablero
+          wordType:          pict.wordType,
+          fitzgeraldEnabled: false,
+        },
+        // Usar la acción original del tablero: navigate, setSlot, voice+navigate…
+        // Si el backend no devolvió acción (picto antiguo en OBL), se asume 'voice'.
+        action: pict.action ?? { type: 'voice' },
+      },
+      this.board!._id,
+    );
   }
 
   // ── Módulo IA ─────────────────────────────────────────────────────────────

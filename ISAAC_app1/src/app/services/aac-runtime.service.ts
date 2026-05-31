@@ -25,6 +25,8 @@ export interface AacPhraseItem {
   wordType?: string;
   /** true si el pictograma usa la paleta Fitzgerald (el color se deriva de wordType). */
   fitzgeraldEnabled?: boolean;
+  /** Acción original del pictograma en el tablero. Preservada para el pipeline IA. */
+  action?: { type: string; targetBoardId?: string; targetSlotId?: number } | null;
 }
 
 /** Acción OBL estructurada (spec open-board-log-0.1). */
@@ -257,6 +259,7 @@ export class AacRuntimeService {
       color:             effectiveColor,
       wordType:          pictogram.wordType ?? 'misc',
       fitzgeraldEnabled: !!(pictogram.fitzgeraldEnabled),
+      action:            action ? { type: action.type, targetBoardId: action.targetBoardId ?? undefined, targetSlotId: action.targetSlotId ?? undefined } : null,
     };
 
     const spoken       = type === 'voice' || type === 'voice+navigate' || type === 'voice+setSlot';

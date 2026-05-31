@@ -1,92 +1,200 @@
 $mint:      #20c997;
-$mint-light:#e0fff6;
 $mint-dark: #17a682;
+$mint-rim:  #0d8a66;
+$mint-bg:   #d3fdf2;
+$violet:    #7c4dff;
 
 // ── Host ──────────────────────────────────────────────────────────────────────
-// Por defecto: columna autónoma con borde y fondo propios.
-// Con .ipc--embedded: sin borde/fondo (el contenedor padre los provee).
+// width:100% + height:100% → llena el espacio asignado por el padre flex
+// (board-grid y communicator asignan flex:0 0 6.5%; multiboard flex:1).
+// container-type activa cqi en .ipc-grid para gap/padding proporcionales al
+// ancho del componente completo.
 
 :host {
   display:        flex;
   flex-direction: column;
   min-height:     0;
   overflow:       hidden;
-  // Modo autónomo (tablero normal, communicator): borde/fondo propios + ancho natural
-  border:         2px solid $mint;
-  border-radius:  14px;
-  background:     color-mix(in srgb, #{$mint} 8%, white);
-  // width: fit-content evita que el 1fr del grid interno se expanda en el flex padre
-  width:          fit-content;
+  border:         2px solid $mint-rim;
+  border-radius:  12px;
+  width:          100%;
+  height:         100%;
+  container-type: inline-size;
 }
 
 :host(.ipc--embedded) {
-  // Modo embebido (slot de multitablero): sin borde/fondo, ocupa todo el contenedor
   border:        none;
   border-radius: 0;
   background:    transparent;
-  width:         auto;  // el contenedor padre controla el ancho
+  width:         auto;
 }
 
 // ── Cabecera (multitablero) ───────────────────────────────────────────────────
+
 .ipc-header {
   flex:           0 0 auto;
   display:        flex;
   align-items:    center;
   gap:            5px;
-  padding:        6px 10px;
+  padding:        clamp(4px, 1.5cqi, 8px) clamp(6px, 2.5cqi, 12px);
   background:     rgba($mint, 0.18);
   border-bottom:  1px solid rgba($mint, 0.35);
-  font-size:      9px;
+  font-size:      clamp(7px, 2cqi, 10px);
   font-weight:    800;
   color:          $mint-dark;
   text-transform: uppercase;
   letter-spacing: 0.6px;
 
-  svg { width: 12px; height: 12px; stroke: $mint-dark; flex: 0 0 auto; }
+  svg {
+    width:  clamp(10px, 2.5cqi, 14px);
+    height: clamp(10px, 2.5cqi, 14px);
+    stroke: $mint-dark;
+    flex:   0 0 auto;
+  }
+}
+
+// Ocultar cabecera si el componente tiene menos de 60px de ancho
+@container (max-width: 60px) {
+  .ipc-header { display: none; }
 }
 
 // ── Grid de celdas ────────────────────────────────────────────────────────────
+// gap y padding usan cqi del :host (container-type: inline-size arriba).
+
 .ipc-grid {
   flex:       1;
   display:    grid;
-  gap:        6px;
-  padding:    8px;
+  gap:        clamp(3px, 1.5cqi, 8px);
+  padding:    clamp(4px, 1.8cqi, 10px);
   min-height: 0;
-  // grid-template-columns y grid-template-rows aplicados dinámicamente
+  background: $mint-bg;
+
 }
 
-// ── Celda individual ──────────────────────────────────────────────────────────
+// ── Celda base ───────────────────────────────────────────────────────────────
+// container-type aquí activa cqi para imagen y label dentro de cada celda.
+
 .ipc-cell {
+  border-radius:  clamp(6px, 3cqi, 12px);
+  overflow:       hidden;
+  min-height:     0;
+  min-width:      0;
+  container-type: inline-size;
+}
+
+// ── Celda vacía ───────────────────────────────────────────────────────────────
+
+.ipc-cell--empty {
   display:         flex;
   flex-direction:  column;
   align-items:     center;
   justify-content: center;
+  padding:         clamp(3px, 2cqi, 8px);
   background:      rgba($mint, 0.12);
   border:          1.5px dashed $mint;
-  border-radius:   10px;
-  padding:         6px 4px;
-  min-height:      0;
-  min-width:       0;
-  gap:             4px;
-  overflow:        hidden;
-  container-type:  inline-size;  // habilita cqi para ipc-label
 }
 
 .ipc-logo {
-  // Crece con la celda hasta un máximo
-  width:     min(40px, 60%);
-  height:    auto;
-  display:   block;
-  opacity:   0.75;
-  flex:      0 0 auto;
+  width:   clamp(16px, 50%, 40px);
+  height:  auto;
+  display: block;
+  opacity: 0.75;
 }
 
+// ── Celda activa ──────────────────────────────────────────────────────────────
+
+.ipc-cell--active {
+  display:               grid;
+  grid-template-rows:    1fr auto;
+  grid-template-columns: 1fr;
+  align-items:           stretch;
+  justify-items:         stretch;
+  gap:                   clamp(1px, 1cqi, 3px);
+  padding:               clamp(2px, 4cqi, 8px);
+
+  border-style:  solid;
+  border-width:  1.5px;
+  cursor:        pointer;
+  position:      relative;
+
+  appearance:  none;
+  font-family: inherit;
+
+  touch-action:               manipulation;
+  user-select:                none;
+  -webkit-tap-highlight-color: transparent;
+  transition:                 border-color 0.15s, transform 0.12s, box-shadow 0.12s;
+
+  &:active {
+    transform:    scale(0.95);
+    background:   #f0ebff !important;
+    border-color: $violet  !important;
+  }
+
+  &:focus-visible {
+    outline:        2px solid $mint;
+    outline-offset: 2px;
+  }
+}
+
+// ── Zona de imagen ────────────────────────────────────────────────────────────
+
+.ipc-img-wrap {
+  flex:            1;
+  min-height:      0;
+  min-width:       0;
+  width:           100%;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  overflow:        hidden;
+  padding:         clamp(2px, 3cqi, 6px) clamp(2px, 3cqi, 6px) clamp(1px, 2cqi, 3px);
+  box-sizing:      border-box;
+}
+
+.ipc-pict {
+  width:      100%;
+  height:     100%;
+  object-fit: contain;
+  display:    block;
+}
+
+.ipc-img-placeholder {
+  width:           100%;
+  height:          100%;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+
+  svg {
+    width:  clamp(16px, 50%, 48px);
+    height: auto;
+    stroke: #ccc;
+  }
+}
+
+// ── Etiqueta ──────────────────────────────────────────────────────────────────
+// --ipc-label-fz permite sobreescribir desde el padre
+// (board-grid lo usa en edit mode: --ipc-label-fz: clamp(6px, 10cqi, 10px)).
+
 .ipc-label {
-  font-size:      var(--ipc-label-fz, clamp(9px, 10cqi, 10px));
-  font-weight:    700;
-  color:          $mint-dark;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  text-align:     center;
   flex:           0 0 auto;
+  width:          100%;
+  padding:        clamp(1px, 1cqi, 3px) clamp(2px, 3cqi, 6px) clamp(2px, 3cqi, 6px);
+  font-size:      var(--ipc-label-fz, clamp(8px, 12cqi, 15px));
+  font-weight:    700;
+  text-align:     center;
+  color:          #222222;
+  line-height:    1.1;
+  text-transform: uppercase;
+  overflow:       hidden;
+  display:        -webkit-box;
+  -webkit-line-clamp:  2;
+  -webkit-box-orient:  vertical;
+  max-width:      100%;
+}
+
+// Ocultar label cuando la celda es muy estrecha: la imagen ya lo representa
+@container (max-width: 48px) {
+  .ipc-label { display: none; }
 }

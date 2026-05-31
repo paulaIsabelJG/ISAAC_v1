@@ -10,14 +10,57 @@
   </div>
 }
 
-<!-- Grid de celdas IA -->
+<!-- Grid de celdas -->
 <div class="ipc-grid"
      [style.grid-template-columns]="gridColsStyle"
      [style.grid-template-rows]="gridRowsStyle">
+
   @for (i of cells; track i) {
-    <div class="ipc-cell">
-      <img src="assets/board-builder/logo-IA.png" class="ipc-logo" alt="IA"/>
-      <span class="ipc-label">PICTO IA</span>
-    </div>
+    @let pict = predictions[i];
+
+    @if (pict) {
+
+      <!-- ── Celda activa: misma estructura visual que pictogram-cell ── -->
+      <button type="button"
+              class="ipc-cell ipc-cell--active"
+              [style.background]="cellBg(pict.color)"
+              [style.border-color]="cellBorder(pict.color)"
+              [attr.aria-label]="pict.label"
+              (click)="onCellClick(pict)">
+
+        <!-- Zona imagen (fila 1fr) -->
+        <div class="ipc-img-wrap">
+          @if (pict.imageUrl) {
+            <img [src]="pict.imageUrl"
+                 [alt]="pict.label"
+                 class="ipc-pict"
+                 loading="lazy"
+                 (error)="$any($event.target).style.display='none'"/>
+          } @else {
+            <!-- Sin imagen: mismo placeholder SVG que pict-cell-content -->
+            <div class="ipc-img-placeholder">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="3" y="3" width="18" height="18" rx="3"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+            </div>
+          }
+        </div>
+
+        <!-- Etiqueta (fila auto) -->
+        <span class="ipc-label">{{ pict.label }}</span>
+
+      </button>
+
+    } @else {
+
+      <!-- ── Celda vacía: placeholder actual (logo-IA) ── -->
+      <div class="ipc-cell ipc-cell--empty">
+        <img src="assets/board-builder/logo-IA.png" class="ipc-logo" alt="IA"/>
+      </div>
+
+    }
   }
+
 </div>

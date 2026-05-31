@@ -88,6 +88,37 @@ export class AiPhraseResultModalComponent implements OnInit {
     return text.replace(/[.,;:!?¡¿]+$/, '');
   }
 
+  // ── Interacción con tokens individuales ────────────────────────────────────
+
+  /**
+   * Click en un token del resultado IA.
+   * - Habla el texto del token.
+   * - Si el original tenía action=navigate → navega y cierra el modal.
+   * - Si el original tenía action=setSlot  → cambia el slot y cierra el modal.
+   * - Otros tipos de action (voice, speakAndBack) → solo habla.
+   */
+  onTokenPress(token: AiResolvedToken): void {
+    const action = token.action;
+    const type   = action?.type ?? 'voice';
+
+    // Siempre hablar el label visible
+    if (!action || type === 'voice' || type === 'voice+navigate' || type === 'voice+setSlot' || type === 'speakAndBack') {
+      this.aac.speakText(this.cleanLabel(token.text));
+    }
+
+    if ((type === 'navigate' || type === 'voice+navigate') && action?.targetBoardId) {
+      this.aac.navigateToBoard(action.targetBoardId);
+      void this.modalCtrl.dismiss({ clear: false });
+      return;
+    }
+
+    if ((type === 'setSlot' || type === 'voice+setSlot') && action?.targetSlotId != null && action?.targetBoardId) {
+      this.aac.slotChanged$.next({ slotId: action.targetSlotId, boardId: action.targetBoardId });
+      void this.modalCtrl.dismiss({ clear: false });
+      return;
+    }
+  }
+
   // ── Acciones ───────────────────────────────────────────────────────────────
 
   speakReformulated(): void {

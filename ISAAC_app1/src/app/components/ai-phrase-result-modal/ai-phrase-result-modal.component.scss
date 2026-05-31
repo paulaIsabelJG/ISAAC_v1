@@ -54,11 +54,23 @@ ion-title { font-weight: 700; font-size: 17px; color: $text; }
 }
 
 .apm-token {
+  // Reset <button>
+  appearance:  none;
+  font-family: inherit;
+  background:  none;
+  padding:     0;
+  cursor:      pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+
   border-radius: 10px;
   border: 2px solid $border;
   overflow: hidden;
   container-type: inline-size;
   flex-shrink: 0;
+  transition: transform 0.12s, box-shadow 0.12s;
+
+  &:active { transform: scale(0.93); }
 
   // Token con imagen (original o ARASAAC)
   &--pict {

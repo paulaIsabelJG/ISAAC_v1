@@ -31,7 +31,9 @@
         @if (showPredictor) {
           <app-ia-predictor-column
             [rows]="predictorIaRows"
-            [cols]="predictorIaCols">
+            [cols]="predictorIaCols"
+            [predictions]="predictions"
+            (cellPress)="onPredictorCellPress($event)">
           </app-ia-predictor-column>
         }
 
@@ -77,7 +79,9 @@
           @if (showPredictor) {
             <app-ia-predictor-column
               [rows]="predictorIaRows"
-              [cols]="predictorIaCols">
+              [cols]="predictorIaCols"
+              [predictions]="predictions"
+              (cellPress)="onPredictorCellPress($event)">
             </app-ia-predictor-column>
           }
 
