@@ -243,28 +243,80 @@ export class MultiboardCommunicatorComponent implements OnInit, OnDestroy, OnCha
       currentBoardRole:  'multi',
       currentBoardShape: 'multi',
     }).subscribe({
-      next:  res => { this.predictions = res.predictions; },
+      next:  res => { this.predictions = this.enrichWithSlotId(res.predictions); },
       error: ()  => { /* silencioso */ },
     });
   }
 
+  /**
+   * Para predicciones con acción navigate/voice+navigate, busca en qué slot vive
+   * actualmente el pictograma (por label + targetBoardId) y añade sourceSlotId.
+   * Esto permite que al pulsarlo en la barra IA, la navegación ocurra dentro del
+   * slot correcto en lugar de disparar una navegación global.
+   */
+  private enrichWithSlotId(predictions: PredictedPictogram[]): PredictedPictogram[] {
+    return predictions.map(pict => {
+      const type = pict.action?.type ?? 'voice';
+      if (type !== 'navigate' && type !== 'voice+navigate') return pict;
+
+      for (const state of this.slotStates) {
+        if (!state.board) continue;
+        const match = state.board.cells.find(c =>
+          c.pictogram?.label === pict.label &&
+          c.action?.targetBoardId === pict.action?.targetBoardId,
+        );
+        if (match) return { ...pict, sourceSlotId: state.slotId };
+      }
+      return pict;
+    });
+  }
+
   onPredictorCellPress(pict: PredictedPictogram): void {
-    this.aac.handlePictogramPress(
-      {
-        pictogram: {
-          id:                pict.label,
-          label:             pict.label,
-          imageUrl:          pict.imageUrl,
-          sound:             pict.label,
-          color:             pict.color,   // color resuelto desde la celda real del tablero
-          wordType:          pict.wordType,
-          fitzgeraldEnabled: false,
-        },
-        // Usar la acción original del tablero: navigate, setSlot, voice+navigate…
-        action: pict.action ?? { type: 'voice' },
-      },
-      this.masterBoard!._id,
-    );
+    const action   = pict.action ?? { type: 'voice' };
+    const type     = action.type ?? 'voice';
+    const speaks   = type === 'voice' || type === 'voice+navigate' || type === 'voice+setSlot';
+    const navigates = type === 'navigate' || type === 'voice+navigate';
+    const setsSlot  = type === 'setSlot'  || type === 'voice+setSlot';
+
+    // — Voz: añadir a frase y hablar (con undo apropiado) —
+    if (speaks) {
+      let undo: UndoEntry;
+      if (type === 'voice+navigate' && pict.sourceSlotId != null) {
+        undo = { type: 'slotNavigate', slotId: pict.sourceSlotId };
+      } else if (type === 'voice+setSlot' && action.targetSlotId != null) {
+        const targetSt = this.slotStates.find(s => s.slotId === action.targetSlotId);
+        undo = { type: 'setSlot', slotId: action.targetSlotId, prevSlotBoardId: targetSt?.boardId ?? null };
+      } else {
+        undo = { type: 'none' };
+      }
+      this.aac.addToPhrase({
+        id:                pict.label,
+        label:             pict.label,
+        imageUrl:          pict.imageUrl,
+        sound:             pict.label,
+        color:             pict.color,
+        wordType:          pict.wordType,
+        fitzgeraldEnabled: false,
+      }, undo);
+      this.aac.speakText(pict.label, this.gender);
+    }
+
+    // — Navegación intra-slot: afecta solo al slot de origen del pictograma —
+    if (navigates && action.targetBoardId) {
+      const slotId = pict.sourceSlotId ?? this.slotStates[0]?.slotId;
+      const state  = this.slotStates.find(s => s.slotId === slotId);
+      if (state) {
+        state.boardStack.push(state.boardId!);
+        state.boardId = action.targetBoardId;
+        void this.loadSlotBoard(state);
+      }
+      return;
+    }
+
+    // — Cambio de slot: igual que al pulsar en el tablero —
+    if (setsSlot && action.targetSlotId != null && action.targetBoardId) {
+      this.setSlotBoard(action.targetSlotId, action.targetBoardId);
+    }
   }
 
   // ── Layout ────────────────────────────────────────────────────────────────────

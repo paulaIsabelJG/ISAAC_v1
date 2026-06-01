@@ -16,6 +16,8 @@ export interface PredictedPictogram {
    *  Permite que al pulsar la sugerencia se ejecute el mismo comportamiento
    *  que al pulsar el pictograma directamente en el tablero. */
   action?:  { type: string; targetBoardId?: string; targetSlotId?: number } | null;
+  /** En multitablero: slotId del hueco donde vive este pictograma (calculado en frontend). */
+  sourceSlotId?: number | null;
   reasons?: {
     frequency:    number;
     transition:   number;

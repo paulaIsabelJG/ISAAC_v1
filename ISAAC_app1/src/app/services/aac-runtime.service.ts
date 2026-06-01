@@ -415,21 +415,21 @@ export class AacRuntimeService {
 
     const assignVoice = () => {
       const voices  = window.speechSynthesis.getVoices();
+      const esES    = voices.filter(v => v.lang === 'es-ES');
       const spanish = voices.filter(v => v.lang.startsWith('es'));
-      const all     = voices;
 
       if (!gender || gender === 'prefer_not_to_say' || gender === 'other') {
-        utterance.voice = spanish[0] ?? all[0] ?? null;
+        utterance.voice = esES[0] ?? spanish[0] ?? voices[0] ?? null;
       } else if (gender === 'male') {
         utterance.voice =
+          esES.find(v => /male|jorge|juan|carlos|enrique|pablo/i.test(v.name)) ??
           spanish.find(v => /male|jorge|juan|carlos|enrique|pablo/i.test(v.name)) ??
-          all.find(v => /male|jorge|juan|carlos/i.test(v.name)) ??
-          spanish[0] ?? all[0] ?? null;
+          esES[0] ?? spanish[0] ?? voices[0] ?? null;
       } else if (gender === 'female') {
         utterance.voice =
+          esES.find(v => /female|monica|mónica|paulina|conchita|lucia|lucía|maria/i.test(v.name)) ??
           spanish.find(v => /female|monica|mónica|paulina|conchita|lucia|lucía|maria/i.test(v.name)) ??
-          all.find(v => /female|monica|mónica|paulina/i.test(v.name)) ??
-          spanish[0] ?? all[0] ?? null;
+          esES[0] ?? spanish[0] ?? voices[0] ?? null;
       }
       window.speechSynthesis.speak(utterance);
     };
@@ -467,8 +467,9 @@ export class AacRuntimeService {
 
     const assignVoice = () => {
       const voices  = window.speechSynthesis.getVoices();
+      const esES    = voices.filter(v => v.lang === 'es-ES');
       const spanish = voices.filter(v => v.lang.startsWith('es'));
-      utterance.voice = spanish[0] ?? voices[0] ?? null;
+      utterance.voice = esES[0] ?? spanish[0] ?? voices[0] ?? null;
       window.speechSynthesis.speak(utterance);
     };
     const voices = window.speechSynthesis.getVoices();
