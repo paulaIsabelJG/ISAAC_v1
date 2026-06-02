@@ -54,8 +54,7 @@ export class AppPageHeaderComponent {
   /** Se emite cuando el usuario pulsa el botón volver. */
   @Output() backClick = new EventEmitter<void>();
 
-  onBackClick(event: Event): void {
-    event.stopImmediatePropagation();
+  onBackClick(_event: Event): void {
     this.backClick.emit();
   }
 }

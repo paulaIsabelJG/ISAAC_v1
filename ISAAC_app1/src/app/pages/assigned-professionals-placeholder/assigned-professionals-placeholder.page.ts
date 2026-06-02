@@ -1,5 +1,5 @@
-import { Component } from '@angular/core';
-import { IonicModule, ToastController } from '@ionic/angular';
+import { ChangeDetectorRef, Component } from '@angular/core';
+import { AlertController, IonicModule, ToastController } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
@@ -59,6 +59,8 @@ export class AssignedProfessionalsPlaceholderPage {
   // ── Control de "añadir" ───────────────────────────────────────────────────────
   selectedProfId = '';
 
+  private _savedSnapshot = '[]';
+
   // ── Estados ───────────────────────────────────────────────────────────────────
   isLoading = false;
   isSaving  = false;
@@ -82,21 +84,50 @@ export class AssignedProfessionalsPlaceholderPage {
     private authService: AuthService,
     private userService: UserService,
     private state:       PictogramStateService,
-    private toastCtrl:  ToastController,
+    private toastCtrl:   ToastController,
+    private alertCtrl:   AlertController,
+    private cdr:         ChangeDetectorRef,
   ) {}
 
   // ── Ciclo de vida ─────────────────────────────────────────────────────────────
 
   ionViewWillEnter(): void {
-    this.userId = this.state.userId;
+    this.userId         = this.state.userId;
+    this.selectedUserId = this.userId ?? '';
+    this.rows           = [];
+    this._savedSnapshot = '[]';
+    this.loadSelectableUsers();
     if (this.userId) {
       this.loadData();
-    } else {
-      this.loadSelectableUsers();
     }
   }
 
-  goBack(): void {
+  private rowsSnapshot(): string {
+    return JSON.stringify(this.rows.map(r => [
+      r.professionalId,
+      r.canViewStats, r.canEditBoards, r.canEditPersonalData,
+      r.canAddPictograms, r.canAssignProfessionals, r.canAssignFamilies,
+      r.canViewAssignedBoards,
+    ]));
+  }
+
+  get hasUnsavedChanges(): boolean {
+    return this.rowsSnapshot() !== this._savedSnapshot;
+  }
+
+  async goBack(): Promise<void> {
+    if (this.hasUnsavedChanges) {
+      const alert = await this.alertCtrl.create({
+        header: '¿Salir sin guardar?',
+        message: 'Los cambios que has hecho no se guardarán.',
+        buttons: [
+          { text: 'Cancelar', role: 'cancel' },
+          { text: 'Salir', role: 'destructive', handler: () => this.router.navigateByUrl(this.state.returnTo) },
+        ],
+      });
+      await alert.present();
+      return;
+    }
     this.router.navigateByUrl(this.state.returnTo);
   }
 
@@ -116,19 +147,46 @@ export class AssignedProfessionalsPlaceholderPage {
       const res = await firstValueFrom(this.userService.getUsersByCenter(me.centro ?? ''));
       this.selectableUsers = res.users
         .filter((u) => u.type === 'user')
-        .map((u) => ({ id: u._id, name: u.name }));
+        .map((u) => ({ id: u._id, name: [u.name, u.surname].filter(Boolean).join(' ') }));
     } catch {
       // Lista vacía
     } finally {
       this.selectableUsersLoading = false;
+      this.cdr.detectChanges();
     }
   }
 
-  onUserSelect(event: Event): void {
-    const userId = (event as CustomEvent<{ value: string }>).detail.value;
-    if (!userId) return;
-    this.userId = userId;
-    this.state.userId = userId;
+  async onUserSelect(event: Event): Promise<void> {
+    const newId = (event as CustomEvent<{ value: string }>).detail.value;
+    if (!newId || newId === this.userId) return;
+
+    if (this.hasUnsavedChanges) {
+      const prevId = this.userId ?? '';
+      const alert = await this.alertCtrl.create({
+        header: '¿Cambiar de usuario?',
+        message: 'Tienes cambios sin guardar que se perderán.',
+        buttons: [
+          { text: 'Cancelar', role: 'cancel', handler: () => {
+            setTimeout(() => { this.selectedUserId = prevId; }, 0);
+          }},
+          { text: 'Cambiar', role: 'destructive', handler: () => {
+            this.switchToUser(newId);
+          }},
+        ],
+      });
+      await alert.present();
+      return;
+    }
+
+    this.switchToUser(newId);
+  }
+
+  private switchToUser(id: string): void {
+    this.userId         = id;
+    this.selectedUserId = id;
+    this.state.userId   = id;
+    this.rows           = [];
+    this._savedSnapshot = '[]';
     this.loadData();
   }
 
@@ -163,6 +221,7 @@ export class AssignedProfessionalsPlaceholderPage {
           this.entryToRow(ap)
         );
       }
+      this._savedSnapshot = this.rowsSnapshot();
     } catch {
       this.loadError = 'Error al cargar datos. Inténtalo de nuevo.';
     } finally {
@@ -236,6 +295,7 @@ export class AssignedProfessionalsPlaceholderPage {
       await firstValueFrom(
         this.userService.updateAssignedProfessionals(this.userId, payload)
       );
+      this._savedSnapshot = this.rowsSnapshot();
       this.showToast('Profesionales encargados guardados ✓', 'success');
     } catch {
       this.showToast('Error al guardar. Inténtalo de nuevo.', 'danger');

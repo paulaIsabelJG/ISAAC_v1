@@ -16,9 +16,14 @@ $text-muted:  #7a5163;
   --border-color: transparent;
   box-shadow: 0 2px 12px rgba(233, 30, 140, 0.25);
 
-  ion-back-button {
-    --color: #ffffff;
-    --icon-font-size: 20px;
+  .au-back-btn {
+    --color:         #ffffff;
+    --padding-start: 4px;
+    --padding-end:   8px;
+    font-size:       14px;
+    font-weight:     500;
+    text-transform:  none;
+    letter-spacing:  0;
   }
 }
 

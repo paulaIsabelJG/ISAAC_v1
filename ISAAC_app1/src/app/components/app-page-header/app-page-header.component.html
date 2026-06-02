@@ -3,11 +3,10 @@
 
     @if (showBack) {
       <ion-buttons slot="start">
-        <ion-back-button
-          [defaultHref]="backHref"
-          [text]="backText"
-          (click)="onBackClick($event)">
-        </ion-back-button>
+        <ion-button fill="clear" class="aph-back-btn" (click)="onBackClick($event)">
+          <ion-icon slot="start" name="chevron-back-outline"></ion-icon>
+          {{ backText }}
+        </ion-button>
       </ion-buttons>
     }
 

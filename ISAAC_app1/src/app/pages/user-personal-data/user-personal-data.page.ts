@@ -1,11 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { IonicModule, ToastController } from '@ionic/angular';
+import { AlertController, IonicModule, ToastController } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { buildSafeUrl as buildSafeUrlUtil } from '../../shared/utils/image.utils';
 import { firstValueFrom } from 'rxjs';
 import { UserService, FullBackendUser } from '../../services/user.service';
+import { TtsService } from '../../services/tts.service';
 import { LoadingErrorStateComponent } from '../../components/loading-error-state/loading-error-state.component';
 import { AppPageHeaderComponent } from '../../components/app-page-header/app-page-header.component';
 
@@ -28,6 +29,7 @@ export class UserPersonalDataPage implements OnInit {
   // Imagen
   imgB64: string | null = null;
   imgUrl: SafeUrl | null = null;
+  private _originalImgB64: string | null = null;
 
   isLoading = true;
   isSaving  = false;
@@ -39,7 +41,9 @@ export class UserPersonalDataPage implements OnInit {
     private fb:         FormBuilder,
     private userSvc:    UserService,
     private toastCtrl:  ToastController,
+    private alertCtrl:  AlertController,
     private sanitizer:  DomSanitizer,
+    private ttsSvc:     TtsService,
   ) {}
 
   ngOnInit() {
@@ -68,10 +72,8 @@ export class UserPersonalDataPage implements OnInit {
       const res = await firstValueFrom(this.userSvc.getUserById(this.userId));
       this.targetUser = res.user;
 
-      // Separar nombre y apellidos almacenados como "nombre apellidos"
-      const parts   = res.user.name.trim().split(/\s+/);
-      const name    = parts[0] ?? '';
-      const surname = parts.slice(1).join(' ');
+      const name    = res.user.name    ?? '';
+      const surname = res.user.surname ?? '';
 
       this.form.patchValue({
         name,
@@ -85,6 +87,7 @@ export class UserPersonalDataPage implements OnInit {
         this.imgUrl = this.buildSafeUrl(res.user.image);
         this.imgB64 = res.user.image;
       }
+      this._originalImgB64 = this.imgB64;
     } catch {
       this.loadError = 'Error al cargar los datos del usuario.';
     } finally {
@@ -95,6 +98,7 @@ export class UserPersonalDataPage implements OnInit {
   // ── Imagen ──────────────────────────────────────────────────────────────────
 
   pickImage() {
+    this.ttsSvc.speakIfEnabled('cambiar imagen');
     const input = document.createElement('input');
     input.type   = 'file';
     input.accept = 'image/jpeg,image/png,image/gif,image/webp';
@@ -125,16 +129,17 @@ export class UserPersonalDataPage implements OnInit {
   // ── Guardar ─────────────────────────────────────────────────────────────────
 
   async save() {
+    this.ttsSvc.speakIfEnabled('guardar cambios');
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.isSaving = true;
 
     const { name, surname, gender } = this.form.getRawValue();
-    const fullName = [name.trim(), surname?.trim()].filter(Boolean).join(' ');
 
     try {
       await firstValueFrom(
         this.userSvc.updateUserById(this.userId, {
-          name:   fullName,
+          name:    name.trim(),
+          surname: surname?.trim() ?? '',
           gender: gender || 'prefer_not_to_say',
           image:  this.imgB64 ?? undefined,
         })
@@ -168,7 +173,28 @@ export class UserPersonalDataPage implements OnInit {
     return this.targetUser?.name?.charAt(0)?.toUpperCase() ?? '?';
   }
 
-  goBack() {
+  get hasUnsavedChanges(): boolean {
+    return this.form.dirty || this.imgB64 !== this._originalImgB64;
+  }
+
+  async goBack() {
+    this.ttsSvc.speakIfEnabled('volver');
+    if (this.hasUnsavedChanges) {
+      await this.confirmDiscard(() => this.router.navigate(['/user-session', this.userId]));
+      return;
+    }
     this.router.navigate(['/user-session', this.userId]);
+  }
+
+  private async confirmDiscard(onConfirm: () => void): Promise<void> {
+    const alert = await this.alertCtrl.create({
+      header: '¿Salir sin guardar?',
+      message: 'Los cambios que has hecho no se guardarán.',
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        { text: 'Salir', role: 'destructive', handler: onConfirm },
+      ],
+    });
+    await alert.present();
   }
 }

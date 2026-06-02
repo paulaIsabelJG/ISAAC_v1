@@ -7,7 +7,7 @@ import {
   ValidatorFn,
   Validators,
 } from '@angular/forms';
-import { IonicModule, ToastController } from '@ionic/angular';
+import { AlertController, IonicModule, ToastController } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { buildSafeUrl as buildSafeUrlUtil } from '../../shared/utils/image.utils';
@@ -49,6 +49,8 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
   // ── Imagen ───────────────────────────────────────────────────────────────────
   imgB64: string | null = null;
   imgUrl: SafeUrl | null = null;
+  private _originalImgB64: string | null = null;
+  private _extraDirty = false;
 
   // ── Toggle contraseña ────────────────────────────────────────────────────────
   showPwd = false;
@@ -131,6 +133,7 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
     private userSvc:    UserService,
     private ttsSvc:     TtsService,
     private toastCtrl:  ToastController,
+    private alertCtrl:  AlertController,
     private sanitizer:  DomSanitizer,
   ) {}
 
@@ -180,9 +183,8 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
       const res = await firstValueFrom(this.userSvc.getUserById(this.userId));
       const u = res.user;
 
-      const parts   = u.name.trim().split(/\s+/);
-      const name    = parts[0] ?? '';
-      const surname = parts.slice(1).join(' ');
+      const name    = u.name    ?? '';
+      const surname = u.surname ?? '';
 
       this.form.patchValue({
         email:   u.email,
@@ -198,6 +200,8 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
         this.imgB64 = u.image;
         this.imgUrl = this.buildSafeUrl(u.image);
       }
+      this._originalImgB64 = this.imgB64;
+      this._extraDirty = false;
 
       // Precargar selfPermissions en los checkboxes
       const sp = u.selfPermissions;
@@ -276,6 +280,7 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
 
   onVoiceChange(event: Event): void {
     this.selectedVoiceURI = (event.target as HTMLSelectElement).value;
+    this._extraDirty = true;
   }
 
   testVoice(voice: VoiceOption): void {
@@ -286,6 +291,7 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
 
   setVoiceMode(mode: 'catalog' | 'custom'): void {
     this.voiceMode = mode;
+    this._extraDirty = true;
     if (mode === 'catalog' && this.voices.length === 0 && !this.voicesLoading) {
       void this.loadVoicesForGender(this.form.get('gender')?.value);
     }
@@ -293,6 +299,7 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
 
   async toggleSound(): Promise<void> {
     this.soundEnabled = !this.soundEnabled;
+    this._extraDirty = true;
     if (this.soundEnabled && this.voices.length === 0) {
       await this.loadVoicesForGender(this.form.get('gender')?.value);
     }
@@ -563,12 +570,14 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
   // ── Guardar ──────────────────────────────────────────────────────────────────
 
   async save(): Promise<void> {
+    this.ttsSvc.speakIfEnabled('guardar');
     console.log('[DEBUG save] INICIO — form.invalid:', this.form.invalid, '| form.value:', this.form.value);
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.isSaving = true;
 
     const { email, password, name, surname, gender, age, address } = this.form.value;
-    const fullName    = [name?.trim(), surname?.trim()].filter(Boolean).join(' ');
+    const trimName    = name?.trim()    ?? '';
+    const trimSurname = surname?.trim() ?? '';
     const ageValue    = age != null && age !== '' ? Number(age) : null;
     const addressValue = address?.trim() || null;
 
@@ -603,7 +612,8 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
         if (this.preRegisteredUserId) {
           targetUserId = this.preRegisteredUserId;
           const payload: UpdateUserPayload = {
-            name:            fullName,
+            name:            trimName,
+            surname:         trimSurname,
             email:           email?.trim(),
             gender:          gender || 'prefer_not_to_say',
             age:             ageValue,
@@ -620,7 +630,7 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
             this.authSvc.register({
               email:    email.trim(),
               password: password.trim(),
-              name:     fullName,
+              name:     [trimName, trimSurname].filter(Boolean).join(' '),
               type:     'user',
               gender:   gender || 'prefer_not_to_say',
               centro:   org?.centro || 'Centro ISAAC',
@@ -629,8 +639,10 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
           );
           targetUserId = regRes.user.id;
 
-          // Siempre patcheamos para guardar age, address, permisos y voz
+          // Patch para guardar name/surname por separado, además de age, address, permisos y voz
           const patch: UpdateUserPayload = {
+            name:            trimName,
+            surname:         trimSurname,
             age:             ageValue,
             address:         addressValue,
             selfPermissions: selfPerms,
@@ -643,7 +655,8 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
         // ── EDITAR ────────────────────────────────────────────────────────
         targetUserId = this.userId;
         const payload: UpdateUserPayload = {
-          name:            fullName,
+          name:            trimName,
+          surname:         trimSurname,
           email:           email?.trim(),
           gender:          gender || 'prefer_not_to_say',
           age:             ageValue,
@@ -676,14 +689,41 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
     }
   }
 
+  onPermChange(key: keyof typeof this.perms, checked: boolean): void {
+    this.perms[key] = checked;
+    this._extraDirty = true;
+  }
+
   // ── Navegación ────────────────────────────────────────────────────────────────
 
-  goBack() {
+  get hasUnsavedChanges(): boolean {
+    return this.form.dirty || this._extraDirty || this.imgB64 !== this._originalImgB64;
+  }
+
+  async goBack() {
+    this.ttsSvc.speakIfEnabled('volver');
+    if (this.hasUnsavedChanges) {
+      const dest = this.isEditMode ? ['/user-session', this.userId] : ['/add-user'];
+      await this.confirmDiscard(() => this.router.navigate(dest));
+      return;
+    }
     if (this.isEditMode) {
       this.router.navigate(['/user-session', this.userId]);
     } else {
       this.router.navigate(['/add-user']);
     }
+  }
+
+  private async confirmDiscard(onConfirm: () => void): Promise<void> {
+    const alert = await this.alertCtrl.create({
+      header: '¿Salir sin guardar?',
+      message: 'Los cambios que has hecho no se guardarán.',
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        { text: 'Salir', role: 'destructive', handler: onConfirm },
+      ],
+    });
+    await alert.present();
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────────

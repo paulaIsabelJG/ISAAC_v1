@@ -23,9 +23,14 @@
   // Color global (texto + iconos) cuando la page lo define (ej. temas mint/pink)
   --color: var(--aph-toolbar-color);
 
-  ion-back-button {
-    // Solo sobreescribe el color si la page define --aph-back-color
-    --color: var(--aph-back-color);
+  .aph-back-btn {
+    --color:        var(--aph-back-color, var(--aph-toolbar-color));
+    --padding-start: 4px;
+    --padding-end:   8px;
+    font-size:       14px;
+    font-weight:     500;
+    letter-spacing:  0;
+    text-transform:  none;
   }
 }
 

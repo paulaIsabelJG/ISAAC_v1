@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { IonicModule } from '@ionic/angular';
 import { Location } from '@angular/common';
+import { TtsService } from '../../services/tts.service';
 
 @Component({
   selector: 'app-statistics-placeholder',
@@ -10,7 +11,10 @@ import { Location } from '@angular/common';
   imports: [IonicModule],
 })
 export class StatisticsPlaceholderPage {
-  constructor(private location: Location) {}
+  constructor(private location: Location, private ttsSvc: TtsService) {}
 
-  goBack() { this.location.back(); }
+  goBack() {
+    this.ttsSvc.speakIfEnabled('volver');
+    this.location.back();
+  }
 }

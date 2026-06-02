@@ -103,22 +103,14 @@ export class OrganizationDashboardPage implements OnInit {
     });
   }
 
-  /**
-   * Convierte BackendUser a UserCardData.
-   * add-user guarda "nombre apellidos" concatenado en el campo name,
-   * así que lo separamos: primera palabra → name, el resto → surname.
-   */
   private toCard(u: BackendUser): UserCardData {
-    const parts   = u.name.trim().split(/\s+/);
-    const name    = parts[0] ?? '';
-    const surname = parts.slice(1).join(' ');
     return {
-      _id:   u._id,
-      name,
-      surname,
-      email: u.email,
-      image: u.image ?? undefined,
-      type:  u.type,
+      _id:     u._id,
+      name:    u.name,
+      surname: u.surname ?? '',
+      email:   u.email,
+      image:   u.image ?? undefined,
+      type:    u.type,
     };
   }
 

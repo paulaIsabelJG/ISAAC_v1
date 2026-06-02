@@ -1,10 +1,10 @@
 <ion-header class="ion-no-border">
   <ion-toolbar class="au-toolbar">
     <ion-buttons slot="start">
-      <ion-back-button defaultHref="/organization-dashboard"
-                       text="Volver"
-                       (click)="$event.stopImmediatePropagation(); goBack()">
-      </ion-back-button>
+      <ion-button fill="clear" class="au-back-btn" (click)="goBack()">
+        <ion-icon slot="start" name="chevron-back-outline"></ion-icon>
+        Volver
+      </ion-button>
     </ion-buttons>
     <ion-title class="au-title">{{ headerTitle }}</ion-title>
   </ion-toolbar>
@@ -56,11 +56,6 @@
     ══════════════════════════════════════════════════════════════════ -->
     @if (view === 'professional') {
       <div class="view-form">
-
-        <button class="back-link" (click)="setView('select')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-          Volver a tipos
-        </button>
 
         <!-- Avatar -->
         <div class="avatar-wrap" (click)="pickImage('prof')" title="Toca para cambiar imagen">
@@ -172,11 +167,6 @@
     ══════════════════════════════════════════════════════════════════ -->
     @if (view === 'family') {
       <div class="view-form">
-
-        <button class="back-link" (click)="setView('select')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-          Volver a tipos
-        </button>
 
         <!-- Avatar -->
         <div class="avatar-wrap" (click)="pickImage('fam')" title="Toca para cambiar imagen">

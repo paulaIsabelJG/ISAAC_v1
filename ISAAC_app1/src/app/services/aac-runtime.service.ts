@@ -107,11 +107,14 @@ export class AacRuntimeService {
   configuredRate      = 0.9;
   configuredPitch     = 1.0;
   configuredVolume    = 1.0;
+  /** Género del usuario — usado como fallback cuando no hay voiceURI configurada. */
+  configuredGender    = '';
   iaRows            = 5;
   iaCols            = 1;
   aiRewriteEnabled  = false;
 
   private _currentBoardId = '';
+  private speakTimer: ReturnType<typeof setTimeout> | null = null;
   readonly boardNavigated$    = new Subject<BoardNavEvent>();
   readonly phraseChanged$     = new BehaviorSubject<AacPhraseItem[]>([]);
   readonly slotChanged$       = new Subject<{ slotId: number; boardId: string }>();
@@ -225,6 +228,14 @@ export class AacRuntimeService {
     this.iaRows           = 5;
     this.iaCols           = 1;
     this.aiRewriteEnabled = false;
+    this.soundEnabled       = false;
+    this.configuredVoiceURI = '';
+    this.configuredRate     = 0.9;
+    this.configuredPitch    = 1.0;
+    this.configuredVolume   = 1.0;
+    this.configuredGender   = '';
+    if (this.speakTimer !== null) { clearTimeout(this.speakTimer); this.speakTimer = null; }
+    window.speechSynthesis?.cancel();
     this.phraseChanged$.next([]);
   }
 
@@ -318,12 +329,14 @@ export class AacRuntimeService {
     rate?:        number,
     pitch?:       number,
     volume?:      number,
+    gender?:      string,
   ): void {
     this.soundEnabled       = soundEnabled;
     this.configuredVoiceURI = voiceURI ?? '';
     this.configuredRate     = rate     ?? 0.9;
     this.configuredPitch    = pitch    ?? 1.0;
     this.configuredVolume   = volume   ?? 1.0;
+    this.configuredGender   = gender   ?? '';
   }
 
   // ── Pictogram press ───────────────────────────────────────────────────────
@@ -368,6 +381,12 @@ export class AacRuntimeService {
     if (speakAndBack) {
       this.addToPhrase(item); // undo = 'none': el back ya sucedió vía speech
       this.speakTextAndThen(item.sound || item.label, undefined, () => this.goBack());
+    }
+
+    // soundEnabled: hablar en CUALQUIER pulsación (incluye navigate, setSlot, etc.)
+    // Solo cuando la acción no sea ya "hablada" por los bloques anteriores.
+    if (this.soundEnabled && !spoken && !speakAndBack) {
+      this.speakText(item.sound || item.label);
     }
 
     if (navigates && action?.targetBoardId) {
@@ -436,54 +455,73 @@ export class AacRuntimeService {
     if (!text?.trim()) return;
     if (!window.speechSynthesis) { console.warn('[AAC] speechSynthesis not available'); return; }
 
+    // Cancelar speak pendiente y síntesis actual antes de iniciar uno nuevo
+    if (this.speakTimer !== null) { clearTimeout(this.speakTimer); this.speakTimer = null; }
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(this.normalizeTtsText(text));
-    utterance.lang  = 'es-ES';
-    utterance.rate  = 0.9;
-    utterance.pitch = 1;
 
-    const assignVoice = () => {
-      const voices  = window.speechSynthesis.getVoices();
-      const esES    = voices.filter(v => v.lang === 'es-ES');
-      const spanish = voices.filter(v => v.lang.startsWith('es'));
+    const utterance  = new SpeechSynthesisUtterance(this.normalizeTtsText(text));
+    utterance.lang   = 'es-ES';
+    utterance.rate   = this.configuredRate;
+    utterance.pitch  = this.configuredPitch;
+    utterance.volume = this.configuredVolume;
 
-      if (!gender || gender === 'prefer_not_to_say' || gender === 'other') {
-        utterance.voice = esES[0] ?? spanish[0] ?? voices[0] ?? null;
-      } else if (gender === 'male') {
-        utterance.voice =
-          esES.find(v => /male|jorge|juan|carlos|enrique|pablo/i.test(v.name)) ??
-          spanish.find(v => /male|jorge|juan|carlos|enrique|pablo/i.test(v.name)) ??
-          esES[0] ?? spanish[0] ?? voices[0] ?? null;
-      } else if (gender === 'female') {
-        utterance.voice =
-          esES.find(v => /female|monica|mónica|paulina|conchita|lucia|lucía|maria/i.test(v.name)) ??
-          spanish.find(v => /female|monica|mónica|paulina|conchita|lucia|lucía|maria/i.test(v.name)) ??
-          esES[0] ?? spanish[0] ?? voices[0] ?? null;
+    const doSpeak = () => {
+      this.speakTimer = null;
+      const voices = window.speechSynthesis.getVoices();
+      let voiceSet  = false;
+
+      if (this.configuredVoiceURI) {
+        const match = voices.find(v => v.voiceURI === this.configuredVoiceURI);
+        if (match) { utterance.voice = match; utterance.lang = match.lang; voiceSet = true; }
       }
+
+      if (!voiceSet) {
+        const effectiveGender = gender || this.configuredGender;
+        const esES    = voices.filter(v => v.lang === 'es-ES');
+        const spanish = voices.filter(v => v.lang.startsWith('es'));
+        if (!effectiveGender || effectiveGender === 'prefer_not_to_say' || effectiveGender === 'other') {
+          utterance.voice = esES[0] ?? spanish[0] ?? voices[0] ?? null;
+        } else if (effectiveGender === 'male') {
+          utterance.voice =
+            esES.find(v => /male|jorge|juan|carlos|enrique|pablo/i.test(v.name)) ??
+            spanish.find(v => /male|jorge|juan|carlos|enrique|pablo/i.test(v.name)) ??
+            esES[0] ?? spanish[0] ?? voices[0] ?? null;
+        } else if (effectiveGender === 'female') {
+          utterance.voice =
+            esES.find(v => /female|monica|mónica|paulina|conchita|lucia|lucía|maria/i.test(v.name)) ??
+            spanish.find(v => /female|monica|mónica|paulina|conchita|lucia|lucía|maria/i.test(v.name)) ??
+            esES[0] ?? spanish[0] ?? voices[0] ?? null;
+        }
+      }
+
       window.speechSynthesis.speak(utterance);
     };
 
     const voices = window.speechSynthesis.getVoices();
     if (voices.length > 0) {
-      assignVoice();
+      // Delay de 50 ms tras cancel: evita el bug de Chrome donde cancel+speak
+      // en la misma microtarea silencia o recorta el audio al inicio.
+      // El timer es cancelable: una pulsación nueva descarta la pendiente.
+      this.speakTimer = setTimeout(doSpeak, 50);
     } else {
       window.speechSynthesis.onvoiceschanged = () => {
         window.speechSynthesis.onvoiceschanged = null;
-        assignVoice();
+        doSpeak(); // ya es asíncrono, no necesita delay adicional
       };
     }
   }
 
   /** Habla el texto y, al terminar (o tras timeout), ejecuta la callback. */
-  speakTextAndThen(text: string, _gender?: string, onEnd?: () => void): void {
+  speakTextAndThen(text: string, gender?: string, onEnd?: () => void): void {
     if (!text?.trim()) { onEnd?.(); return; }
     if (!window.speechSynthesis) { onEnd?.(); return; }
 
     window.speechSynthesis.cancel();
     const utterance  = new SpeechSynthesisUtterance(this.normalizeTtsText(text));
     utterance.lang   = 'es-ES';
-    utterance.rate   = 0.9;
-    utterance.pitch  = 1;
+    utterance.rate   = this.configuredRate;
+    utterance.pitch  = this.configuredPitch;
+    utterance.volume = this.configuredVolume;
 
     let fired = false;
     const done = () => { if (!fired) { fired = true; onEnd?.(); } };
@@ -494,19 +532,44 @@ export class AacRuntimeService {
     const wordCount = text.trim().split(/\s+/).length;
     setTimeout(done, Math.max(1500, wordCount * 500));
 
-    const assignVoice = () => {
-      const voices  = window.speechSynthesis.getVoices();
-      const esES    = voices.filter(v => v.lang === 'es-ES');
-      const spanish = voices.filter(v => v.lang.startsWith('es'));
-      utterance.voice = esES[0] ?? spanish[0] ?? voices[0] ?? null;
+    const doSpeak = () => {
+      const voices          = window.speechSynthesis.getVoices();
+      const effectiveGender = gender || this.configuredGender;
+      let voiceSet          = false;
+
+      if (this.configuredVoiceURI) {
+        const match = voices.find(v => v.voiceURI === this.configuredVoiceURI);
+        if (match) { utterance.voice = match; utterance.lang = match.lang; voiceSet = true; }
+      }
+
+      if (!voiceSet) {
+        const esES    = voices.filter(v => v.lang === 'es-ES');
+        const spanish = voices.filter(v => v.lang.startsWith('es'));
+        if (effectiveGender === 'female') {
+          utterance.voice =
+            esES.find(v => /female|monica|mónica|paulina|conchita|lucia|lucía|maria/i.test(v.name)) ??
+            spanish.find(v => /female|monica|mónica|paulina|conchita|lucia|lucía|maria/i.test(v.name)) ??
+            esES[0] ?? spanish[0] ?? voices[0] ?? null;
+        } else if (effectiveGender === 'male') {
+          utterance.voice =
+            esES.find(v => /male|jorge|juan|carlos|enrique|pablo/i.test(v.name)) ??
+            spanish.find(v => /male|jorge|juan|carlos|enrique|pablo/i.test(v.name)) ??
+            esES[0] ?? spanish[0] ?? voices[0] ?? null;
+        } else {
+          utterance.voice = esES[0] ?? spanish[0] ?? voices[0] ?? null;
+        }
+      }
+
       window.speechSynthesis.speak(utterance);
     };
+
     const voices = window.speechSynthesis.getVoices();
-    if (voices.length > 0) { assignVoice(); }
-    else {
+    if (voices.length > 0) {
+      setTimeout(doSpeak, 50);
+    } else {
       window.speechSynthesis.onvoiceschanged = () => {
         window.speechSynthesis.onvoiceschanged = null;
-        assignVoice();
+        doSpeak();
       };
     }
   }

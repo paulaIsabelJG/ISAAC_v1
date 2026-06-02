@@ -119,6 +119,7 @@ const validateUserPayload = async (payload, existingUser = null, isCreate = fals
     hijos:    validatedHijos,
     parentId: validatedParentId,
     name:     payload.name,
+    surname:  payload.surname,
     email:    payload.email,
     password: payload.password,
     gender:   payload.gender,
@@ -310,8 +311,9 @@ exports.createUser = async (req, res) => {
 };
 
 const applyUserUpdates = (user, updates) => {
-  if (updates.name !== undefined)     user.name     = updates.name;
-  if (updates.email !== undefined)    user.email    = updates.email;
+  if (updates.name    !== undefined)  user.name    = updates.name;
+  if (updates.surname !== undefined)  user.surname = updates.surname;
+  if (updates.email   !== undefined)  user.email   = updates.email;
   if (updates.password !== undefined) user.password = updates.password;
   if (updates.type !== undefined)     user.type     = updates.type;
   if (updates.gender !== undefined)   user.gender   = updates.gender;
@@ -649,12 +651,12 @@ exports.getAssignedProfessionals = async (req, res) => {
     const result = (user.assignedProfessionals || [])
       .filter((ap) => !!ap.professionalId)
       .map((ap) => {
-        const prof  = ap.professionalId;
-        const parts = (prof.name || '').trim().split(/\s+/);
+        const prof    = ap.professionalId;
+        const rawName = (prof.name || '').trim();
         return {
           professionalId:         prof._id.toString(),
-          name:                   parts[0] ?? '',
-          surname:                parts.slice(1).join(' '),
+          name:    prof.surname !== undefined ? rawName : (rawName.split(/\s+/)[0] ?? ''),
+          surname: prof.surname !== undefined ? (prof.surname ?? '') : rawName.split(/\s+/).slice(1).join(' '),
           email:                  prof.email,
           image:                  prof.image || null,
           canViewStats:           ap.canViewStats,
@@ -758,11 +760,11 @@ exports.getAssignedUsers = async (req, res) => {
       const ap = (user.assignedProfessionals || []).find(
         (e) => e.professionalId?.toString() === professionalId
       );
-      const parts = (user.name || '').trim().split(/\s+/);
+      const rawName = (user.name || '').trim();
       return {
         userId:                 user._id.toString(),
-        name:                   parts[0] ?? '',
-        surname:                parts.slice(1).join(' '),
+        name:    user.surname !== undefined ? rawName : (rawName.split(/\s+/)[0] ?? ''),
+        surname: user.surname !== undefined ? (user.surname ?? '') : rawName.split(/\s+/).slice(1).join(' '),
         email:                  user.email,
         image:                  user.image || null,
         canEditPersonalData:    ap?.canEditPersonalData    ?? false,

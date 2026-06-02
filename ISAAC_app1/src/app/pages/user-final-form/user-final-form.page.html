@@ -443,37 +443,37 @@
               <label class="perm-item">
                 <input type="checkbox" class="perm-check"
                        [checked]="perms.editData"
-                       (change)="perms.editData = $any($event.target).checked"/>
+                       (change)="onPermChange('editData', $any($event.target).checked)"/>
                 <span class="perm-text">Editar datos personales</span>
               </label>
               <label class="perm-item">
                 <input type="checkbox" class="perm-check"
                        [checked]="perms.editBoards"
-                       (change)="perms.editBoards = $any($event.target).checked"/>
+                       (change)="onPermChange('editBoards', $any($event.target).checked)"/>
                 <span class="perm-text">Crear tableros</span>
               </label>
               <label class="perm-item">
                 <input type="checkbox" class="perm-check"
                        [checked]="perms.editStats"
-                       (change)="perms.editStats = $any($event.target).checked"/>
+                       (change)="onPermChange('editStats', $any($event.target).checked)"/>
                 <span class="perm-text">Ver estadísticas</span>
               </label>
               <label class="perm-item">
                 <input type="checkbox" class="perm-check"
                        [checked]="perms.addPictograms"
-                       (change)="perms.addPictograms = $any($event.target).checked"/>
+                       (change)="onPermChange('addPictograms', $any($event.target).checked)"/>
                 <span class="perm-text">Añadir pictogramas</span>
               </label>
               <label class="perm-item">
                 <input type="checkbox" class="perm-check"
                        [checked]="perms.assignProfessionals"
-                       (change)="perms.assignProfessionals = $any($event.target).checked"/>
+                       (change)="onPermChange('assignProfessionals', $any($event.target).checked)"/>
                 <span class="perm-text">Asignar profesionales</span>
               </label>
               <label class="perm-item">
                 <input type="checkbox" class="perm-check"
                        [checked]="perms.assignFamilies"
-                       (change)="perms.assignFamilies = $any($event.target).checked"/>
+                       (change)="onPermChange('assignFamilies', $any($event.target).checked)"/>
                 <span class="perm-text">Asignar familiares</span>
               </label>
             </div>

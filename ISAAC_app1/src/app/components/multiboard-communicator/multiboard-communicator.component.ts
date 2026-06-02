@@ -11,7 +11,7 @@ import { IonicModule } from '@ionic/angular';
 import { firstValueFrom, Subscription } from 'rxjs';
 import { Board, BoardCell, CellPictogram } from '../../services/board.service';
 import { BoardService } from '../../services/board.service';
-import { AacRuntimeService, UndoEntry } from '../../services/aac-runtime.service';
+import { AacRuntimeService, OblAction, UndoEntry } from '../../services/aac-runtime.service';
 import { getCellBaseColor } from '../../shared/utils/board-color.utils';
 import { BoardLayoutService } from '../../services/board-layout.service';
 import { BoardGridComponent } from '../board-grid/board-grid.component';
@@ -157,18 +157,18 @@ export class MultiboardCommunicatorComponent implements OnInit, OnDestroy, OnCha
     if (!cell?.pictogram) return;
     if (!state.board) return;
 
-    const action = cell.action;
-    const type   = action?.type ?? 'voice';
+    const action    = cell.action;
+    const type      = action?.type ?? 'voice';
+    const spoken    = type === 'voice' || type === 'voice+navigate' || type === 'voice+setSlot';
+    const navigates = type === 'navigate' || type === 'voice+navigate';
+    const setsSlot  = type === 'setSlot'  || type === 'voice+setSlot';
 
-    // Voz
-    if (type === 'voice' || type === 'voice+navigate' || type === 'voice+setSlot') {
-      // Calcular la entrada de undo ANTES de cualquier cambio de estado.
+    // ── Frase + voz ───────────────────────────────────────────────────────────
+    if (spoken) {
       let undo: UndoEntry;
       if (type === 'voice+navigate') {
-        // La navegación intra-slot usa state.boardStack; registramos el slotId para deshacerla.
         undo = { type: 'slotNavigate', slotId: state.slotId };
       } else if (type === 'voice+setSlot' && action?.targetSlotId != null) {
-        // Capturar el board actual del slot destino ANTES de cambiarlo.
         const targetSt = this.slotStates.find(s => s.slotId === action.targetSlotId);
         undo = { type: 'setSlot', slotId: action.targetSlotId, prevSlotBoardId: targetSt?.boardId ?? null };
       } else {
@@ -184,31 +184,41 @@ export class MultiboardCommunicatorComponent implements OnInit, OnDestroy, OnCha
         fitzgeraldEnabled: !!(cell.pictogram.fitzgeraldEnabled),
       }, undo);
       this.aac.speakText(cell.pictogram.sound || cell.pictogram.label, this.gender);
-      this.aac.logButtonEvent({
-        label:        cell.pictogram.label,
-        vocalization: cell.pictogram.sound || cell.pictogram.label,
-        spoken:       true,
-        button_id:    cell.pictogram.id,
-        board_id:     state.board._id,
-        image_url:    cell.pictogram.imageUrl,
-        actions:      [{ action: '+speak' }],
-        color:        getCellBaseColor(cell.pictogram as CellPictogram) ?? undefined,
-        wordType:     cell.pictogram.wordType ?? 'misc',
-      });
     }
 
-    // Navegación intra-slot
-    if ((type === 'navigate' || type === 'voice+navigate') && action?.targetBoardId) {
+    // soundEnabled: hablar en CUALQUIER pulsación (incluye navigate, setSlot, etc.)
+    if (this.aac.soundEnabled && !spoken) {
+      this.aac.speakText(cell.pictogram.sound || cell.pictogram.label, this.gender);
+    }
+
+    // ── OBL: registrar TODAS las pulsaciones en modo comunicador ─────────────
+    const oblActions: OblAction[] = [];
+    if (spoken)   oblActions.push({ action: '+speak' });
+    if (navigates) oblActions.push({ action: ':open_board', destination_board_id: action?.targetBoardId ?? undefined });
+    if (setsSlot)  oblActions.push({ action: 'ext_isaac_set_slot', ext_isaac_slot_id: action?.targetSlotId ?? undefined, destination_board_id: action?.targetBoardId ?? undefined });
+
+    this.aac.logButtonEvent({
+      label:        cell.pictogram.label,
+      vocalization: cell.pictogram.sound || cell.pictogram.label,
+      spoken,
+      button_id:    cell.pictogram.id,
+      board_id:     state.board._id,
+      image_url:    cell.pictogram.imageUrl,
+      actions:      oblActions,
+      color:        getCellBaseColor(cell.pictogram as CellPictogram) ?? undefined,
+      wordType:     cell.pictogram.wordType ?? 'misc',
+    });
+
+    // ── Navegación intra-slot ─────────────────────────────────────────────────
+    if (navigates && action?.targetBoardId) {
       state.boardStack.push(state.boardId!);
       state.boardId = action.targetBoardId;
       void this.loadSlotBoard(state);
       return;
     }
 
-    // setSlot: el AacRuntimeService ya emite slotChanged$ en handlePictogramPress,
-    // pero aquí lo manejamos directamente porque no pasamos por handlePictogramPress
-    if ((type === 'setSlot' || type === 'voice+setSlot') &&
-        action?.targetSlotId != null && action?.targetBoardId) {
+    // ── setSlot ───────────────────────────────────────────────────────────────
+    if (setsSlot && action?.targetSlotId != null && action?.targetBoardId) {
       this.setSlotBoard(action.targetSlotId, action.targetBoardId);
     }
   }
@@ -298,6 +308,11 @@ export class MultiboardCommunicatorComponent implements OnInit, OnDestroy, OnCha
         wordType:          pict.wordType,
         fitzgeraldEnabled: false,
       }, undo);
+      this.aac.speakText(pict.label, this.gender);
+    }
+
+    // soundEnabled: hablar en CUALQUIER pulsación aunque no sea acción de voz
+    if (this.aac.soundEnabled && !speaks) {
       this.aac.speakText(pict.label, this.gender);
     }
 

@@ -4,13 +4,14 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface BackendUser {
-  _id:     string;
-  name:    string;
-  email:   string;
+  _id:      string;
+  name:     string;
+  surname?: string;
+  email:    string;
   type:    'teacher' | 'parent' | 'user';
   image?:  string | null;
   centro?: string | null;
-  gender?: string | null;   // usado para info básica en tabla de familiar
+  gender?: string | null;
 }
 
 /** Permisos propios del usuario final (lo que puede ver al loguearse como él mismo) */
@@ -25,9 +26,11 @@ export interface SelfPermissions {
 
 /** Usuario completo devuelto por GET /api/users/:userId */
 export interface FullBackendUser {
-  _id:     string;
-  name:    string;
-  email:   string;
+  _id:      string;
+  name:     string;
+  /** Apellidos almacenados como campo separado. undefined = usuario legacy (sin migrar). */
+  surname?: string;
+  email:    string;
   type:    'teacher' | 'parent' | 'user';
   image?:  string | null;
   centro?: string | null;
@@ -103,6 +106,7 @@ export interface VoiceSettings {
 /** Payload para actualizar datos personales de un usuario final */
 export interface UpdateUserPayload {
   name?:             string;
+  surname?:          string;
   email?:            string;
   password?:         string;
   gender?:           string;

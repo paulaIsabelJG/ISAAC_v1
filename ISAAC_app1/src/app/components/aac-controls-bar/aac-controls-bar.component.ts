@@ -119,7 +119,7 @@ export class AacControlsBarComponent implements OnInit, OnDestroy {
   get hasPhrase(): boolean { return this.phrase.length > 0; }
 
   private voiceAction(label: string, action: () => void): void {
-    if (this.mode === 'preview' || (this.mode === 'communicator' && this.voiceEnabled)) {
+    if (this.mode === 'preview' || (this.mode === 'communicator' && (this.voiceEnabled || this.aac.soundEnabled))) {
       this.aac.speakText(label, this.gender);
     }
     action();

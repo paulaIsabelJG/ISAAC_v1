@@ -1,8 +1,8 @@
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import {
-  IonicModule,
-  ActionSheetController,
   AlertController,
+  ActionSheetController,
+  IonicModule,
   ToastController,
 } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
@@ -97,20 +97,49 @@ export class OwnPictogramsPlaceholderPage {
     private actionSheet: ActionSheetController,
     private alertCtrl: AlertController,
     private toastCtrl: ToastController,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   // ── Ciclo de vida ────────────────────────────────────────────────────────────
 
   ionViewWillEnter(): void {
-    this.userId = this.state.userId;
+    this.resetForm();
+    this.editingId      = null;
+    this._editBackup    = null;
+
+    this.userId         = this.state.userId;
+    this.selectedUserId = this.userId ?? '';
+    this.loadSelectableUsers();
     if (this.userId) {
       this.loadFromBackend();
-    } else {
-      this.loadSelectableUsers();
     }
   }
 
-  goBack(): void {
+  get hasUnsavedChanges(): boolean {
+    if (this.isEditing && this._editBackup) {
+      return (
+        this.formName.trim()        !== this._editBackup.name ||
+        this.formWordType           !== this._editBackup.wordType ||
+        this.formImageB64           !== this._editBackup.imageB64 ||
+        (this.formDescription.trim() || undefined) !== this._editBackup.description
+      );
+    }
+    return this.formName.trim() !== '' || this.formImageB64 !== null;
+  }
+
+  async goBack(): Promise<void> {
+    if (this.hasUnsavedChanges) {
+      const alert = await this.alertCtrl.create({
+        header: '¿Salir sin guardar?',
+        message: 'Los cambios que has hecho no se guardarán.',
+        buttons: [
+          { text: 'Cancelar', role: 'cancel' },
+          { text: 'Salir', role: 'destructive', handler: () => this.router.navigateByUrl(this.state.returnTo) },
+        ],
+      });
+      await alert.present();
+      return;
+    }
     this.router.navigateByUrl(this.state.returnTo);
   }
 
@@ -133,7 +162,7 @@ export class OwnPictogramsPlaceholderPage {
         const res = await firstValueFrom(this.userSvc.getUsersByCenter(me.centro ?? ''));
         this.selectableUsers = res.users
           .filter((u) => u.type === 'user')
-          .map((u) => ({ id: u._id, name: u.name }));
+          .map((u) => ({ id: u._id, name: [u.name, u.surname].filter(Boolean).join(' ') }));
       } else if (me.type === 'parent') {
         // Familiar: hijos asignados
         const res = await firstValueFrom(this.userSvc.getUserById(me.id));
@@ -141,7 +170,7 @@ export class OwnPictogramsPlaceholderPage {
         const childUsers = await Promise.all(
           childrenAccess.map((c) =>
             firstValueFrom(this.userSvc.getUserById(c.childId))
-              .then((r) => ({ id: c.childId, name: r.user.name }))
+              .then((r) => ({ id: c.childId, name: [r.user.name, r.user.surname].filter(Boolean).join(' ') }))
               .catch(() => null),
           ),
         );
@@ -151,14 +180,43 @@ export class OwnPictogramsPlaceholderPage {
       // Lista vacía — el template muestra estado vacío
     } finally {
       this.selectableUsersLoading = false;
+      this.cdr.detectChanges();
     }
   }
 
-  onUserSelect(event: Event): void {
-    const userId = (event as CustomEvent<{ value: string }>).detail.value;
-    if (!userId) return;
-    this.userId = userId;
-    this.state.userId = userId;
+  async onUserSelect(event: Event): Promise<void> {
+    const newId = (event as CustomEvent<{ value: string }>).detail.value;
+    if (!newId || newId === this.userId) return;
+
+    if (this.hasUnsavedChanges) {
+      const prevId = this.userId ?? '';
+      const alert = await this.alertCtrl.create({
+        header: '¿Cambiar de usuario?',
+        message: 'Tienes cambios sin guardar que se perderán.',
+        buttons: [
+          { text: 'Cancelar', role: 'cancel', handler: () => {
+            setTimeout(() => { this.selectedUserId = prevId; }, 0);
+          }},
+          { text: 'Cambiar', role: 'destructive', handler: () => {
+            this.switchToUser(newId);
+          }},
+        ],
+      });
+      await alert.present();
+      return;
+    }
+
+    this.switchToUser(newId);
+  }
+
+  private switchToUser(id: string): void {
+    this.resetForm();
+    this.editingId      = null;
+    this._editBackup    = null;
+    this.userId         = id;
+    this.selectedUserId = id;
+    this.state.userId   = id;
+    this.localPictograms = [];
     this.loadFromBackend();
   }
 

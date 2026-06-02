@@ -1,9 +1,10 @@
 <ion-header class="ion-no-border">
   <ion-toolbar class="op-toolbar">
     <ion-buttons slot="start">
-      <ion-back-button defaultHref="/organization-dashboard" text="Volver"
-                       (click)="$event.stopImmediatePropagation(); goBack()">
-      </ion-back-button>
+      <ion-button fill="clear" class="op-back-btn" (click)="goBack()">
+        <ion-icon slot="start" name="chevron-back-outline"></ion-icon>
+        Volver
+      </ion-button>
     </ion-buttons>
     <ion-title class="op-title">Perfil organización</ion-title>
   </ion-toolbar>

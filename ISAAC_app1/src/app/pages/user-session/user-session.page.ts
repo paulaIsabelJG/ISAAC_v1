@@ -8,6 +8,7 @@ import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { UserService, FullBackendUser } from '../../services/user.service';
 import { BoardService, Board } from '../../services/board.service';
+import { TtsService } from '../../services/tts.service';
 import { LoadingErrorStateComponent } from '../../components/loading-error-state/loading-error-state.component';
 import { AppPageHeaderComponent } from '../../components/app-page-header/app-page-header.component';
 import { BoardMiniCardComponent } from '../../components/board-mini-card/board-mini-card.component';
@@ -53,6 +54,7 @@ export class UserSessionPage implements OnInit {
     private userService:  UserService,
     private boardService: BoardService,
     private sanitizer:    DomSanitizer,
+    private ttsSvc:       TtsService,
   ) {}
 
   ngOnInit() {
@@ -80,6 +82,11 @@ export class UserSessionPage implements OnInit {
       const res = await firstValueFrom(this.userService.getUserById(this.userId));
       this.targetUser = res.user;
       this.avatarUrl  = this.buildSafeUrl(this.targetUser.image);
+      // Configurar TTS solo cuando es el propio usuario final (no un teacher/org navegando)
+      this.ttsSvc.setFromVoiceSettings(
+        this.fromLogin ? this.targetUser.voiceSettings : null,
+        this.fromLogin ? (this.targetUser.gender ?? '') : '',
+      );
       await this.computePermissions();
     } catch (err: unknown) {
       const status = (err as HttpErrorResponse)?.status;
@@ -200,15 +207,11 @@ export class UserSessionPage implements OnInit {
   }
 
   getDisplayName(): string {
-    if (!this.targetUser) return '';
-    const parts = this.targetUser.name.trim().split(/\s+/);
-    return parts[0] ?? this.targetUser.name;
+    return this.targetUser?.name ?? '';
   }
 
   getDisplaySurname(): string {
-    if (!this.targetUser) return '';
-    const parts = this.targetUser.name.trim().split(/\s+/);
-    return parts.slice(1).join(' ');
+    return this.targetUser?.surname ?? '';
   }
 
   // ── Navegación ───────────────────────────────────────────────────────────────
@@ -216,21 +219,31 @@ export class UserSessionPage implements OnInit {
   goBack() {
     const viewer = this.authService.getCurrentUser();
     if (viewer?.type === 'user') {
-      // El usuario final está en su propia pantalla de inicio → salir = logout
+      this.ttsSvc.speakIfEnabled('salir');
       this.authService.logout();
     } else if (viewer?.type === 'teacher' && viewer.professionalType) {
-      // Profesional asignado → vuelve a su propia sesión
+      this.ttsSvc.speakIfEnabled('volver');
       this.router.navigate(['/professional-session', viewer.id]);
     } else {
+      this.ttsSvc.speakIfEnabled('volver');
       this.router.navigate(['/organization-dashboard']);
     }
   }
-  goToPersonalData(){ this.router.navigate(['/user-final-form', this.userId]); }
-  goToStats()       { this.router.navigate(['/statistics-placeholder']); }
+
+  goToPersonalData() {
+    this.ttsSvc.speakIfEnabled('datos personales');
+    this.router.navigate(['/user-final-form', this.userId]);
+  }
+
+  goToStats() {
+    this.ttsSvc.speakIfEnabled('estadísticas');
+    this.router.navigate(['/statistics-placeholder']);
+  }
 
   /** Abre el board builder del usuario cuya sesión se está visualizando.
    *  creatorId = userId del perfil → el builder filtra por ese creador. */
-  goToBoardBuilder(){
+  goToBoardBuilder() {
+    this.ttsSvc.speakIfEnabled('tablero builder');
     this.router.navigate(['/board-builder'], {
       queryParams: {
         returnTo:    '/user-session/' + this.userId,
@@ -248,6 +261,7 @@ export class UserSessionPage implements OnInit {
    * El Board Builder se accede únicamente desde el botón "Tablero Builder".
    */
   openBoard(board: Board) {
+    this.ttsSvc.speakIfEnabled(board.name || 'tablero');
     this.router.navigate(['/communicator', board._id], {
       queryParams: {
         userId:   this.userId,

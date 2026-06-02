@@ -93,6 +93,18 @@ export class CommunicatorPage implements OnInit, OnDestroy {
         this.targetUser = res.user;
         // Comprobar si el usuario tiene TTS de controles activado
         this.voiceEnabled = !!(res.user as any)?.voiceControlsEnabled;
+        // Aplicar configuración de voz del usuario al servicio AAC
+        const vs = res.user.voiceSettings;
+        if (vs) {
+          this.aac.configureSoundSettings(
+            vs.soundEnabled,
+            vs.catalogVoice?.voiceURI,
+            vs.catalogVoice?.speechRate,
+            vs.catalogVoice?.speechPitch,
+            vs.catalogVoice?.speechVolume,
+            res.user.gender ?? '',
+          );
+        }
       } catch { /* silencioso */ }
     }
 

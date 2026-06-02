@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { IonicModule, ToastController } from '@ionic/angular';
+import { AlertController, IonicModule, ToastController } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { buildSafeUrl as buildSafeUrlUtil } from '../../shared/utils/image.utils';
@@ -74,9 +74,20 @@ export class AddUserPage implements OnInit {
     private userSvc:   UserService,
     private router:    Router,
     private toastCtrl: ToastController,
+    private alertCtrl: AlertController,
     private sanitizer: DomSanitizer,
     private state:     PictogramStateService,
   ) {}
+
+  ionViewWillEnter(): void {
+    this.view = 'select';
+    this.profForm?.reset({ professionalType: 'Terapeuta' });
+    this.famForm?.reset();
+    this.profImgB64 = null; this.profImgUrl = null;
+    this.famImgB64  = null; this.famImgUrl  = null;
+    this.famRows    = [];
+    this.selectedChildId = '';
+  }
 
   ngOnInit() {
     this.profForm = this.fb.group({
@@ -96,10 +107,53 @@ export class AddUserPage implements OnInit {
 
   // ── Navegación ───────────────────────────────────────────────────────────────
 
-  goBack() {
-    this.view === 'select'
-      ? this.router.navigate(['/organization-dashboard'])
-      : (this.view = 'select');
+  get hasUnsavedChanges(): boolean {
+    if (this.view === 'professional') {
+      return this.profForm.dirty || !!this.profImgB64;
+    }
+    if (this.view === 'family') {
+      return this.famForm.dirty || !!this.famImgB64 || this.famRows.length > 0;
+    }
+    return false;
+  }
+
+  async goBack() {
+    if (this.view === 'select') {
+      this.router.navigate(['/organization-dashboard']);
+      return;
+    }
+    if (this.hasUnsavedChanges) {
+      await this.confirmDiscard(() => {
+        this.resetCurrentForm();
+        this.view = 'select';
+      });
+      return;
+    }
+    this.resetCurrentForm();
+    this.view = 'select';
+  }
+
+  private resetCurrentForm(): void {
+    if (this.view === 'professional') {
+      this.profForm.reset({ professionalType: 'Terapeuta' });
+      this.profImgB64 = null; this.profImgUrl = null;
+    } else if (this.view === 'family') {
+      this.famForm.reset();
+      this.famImgB64 = null; this.famImgUrl = null;
+      this.famRows = []; this.selectedChildId = '';
+    }
+  }
+
+  private async confirmDiscard(onConfirm: () => void): Promise<void> {
+    const alert = await this.alertCtrl.create({
+      header: '¿Salir sin guardar?',
+      message: 'Los cambios que has hecho no se guardarán.',
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        { text: 'Salir', role: 'destructive', handler: onConfirm },
+      ],
+    });
+    await alert.present();
   }
 
   setView(v: View | 'final-user'): void {

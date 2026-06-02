@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { IonicModule, ToastController } from '@ionic/angular';
+import { AlertController, IonicModule, ToastController } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { AuthService, User, AddressSuggestion } from '../../services/auth.service';
@@ -44,12 +44,14 @@ export class OrganizationProfilePage implements OnInit {
    * El campo `image` del modelo User acepta cualquier String.
    */
   private imageBase64: string | null = null;
+  private _imageChanged = false;
 
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router,
     private toastCtrl: ToastController,
+    private alertCtrl: AlertController,
     private sanitizer: DomSanitizer
   ) {}
 
@@ -96,9 +98,8 @@ export class OrganizationProfilePage implements OnInit {
       const reader = new FileReader();
       reader.onload = (event: ProgressEvent<FileReader>) => {
         const result = event.target?.result as string;
-        // Guardar base64 para enviar al backend
         this.imageBase64 = result;
-        // Crear SafeUrl para mostrar el preview inmediato
+        this._imageChanged = true;
         this.previewUrl = this.sanitizer.bypassSecurityTrustUrl(result);
       };
       reader.readAsDataURL(file);
@@ -157,8 +158,28 @@ export class OrganizationProfilePage implements OnInit {
 
   // ─── Navegación ───────────────────────────────────────────────────────────
 
-  goBack(): void {
+  get hasUnsavedChanges(): boolean {
+    return this.profileForm.dirty || this._imageChanged;
+  }
+
+  async goBack(): Promise<void> {
+    if (this.hasUnsavedChanges) {
+      await this.confirmDiscard(() => this.router.navigate(['/organization-dashboard']));
+      return;
+    }
     this.router.navigate(['/organization-dashboard']);
+  }
+
+  private async confirmDiscard(onConfirm: () => void): Promise<void> {
+    const alert = await this.alertCtrl.create({
+      header: '¿Salir sin guardar?',
+      message: 'Los cambios que has hecho no se guardarán.',
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        { text: 'Salir', role: 'destructive', handler: onConfirm },
+      ],
+    });
+    await alert.present();
   }
 
   // ─── Guardado ─────────────────────────────────────────────────────────────

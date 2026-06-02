@@ -46,8 +46,8 @@
         @else if (inter.type === 'button') {
           <div class="plc-pict-wrap"
                [class.plc-pict-wrap--inactive]="!inter.activeInFinalPhrase"
-               [style.background]="inter.activeInFinalPhrase ? pictBg(inter) : null"
-               [style.border-color]="inter.activeInFinalPhrase ? pictBorder(inter) : null"
+               [style.background]="pictBg(inter)"
+               [style.border-color]="pictBorder(inter)"
                [title]="inter.activeInFinalPhrase ? inter.label : inter.label + ' (eliminado)'">
             <div class="plc-pict-cell">
               <app-pict-cell-content

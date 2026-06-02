@@ -8,39 +8,36 @@
   <div class="op-container">
 
     <!-- ══════════════════════════════════════════════════════════════════════
-         SELECTOR DE USUARIO (cuando no viene preseleccionado)
+         SELECTOR DE USUARIO (siempre visible)
     ════════════════════════════════════════════════════════════════════════ -->
-    @if (!userId) {
-      <div class="user-select-card">
-        <div class="sec-head">
-          <div class="sec-head-left">
-            <span class="sec-dot sec-dot--mint"></span>
-            <h2 class="sec-title">SELECCIONAR USUARIO</h2>
-          </div>
+    <div class="user-select-card">
+      <div class="sec-head">
+        <div class="sec-head-left">
+          <span class="sec-dot sec-dot--mint"></span>
+          <h2 class="sec-title">SELECCIONAR USUARIO</h2>
         </div>
-        <p class="user-select-hint">Selecciona un usuario para gestionar sus pictogramas</p>
-
-        @if (selectableUsersLoading) {
-          <div class="user-select-loading">
-            <ion-spinner name="crescent"></ion-spinner>
-            <span>Cargando usuarios…</span>
-          </div>
-        } @else if (selectableUsers.length > 0) {
-          <ion-select
-            class="user-select-input"
-            [value]="selectedUserId"
-            placeholder="Seleccionar usuario…"
-            (ionChange)="onUserSelect($event)"
-            interface="action-sheet">
-            @for (u of selectableUsers; track u.id) {
-              <ion-select-option [value]="u.id">{{ u.name }}</ion-select-option>
-            }
-          </ion-select>
-        } @else {
-          <p class="user-select-empty">No hay usuarios disponibles.</p>
-        }
       </div>
-    }
+
+      @if (selectableUsersLoading) {
+        <div class="user-select-loading">
+          <ion-spinner name="crescent"></ion-spinner>
+          <span>Cargando usuarios…</span>
+        </div>
+      } @else if (selectableUsers.length > 0) {
+        <ion-select
+          class="user-select-input"
+          [value]="selectedUserId"
+          placeholder="Seleccionar usuario…"
+          (ionChange)="onUserSelect($event)"
+          interface="action-sheet">
+          @for (u of selectableUsers; track u.id) {
+            <ion-select-option [value]="u.id">{{ u.name }}</ion-select-option>
+          }
+        </ion-select>
+      } @else {
+        <p class="user-select-empty">No hay usuarios disponibles.</p>
+      }
+    </div>
 
     <!-- ══════════════════════════════════════════════════════════════════════
          SECCIÓN 1 — ÁLBUM DE PICTOGRAMAS

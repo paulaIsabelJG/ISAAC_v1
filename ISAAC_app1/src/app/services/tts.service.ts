@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import type { VoiceSettings } from './user.service';
 
 export interface VoiceOption {
   name:     string;
@@ -23,6 +24,49 @@ const MALE_RE   = /\b(male|hombre|masculino|Pablo|Jorge|Diego|Carlos|Antonio|Jua
 
 @Injectable({ providedIn: 'root' })
 export class TtsService {
+
+  // ── Configuración de la sesión del usuario final ──────────────────────────
+  // Se aplica a todas las páginas de la app (fuera del comunicador).
+
+  private _soundEnabled  = false;
+  private _voiceURI      = '';
+  private _speechRate    = 0.9;
+  private _speechPitch   = 1.0;
+  private _speechVolume  = 1.0;
+  private _gender        = '';
+
+  /** Carga la configuración de voz del usuario actual. Llamar en user-session al cargar perfil. */
+  setFromVoiceSettings(vs: VoiceSettings | null | undefined, gender = ''): void {
+    if (!vs) { this._soundEnabled = false; this._gender = ''; return; }
+    this._soundEnabled  = vs.soundEnabled;
+    this._voiceURI      = vs.catalogVoice?.voiceURI     ?? '';
+    this._speechRate    = vs.catalogVoice?.speechRate    ?? 0.9;
+    this._speechPitch   = vs.catalogVoice?.speechPitch   ?? 1.0;
+    this._speechVolume  = vs.catalogVoice?.speechVolume  ?? 1.0;
+    this._gender        = gender;
+  }
+
+  /** Habla la etiqueta si el usuario tiene soundEnabled activado, usando su voz configurada. */
+  speakIfEnabled(label: string): void {
+    if (!this._soundEnabled || !label?.trim()) return;
+
+    let voice: VoiceOption | undefined;
+
+    if (this._voiceURI) {
+      voice = { name: '', lang: 'es-ES', voiceURI: this._voiceURI };
+    } else if (this._gender) {
+      // Sin URI configurada: seleccionar voz por género del usuario
+      const allVoices = window.speechSynthesis?.getVoices() ?? [];
+      const opts: VoiceOption[] = allVoices.map(v => ({
+        name: v.name, lang: v.lang, voiceURI: v.voiceURI,
+        gender: this.detectVoiceGender(v),
+      }));
+      const found = this.getDefaultVoiceByUserGender(this._gender, opts);
+      if (found) voice = found;
+    }
+
+    this.speak(label.trim().toLowerCase(), voice, this._speechRate, this._speechPitch, this._speechVolume);
+  }
 
   /**
    * Intenta inferir el género de una voz a partir de su nombre y URI.
@@ -122,7 +166,9 @@ export class TtsService {
       if (match) utterance.voice = match;
     }
 
-    window.speechSynthesis.speak(utterance);
+    // Delay tras cancel: evita el bug de Chrome donde cancel+speak
+    // en la misma microtarea silencia o recorta el audio.
+    setTimeout(() => window.speechSynthesis.speak(utterance), 50);
   }
 
   stop(): void {
