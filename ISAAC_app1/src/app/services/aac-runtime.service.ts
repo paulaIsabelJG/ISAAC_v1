@@ -98,6 +98,15 @@ export class AacRuntimeService {
 
   /** Configuración del Predictor IA y Corrector IA cargados del tablero raíz. */
   predictorEnabled  = false;
+
+  // ── Configuración de voz del usuario final ────────────────────────────────
+  /** true → cualquier pictograma (con cualquier acción) emite audio al pulsarse. */
+  soundEnabled        = false;
+  /** voiceURI de la voz elegida por el usuario. Vacío = selección automática por género. */
+  configuredVoiceURI  = '';
+  configuredRate      = 0.9;
+  configuredPitch     = 1.0;
+  configuredVolume    = 1.0;
   iaRows            = 5;
   iaCols            = 1;
   aiRewriteEnabled  = false;
@@ -295,6 +304,26 @@ export class AacRuntimeService {
       this._currentBoardId = this.rootBoardId;
       this.returnToRoot$.next(this.rootBoardId);
     }
+  }
+
+  // ── Configurar voz del usuario final ─────────────────────────────────────
+
+  /**
+   * Aplica la configuración de voz guardada en el perfil del usuario final.
+   * Llamar tras startSession() desde CommunicatorPage.
+   */
+  configureSoundSettings(
+    soundEnabled: boolean,
+    voiceURI?:    string,
+    rate?:        number,
+    pitch?:       number,
+    volume?:      number,
+  ): void {
+    this.soundEnabled       = soundEnabled;
+    this.configuredVoiceURI = voiceURI ?? '';
+    this.configuredRate     = rate     ?? 0.9;
+    this.configuredPitch    = pitch    ?? 1.0;
+    this.configuredVolume   = volume   ?? 1.0;
   }
 
   // ── Pictogram press ───────────────────────────────────────────────────────

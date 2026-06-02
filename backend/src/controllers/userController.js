@@ -346,6 +346,8 @@ const updateUserInternal = async (req, res) => {
       return res.status(400).json({ error: 'No fields provided to update' });
     }
 
+    console.log('[PATCH user] address recibida:', payload.address);
+
     const normalized = await validateUserPayload(payload, user, false);
 
     if (payload.email && payload.email !== user.email) {

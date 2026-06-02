@@ -89,10 +89,14 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
     return Math.min(this.voicePollingAttempts / this.MAX_POLLING_ATTEMPTS, 0.95);
   }
 
-  /** El botón Guardar se bloquea mientras la voz personalizada está en proceso activo */
+  /**
+   * Bloquea Guardar solo durante operaciones activas iniciadas en ESTA sesión.
+   * 'processing' NO bloquea: Python trabaja en background y el usuario
+   * puede guardar el resto de datos mientras tanto.
+   */
   get saveDisabledByVoice(): boolean {
     if (this.voiceMode !== 'custom') return false;
-    return ['recording', 'recorded', 'creating', 'processing'].includes(this.customVoiceStep);
+    return ['recording', 'recorded', 'creating'].includes(this.customVoiceStep);
   }
 
   // ── Permisos del usuario final ───────────────────────────────────────────────
@@ -216,15 +220,20 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
         }
         const cv = vs.customVoice;
         if (cv) {
-          this.customVoiceStep = cv.status === 'ready'         ? 'ready'
-                               : cv.status === 'processing'    ? 'processing'
+          this.customVoiceStep = cv.status === 'ready'           ? 'ready'
+                               : cv.status === 'processing'      ? 'processing'
                                : cv.status === 'sample_uploaded' ? 'idle'
-                               : cv.status === 'error'         ? 'error'
+                               : cv.status === 'error'           ? 'error'
                                : 'idle';
           if (cv.status === 'error' && cv.lastError) {
             this.customVoiceError = cv.lastError;
           }
           if (cv.consentAccepted) this.customVoiceConsent = true;
+          // Si la voz estaba procesándose, arrancar polling para detectar cuando termine
+          if (cv.status === 'processing') {
+            this.voicePollingAttempts = 0;
+            this.startVoicePolling(this.userId);
+          }
         }
       }
       // Cargar voces siempre (el selector está siempre visible)
@@ -527,7 +536,16 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
     if (val.length < 3) { this.suggestions = []; this.showSuggestions = false; return; }
     this._deb = setTimeout(() => {
       this.authSvc.getPlaceSuggestions(val).subscribe({
-        next:  (r) => { this.suggestions = r.suggestions; this.showSuggestions = r.suggestions.length > 0; },
+        next:  (r) => {
+          // Eliminar sugerencias duplicadas por dirección
+          const seen = new Set<string>();
+          this.suggestions = r.suggestions.filter(s => {
+            if (seen.has(s.formattedAddress)) return false;
+            seen.add(s.formattedAddress);
+            return true;
+          });
+          this.showSuggestions = this.suggestions.length > 0;
+        },
         error: ()  => { this.suggestions = []; this.showSuggestions = false; },
       });
     }, 300);
@@ -545,6 +563,7 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
   // ── Guardar ──────────────────────────────────────────────────────────────────
 
   async save(): Promise<void> {
+    console.log('[DEBUG save] INICIO — form.invalid:', this.form.invalid, '| form.value:', this.form.value);
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.isSaving = true;
 
@@ -552,6 +571,8 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
     const fullName    = [name?.trim(), surname?.trim()].filter(Boolean).join(' ');
     const ageValue    = age != null && age !== '' ? Number(age) : null;
     const addressValue = address?.trim() || null;
+
+    console.log('[DEBUG save] address raw:', address, '| addressValue:', addressValue);
 
     const selfPerms: SelfPermissions = {
       canEditPersonalData:    this.perms.editData,

@@ -102,7 +102,7 @@ export class AddUserPage implements OnInit {
       : (this.view = 'select');
   }
 
-  setView(v: 'professional' | 'family' | 'final-user'): void {
+  setView(v: View | 'final-user'): void {
     if (v === 'final-user') {
       this.router.navigate(['/user-final-form', 'new']);
       return;
