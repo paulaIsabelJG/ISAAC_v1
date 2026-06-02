@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { IonicModule } from '@ionic/angular';
+import type { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { buildSafeUrl as buildSafeUrlUtil } from '../../shared/utils/image.utils';
@@ -80,8 +81,19 @@ export class UserSessionPage implements OnInit {
       this.targetUser = res.user;
       this.avatarUrl  = this.buildSafeUrl(this.targetUser.image);
       await this.computePermissions();
-    } catch {
-      this.loadError = 'Error al cargar el usuario. Inténtalo de nuevo.';
+    } catch (err: unknown) {
+      const status = (err as HttpErrorResponse)?.status;
+      if (status === 401 || status === 403) {
+        // El interceptor ya habrá redirigido a /login?expired=true,
+        // pero por si el componente aún está activo mostramos un mensaje claro.
+        this.loadError = 'Tu sesión ha caducado. Inicia sesión de nuevo.';
+      } else if (status === 404) {
+        this.loadError = 'El usuario no existe o ha sido eliminado.';
+      } else if (status === 500) {
+        this.loadError = 'Error en el servidor. Inténtalo más tarde.';
+      } else {
+        this.loadError = 'Error al cargar el usuario. Inténtalo de nuevo.';
+      }
     } finally {
       this.isLoading = false;
     }

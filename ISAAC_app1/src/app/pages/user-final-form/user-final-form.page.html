@@ -1,6 +1,6 @@
 <app-page-header
-  title="Datos personales"
-  [backHref]="'/user-session/' + userId"
+  [title]="pageTitle"
+  [backHref]="isEditMode ? '/user-session/' + userId : '/add-user'"
   (backClick)="goBack()">
 </app-page-header>
 
@@ -50,9 +50,13 @@
               }
             </div>
 
-            <!-- Contraseña (opcional en edición) -->
+            <!-- Contraseña -->
             <div class="field">
-              <label class="field-label">Contraseña <span class="field-label-hint">(dejar vacío para no cambiar)</span></label>
+              <label class="field-label">
+                Contraseña
+                @if (isEditMode) { <span class="field-label-hint">(dejar vacío para no cambiar)</span> }
+                @else { <span class="field-label-hint">*</span> }
+              </label>
               <div class="pwd-wrap">
                 <input formControlName="password"
                        [type]="showPwd ? 'text' : 'password'"
@@ -146,20 +150,290 @@
             </div>
           </div>
 
-          <!-- Sonido -->
-          <div class="section-row">
-            <span class="section-label">Sonido</span>
-            <button type="button" class="sound-btn" (click)="toggleSound()">
-              @if (soundEnabled) {
-                <img src="assets/pictograms/sound-on.png"
-                     class="sound-img" alt="Sonido activado"/>
-                <span class="sound-state sound-state--on">Activado</span>
-              } @else {
-                <img src="assets/pictograms/sound-off.png"
-                     class="sound-img" alt="Sonido desactivado"/>
-                <span class="sound-state sound-state--off">Desactivado</span>
+          <!-- Sonido + voz -->
+          <div class="sound-block">
+
+            <!-- Toggle sonido -->
+            <div class="sound-header">
+              <div class="sound-label-group">
+                <span class="section-label">Sonido de botones</span>
+                <span class="sound-desc">Activa o desactiva el sonido al pulsar cualquier botón de la aplicación</span>
+              </div>
+              <button type="button" class="sound-btn" (click)="toggleSound()">
+                @if (soundEnabled) {
+                  <img src="assets/pictograms/sound-on.png" class="sound-img" alt="Sonido activado"/>
+                  <span class="sound-state sound-state--on">Activado</span>
+                } @else {
+                  <img src="assets/pictograms/sound-off.png" class="sound-img" alt="Sonido desactivado"/>
+                  <span class="sound-state sound-state--off">Desactivado</span>
+                }
+              </button>
+            </div>
+
+            @if (soundEnabled) {
+              <p class="sound-hint sound-hint--on">
+                La voz seleccionada se usará al pulsar pictogramas en los tableros asignados y al tocar cualquier botón de la app.
+              </p>
+            } @else {
+              <p class="sound-hint sound-hint--off">
+                Solo se usará la voz seleccionada en los tableros asignados. El resto de botones de la app no emitirán sonido.
+              </p>
+            }
+
+            <div class="sound-divider"></div>
+
+            <!-- Selector de voz -->
+            <div class="voice-section">
+
+              <p class="field-label" style="margin-bottom:8px">Modo de voz</p>
+              <div class="voice-mode-tabs">
+                <button type="button" class="voice-tab"
+                        [class.voice-tab--active]="voiceMode === 'catalog'"
+                        (click)="setVoiceMode('catalog')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+                    <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+                  </svg>
+                  Voz del catálogo
+                </button>
+                <button type="button" class="voice-tab"
+                        [class.voice-tab--active]="voiceMode === 'custom'"
+                        (click)="setVoiceMode('custom')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/>
+                    <line x1="8" y1="23" x2="16" y2="23"/>
+                  </svg>
+                  Personalizar mi propia voz
+                </button>
+              </div>
+
+              <!-- ── CATÁLOGO ─────────────────────────────────────── -->
+              @if (voiceMode === 'catalog') {
+                @if (voicesLoading) {
+                  <div class="voice-loading">
+                    <ion-spinner name="crescent" class="voice-spinner"></ion-spinner>
+                    <span>Cargando voces disponibles…</span>
+                  </div>
+                } @else if (voicesError) {
+                  <div class="voice-error">{{ voicesError }}</div>
+                } @else if (voices.length === 0) {
+                  <div class="voice-error">No hay voces de síntesis disponibles en este dispositivo.</div>
+                } @else {
+                  <label class="field-label">Voz de los tableros asignados</label>
+                  <select class="field-input voice-select"
+                          [value]="selectedVoiceURI"
+                          (change)="onVoiceChange($event)">
+                    @for (v of voices; track v.voiceURI) {
+                      <option [value]="v.voiceURI">{{ v.name }} ({{ v.lang }})</option>
+                    }
+                  </select>
+                  <p class="voice-list-hint">Pulsa ▶ para escuchar cada voz antes de elegirla</p>
+                  <div class="voice-list">
+                    @for (v of voices; track v.voiceURI) {
+                      <div class="voice-row"
+                           [class.voice-row--selected]="v.voiceURI === selectedVoiceURI"
+                           (click)="selectedVoiceURI = v.voiceURI">
+                        <div class="voice-info">
+                          <span class="voice-name">{{ v.name }}</span>
+                          <span class="voice-meta">
+                            {{ v.lang }}
+                            @if (v.gender === 'male')   { · Voz masculina }
+                            @if (v.gender === 'female') { · Voz femenina  }
+                          </span>
+                        </div>
+                        <button type="button" class="voice-test-btn"
+                                (click)="$event.stopPropagation(); testVoice(v)"
+                                title="Probar esta voz">
+                          <svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15">
+                            <polygon points="5,3 20,12 5,21"/>
+                          </svg>
+                        </button>
+                      </div>
+                    }
+                  </div>
+                }
               }
-            </button>
+
+              <!-- ── VOZ PERSONALIZADA ───────────────────────────── -->
+              @if (voiceMode === 'custom') {
+                <div class="custom-voice-card">
+
+                  <!-- Estado: lista -->
+                  @if (customVoiceStep === 'ready') {
+                    <div class="custom-voice-ready">
+                      <div class="ready-header">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                             width="20" height="20">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        <span>Tu voz personalizada está lista</span>
+                      </div>
+                      <div class="ready-btns">
+                        <button type="button" class="rec-btn rec-btn--start"
+                                [disabled]="customVoiceTesting"
+                                (click)="testCustomVoice()">
+                          @if (customVoiceTesting) {
+                            <ion-spinner name="crescent" style="width:14px;height:14px;--color:#fff"></ion-spinner>
+                          } @else {
+                            <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
+                              <polygon points="5,3 20,12 5,21"/>
+                            </svg>
+                          }
+                          Probar mi voz
+                        </button>
+                        <button type="button" class="rec-btn rec-btn--discard"
+                                (click)="customVoiceStep = 'idle'; customVoiceConsent = false">
+                          Volver a grabar
+                        </button>
+                        <button type="button" class="rec-btn rec-btn--delete"
+                                (click)="deleteCustomVoice()">
+                          Eliminar voz personalizada
+                        </button>
+                      </div>
+                    </div>
+                  }
+
+                  <!-- Estado: subiendo muestra -->
+                  @if (customVoiceStep === 'creating') {
+                    <div class="custom-voice-processing">
+                      <ion-spinner name="crescent" style="--color:#ff69b4;width:20px;height:20px"></ion-spinner>
+                      <div class="voice-proc-content">
+                        <span class="voice-proc-title">Subiendo muestra de voz…</span>
+                        <span class="voice-proc-hint">Registrando y preparando el proceso de clonación.</span>
+                      </div>
+                    </div>
+                  }
+
+                  <!-- Estado: generando voz (Python) -->
+                  @if (customVoiceStep === 'processing') {
+                    <div class="custom-voice-processing">
+                      <ion-spinner name="crescent" style="--color:#ff69b4;width:20px;height:20px"></ion-spinner>
+                      <div class="voice-proc-content">
+                        <span class="voice-proc-title">Generando tu voz personalizada…</span>
+                        <span class="voice-proc-hint">Esto puede tardar entre 1 y 3 minutos. Cuando esté lista, se reproducirá automáticamente.</span>
+                        <ion-progress-bar
+                          [value]="voiceProcessingProgress"
+                          color="secondary"
+                          style="margin-top:8px; border-radius:6px">
+                        </ion-progress-bar>
+                      </div>
+                    </div>
+                    <button type="button" class="rec-btn rec-btn--discard"
+                            style="margin-top:8px"
+                            (click)="deleteCustomVoice()">
+                      Cancelar y usar voz del catálogo
+                    </button>
+                  }
+
+                  <!-- Estado: error -->
+                  @if (customVoiceStep === 'error') {
+                    <div class="voice-error">
+                      Error al crear la voz: {{ customVoiceError || 'Error desconocido' }}
+                    </div>
+                    <button type="button" class="rec-btn rec-btn--discard"
+                            (click)="customVoiceStep = 'idle'; customVoiceError = ''">
+                      Volver a intentarlo
+                    </button>
+                  }
+
+                  <!-- Estados idle / recording / recorded / mic_error -->
+                  @if (customVoiceStep === 'idle' || customVoiceStep === 'recording' ||
+                       customVoiceStep === 'recorded' || customVoiceStep === 'mic_error') {
+
+                    <!-- Consentimiento -->
+                    <div class="consent-block">
+                      <p class="consent-text">
+                        Al crear una voz personalizada, confirmas que tienes permiso para usar esta grabación con fines de síntesis de voz dentro de la aplicación. La muestra se almacenará de forma segura y solo se usará para generar mensajes dentro del comunicador de este usuario.
+                      </p>
+                      <label class="consent-row">
+                        <input type="checkbox" class="consent-check"
+                               [checked]="customVoiceConsent"
+                               (change)="customVoiceConsent = $any($event.target).checked"/>
+                        <span>He leído y acepto las condiciones anteriores</span>
+                      </label>
+                    </div>
+
+                    @if (customVoiceConsent) {
+                      <div class="record-prompt-block">
+                        <p class="record-prompt-label">Lee en voz alta:</p>
+                        <p class="record-text">"Hola, esta es mi voz para comunicarme con esta aplicación. Gracias por ayudarme."</p>
+                      </div>
+
+                      @if (customVoiceStep === 'idle') {
+                        <button type="button" class="rec-btn rec-btn--start" (click)="startRecording()">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                          </svg>
+                          Iniciar grabación
+                        </button>
+                      }
+
+                      @if (customVoiceStep === 'recording') {
+                        <div class="rec-active">
+                          <span class="rec-dot"></span>
+                          Grabando… habla despacio y con claridad
+                        </div>
+                        <button type="button" class="rec-btn rec-btn--stop" (click)="stopRecording()">
+                          <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                            <rect x="4" y="4" width="16" height="16" rx="2"/>
+                          </svg>
+                          Detener grabación
+                        </button>
+                      }
+
+                      @if (customVoiceStep === 'recorded') {
+                        <div class="rec-done-block">
+                          <p class="rec-done-label">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15">
+                              <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                            Muestra grabada correctamente
+                          </p>
+                          <audio class="rec-audio" [src]="recordedAudioUrl!" controls></audio>
+
+                          @if (customVoiceError) {
+                            <div class="voice-error" style="margin-top:4px">{{ customVoiceError }}</div>
+                          }
+
+                          <div class="rec-done-btns">
+                            <button type="button" class="rec-btn rec-btn--create"
+                                    (click)="createCustomVoiceInForm()">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                                <line x1="12" y1="19" x2="12" y2="23"/>
+                                <line x1="8" y1="23" x2="16" y2="23"/>
+                              </svg>
+                              Crear mi voz
+                            </button>
+                            <button type="button" class="rec-btn rec-btn--discard" (click)="discardRecording()">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                <path d="M3 6h18M19 6l-1 14H6L5 6M9 6V4h6v2"/>
+                              </svg>
+                              Descartar
+                            </button>
+                          </div>
+                          <p class="rec-create-hint">
+                            El Email, Contraseña, Nombre y Apellidos deben estar rellenos antes de crear la voz.
+                          </p>
+                        </div>
+                      }
+
+                      @if (customVoiceStep === 'mic_error') {
+                        <div class="voice-error">{{ customVoiceError }}</div>
+                        <button type="button" class="rec-btn rec-btn--discard"
+                                (click)="customVoiceStep = 'idle'; customVoiceError = ''">
+                          Reintentar
+                        </button>
+                      }
+                    }
+                  }
+
+                </div>
+              }
+
+            </div>
           </div>
 
           <!-- Permisos -->
@@ -207,11 +481,15 @@
 
           <!-- Botón guardar -->
           <button type="submit" class="submit-btn"
-                  [disabled]="form.invalid || isSaving">
+                  [disabled]="form.invalid || isSaving || saveDisabledByVoice">
             @if (isSaving) {
               <ion-spinner name="crescent" class="btn-spinner"></ion-spinner>
             }
-            Guardar cambios
+            @if (saveDisabledByVoice) {
+              Esperando a que la voz esté lista…
+            } @else {
+              {{ isEditMode ? 'Guardar cambios' : 'Añadir usuario' }}
+            }
           </button>
 
         </form>

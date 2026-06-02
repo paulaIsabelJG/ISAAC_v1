@@ -1,0 +1,200 @@
+"""
+Microservicio FastAPI — OpenVoice V2
+Clonar voz de referencia y sintetizar audio personalizado.
+
+Requisitos previos (una sola vez):
+  git clone https://github.com/myshell-ai/OpenVoice
+  git clone https://github.com/myshell-ai/MeloTTS
+  pip install -e ./OpenVoice -e ./MeloTTS
+  python -m unidic download
+
+  Descargar checkpoints:
+    https://myshell-public-repo-host.s3.amazonaws.com/openvoice/checkpoints_v2_0417.zip
+    Descomprimir en ./checkpoints_v2/
+"""
+
+import os
+import sys
+import hashlib
+import tempfile
+import traceback
+from pathlib import Path
+
+import torch
+import numpy as np
+import soundfile as sf
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from pydantic import BaseModel
+
+# ── Paths ─────────────────────────────────────────────────────────────────────
+
+BASE_DIR        = Path(__file__).parent
+CHECKPOINTS_DIR = BASE_DIR / "checkpoints_v2"
+VOICES_DIR      = BASE_DIR / "voices"
+CACHE_DIR       = BASE_DIR / "cache"
+
+VOICES_DIR.mkdir(parents=True, exist_ok=True)
+CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+print(f"[voice_service] Dispositivo: {DEVICE}")
+
+# ── Cargar modelos al arranque ────────────────────────────────────────────────
+
+try:
+    sys.path.insert(0, str(BASE_DIR / "OpenVoice"))
+    sys.path.insert(0, str(BASE_DIR / "MeloTTS"))
+
+    from openvoice import se_extractor
+    from openvoice.api import ToneColorConverter
+
+    config_path = CHECKPOINTS_DIR / "converter" / "config.json"
+    ckpt_path   = CHECKPOINTS_DIR / "converter" / "checkpoint.pth"
+
+    tone_color_converter = ToneColorConverter(str(config_path), device=DEVICE)
+    tone_color_converter.load_ckpt(str(ckpt_path))
+
+    from melo.api import TTS as MeloTTS
+    tts_model = MeloTTS(language="ES", device=DEVICE)
+    ES_SPEAKER_ID = tts_model.hps.data.spk2id.get(
+        "ES", list(tts_model.hps.data.spk2id.values())[0]
+    )
+    # Embedding del speaker base (español)
+    base_speaker_se_path = CHECKPOINTS_DIR / "base_speakers" / "ses" / "es.pth"
+    BASE_SE = torch.load(str(base_speaker_se_path), map_location=DEVICE)
+
+    MODELS_READY = True
+    print("[voice_service] Modelos cargados correctamente.")
+
+except Exception as exc:
+    MODELS_READY = False
+    print(f"[voice_service] AVISO: No se pudieron cargar los modelos: {exc}")
+    print("  Arranca el servicio de todos modos (los endpoints devolverán 503 si se llaman).")
+
+# ── FastAPI ───────────────────────────────────────────────────────────────────
+
+app = FastAPI(title="ISAAC Voice Service", version="1.0.0")
+
+
+def require_models():
+    if not MODELS_READY:
+        raise HTTPException(
+            status_code=503,
+            detail="Modelos de voz no disponibles. Sigue las instrucciones de instalación en requirements.txt.",
+        )
+
+
+# ── Schemas ───────────────────────────────────────────────────────────────────
+
+class CreateVoiceRequest(BaseModel):
+    userId:             str
+    referenceAudioPath: str
+
+
+class SynthesizeRequest(BaseModel):
+    userId:             str
+    text:               str
+    speakerProfilePath: str
+
+
+# ── Endpoints ─────────────────────────────────────────────────────────────────
+
+@app.get("/health")
+def health():
+    return {"status": "ok", "modelsReady": MODELS_READY, "device": DEVICE}
+
+
+@app.post("/voice/create")
+def create_voice(body: CreateVoiceRequest):
+    """
+    Extrae el embedding tonal (tone color) de la muestra de referencia
+    y lo guarda en disco. Devuelve la ruta del perfil.
+    """
+    require_models()
+
+    ref_path = Path(body.referenceAudioPath)
+    if not ref_path.exists():
+        raise HTTPException(status_code=400, detail="Archivo de referencia no encontrado")
+
+    user_voices_dir = VOICES_DIR / body.userId
+    user_voices_dir.mkdir(parents=True, exist_ok=True)
+
+    try:
+        target_se, _ = se_extractor.get_se(
+            str(ref_path),
+            tone_color_converter,
+            target_dir=str(user_voices_dir),
+            vad=True,
+        )
+        profile_path = user_voices_dir / "speaker_embedding.pth"
+        torch.save(target_se, str(profile_path))
+        return {"speakerProfilePath": str(profile_path)}
+
+    except Exception as exc:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error al crear perfil de voz: {exc}")
+
+
+@app.post("/voice/synthesize")
+def synthesize_voice(body: SynthesizeRequest):
+    """
+    Genera audio WAV aplicando el perfil de voz personalizado al texto dado.
+    Devuelve el archivo de audio.
+    """
+    require_models()
+
+    profile_path = Path(body.speakerProfilePath)
+    if not profile_path.exists():
+        raise HTTPException(status_code=400, detail="Perfil de voz no encontrado")
+
+    text = body.text.strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="El texto no puede estar vacío")
+
+    # Caché: mismo texto + mismo perfil = mismo audio
+    cache_key  = hashlib.sha256(f"{body.userId}:{text}:{body.speakerProfilePath}".encode()).hexdigest()
+    cache_file = CACHE_DIR / body.userId / f"{cache_key}.wav"
+    cache_file.parent.mkdir(parents=True, exist_ok=True)
+
+    if cache_file.exists():
+        return FileResponse(str(cache_file), media_type="audio/wav")
+
+    try:
+        # 1. TTS base con MeloTTS (español)
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+            tmp_path = tmp.name
+
+        tts_model.tts_to_file(text, ES_SPEAKER_ID, tmp_path, speed=1.0)
+
+        # 2. Conversión de color tonal (aplicar voz del usuario)
+        target_se = torch.load(str(profile_path), map_location=DEVICE)
+
+        tone_color_converter.convert(
+            audio_src_path=tmp_path,
+            src_se=BASE_SE,
+            tgt_se=target_se,
+            output_path=str(cache_file),
+            message="@ISAAC",
+        )
+
+        os.unlink(tmp_path)
+
+        return FileResponse(str(cache_file), media_type="audio/wav")
+
+    except Exception as exc:
+        traceback.print_exc()
+        # Limpiar archivo temporal si existe
+        try:
+            if "tmp_path" in locals() and os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+        except Exception:
+            pass
+        raise HTTPException(status_code=500, detail=f"Error al sintetizar voz: {exc}")
+
+
+# ── Arranque ──────────────────────────────────────────────────────────────────
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=False)

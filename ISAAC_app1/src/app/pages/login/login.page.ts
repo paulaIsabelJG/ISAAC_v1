@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { IonicModule, ToastController } from '@ionic/angular';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -14,18 +14,24 @@ import { AuthService } from '../../services/auth.service';
 })
 export class LoginPage implements OnInit {
   loginForm!: FormGroup;
-  isLoading = false;
-  errorMessage = '';
+  isLoading      = false;
+  errorMessage   = '';
+  /** true cuando se llega desde una sesión caducada (?expired=true en la URL) */
+  sessionExpired = false;
 
   constructor(
-    private fb: FormBuilder,
+    private fb:          FormBuilder,
     private authService: AuthService,
-    private router: Router,
-    private toastCtrl: ToastController
+    private router:      Router,
+    private route:       ActivatedRoute,
+    private toastCtrl:   ToastController,
   ) {}
 
   ngOnInit() {
-    // Si ya hay sesión activa, redirigir directamente al dashboard
+    // Detectar si venimos de una sesión caducada (guard o interceptor)
+    this.sessionExpired = this.route.snapshot.queryParamMap.get('expired') === 'true';
+
+    // Si ya hay sesión activa y válida, redirigir directamente
     if (this.authService.isLoggedIn()) {
       const user = this.authService.getCurrentUser();
       if (user) {
@@ -46,20 +52,20 @@ export class LoginPage implements OnInit {
       return;
     }
 
-    this.isLoading = true;
-    this.errorMessage = '';
+    this.isLoading      = true;
+    this.errorMessage   = '';
+    this.sessionExpired = false; // Ocultar el banner al intentar de nuevo
 
     this.authService.login(this.loginForm.value).subscribe({
       next: async (response) => {
         this.isLoading = false;
         const toast = await this.toastCtrl.create({
-          message: `Bienvenido, ${response.user.name}`,
-          duration: 1500,
-          color: 'success',
+          message:  `Bienvenido, ${response.user.name}`,
+          duration:  1500,
+          color:    'success',
           position: 'top',
         });
         await toast.present();
-        // Navegar según tipo de usuario (saveSession ya fue llamado via tap() en el servicio)
         this.router.navigate([this.authService.getRedirectRoute(response.user)], { replaceUrl: true });
       },
       error: async (err) => {
@@ -67,9 +73,9 @@ export class LoginPage implements OnInit {
         this.errorMessage =
           err?.error?.error || err?.error?.message || 'Error al iniciar sesión. Revisa tus credenciales.';
         const toast = await this.toastCtrl.create({
-          message: this.errorMessage,
-          duration: 2500,
-          color: 'danger',
+          message:  this.errorMessage,
+          duration:  2500,
+          color:    'danger',
           position: 'top',
         });
         await toast.present();

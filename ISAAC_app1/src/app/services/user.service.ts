@@ -31,9 +31,11 @@ export interface FullBackendUser {
   type:    'teacher' | 'parent' | 'user';
   image?:  string | null;
   centro?: string | null;
-  gender?: string | null;
-  age?:    number | null;
-  selfPermissions?: SelfPermissions;
+  gender?:  string | null;
+  age?:     number | null;
+  address?: string | null;
+  selfPermissions?:  SelfPermissions;
+  voiceSettings?:    VoiceSettings;
   assignedProfessionals?: Array<{
     professionalId:         string;
     canViewStats:           boolean;
@@ -56,6 +58,48 @@ export interface FullBackendUser {
   }>;
 }
 
+/** @deprecated Usar VoiceSettings. Mantenido para retrocompatibilidad. */
+export interface TtsConfig {
+  soundEnabled:  boolean;
+  voiceName:     string;
+  voiceLang:     string;
+  voiceURI:      string;
+  speechRate?:   number;
+  speechPitch?:  number;
+  speechVolume?: number;
+}
+
+// ─── Voice Settings (nuevo esquema) ──────────────────────────────────────────
+
+export interface CatalogVoice {
+  voiceName?:    string;
+  voiceLang?:    string;
+  voiceURI?:     string;
+  speechRate?:   number;
+  speechPitch?:  number;
+  speechVolume?: number;
+}
+
+export interface CustomVoiceInfo {
+  enabled:             boolean;
+  provider:            'openvoice';
+  status:              'disabled' | 'sample_uploaded' | 'processing' | 'ready' | 'error';
+  referenceAudioPath?: string | null;
+  speakerProfilePath?: string | null;
+  consentAccepted:     boolean;
+  consentAcceptedAt?:  string | null;
+  sampleUploadedAt?:   string | null;
+  voiceCreatedAt?:     string | null;
+  lastError?:          string | null;
+}
+
+export interface VoiceSettings {
+  soundEnabled: boolean;
+  voiceMode:    'catalog' | 'custom';
+  catalogVoice?: CatalogVoice;
+  customVoice?:  CustomVoiceInfo;
+}
+
 /** Payload para actualizar datos personales de un usuario final */
 export interface UpdateUserPayload {
   name?:             string;
@@ -63,8 +107,12 @@ export interface UpdateUserPayload {
   password?:         string;
   gender?:           string;
   age?:              number | null;
+  address?:          string | null;
   image?:            string | null;
   selfPermissions?:  SelfPermissions;
+  voiceSettings?:    VoiceSettings;
+  /** @deprecated usar voiceSettings */
+  ttsConfig?:        TtsConfig;
 }
 
 // ─── childrenAccess ───────────────────────────────────────────────────────────
@@ -147,7 +195,8 @@ export interface AssignedUserEntry {
 
 @Injectable({ providedIn: 'root' })
 export class UserService {
-  private readonly url = `${environment.apiUrl}/users`;
+  private readonly url      = `${environment.apiUrl}/users`;
+  private readonly voiceUrl = `${environment.apiUrl}/voice`;
 
   constructor(private http: HttpClient) {}
 
@@ -249,6 +298,52 @@ export class UserService {
     return this.http.put<{ message: string; count: number }>(
       `${this.url}/${encodeURIComponent(userId)}/assigned-professionals`,
       { assignedProfessionals: assignments }
+    );
+  }
+
+  // ── Voz personalizada ──────────────────────────────────────────────────────
+
+  /** POST /api/voice/:userId/sample — sube muestra de audio en base64 */
+  uploadVoiceSample(
+    userId:          string,
+    audioDataUrl:    string,
+    consentAccepted: boolean,
+    consentText:     string
+  ): Observable<{ message: string; status: string }> {
+    return this.http.post<{ message: string; status: string }>(
+      `${this.voiceUrl}/${encodeURIComponent(userId)}/sample`,
+      { audioDataUrl, consentAccepted, consentText }
+    );
+  }
+
+  /** POST /api/voice/:userId/create — lanza la creación de voz en Python */
+  createVoice(userId: string): Observable<{ message: string; status: string }> {
+    return this.http.post<{ message: string; status: string }>(
+      `${this.voiceUrl}/${encodeURIComponent(userId)}/create`,
+      {}
+    );
+  }
+
+  /** GET /api/voice/:userId/status — devuelve el estado de voiceSettings */
+  getVoiceStatus(userId: string): Observable<{ voiceSettings: VoiceSettings }> {
+    return this.http.get<{ voiceSettings: VoiceSettings }>(
+      `${this.voiceUrl}/${encodeURIComponent(userId)}/status`
+    );
+  }
+
+  /** DELETE /api/voice/:userId/custom — elimina la voz personalizada */
+  deleteCustomVoice(userId: string): Observable<{ message: string; status: string }> {
+    return this.http.delete<{ message: string; status: string }>(
+      `${this.voiceUrl}/${encodeURIComponent(userId)}/custom`
+    );
+  }
+
+  /** POST /api/voice/tts/speak — genera audio con la voz personalizada (devuelve Blob WAV) */
+  speakCustom(userId: string, text: string): Observable<Blob> {
+    return this.http.post(
+      `${this.voiceUrl}/tts/speak`,
+      { userId, text },
+      { responseType: 'blob' }
     );
   }
 }

@@ -324,6 +324,49 @@ $text-muted:  #7a5163;
 }
 
 // ── Sección sonido ────────────────────────────────────────────────────────────
+.sound-block {
+  margin: 18px 0 16px;
+  border: 1.5px solid $border;
+  border-radius: 14px;
+  padding: 14px 16px 12px;
+  background: #fffbfd;
+}
+
+.sound-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sound-label-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.sound-desc {
+  font-size: 12px;
+  color: $text-muted;
+  line-height: 1.4;
+}
+
+.sound-hint {
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 10px 0 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+
+  &--on  { background: #e8fff6; color: $mint-dark; }
+  &--off { background: #f5f5f5; color: #888; }
+}
+
+.sound-divider {
+  border-top: 1px solid $border;
+  margin: 14px 0;
+}
+
 .section-row {
   display: flex;
   align-items: center;
@@ -367,6 +410,114 @@ $text-muted:  #7a5163;
 
   &--on  { color: $mint-dark; }
   &--off { color: #aaa; }
+}
+
+// ── Sección voz TTS ───────────────────────────────────────────────────────────
+.voice-section {
+  margin: 0 0 18px;
+}
+
+.voice-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: $text-muted;
+  font-size: 13px;
+  padding: 10px 0;
+}
+
+.voice-spinner { --color: #{$pink}; width: 18px; height: 18px; }
+
+.voice-error {
+  background: #fff3e0;
+  border: 1px solid #ffb74d;
+  border-radius: 10px;
+  color: #e65100;
+  font-size: 13px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+}
+
+.voice-select {
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+
+.voice-list-hint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: $text-muted;
+  margin: 0 0 8px;
+
+}
+
+.voice-list {
+  border: 1.5px solid $border;
+  border-radius: 14px;
+  overflow: hidden;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.voice-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.12s;
+
+  &:not(:last-child) { border-bottom: 1px solid $border; }
+  &:hover { background: $pink-light; }
+
+  &--selected {
+    background: #e8fff6;
+    border-left: 3px solid $mint;
+    padding-left: 11px;
+  }
+}
+
+.voice-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.voice-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: $text-dark;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.voice-meta {
+  font-size: 11px;
+  color: $text-muted;
+}
+
+.voice-test-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  border: 1.5px solid $border;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  color: $pink;
+  font-size: 17px;
+  transition: background 0.15s, border-color 0.15s;
+  margin-left: 8px;
+
+  &:hover { background: $pink; color: #fff; border-color: $pink; }
+  &:active { transform: scale(0.93); }
 }
 
 // ── Permisos ─────────────────────────────────────────────────────────────────
@@ -763,4 +914,224 @@ $text-muted:  #7a5163;
   .type-card    { width: 130px; padding: 18px 10px 16px; }
   .type-img     { width: 64px; height: 64px; }
   .extra-btns   { gap: 10px; }
+}
+
+// ── Tabs: catálogo / voz personalizada ────────────────────────────────────────
+.voice-mode-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.voice-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1.5px solid $border;
+  border-radius: 14px;
+  background: #fff;
+  color: $text-muted;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.18s;
+  text-align: center;
+  line-height: 1.2;
+
+  svg { flex: 0 0 15px; }
+
+  &:hover {
+    border-color: $pink;
+    color: $pink;
+    background: $pink-light;
+  }
+
+  &--active {
+    background: $pink;
+    border-color: $pink-dark;
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(255, 105, 180, 0.25);
+  }
+}
+
+// ── Tarjeta voz personalizada ─────────────────────────────────────────────────
+.custom-voice-card {
+  background: #fffbfe;
+  border: 1.5px solid #f0d4e2;
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+// ── Bloque de consentimiento ──────────────────────────────────────────────────
+.consent-block {
+  background: #fff8f0;
+  border: 1px solid #ffd9a0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.consent-text {
+  font-size: 12px;
+  color: #7a5c00;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.consent-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+
+  span {
+    font-size: 13px;
+    font-weight: 600;
+    color: $text-dark;
+    line-height: 1.3;
+  }
+}
+
+.consent-check {
+  width: 16px;
+  height: 16px;
+  accent-color: $pink;
+  flex: 0 0 16px;
+  margin-top: 2px;
+  cursor: pointer;
+}
+
+// ── Texto base a leer ─────────────────────────────────────────────────────────
+.record-prompt-block {
+  background: #f0f8ff;
+  border: 1px solid #b3d9ff;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.record-prompt-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #4a90d9;
+  margin: 0 0 6px;
+}
+
+.record-text {
+  font-size: 15px;
+  font-style: italic;
+  color: $text-dark;
+  line-height: 1.45;
+  margin: 0;
+}
+
+// ── Botones de grabación ──────────────────────────────────────────────────────
+.rec-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 22px;
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.18s, transform 0.12s;
+
+  &--start {
+    background: $pink;
+    color: #fff;
+    &:hover { background: $pink-dark; transform: translateY(-1px); }
+  }
+
+  &--stop {
+    background: #ef5350;
+    color: #fff;
+    &:hover { background: #c62828; }
+  }
+
+  &--discard {
+    background: #f5f5f5;
+    color: $text-muted;
+    border: 1.5px solid $border;
+    &:hover { background: #e8e8e8; }
+  }
+}
+
+// ── Indicador de grabación activa ─────────────────────────────────────────────
+.rec-active {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ef5350;
+  margin-bottom: 10px;
+}
+
+.rec-dot {
+  width: 10px;
+  height: 10px;
+  background: #ef5350;
+  border-radius: 50%;
+  flex: 0 0 10px;
+  animation: rec-blink 1s ease-in-out infinite;
+}
+
+@keyframes rec-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.15; }
+}
+
+// ── Bloque muestra lista ──────────────────────────────────────────────────────
+.rec-done-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rec-done-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: $mint-dark;
+  margin: 0;
+
+  svg { color: $mint-dark; }
+}
+
+.rec-audio {
+  width: 100%;
+  border-radius: 10px;
+  outline: none;
+}
+
+.rec-done-btns {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.rec-save-hint {
+  font-size: 12px;
+  color: $text-muted;
+  font-style: italic;
+  margin: 0;
+  padding: 8px 12px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  line-height: 1.4;
 }

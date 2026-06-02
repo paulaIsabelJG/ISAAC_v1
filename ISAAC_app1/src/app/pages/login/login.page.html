@@ -11,6 +11,13 @@
         <p>Accede con tu cuenta para continuar</p>
       </div>
 
+      @if (sessionExpired) {
+        <div class="session-expired-banner">
+          <ion-icon name="time-outline"></ion-icon>
+          Tu sesión ha caducado. Inicia sesión de nuevo.
+        </div>
+      }
+
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
         <ion-item class="login-item">
           <ion-label position="floating">Email</ion-label>

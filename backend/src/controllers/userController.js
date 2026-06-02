@@ -123,7 +123,8 @@ const validateUserPayload = async (payload, existingUser = null, isCreate = fals
     password: payload.password,
     gender:   payload.gender,
     image:    payload.image,
-    age:      payload.age !== undefined ? (payload.age === null ? null : Number(payload.age)) : undefined,
+    age:     payload.age     !== undefined ? (payload.age === null ? null : Number(payload.age)) : undefined,
+    address: payload.address !== undefined ? (payload.address || null)                         : undefined,
   };
 };
 
@@ -314,9 +315,10 @@ const applyUserUpdates = (user, updates) => {
   if (updates.password !== undefined) user.password = updates.password;
   if (updates.type !== undefined)     user.type     = updates.type;
   if (updates.gender !== undefined)   user.gender   = updates.gender;
-  if (updates.age !== undefined)      user.age      = updates.age;
-  if (updates.image !== undefined)    user.image    = updates.image;
-  if (updates.centro !== undefined)   user.centro   = updates.centro;
+  if (updates.age     !== undefined)  user.age     = updates.age;
+  if (updates.address !== undefined)  user.address = updates.address;
+  if (updates.image   !== undefined)  user.image   = updates.image;
+  if (updates.centro  !== undefined)  user.centro  = updates.centro;
   if (updates.hijos !== undefined)    user.hijos    = updates.hijos;
   if (updates.parentId !== undefined) user.parentId = updates.parentId;
 };
@@ -364,6 +366,41 @@ const updateUserInternal = async (req, res) => {
         canAddPictograms:       !!payload.selfPermissions?.canAddPictograms,
         canAssignProfessionals: !!payload.selfPermissions?.canAssignProfessionals,
         canAssignFamilies:      !!payload.selfPermissions?.canAssignFamilies,
+      };
+    }
+
+    // voiceSettings: configuración de síntesis de voz del usuario final
+    if (payload.voiceSettings !== undefined) {
+      const vs = payload.voiceSettings;
+      if (!user.voiceSettings) user.voiceSettings = {};
+      if (typeof vs.soundEnabled === 'boolean') user.voiceSettings.soundEnabled = vs.soundEnabled;
+      if (vs.voiceMode === 'catalog' || vs.voiceMode === 'custom') user.voiceSettings.voiceMode = vs.voiceMode;
+      if (vs.catalogVoice != null) {
+        const cv = vs.catalogVoice;
+        user.voiceSettings.catalogVoice = {
+          voiceName:    typeof cv.voiceName    === 'string' ? cv.voiceName    : null,
+          voiceLang:    typeof cv.voiceLang    === 'string' ? cv.voiceLang    : null,
+          voiceURI:     typeof cv.voiceURI     === 'string' ? cv.voiceURI     : null,
+          speechRate:   typeof cv.speechRate   === 'number' ? cv.speechRate   : 0.9,
+          speechPitch:  typeof cv.speechPitch  === 'number' ? cv.speechPitch  : 1.0,
+          speechVolume: typeof cv.speechVolume === 'number' ? cv.speechVolume : 1.0,
+        };
+      }
+    }
+
+    // Retrocompatibilidad: payload antiguo con ttsConfig → se mapea a catalogVoice
+    if (payload.ttsConfig !== undefined && payload.voiceSettings === undefined) {
+      const t = payload.ttsConfig;
+      if (!user.voiceSettings) user.voiceSettings = {};
+      user.voiceSettings.soundEnabled = typeof t.soundEnabled === 'boolean' ? t.soundEnabled : false;
+      user.voiceSettings.voiceMode    = 'catalog';
+      user.voiceSettings.catalogVoice = {
+        voiceName:    typeof t.voiceName    === 'string' ? t.voiceName    : null,
+        voiceLang:    typeof t.voiceLang    === 'string' ? t.voiceLang    : null,
+        voiceURI:     typeof t.voiceURI     === 'string' ? t.voiceURI     : null,
+        speechRate:   typeof t.speechRate   === 'number' ? t.speechRate   : 0.9,
+        speechPitch:  typeof t.speechPitch  === 'number' ? t.speechPitch  : 1.0,
+        speechVolume: typeof t.speechVolume === 'number' ? t.speechVolume : 1.0,
       };
     }
 

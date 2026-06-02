@@ -37,3 +37,93 @@ app-page-header {
   color:          #aaa;
   margin-left:    4px;
 }
+
+// ── Estado: voz personalizada lista ──────────────────────────────────────────
+.custom-voice-ready {
+  display:        flex;
+  flex-direction: column;
+  gap:            12px;
+}
+
+.ready-header {
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+  font-size:   14px;
+  font-weight: 700;
+  color:       #20c997;
+
+  svg { color: #20c997; flex: 0 0 20px; }
+}
+
+.ready-btns {
+  display:   flex;
+  gap:       8px;
+  flex-wrap: wrap;
+}
+
+// ── Estado: procesando ────────────────────────────────────────────────────────
+.custom-voice-processing {
+  display:     flex;
+  align-items: center;
+  gap:         10px;
+  font-size:   13px;
+  color:       #9e7a8e;
+  background:  #fff8fc;
+  border:      1px solid #f0d4e2;
+  border-radius: 10px;
+  padding:     12px 14px;
+  margin-bottom: 10px;
+}
+
+// ── Botón eliminar voz (rojo suave) ──────────────────────────────────────────
+.rec-btn--delete {
+  background: #fff0f0;
+  color:      #e53935;
+  border:     1.5px solid #ffcdd2;
+  font-size:  12px;
+
+  &:hover { background: #ffebee; border-color: #e53935; }
+}
+
+// ── Botón "Crear mi voz" (rosa primario, destacado) ───────────────────────────
+.rec-btn--create {
+  background: #9c27b0;
+  color:      #fff;
+  font-size:  14px;
+  box-shadow: 0 3px 10px rgba(156, 39, 176, 0.28);
+
+  &:hover { background: #7b1fa2; transform: translateY(-1px); }
+}
+
+// ── Bloque de procesamiento (creating / processing) ───────────────────────────
+.voice-proc-content {
+  display:        flex;
+  flex-direction: column;
+  gap:            4px;
+  flex:           1;
+}
+
+.voice-proc-title {
+  font-size:   13px;
+  font-weight: 700;
+  color:       #42283a;
+}
+
+.voice-proc-hint {
+  font-size:   12px;
+  color:       #9e7a8e;
+  line-height: 1.4;
+}
+
+// ── Hint antes de crear la voz ────────────────────────────────────────────────
+.rec-create-hint {
+  font-size:    11px;
+  color:        #b0a0a8;
+  font-style:   italic;
+  margin:       0;
+  padding:      6px 10px;
+  background:   #f9f9f9;
+  border-radius: 8px;
+  line-height:  1.4;
+}

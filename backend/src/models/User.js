@@ -46,6 +46,8 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  // Dirección (texto tal como la escribió el usuario / seleccionó del autocompletado)
+  address:   { type: String, default: null },
   // Geolocalización (se rellena desde el autocompletado de direcciones)
   latitude:  { type: Number, default: null },
   longitude: { type: Number, default: null },
@@ -98,6 +100,32 @@ const userSchema = new mongoose.Schema({
     canAssignFamilies:      { type: Boolean, default: false },
     canViewAssignedBoards:  { type: Boolean, default: false },
   }],
+  // Configuración de síntesis de voz — solo relevante para usuarios finales
+  voiceSettings: {
+    soundEnabled: { type: Boolean, default: false },
+    voiceMode:    { type: String, enum: ['catalog', 'custom'], default: 'catalog' },
+    catalogVoice: {
+      voiceName:    { type: String, default: null },
+      voiceLang:    { type: String, default: null },
+      voiceURI:     { type: String, default: null },
+      speechRate:   { type: Number, default: 0.9 },
+      speechPitch:  { type: Number, default: 1.0 },
+      speechVolume: { type: Number, default: 1.0 },
+    },
+    customVoice: {
+      enabled:            { type: Boolean, default: false },
+      provider:           { type: String, enum: ['openvoice'], default: 'openvoice' },
+      status:             { type: String, enum: ['disabled', 'sample_uploaded', 'processing', 'ready', 'error'], default: 'disabled' },
+      referenceAudioPath: { type: String, default: null },
+      speakerProfilePath: { type: String, default: null },
+      consentAccepted:    { type: Boolean, default: false },
+      consentAcceptedAt:  { type: Date,    default: null },
+      consentText:        { type: String,  default: null },
+      sampleUploadedAt:   { type: Date,    default: null },
+      voiceCreatedAt:     { type: Date,    default: null },
+      lastError:          { type: String,  default: null },
+    },
+  },
   customPictograms: [{
     id: {
       type: String,

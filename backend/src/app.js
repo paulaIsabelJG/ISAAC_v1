@@ -11,6 +11,7 @@ const oblRoutes         = require('./routes/obl');
 const aacStatisticsRoutes = require('./routes/aacStatistics');
 const aiRoutes            = require('./routes/ai');
 const aacPredictionRoutes = require('./routes/aacPrediction');
+const voiceRoutes         = require('./routes/voice');
 
 const app = express();
 
@@ -47,5 +48,8 @@ app.use('/api/aac-prediction', aacPredictionRoutes);
 
 // Places / geocoding routes
 app.use('/api/places', placesRoutes);
+
+// Voz personalizada (muestra + OpenVoice + caché TTS)
+app.use('/api/voice', voiceRoutes);
 
 module.exports = app;
