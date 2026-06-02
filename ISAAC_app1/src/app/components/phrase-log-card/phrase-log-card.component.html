@@ -1,5 +1,20 @@
 <div class="plc-card" [class.plc-card--expanded]="expanded">
 
+  <!-- ── Controles fijos: X arriba, flecha abajo ────────────────────────── -->
+  <button class="plc-delete-btn" (click)="onDeleteClick($event)" title="Eliminar frase" aria-label="Eliminar frase">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11">
+      <line x1="18" y1="6" x2="6" y2="18"/>
+      <line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+  </button>
+
+  <button class="plc-toggle" (click)="toggleExpanded()" [attr.aria-expanded]="expanded">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+         [style.transform]="expanded ? 'rotate(180deg)' : 'none'">
+      <polyline points="6 9 12 15 18 9"/>
+    </svg>
+  </button>
+
   <!-- ── Cabecera ────────────────────────────────────────────────────────── -->
   <div class="plc-header" (click)="toggleExpanded()">
 
@@ -16,13 +31,6 @@
         "{{ phrase.aiReformulatedText }}"
       </p>
     }
-
-    <button class="plc-toggle" [attr.aria-expanded]="expanded">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-           [style.transform]="expanded ? 'rotate(180deg)' : 'none'">
-        <polyline points="6 9 12 15 18 9"/>
-      </svg>
-    </button>
 
   </div>
 

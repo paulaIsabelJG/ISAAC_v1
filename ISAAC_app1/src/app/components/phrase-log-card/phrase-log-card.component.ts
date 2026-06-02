@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule }     from '@angular/common';
 import { ReconstructedPhrase, PhraseInteraction } from '../../services/aac-statistics.service';
 import { PictCellContentComponent } from '../pict-cell-content/pict-cell-content.component';
@@ -13,11 +13,17 @@ import { getPictBgColor, getPictBorderColor } from '../../shared/utils/board-col
   imports:     [CommonModule, PictCellContentComponent],
 })
 export class PhraseLogCardComponent {
-  @Input() phrase!: ReconstructedPhrase;
+  @Input()  phrase!: ReconstructedPhrase;
+  @Output() deleteClick = new EventEmitter<void>();
 
   expanded = false;
 
   toggleExpanded(): void { this.expanded = !this.expanded; }
+
+  onDeleteClick(event: MouseEvent): void {
+    event.stopPropagation();
+    this.deleteClick.emit();
+  }
 
   /** Convierte una interacción de pictograma en CellPictogram para pict-cell-content. */
   toCell(inter: PhraseInteraction): CellPictogram {

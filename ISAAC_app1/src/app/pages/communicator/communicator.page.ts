@@ -54,6 +54,8 @@ export class CommunicatorPage implements OnInit, OnDestroy {
   canLog = false;
   /** true cuando el usuario tiene la opción de voz de controles activada. */
   voiceEnabled = false;
+  /** true cuando la sesión se inició en modo oculto (sin registro OBL). */
+  privateMode = false;
 
   predictions: PredictedPictogram[] = [];
 
@@ -86,6 +88,9 @@ export class CommunicatorPage implements OnInit, OnDestroy {
   async ionViewWillEnter() {
     const boardId = this.route.snapshot.paramMap.get('boardId') ?? '';
 
+    // Modo oculto: se pasa como navigation state (no se persiste, se limpia al salir).
+    this.privateMode = !!(history.state as Record<string, unknown>)?.['privateMode'];
+
     // Cargar perfil del usuario final (para voz y configuración)
     if (this.userId) {
       try {
@@ -108,10 +113,8 @@ export class CommunicatorPage implements OnInit, OnDestroy {
       } catch { /* silencioso */ }
     }
 
-    // Guardar OBL siempre que haya un usuario final identificado.
-    // El userId del log es el del usuario final (query param), no el del autenticado.
-    // Permite que teacher/org supervise y los eventos se asocien al usuario final.
-    this.canLog = !!this.userId;
+    // Guardar OBL siempre que haya usuario final identificado, salvo modo oculto.
+    this.canLog = !!this.userId && !this.privateMode;
 
     // Cargar raíz sin userId para leer el flag autoPersonalize del tablero.
     // Si está activo, recargar con userId para aplicar personalización en el raíz.
@@ -169,7 +172,8 @@ export class CommunicatorPage implements OnInit, OnDestroy {
     this.phraseSub?.unsubscribe();
     this.boardSourcePicts.clear();
     this.navSourcePict = undefined;
-    this.predictions = [];
+    this.predictions   = [];
+    this.privateMode   = false;   // limpia el modo oculto al salir
   }
 
   // ── Predictor IA ──────────────────────────────────────────────────────────

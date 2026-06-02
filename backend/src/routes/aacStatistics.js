@@ -12,6 +12,12 @@ router.get('/organization/charts',  ctrl.getOrganizationCharts);
 router.get('/organization/boards',  ctrl.getOrganizationBoards);
 router.get('/organization/phrases', ctrl.getOrganizationPhrases);
 
+// ── Exportación ───────────────────────────────────────────────────────────────
+router.post('/export/obla', ctrl.exportObla);
+
+// ── Borrar frase ──────────────────────────────────────────────────────────────
+router.delete('/phrases/:phraseId', ctrl.deletePhrase);
+
 // ── Usuario concreto ──────────────────────────────────────────────────────────
 router.get('/users/:userId/summary', ctrl.getUserStatistics);
 router.get('/users/:userId/phrases', ctrl.getUserPhrases);

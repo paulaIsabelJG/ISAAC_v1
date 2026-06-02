@@ -1,4 +1,3 @@
-const { randomUUID } = require('crypto');
 
 /**
  * Reconstruye frases completas a partir de los eventos OBL de una sesión.
@@ -18,6 +17,7 @@ const { randomUUID } = require('crypto');
  */
 exports.reconstructPhrases = function reconstructPhrases(session) {
   const phrases = [];
+  const deletedKeys = new Set(session.deletedPhraseKeys || []);
   const events = (session.events || [])
     .slice()
     .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
@@ -69,11 +69,18 @@ exports.reconstructPhrases = function reconstructPhrases(session) {
       return base;
     });
 
-    const startMs = new Date(phraseStart).getTime();
-    const endMs   = new Date(endTimestamp).getTime();
+    const startMs  = new Date(phraseStart).getTime();
+    const endMs    = new Date(endTimestamp).getTime();
+    const phraseKey = `${session.sessionId}_${startMs}`;
+
+    if (deletedKeys.has(phraseKey)) {
+      buffer = [];
+      phraseStart = endTimestamp;
+      return;
+    }
 
     phrases.push({
-      phraseId:     randomUUID(),
+      phraseId:     phraseKey,
       sessionId:    session.sessionId,
       userId:       session.userId?.toString() || '',
       finalText:    finalText.trim(),

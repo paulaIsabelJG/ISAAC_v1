@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { IonicModule }       from '@ionic/angular';
+import { IonicModule, AlertController, ToastController } from '@ionic/angular';
 import { CommonModule }      from '@angular/common';
 import { FormsModule }       from '@angular/forms';
 import { Router }            from '@angular/router';
@@ -12,12 +12,13 @@ import {
   AacStatisticsService,
   OrgSummary, OrgCharts, BoardStat, PhrasesPage,
   ReconstructedPhrase, StatsFilters, StatsScope, ChartPoint,
+  OblaExportParams,
 } from '../../services/aac-statistics.service';
 import { StatisticsSummaryCardsComponent } from '../../components/statistics-summary-cards/statistics-summary-cards.component';
 import { StatisticsChartCardComponent }    from '../../components/statistics-chart-card/statistics-chart-card.component';
 import { PhraseLogCardComponent }          from '../../components/phrase-log-card/phrase-log-card.component';
 
-export type DashSection = 'resumen' | 'tableros' | 'frases';
+export type DashSection = 'resumen' | 'tableros' | 'frases' | 'exportacion';
 
 @Component({
   selector:    'app-organization-statistics',
@@ -48,7 +49,20 @@ export class OrganizationStatisticsPage implements OnInit {
 
   // ── Selector de usuario ───────────────────────────────────────────────────
   allFinalUsers:  BackendUser[] = [];
+  allOrgUsers:    BackendUser[] = [];
   selectedUserId = '';
+
+  // ── Exportación ───────────────────────────────────────────────────────────
+  exportFormat:      'obla' | 'pdf'                          = 'obla';
+  exportDateFilter:  'all' | 'today' | '7days' | '30days' | 'custom' = 'all';
+  exportDateFrom     = '';
+  exportDateTo       = '';
+  exportBoardId      = '';
+  exportScope:       'userType' | 'family' | 'user'          = 'userType';
+  exportUserType:    'user' | 'professional' | 'parent'      = 'user';
+  exportFamilyUserId = '';
+  exportUserId       = '';
+  exportLoading      = false;
 
   // ── Datos org ─────────────────────────────────────────────────────────────
   summary:       OrgSummary | null = null;
@@ -97,10 +111,12 @@ export class OrganizationStatisticsPage implements OnInit {
   };
 
   constructor(
-    private router:   Router,
-    private authSvc:  AuthService,
-    private userSvc:  UserService,
-    private statsSvc: AacStatisticsService,
+    private router:      Router,
+    private authSvc:     AuthService,
+    private userSvc:     UserService,
+    private statsSvc:    AacStatisticsService,
+    private alertCtrl:   AlertController,
+    private toastCtrl:   ToastController,
   ) {}
 
   ngOnInit(): void {
@@ -188,6 +204,7 @@ export class OrganizationStatisticsPage implements OnInit {
     try {
       const res = await firstValueFrom(this.userSvc.getUsersByCenter(user.centro));
       this.allFinalUsers = res.users.filter(u => u.type === 'user');
+      this.allOrgUsers   = res.users;
     } catch { /* silencioso */ }
   }
 
@@ -212,6 +229,45 @@ export class OrganizationStatisticsPage implements OnInit {
       this.userTotalPhrases = res.totalCount;
     } catch { /* silencioso */ }
     finally { this.loadingUser = false; }
+  }
+
+  // ── Eliminar frase ────────────────────────────────────────────────────────
+
+  async onDeletePhrase(phrase: ReconstructedPhrase): Promise<void> {
+    const alert = await this.alertCtrl.create({
+      header:  'Eliminar frase',
+      message: '¿Seguro que deseas eliminar esta frase de las estadísticas? Esta acción no se puede deshacer.',
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        {
+          text:    'Eliminar',
+          role:    'destructive',
+          handler: () => { void this._confirmDeletePhrase(phrase); },
+        },
+      ],
+    });
+    await alert.present();
+  }
+
+  private async _confirmDeletePhrase(phrase: ReconstructedPhrase): Promise<void> {
+    try {
+      await firstValueFrom(this.statsSvc.deletePhrase(phrase.phraseId));
+      this.orgPhrases  = this.orgPhrases.filter(p => p.phraseId !== phrase.phraseId);
+      this.userPhrases = this.userPhrases.filter(p => p.phraseId !== phrase.phraseId);
+      await this._showToast('Frase eliminada correctamente.', 'success');
+    } catch {
+      await this._showToast('No se pudo eliminar la frase.', 'danger');
+    }
+  }
+
+  private async _showToast(message: string, color: 'success' | 'danger'): Promise<void> {
+    const toast = await this.toastCtrl.create({
+      message,
+      duration: 2500,
+      color,
+      position: 'bottom',
+    });
+    await toast.present();
   }
 
   // ── Paginación ────────────────────────────────────────────────────────────
@@ -240,6 +296,47 @@ export class OrganizationStatisticsPage implements OnInit {
 
   get isLoading(): boolean {
     return this.loadingSummary || this.loadingCharts || this.loadingBoards || this.loadingPhrases;
+  }
+
+  // ── Exportación OBLA ─────────────────────────────────────────────────────
+
+  async runExport(): Promise<void> {
+    const params: OblaExportParams = {
+      dateFilter:   this.exportDateFilter,
+      dateFrom:     this.exportDateFilter === 'custom' ? this.exportDateFrom  : undefined,
+      dateTo:       this.exportDateFilter === 'custom' ? this.exportDateTo    : undefined,
+      boardId:      this.exportBoardId   || undefined,
+      exportScope:  this.exportScope,
+      userType:     this.exportScope === 'userType' ? this.exportUserType     : undefined,
+      familyUserId: this.exportScope === 'family'   ? this.exportFamilyUserId : undefined,
+      userId:       this.exportScope === 'user'     ? this.exportUserId       : undefined,
+    };
+
+    this.exportLoading = true;
+    try {
+      const blob = await firstValueFrom(this.statsSvc.exportObla(params));
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      const date = new Date().toISOString().split('T')[0];
+      a.href     = url;
+      a.download = `estadisticas-${this.orgName.replace(/\s+/g, '-')}-${date}.obla`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      await this._showToast('Exportación OBLA completada.', 'success');
+    } catch {
+      await this._showToast('Error al generar la exportación.', 'danger');
+    } finally {
+      this.exportLoading = false;
+    }
+  }
+
+  userTypeLabel(type: string): string {
+    if (type === 'user')    return 'usuario final';
+    if (type === 'teacher') return 'profesional';
+    if (type === 'parent')  return 'familiar';
+    return type;
   }
 
   // ── Navegación ────────────────────────────────────────────────────────────

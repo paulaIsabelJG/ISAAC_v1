@@ -125,10 +125,30 @@
             <span>Aún no hay tableros principales asignados a este usuario.</span>
           </div>
         } @else {
+          <!-- Indicador de descarga en curso -->
+          @if (isDownloading) {
+            <div class="us-downloading-bar">
+              <ion-spinner name="crescent" color="secondary"></ion-spinner>
+              <span>Generando archivo…</span>
+            </div>
+          }
           <div class="us-boards-grid">
             @for (board of assignedBoards; track board._id) {
-              <app-board-mini-card [board]="board" (cardClick)="openBoard($event)">
-              </app-board-mini-card>
+              <div class="us-board-wrapper"
+                   (pointerdown)="startHold($event, board)"
+                   (pointerup)="cancelHold()"
+                   (pointermove)="onHoldPointerMove($event)"
+                   (pointerleave)="cancelHold()">
+                <app-board-mini-card [board]="board" (cardClick)="onBoardCardClick($event)">
+                </app-board-mini-card>
+                @if (holdBoardId === board._id && holdProgress >= 25) {
+                  <div class="us-hold-overlay">
+                    <ion-progress-bar [value]="holdProgress / 100" color="secondary">
+                    </ion-progress-bar>
+                    <span class="us-hold-hint">Mantén pulsado…</span>
+                  </div>
+                }
+              </div>
             }
           </div>
         }

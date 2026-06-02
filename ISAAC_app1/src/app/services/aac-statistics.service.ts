@@ -112,6 +112,17 @@ export interface StatsFilters {
   pageSize?: number;
 }
 
+export interface OblaExportParams {
+  dateFilter:    'all' | 'today' | '7days' | '30days' | 'custom';
+  dateFrom?:     string;
+  dateTo?:       string;
+  boardId?:      string;
+  exportScope:   'userType' | 'family' | 'user';
+  userType?:     'user' | 'professional' | 'parent';
+  familyUserId?: string;
+  userId?:       string;
+}
+
 // ─── Servicio ─────────────────────────────────────────────────────────────────
 
 @Injectable({ providedIn: 'root' })
@@ -173,6 +184,20 @@ export class AacStatisticsService {
     return this.http.get<PhrasesPage>(
       `${this.base}/users/${encodeURIComponent(userId)}/phrases`,
       { params: this.params(filters) }
+    );
+  }
+
+  deletePhrase(phraseId: string): Observable<{ ok: boolean }> {
+    return this.http.delete<{ ok: boolean }>(
+      `${this.base}/phrases/${encodeURIComponent(phraseId)}`
+    );
+  }
+
+  exportObla(params: OblaExportParams): Observable<Blob> {
+    return this.http.post(
+      `${this.base}/export/obla`,
+      params,
+      { responseType: 'blob' }
     );
   }
 }

@@ -63,6 +63,9 @@
     <ion-segment-button value="frases">
       <ion-label>Frases</ion-label>
     </ion-segment-button>
+    <ion-segment-button value="exportacion">
+      <ion-label>Exportación</ion-label>
+    </ion-segment-button>
   </ion-segment>
 
   <!-- ════════════════════ SECCIÓN: RESUMEN ════════════════════ -->
@@ -235,7 +238,7 @@
       } @else {
         <div class="os-phrase-list">
           @for (phrase of orgPhrases; track phrase.phraseId) {
-            <app-phrase-log-card [phrase]="phrase"></app-phrase-log-card>
+            <app-phrase-log-card [phrase]="phrase" (deleteClick)="onDeletePhrase(phrase)"></app-phrase-log-card>
           }
         </div>
         @if (orgTotalPages > 1) {
@@ -275,7 +278,7 @@
         } @else {
           <div class="os-phrase-list">
             @for (phrase of userPhrases; track phrase.phraseId) {
-              <app-phrase-log-card [phrase]="phrase"></app-phrase-log-card>
+              <app-phrase-log-card [phrase]="phrase" (deleteClick)="onDeletePhrase(phrase)"></app-phrase-log-card>
             }
           </div>
           @if (userTotalPages > 1) {
@@ -291,6 +294,139 @@
           }
         }
       }
+
+    </div>
+  }
+
+  <!-- ════════════════════ SECCIÓN: EXPORTACIÓN ════════════════════ -->
+  @if (activeSection === 'exportacion') {
+    <div class="os-section">
+
+      <div class="os-export-form">
+
+        <!-- Formato -->
+        <div class="os-export-row">
+          <label class="os-filter-label">Formato</label>
+          <select class="os-filter-input os-filter-select" [(ngModel)]="exportFormat">
+            <option value="obla">OBLA (.obla)</option>
+            <option value="pdf">PDF</option>
+          </select>
+        </div>
+
+        @if (exportFormat === 'pdf') {
+          <div class="os-export-notice os-export-notice--pending">
+            Exportación PDF pendiente de implementar.
+          </div>
+        }
+
+        @if (exportFormat === 'obla') {
+
+          <!-- Organización -->
+          <div class="os-export-row">
+            <label class="os-filter-label">Organización</label>
+            <input class="os-filter-input" type="text" [value]="orgName" readonly />
+          </div>
+
+          <!-- Período -->
+          <div class="os-export-row">
+            <label class="os-filter-label">Período</label>
+            <select class="os-filter-input os-filter-select" [(ngModel)]="exportDateFilter">
+              <option value="all">Todo</option>
+              <option value="today">Hoy</option>
+              <option value="7days">Últimos 7 días</option>
+              <option value="30days">Últimos 30 días</option>
+              <option value="custom">Rango personalizado</option>
+            </select>
+          </div>
+
+          @if (exportDateFilter === 'custom') {
+            <div class="os-export-row os-export-row--inline">
+              <div class="os-filter-field">
+                <label class="os-filter-label">Desde</label>
+                <input class="os-filter-input" type="date" [(ngModel)]="exportDateFrom" />
+              </div>
+              <div class="os-filter-field">
+                <label class="os-filter-label">Hasta</label>
+                <input class="os-filter-input" type="date" [(ngModel)]="exportDateTo" />
+              </div>
+            </div>
+          }
+
+          <!-- Tablero -->
+          <div class="os-export-row">
+            <label class="os-filter-label">Tablero</label>
+            <select class="os-filter-input os-filter-select" [(ngModel)]="exportBoardId">
+              <option value="">Todos los tableros</option>
+              @for (b of boards; track b.boardId) {
+                <option [value]="b.boardId">{{ b.name || b.boardId }}</option>
+              }
+            </select>
+          </div>
+
+          <!-- Tipo de exportación -->
+          <div class="os-export-row">
+            <label class="os-filter-label">Tipo de exportación</label>
+            <select class="os-filter-input os-filter-select" [(ngModel)]="exportScope">
+              <option value="userType">Por tipo de usuario</option>
+              <option value="family">Por familia</option>
+              <option value="user">Por usuario concreto</option>
+            </select>
+          </div>
+
+          @if (exportScope === 'userType') {
+            <div class="os-export-row">
+              <label class="os-filter-label">Tipo de usuario</label>
+              <select class="os-filter-input os-filter-select" [(ngModel)]="exportUserType">
+                <option value="user">Usuario final</option>
+                <option value="professional">Profesional</option>
+                <option value="parent">Familia</option>
+              </select>
+            </div>
+          }
+
+          @if (exportScope === 'family') {
+            <div class="os-export-row">
+              <label class="os-filter-label">Familia de</label>
+              <select class="os-filter-input os-filter-select" [(ngModel)]="exportFamilyUserId">
+                <option value="">— Selecciona un usuario final —</option>
+                @for (u of allFinalUsers; track u._id) {
+                  <option [value]="u._id">Familia de {{ u.name }}</option>
+                }
+              </select>
+            </div>
+          }
+
+          @if (exportScope === 'user') {
+            <div class="os-export-row">
+              <label class="os-filter-label">Usuario</label>
+              <select class="os-filter-input os-filter-select" [(ngModel)]="exportUserId">
+                <option value="">— Selecciona un usuario —</option>
+                @for (u of allOrgUsers; track u._id) {
+                  <option [value]="u._id">{{ u.name }} ({{ userTypeLabel(u.type) }})</option>
+                }
+              </select>
+            </div>
+          }
+
+          <!-- Botón exportar -->
+          <div class="os-export-actions">
+            <button class="os-export-btn" (click)="runExport()" [disabled]="exportLoading">
+              @if (exportLoading) {
+                <ion-spinner name="crescent" style="width:16px;height:16px;color:#fff"></ion-spinner>
+                Generando...
+              } @else {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Exportar OBLA
+              }
+            </button>
+          </div>
+
+        }
+      </div>
 
     </div>
   }

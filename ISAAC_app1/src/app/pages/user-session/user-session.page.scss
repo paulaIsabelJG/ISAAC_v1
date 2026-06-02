@@ -318,6 +318,55 @@ $board-rows:  2;
   span { font-size: 13px; color: $text-muted; }
 }
 
+// ── Descarga en curso ─────────────────────────────────────────────────────────
+.us-downloading-bar {
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+  padding:     8px 0 12px;
+  color:       $text-muted;
+  font-size:   12px;
+  font-weight: 600;
+}
+
+// ── Tarjeta de tablero: wrapper para pulsación larga ─────────────────────────
+.us-board-wrapper {
+  position:    relative;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: pan-y;    // permite scroll vertical; capturamos el hold
+}
+
+.us-hold-overlay {
+  position:        absolute;
+  inset:           0;
+  border-radius:   14px;
+  background:      rgba(0, 0, 0, 0.45);
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: flex-end;
+  gap:             5px;
+  padding-bottom:  10px;
+  pointer-events:  none;
+  z-index:         10;
+
+  ion-progress-bar {
+    width:       80%;
+    border-radius: 4px;
+    --background: rgba(255, 255, 255, 0.25);
+    --progress-background: #{$mint};
+  }
+}
+
+.us-hold-hint {
+  font-size:      10px;
+  font-weight:    700;
+  color:          #fff;
+  letter-spacing: 0.3px;
+  text-shadow:    0 1px 3px rgba(0,0,0,0.6);
+}
+
 // ── Tarjeta de tablero ────────────────────────────────────────────────────────
 // Estilos movidos a BoardMiniCardComponent (board-mini-card.component.scss)
 

@@ -69,3 +69,33 @@ app-ia-predictor-column {
 @media (max-width: 600px) {
   .comm-circular-row { padding: 4px 0 4px 4px; }
 }
+
+// ── Modo oculto ───────────────────────────────────────────────────────────────
+.comm-root--private {
+  background: #111;
+
+  .comm-board       { background: #000; }
+  .comm-circular-row { background: #000; }
+  .comm-loading,
+  .comm-error       { color: #666; }
+}
+
+.comm-private-badge {
+  position:        fixed;
+  top:             10px;
+  right:           14px;
+  z-index:         9999;
+  display:         flex;
+  align-items:     center;
+  gap:             5px;
+  background:      rgba(0, 0, 0, 0.70);
+  color:           #bbb;
+  border:          1px solid rgba(255, 255, 255, 0.15);
+  border-radius:   20px;
+  padding:         5px 12px;
+  font-size:       11px;
+  font-weight:     700;
+  letter-spacing:  0.5px;
+  backdrop-filter: blur(6px);
+  pointer-events:  none;
+}

@@ -42,7 +42,8 @@ const oblLogSchema = new mongoose.Schema({
   format:    { type: String, default: 'open-board-log-0.1' },
   started:   { type: String },   // ISO
   ended:     { type: String },   // ISO
-  events:    [oblEventSchema],
+  events:           [oblEventSchema],
+  deletedPhraseKeys: [{ type: String }],
 }, { timestamps: true });
 
 oblLogSchema.index({ userId: 1, started: -1 });

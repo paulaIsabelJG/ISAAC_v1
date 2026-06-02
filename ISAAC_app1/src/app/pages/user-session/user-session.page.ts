@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { IonicModule } from '@ionic/angular';
+import { ActionSheetController, IonicModule, ToastController } from '@ionic/angular';
 import type { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
@@ -9,6 +9,8 @@ import { AuthService } from '../../services/auth.service';
 import { UserService, FullBackendUser } from '../../services/user.service';
 import { BoardService, Board } from '../../services/board.service';
 import { TtsService } from '../../services/tts.service';
+import { ObfExportService } from '../../services/obf-export.service';
+import { BoardPdfExportService } from '../../services/board-pdf-export.service';
 import { LoadingErrorStateComponent } from '../../components/loading-error-state/loading-error-state.component';
 import { AppPageHeaderComponent } from '../../components/app-page-header/app-page-header.component';
 import { BoardMiniCardComponent } from '../../components/board-mini-card/board-mini-card.component';
@@ -47,6 +49,15 @@ export class UserSessionPage implements OnInit {
   boardsLoading  = true;
   boardsError    = '';
 
+  // ── Pulsación larga en tarjeta de tablero ────────────────────────────────────
+  holdBoardId   = '';
+  holdProgress  = 0;
+  isDownloading = false;
+  private _holdInterval?: ReturnType<typeof setInterval>;
+  private _holdStartX   = 0;
+  private _holdStartY   = 0;
+  private _suppressNextCardClick = false;
+
   constructor(
     private route:        ActivatedRoute,
     private router:       Router,
@@ -55,6 +66,10 @@ export class UserSessionPage implements OnInit {
     private boardService: BoardService,
     private sanitizer:    DomSanitizer,
     private ttsSvc:       TtsService,
+    private obfExport:    ObfExportService,
+    private pdfExport:    BoardPdfExportService,
+    private actionSheet:  ActionSheetController,
+    private toastCtrl:    ToastController,
   ) {}
 
   ngOnInit() {
@@ -260,7 +275,7 @@ export class UserSessionPage implements OnInit {
    * se visualizan en el comunicador, no en el editor.
    * El Board Builder se accede únicamente desde el botón "Tablero Builder".
    */
-  openBoard(board: Board) {
+  openBoard(board: Board): void {
     this.ttsSvc.speakIfEnabled(board.name || 'tablero');
     this.router.navigate(['/communicator', board._id], {
       queryParams: {
@@ -268,5 +283,148 @@ export class UserSessionPage implements OnInit {
         returnTo: '/user-session/' + this.userId,
       },
     });
+  }
+
+  /** Intercepta el cardClick de board-mini-card. Si viene de una pulsación
+   *  larga ya gestionada, descarta el clic; si no, abre el tablero normal. */
+  onBoardCardClick(board: Board): void {
+    if (this._suppressNextCardClick) {
+      this._suppressNextCardClick = false;
+      return;
+    }
+    this.openBoard(board);
+  }
+
+  // ── Pulsación larga: detección y cancelación ─────────────────────────────────
+
+  startHold(event: PointerEvent, board: Board): void {
+    this._holdStartX  = event.clientX;
+    this._holdStartY  = event.clientY;
+    this.holdBoardId  = board._id;
+    this.holdProgress = 0;
+
+    const DURATION_MS = 2000;
+    const TICK_MS     = 50;
+    const totalTicks  = DURATION_MS / TICK_MS;
+    let   tick        = 0;
+
+    this._holdInterval = setInterval(() => {
+      tick++;
+      this.holdProgress = Math.round((tick / totalTicks) * 100);
+      if (tick >= totalTicks) {
+        this._clearHoldTimer();
+        this.holdBoardId              = '';
+        this.holdProgress             = 0;
+        this._suppressNextCardClick   = true;
+        void this._showBoardOptions(board);
+      }
+    }, TICK_MS);
+  }
+
+  onHoldPointerMove(event: PointerEvent): void {
+    if (!this.holdBoardId) return;
+    const dx = event.clientX - this._holdStartX;
+    const dy = event.clientY - this._holdStartY;
+    if (Math.sqrt(dx * dx + dy * dy) > 15) {
+      this.cancelHold();
+    }
+  }
+
+  cancelHold(): void {
+    this._clearHoldTimer();
+    this.holdBoardId  = '';
+    this.holdProgress = 0;
+  }
+
+  private _clearHoldTimer(): void {
+    if (this._holdInterval != null) {
+      clearInterval(this._holdInterval);
+      this._holdInterval = undefined;
+    }
+  }
+
+  // ── Menú de opciones del tablero (descarga + modo oculto) ───────────────────
+
+  private async _showBoardOptions(board: Board): Promise<void> {
+    const sheet = await this.actionSheet.create({
+      header:  board.name || 'Opciones del tablero',
+      buttons: [
+        {
+          text:    'Entrar en modo oculto',
+          icon:    'eye-off-outline',
+          handler: () => { this.openBoardHidden(board); },
+        },
+        {
+          text:    'Descargar OBZ',
+          icon:    'archive-outline',
+          handler: () => { void this._downloadOBZ(board); },
+        },
+        {
+          text:    'Descargar PDF',
+          icon:    'document-outline',
+          handler: () => { void this._downloadPDF(board); },
+        },
+        {
+          text: 'Cancelar',
+          icon: 'close-outline',
+          role: 'cancel',
+        },
+      ],
+    });
+    await sheet.present();
+  }
+
+  // ── Modo oculto ───────────────────────────────────────────────────────────────
+
+  openBoardHidden(board: Board): void {
+    this.ttsSvc.speakIfEnabled(board.name || 'tablero');
+    this.router.navigate(['/communicator', board._id], {
+      queryParams: {
+        userId:   this.userId,
+        returnTo: '/user-session/' + this.userId,
+      },
+      state: { privateMode: true },
+    });
+  }
+
+  // ── Descargas ─────────────────────────────────────────────────────────────────
+
+  private async _downloadOBZ(board: Board): Promise<void> {
+    this.isDownloading = true;
+    try {
+      const { boards, warnings } = await this.obfExport.collectLinkedBoards(board);
+      if (warnings.length) console.warn('[OBZ export]', warnings);
+      const { blob } = await this.obfExport.buildOBZPackage(board, boards);
+      const url = URL.createObjectURL(blob);
+      const a   = Object.assign(document.createElement('a'), { href: url, download: `${this._safeName(board.name)}.obz` });
+      a.click();
+      URL.revokeObjectURL(url);
+      await this._showToast('Tablero descargado como OBZ ✓', 'success');
+    } catch {
+      await this._showToast('Error al generar el OBZ. Inténtalo de nuevo.', 'danger');
+    } finally {
+      this.isDownloading = false;
+    }
+  }
+
+  private async _downloadPDF(board: Board): Promise<void> {
+    this.isDownloading = true;
+    try {
+      await this.pdfExport.exportToPdf(board);
+      await this._showToast('Tablero descargado como PDF ✓', 'success');
+    } catch {
+      await this._showToast('Error al generar el PDF. Inténtalo de nuevo.', 'danger');
+    } finally {
+      this.isDownloading = false;
+    }
+  }
+
+  private async _showToast(message: string, color: 'success' | 'danger'): Promise<void> {
+    const t = await this.toastCtrl.create({ message, duration: 2500, color, position: 'top' });
+    await t.present();
+  }
+
+  private _safeName(name: string): string {
+    return name.replace(/[^\w\-áéíóúÁÉÍÓÚñÑ ]/g, '').trim().replace(/\s+/g, '_') || 'tablero';
   }
 }
