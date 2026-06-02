@@ -63,6 +63,8 @@ export class CommunicatorPage implements OnInit, OnDestroy {
   private rootSub?:    Subscription;
   private aiSub?:      Subscription;
   private phraseSub?:  Subscription;
+  /** Evita abrir un segundo modal IA si el usuario pulsa HABLAR mientras uno ya está abierto. */
+  private aiModalActive = false;
   /** Mapa boardId → pictograma que originó la navegación hacia ese tablero. */
   private boardSourcePicts = new Map<string, CellPictogram | null>();
   /** Pictograma que originó la navegación al tablero actualmente visible. */
@@ -148,6 +150,10 @@ export class CommunicatorPage implements OnInit, OnDestroy {
     // Suscripción al módulo IA: se activa cuando aiRewriteEnabled y el usuario pulsa HABLAR.
     // t1 (speakTimestamp) se pasa al modal para que el evento OBL de IA use el tiempo de HABLAR.
     this.aiSub = this.aac.phraseSpoken$.subscribe(({ phrase, timestamp }) => {
+      if (this.aiModalActive) {
+        console.log('[AI] modal ya activo, ignorando phraseSpoken$');
+        return;
+      }
       void this.openAiModal(phrase, timestamp);
     });
 
@@ -219,6 +225,7 @@ export class CommunicatorPage implements OnInit, OnDestroy {
   // ── Módulo IA ─────────────────────────────────────────────────────────────
 
   private async openAiModal(phrase: AacPhraseItem[], speakTimestamp: string): Promise<void> {
+    this.aiModalActive = true;
     const modal = await this.modalCtrl.create({
       component:      AiPhraseResultModalComponent,
       componentProps: { originalPhrase: phrase, speakTimestamp },
@@ -227,26 +234,48 @@ export class CommunicatorPage implements OnInit, OnDestroy {
       initialBreakpoint: 0.85,
     });
     await modal.present();
-    const { data } = await modal.onWillDismiss<{
-      clear:           boolean;
-      result?:         AiReformulationResponse | null;
-      speakTimestamp?: string;
-    }>();
-    if (data?.clear) {
-      // Registrar evento OBL de IA solo al aceptar (nunca al pulsar ESCUCHAR).
-      // Usa speakTimestamp (t1) para que el tiempo del evento sea el de HABLAR, no el de OK.
-      if (data.result) {
+
+    try {
+      // onDidDismiss: espera a que la animación de cierre termine antes de limpiar.
+      // Cubre todos los cierres: aceptar, X, error-cerrar, swipe, token-navegar.
+      const { data } = await modal.onDidDismiss<{
+        clear:           boolean;
+        result?:         AiReformulationResponse | null;
+        speakTimestamp?: string;
+      }>();
+
+      console.log('[AI] modal cerrado —',
+        'clear=' + !!(data?.clear),
+        'phrase.length=' + phrase.length,
+        'aac.phrase.length=' + this.aac.phrase.length);
+
+      // Solo al aceptar: registrar evento OBL de reformulación IA.
+      // La frase ya fue cerrada por :speak (t1); no se emite :clear.
+      if (data?.clear && data.result) {
         const originalText = phrase.map(p => p.label).join(' ');
+        const tokensForLog = (data.result.tokens ?? []).map(t => ({
+          ...t,
+          imageUrl: t.imageUrl?.startsWith('data:') ? '' : t.imageUrl,
+        }));
         this.aac.logAiReformulationEvent(
           originalText,
           data.result.reformulatedText,
           data.speakTimestamp ?? speakTimestamp,
-          data.result.tokens ?? [],
+          tokensForLog,
         );
       }
-      // clearPhraseSilent: la frase ya fue cerrada por :speak en t1.
-      // No registrar :clear para no desplazar phraseStart al momento de OK.
-      this.aac.clearPhraseSilent();
+
+      // Cierre definitivo de frase: limpia toda la frase, resetea navegación
+      // y vuelve al tablero raíz (siempre, aunque ya estuviésemos en él).
+      // La sesión OBL continúa; la siguiente frase se registra en la misma sesión.
+      this.aac.finalizePhraseAfterAiPopup();
+      this.boardSourcePicts.clear();
+      this.navSourcePict = undefined;
+
+      console.log('[AI] finalizePhraseAfterAiPopup completado —',
+        'aac.phrase.length=' + this.aac.phrase.length);
+    } finally {
+      this.aiModalActive = false;
     }
   }
 

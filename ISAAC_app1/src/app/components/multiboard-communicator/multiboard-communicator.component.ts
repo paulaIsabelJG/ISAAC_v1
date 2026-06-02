@@ -179,6 +179,7 @@ export class MultiboardCommunicatorComponent implements OnInit, OnDestroy, OnCha
         label:             cell.pictogram.label,
         imageUrl:          cell.pictogram.imageUrl,
         sound:             cell.pictogram.sound || cell.pictogram.label,
+        boardId:           state.board._id,
         color:             getCellBaseColor(cell.pictogram as CellPictogram) ?? '',
         wordType:          cell.pictogram.wordType  ?? 'misc',
         fitzgeraldEnabled: !!(cell.pictogram.fitzgeraldEnabled),
@@ -193,9 +194,10 @@ export class MultiboardCommunicatorComponent implements OnInit, OnDestroy, OnCha
 
     // ── OBL: registrar TODAS las pulsaciones en modo comunicador ─────────────
     const oblActions: OblAction[] = [];
-    if (spoken)   oblActions.push({ action: '+speak' });
-    if (navigates) oblActions.push({ action: ':open_board', destination_board_id: action?.targetBoardId ?? undefined });
-    if (setsSlot)  oblActions.push({ action: 'ext_isaac_set_slot', ext_isaac_slot_id: action?.targetSlotId ?? undefined, destination_board_id: action?.targetBoardId ?? undefined });
+    if (navigates && action?.targetBoardId)
+                                   oblActions.push({ action: ':open_board', destination_board_id: action.targetBoardId });
+    if (setsSlot && action?.targetBoardId)
+                                   oblActions.push({ action: 'ext_isaac_set_slot', ext_isaac_slot_id: action?.targetSlotId ?? undefined, destination_board_id: action.targetBoardId });
 
     this.aac.logButtonEvent({
       label:        cell.pictogram.label,
@@ -282,11 +284,36 @@ export class MultiboardCommunicatorComponent implements OnInit, OnDestroy, OnCha
   }
 
   onPredictorCellPress(pict: PredictedPictogram): void {
-    const action   = pict.action ?? { type: 'voice' };
-    const type     = action.type ?? 'voice';
-    const speaks   = type === 'voice' || type === 'voice+navigate' || type === 'voice+setSlot';
+    const action    = pict.action ?? { type: 'voice' };
+    const type      = action.type ?? 'voice';
+    const speaks    = type === 'voice' || type === 'voice+navigate' || type === 'voice+setSlot';
     const navigates = type === 'navigate' || type === 'voice+navigate';
     const setsSlot  = type === 'setSlot'  || type === 'voice+setSlot';
+
+    // Board de origen: el slot que contiene el pictograma, o el masterBoard
+    const sourceSt   = pict.sourceSlotId != null
+      ? this.slotStates.find(s => s.slotId === pict.sourceSlotId)
+      : null;
+    const sourceBoardId = sourceSt?.board?._id ?? this.masterBoard?._id ?? '';
+
+    // Registrar evento button ANTES de cualquier otra acción
+    const oblActions: OblAction[] = [];
+    if (navigates && action.targetBoardId)
+      oblActions.push({ action: ':open_board', destination_board_id: action.targetBoardId });
+    if (setsSlot && action.targetBoardId)
+      oblActions.push({ action: 'ext_isaac_set_slot', ext_isaac_slot_id: action.targetSlotId ?? undefined, destination_board_id: action.targetBoardId });
+
+    this.aac.logButtonEvent({
+      label:        pict.label,
+      vocalization: pict.label,
+      spoken:       speaks,
+      button_id:    pict.label,
+      board_id:     sourceBoardId,
+      image_url:    pict.imageUrl ?? '',
+      actions:      oblActions,
+      color:        pict.color    ?? undefined,
+      wordType:     pict.wordType ?? undefined,
+    });
 
     // — Voz: añadir a frase y hablar (con undo apropiado) —
     if (speaks) {
@@ -304,6 +331,7 @@ export class MultiboardCommunicatorComponent implements OnInit, OnDestroy, OnCha
         label:             pict.label,
         imageUrl:          pict.imageUrl,
         sound:             pict.label,
+        boardId:           sourceBoardId,
         color:             pict.color,
         wordType:          pict.wordType,
         fitzgeraldEnabled: false,

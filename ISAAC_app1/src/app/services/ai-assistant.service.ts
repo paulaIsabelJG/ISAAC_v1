@@ -38,15 +38,18 @@ export class AiAssistantService {
    * PRIVACIDAD: solo se transmiten etiquetas, categorías e imágenes de los pictogramas.
    * No se envían datos personales del usuario al servicio externo.
    */
-  reformulatePhrase(phrase: AacPhraseItem[], locale = 'es'): Observable<AiReformulationResponse> {
+  reformulatePhrase(
+    phrase: AacPhraseItem[],
+    locale = 'es',
+    mode: 'statement' | 'request' | 'past' | 'future' = 'statement',
+  ): Observable<AiReformulationResponse> {
     const text = phrase.map(p => p.label).join(' ');
     return this.http.post<AiReformulationResponse>(
       `${this.apiUrl}/ai/reformulate-phrase`,
       {
         text,
         locale,
-        // Se envían imageUrl/color/wordType para que el backend pueda reutilizarlos
-        // al resolver los tokens sin volver a buscar en ARASAAC.
+        mode,
         tokens: phrase.map(p => ({
           label:             p.label,
           imageUrl:          p.imageUrl,

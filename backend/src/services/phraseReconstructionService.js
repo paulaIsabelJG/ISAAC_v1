@@ -71,7 +71,12 @@ exports.reconstructPhrases = function reconstructPhrases(session) {
 
     const startMs  = new Date(phraseStart).getTime();
     const endMs    = new Date(endTimestamp).getTime();
-    const phraseKey = `${session.sessionId}_${startMs}`;
+    // Usar el UUID estable de frase si está disponible (logs nuevos).
+    // Fallback a sessionId_startMs para logs antiguos sin ext_isaac_phrase_id.
+    const stablePhraseId = buffer.find(b => b.event.ext_isaac_phrase_id)?.event.ext_isaac_phrase_id;
+    const phraseKey = stablePhraseId
+      ? `${session.sessionId}_${stablePhraseId}`
+      : `${session.sessionId}_${startMs}`;
 
     if (deletedKeys.has(phraseKey)) {
       buffer = [];

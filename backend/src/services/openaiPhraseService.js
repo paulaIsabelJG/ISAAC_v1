@@ -7,12 +7,17 @@ Reformula frases telegráficas en frases naturales, pero conserva TODOS los conc
 
 REGLAS:
 - No elimines ningún concepto original.
-- No añadas contenido nuevo.
-- Añade solo palabras funcionales necesarias: artículos, preposiciones, conjunciones.
+- Añade solo palabras funcionales imprescindibles: artículos, preposiciones, conjunciones.
 - No uses "de" por defecto.
-- Si hay varios alimentos/objetos/personas seguidos, trátalos como enumeración con "," e "y", salvo que claramente formen una expresión natural con "de".
-- Usa "de" solo cuando sea una relación natural: "vaso de agua", "puré de patata", "casa de mamá".
+- Enumeraciones con "," e "y": "sopa, puré y espaguetis".
+- Usa "de" solo en relaciones naturales: "vaso de agua", "puré de patata", "casa de mamá".
 - La salida debe ser breve y clara.
+
+MODOS (se indica en la entrada como [mode:...]):
+- statement (por defecto): afirmación en presente. Conjuga verbos normalmente. NO añadir "quiero"/"necesito" salvo que el usuario lo haya incluido explícitamente.
+- request: petición o deseo. Puedes añadir "quiero" o "necesito" si resulta natural.
+- past: afirmación en pasado (pretérito indefinido o imperfecto según contexto).
+- future: afirmación en futuro próximo ("voy a…") o futuro simple.
 
 Devuelve SOLO JSON válido:
 {
@@ -34,45 +39,24 @@ displayTokens:
 - concordancia correcta.
 - alineado por índice con canonicalTokens.
 
-wordType usa SOLO:
-- "verb"
-- "pronoun"
-- "noun"
-- "descriptor"
-- "social"
-- "place"
-- "time"
-- "misc"
+wordType usa SOLO: "verb", "pronoun", "noun", "descriptor", "social", "place", "time", "misc"
 
 Ejemplos:
-Entrada: "yo comer sopa puré espaguetis"
-Salida:
-{
-  "reformulatedText": "Yo quiero comer sopa, puré y espaguetis.",
-  "canonicalTokens": [
-    {"text":"yo","wordType":"pronoun"},
-    {"text":"querer","wordType":"verb"},
-    {"text":"comer","wordType":"verb"},
-    {"text":"sopa","wordType":"noun"},
-    {"text":"puré","wordType":"noun"},
-    {"text":"y","wordType":"misc"},
-    {"text":"espaguetis","wordType":"noun"}
-  ],
-  "displayTokens": [
-    {"text":"Yo","wordType":"pronoun"},
-    {"text":"quiero","wordType":"verb"},
-    {"text":"comer","wordType":"verb"},
-    {"text":"sopa","wordType":"noun"},
-    {"text":"puré","wordType":"noun"},
-    {"text":"y","wordType":"misc"},
-    {"text":"espaguetis","wordType":"noun"}
-  ],
-  "confidence": 0.95,
-  "notes": []
-}
 
-Entrada: "yo beber vaso agua"
-Salida: "Yo quiero beber un vaso de agua."
+[mode:statement] "yo ser veloz"
+→ { "reformulatedText": "Yo soy veloz.", "canonicalTokens": [{"text":"yo","wordType":"pronoun"},{"text":"ser","wordType":"verb"},{"text":"veloz","wordType":"descriptor"}], "displayTokens": [{"text":"Yo","wordType":"pronoun"},{"text":"soy","wordType":"verb"},{"text":"veloz","wordType":"descriptor"}], "confidence": 0.95, "notes": [] }
+
+[mode:statement] "yo comer sopa puré espaguetis"
+→ { "reformulatedText": "Yo como sopa, puré y espaguetis.", "canonicalTokens": [{"text":"yo","wordType":"pronoun"},{"text":"comer","wordType":"verb"},{"text":"sopa","wordType":"noun"},{"text":"puré","wordType":"noun"},{"text":"y","wordType":"misc"},{"text":"espaguetis","wordType":"noun"}], "displayTokens": [{"text":"Yo","wordType":"pronoun"},{"text":"como","wordType":"verb"},{"text":"sopa","wordType":"noun"},{"text":"puré","wordType":"noun"},{"text":"y","wordType":"misc"},{"text":"espaguetis","wordType":"noun"}], "confidence": 0.95, "notes": [] }
+
+[mode:request] "yo comer sopa puré espaguetis"
+→ { "reformulatedText": "Yo quiero comer sopa, puré y espaguetis.", ... }
+
+[mode:past] "yo comer sopa"
+→ { "reformulatedText": "Yo comí sopa.", ... }
+
+[mode:future] "yo ir parque"
+→ { "reformulatedText": "Yo voy a ir al parque.", ... }
 
 Responde solo JSON.`;
 
@@ -84,7 +68,7 @@ Responde solo JSON.`;
  * @param {string} locale - Código de idioma. Por defecto "es".
  * @returns {Promise<{ reformulatedText, canonicalTokens, displayTokens, confidence, notes }>}
  */
-exports.reformulatePhrase = async (text, locale = "es") => {
+exports.reformulatePhrase = async (text, locale = "es", mode = "statement") => {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     const err = new Error(
@@ -108,7 +92,7 @@ exports.reformulatePhrase = async (text, locale = "es") => {
       model,
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: `Entrada: "${text}"` },
+        { role: "user", content: `[mode:${mode}] Entrada: "${text}"` },
       ],
       response_format: { type: "json_object" },
       temperature: 0.1,

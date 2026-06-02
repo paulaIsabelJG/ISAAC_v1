@@ -32,7 +32,7 @@ function normalizeToken(t) {
  */
 exports.reformulatePhrase = async (req, res) => {
   try {
-    const { text, locale = 'es', tokens: originalTokens = [] } = req.body;
+    const { text, locale = 'es', tokens: originalTokens = [], mode = 'statement' } = req.body;
 
     if (!text || typeof text !== 'string' || !text.trim()) {
       return res.status(400).json({ error: 'El campo "text" es obligatorio y no puede estar vacío.' });
@@ -43,7 +43,10 @@ exports.reformulatePhrase = async (req, res) => {
       return res.status(400).json({ error: 'El texto no puede superar 500 caracteres.' });
     }
 
-    const aiResult = await openaiPhraseService.reformulatePhrase(trimmedText, locale);
+    const validModes = new Set(['statement', 'request', 'past', 'future']);
+    const safeMode = validModes.has(mode) ? mode : 'statement';
+
+    const aiResult = await openaiPhraseService.reformulatePhrase(trimmedText, locale, safeMode);
 
     // Normalizar a Array<{text, wordType}> (acepta strings o objetos)
     let canonicals = aiResult.canonicalTokens.map(normalizeToken);

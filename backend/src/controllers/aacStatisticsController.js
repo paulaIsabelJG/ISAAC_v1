@@ -144,7 +144,8 @@ exports.getOrganizationPhrases = async (req, res) => {
 exports.deletePhrase = async (req, res) => {
   try {
     const { phraseId } = req.params;
-    // phraseId = sessionId_startMs (sessionId es UUID sin guiones bajos)
+    // phraseId = sessionId_phraseUUID (logs nuevos) o sessionId_startMs (logs antiguos)
+    // En ambos casos el sessionId es un UUID sin guiones bajos → split en primer '_'.
     const underscoreIdx = phraseId.indexOf('_');
     if (underscoreIdx === -1) return res.status(400).json({ error: 'Formato de phraseId inválido.' });
     const sessionId = phraseId.slice(0, underscoreIdx);
@@ -267,6 +268,12 @@ exports.exportObla = async (req, res) => {
     }
     let sessions = await OblLog.find(sessionQ).lean();
 
+    // Guard: para exportación de usuario concreto, descartar sesiones de cualquier otro userId
+    if (exportScope === 'user') {
+      const expectedId = String(targetUsers[0]._id);
+      sessions = sessions.filter(s => String(s.userId) === expectedId);
+    }
+
     if (boardId) {
       sessions = sessions.filter(s =>
         (s.events || []).some(e => e.type === 'button' && e.board_id === boardId)
@@ -284,55 +291,118 @@ exports.exportObla = async (req, res) => {
     const anon = id =>
       id ? createHash('sha256').update(salt + String(id)).digest('hex').slice(0, 16) : 'unknown';
 
-    // ── Construcción OBLA ────────────────────────────────────────────────────
-    const oblaSessions = sessions.map(session => {
-      const sessionEvents = [...(session.events || [])]
-        .filter(e => e.type === 'button' || e.type === 'utterance')
-        .sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0))
-        .map(e => {
-          if (e.type === 'button') {
-            const ev = {
-              type:      'button',
-              timestamp: e.timestamp,
-              label:     e.label || '',
-              button_id: anon(e.button_id),
-              board_id:  anon(e.board_id),
-              spoken:    !!e.spoken,
-            };
-            const navActions = (e.actions || []).filter(a => a.action === ':open_board');
-            if (navActions.length) {
-              ev.actions = navActions.map(a => ({
-                action:               ':open_board',
-                destination_board_id: anon(a.destination_board_id),
-              }));
-            }
-            return ev;
-          }
-          return {
-            type:      'utterance',
-            timestamp: e.timestamp,
-            text:      e.text || '',
-            buttons:   (e.buttons || []).map(b => anon(b)),
-          };
-        });
+    // ── root.user_id ─────────────────────────────────────────────────────────
+    // 'user' → siempre el pseudónimo del usuario seleccionado (no derivado de sesiones)
+    // otros  → 'multi-user' excepto si resulta que solo hay un usuario en las sesiones
+    let rootUserId;
+    if (exportScope === 'user') {
+      rootUserId = anon(targetUsers[0]._id);
+    } else {
+      const uniqueUserIds = [...new Set(sessions.map(s => String(s.userId)))];
+      rootUserId = uniqueUserIds.length === 1 ? anon(uniqueUserIds[0]) : 'multi-user';
+    }
 
-      return {
-        id:             anon(session.sessionId),
-        type:           'log',
-        started:        session.started || null,
-        ended:          session.ended   || null,
-        user_id:        anon(session.userId),
-        anonymizations: ['id_pseudonymization', 'name_masking', 'url_stripping', 'extras_removed'],
-        events:         sessionEvents,
-      };
-    });
+    const oblaSessions = sessions
+      .map(session => {
+        const sessionEvents = [...(session.events || [])]
+          .sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0))
+          .map(e => {
+            // ── Button ───────────────────────────────────────────────────────
+            if (e.type === 'button') {
+              const ev = {
+                id:        e.id || randomUUID(),
+                type:      'button',
+                timestamp: e.timestamp,
+                label:     e.label || '',
+                button_id: anon(e.button_id),
+                board_id:  anon(e.board_id),
+                spoken:    !!e.spoken,
+              };
+              if (e.vocalization && e.vocalization !== e.label) ev.vocalization = e.vocalization;
+              if (e.color)    ev.color    = e.color;
+              if (e.wordType) ev.wordType = e.wordType;
+              // Acciones internas del botón: navegación y slots.
+              // image_url y base64 nunca se incluyen; destination_board_id se pseudonimiza.
+              const mappedActions = (e.actions || [])
+                .filter(a => a.action === ':open_board' || a.action === 'ext_isaac_set_slot')
+                .map(a => {
+                  const ma = { action: a.action };
+                  if (a.destination_board_id) ma.destination_board_id = anon(a.destination_board_id);
+                  if (a.ext_isaac_slot_id != null) ma.ext_isaac_slot_id = a.ext_isaac_slot_id;
+                  return ma;
+                });
+              if (mappedActions.length) ev.actions = mappedActions;
+              if (e.ext_isaac_phrase_id) ev.ext_isaac_phrase_id = anon(e.ext_isaac_phrase_id);
+              return ev;
+            }
+
+            // ── Action ───────────────────────────────────────────────────────
+            if (e.type === 'action') {
+              const ev = {
+                id:        e.id || randomUUID(),
+                type:      'action',
+                timestamp: e.timestamp,
+                action:    e.action || '',
+              };
+              // destination_board_id (presente en :open_board y ext_isaac_set_slot a nivel raíz)
+              if (e.destination_board_id) ev.destination_board_id = anon(e.destination_board_id);
+              // Texto de la frase (utterance y reformulación IA)
+              if (e.text) ev.text = e.text;
+              // Campos ext_isaac_ai_reformulation — se exportan; ext_isaac_ai_tokens se omite (contiene imágenes)
+              if (e.ext_isaac_original_text)     ev.ext_isaac_original_text     = e.ext_isaac_original_text;
+              if (e.ext_isaac_reformulated_text) ev.ext_isaac_reformulated_text = e.ext_isaac_reformulated_text;
+              if (e.ext_isaac_phrase_id) ev.ext_isaac_phrase_id = anon(e.ext_isaac_phrase_id);
+              return ev;
+            }
+
+            // ── Utterance ────────────────────────────────────────────────────
+            // buttons puede ser string[] (datos antiguos) u objetos {id,label,board_id} (nuevo)
+            const anonButtons = (e.buttons || []).map(b =>
+              typeof b === 'string'
+                ? anon(b)
+                : { id: anon(b.id), label: b.label || '', board_id: anon(b.board_id) }
+            );
+            const ev = {
+              id:        e.id || randomUUID(),
+              type:      'utterance',
+              timestamp: e.timestamp,
+              text:      e.text || '',
+              buttons:   anonButtons,
+            };
+            if (e.ext_isaac_phrase_id) ev.ext_isaac_phrase_id = anon(e.ext_isaac_phrase_id);
+            return ev;
+          });
+
+        if (sessionEvents.length === 0) return null;   // descartar sesiones vacías
+
+        // Fallback ended: último evento > updatedAt > started
+        const lastEventTs = sessionEvents.length > 0
+          ? sessionEvents[sessionEvents.length - 1].timestamp
+          : null;
+        const ended = session.ended
+          || lastEventTs
+          || (session.updatedAt ? new Date(session.updatedAt).toISOString() : null)
+          || session.started
+          || null;
+
+        return {
+          id:             anon(session.sessionId),
+          type:           'log',
+          started:        session.started || null,
+          ended,
+          user_id:        anon(session.userId),
+          anonymizations: ['id_pseudonymization', 'name_masking', 'url_stripping', 'extras_removed'],
+          events:         sessionEvents,
+        };
+      })
+      .filter(Boolean);   // eliminar nulls (sesiones vacías)
 
     const obla = {
       format:     'open-board-log-0.1',
       anonymized: true,
       source:     'ISAAC',
       locale:     'es',
-      user_id:    oblaSessions.length === 1 ? oblaSessions[0].user_id : 'multi-user',
+      user_id:    rootUserId,
       sessions:   oblaSessions,
     };
 

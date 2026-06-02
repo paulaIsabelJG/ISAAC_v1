@@ -19,6 +19,8 @@ export interface AacPhraseItem {
   label:    string;
   imageUrl: string;
   sound:    string;
+  /** ID del tablero desde el que se pulsó el pictograma. Necesario para utterance buttons. */
+  boardId?: string;
   /** Color efectivo del pictograma (Fitzgerald o manual, hex). Mostrado en la phrase-band y en OBL. */
   color?:   string;
   /** Categoría gramatical Fitzgerald. */
@@ -31,7 +33,7 @@ export interface AacPhraseItem {
 
 /** Acción OBL estructurada (spec open-board-log-0.1). */
 export interface OblAction {
-  action:                string;          // ':open_board' | 'ext_isaac_set_slot' | '+speak' | ':back'
+  action:                string;          // ':open_board' | 'ext_isaac_set_slot' | ':back'
   destination_board_id?: string;
   ext_isaac_slot_id?:    number;
   ext_isaac_multi_board_id?: string;
@@ -53,11 +55,13 @@ export interface OblEvent {
   action?:              string;
   destination_board_id?: string;
   text?:                string;
-  buttons?:             string[];
+  buttons?:             Array<{ id: string; label: string; board_id: string }>;
   // extensión ISAAC: reformulación IA (solo en action 'ext_isaac_ai_reformulation')
   ext_isaac_original_text?:     string;
   ext_isaac_reformulated_text?: string;
   ext_isaac_ai_tokens?:         any[];
+  /** Identificador estable de la frase en curso. Compartido por button, :speak, utterance y ext_isaac_ai_reformulation. */
+  ext_isaac_phrase_id?:         string;
 }
 
 /**
@@ -144,6 +148,9 @@ export class AacRuntimeService {
 
   private pendingEvents: OblEvent[] = [];
   private sessionStarted = '';
+  /** UUID estable que identifica la frase en curso. Se genera al añadir el primer pictograma
+   *  de cada frase y se comparte en todos sus eventos OBL (button, :speak, utterance, AI). */
+  private currentPhraseId = '';
 
   constructor(private http: HttpClient) {}
 
@@ -174,8 +181,9 @@ export class AacRuntimeService {
     this.boardStack  = [];
     this.phrase      = [];
     this.undoStack   = [];
-    this.pendingEvents = [];
-    this.canLog         = mode === 'communicator' && canLog;
+    this.pendingEvents    = [];
+    this.currentPhraseId  = '';
+    this.canLog           = mode === 'communicator' && canLog;
     this.controlsConfig  = controlsConfig ?? { ...DEFAULT_CONTROLS_CONFIG };
     this.predictorEnabled = predictorEnabled;
     this.iaRows           = iaRows;
@@ -246,6 +254,9 @@ export class AacRuntimeService {
    * debe restaurarse si el usuario pulsa "Borrar último" sobre este ítem.
    */
   addToPhrase(item: AacPhraseItem, undo: UndoEntry = { type: 'none' }): void {
+    if (this.phrase.length === 0) {
+      this.currentPhraseId = this.uuid();
+    }
     this.phrase.push(item);
     this.undoStack.push(undo);
     this.phraseChanged$.next([...this.phrase]);
@@ -296,6 +307,51 @@ export class AacRuntimeService {
     this.phrase    = [];
     this.undoStack = [];
     this.phraseChanged$.next([]);
+  }
+
+  /**
+   * Igual que clearPhraseSilent pero además vuelve al tablero raíz.
+   * Usar al cerrar el modal IA (tanto al aceptar como al cancelar): la frase ya
+   * fue cerrada por :speak, no se emite :clear, y el tablero vuelve al inicio
+   * listo para una frase nueva dentro de la misma sesión OBL.
+   */
+  clearPhraseSilentAndGoRoot(): void {
+    this.phrase    = [];
+    this.undoStack = [];
+    this.phraseChanged$.next([]);
+    this.boardStack = [];
+    if (this.rootBoardId && this._currentBoardId !== this.rootBoardId) {
+      this._currentBoardId = this.rootBoardId;
+      this.returnToRoot$.next(this.rootBoardId);
+    }
+  }
+
+  /**
+   * Cierre definitivo de frase tras el popup IA.
+   * Llamar desde TODOS los cierres del modal (aceptar, cancelar, swipe, error).
+   *
+   * - No emite :clear (la frase ya fue cerrada por :speak).
+   * - Siempre emite returnToRoot$ (incluso si ya estábamos en raíz) para que
+   *   el multitablero recargue y resetee los stacks de slots.
+   * - No cierra sesión OBL ni borra eventos ya registrados.
+   */
+  finalizePhraseAfterAiPopup(): void {
+    console.log('[AAC] finalizePhraseAfterAiPopup — antes:',
+      'phrase.length=' + this.phrase.length,
+      'boardStack.length=' + this.boardStack.length);
+
+    this.phrase          = [];
+    this.undoStack       = [];
+    this.currentPhraseId = '';
+    this.phraseChanged$.next([]);
+    this.boardStack = [];
+    if (this.rootBoardId) {
+      this._currentBoardId = this.rootBoardId;
+      this.returnToRoot$.next(this.rootBoardId);
+    }
+
+    console.log('[AAC] finalizePhraseAfterAiPopup — después:',
+      'phrase.length=' + this.phrase.length);
   }
 
   /**
@@ -355,6 +411,7 @@ export class AacRuntimeService {
       label:             pictogram.label    ?? '',
       imageUrl:          pictogram.imageUrl ?? '',
       sound:             pictogram.sound    ?? pictogram.label ?? '',
+      boardId:           boardId,
       color:             effectiveColor,
       wordType:          pictogram.wordType ?? 'misc',
       fitzgeraldEnabled: !!(pictogram.fitzgeraldEnabled),
@@ -389,20 +446,13 @@ export class AacRuntimeService {
       this.speakText(item.sound || item.label);
     }
 
-    if (navigates && action?.targetBoardId) {
-      this.navigateToBoard(action.targetBoardId, pictogram as CellPictogram);
-    }
-
-    if (setsSlot && action?.targetSlotId != null && action?.targetBoardId) {
-      this.slotChanged$.next({ slotId: action.targetSlotId, boardId: action.targetBoardId });
-      this.logActionEvent(`:setSlot(${action.targetSlotId},${action.targetBoardId})`);
-    }
-
+    // Registrar evento button ANTES de navegar/hablar/modificar frase
     const oblActions: OblAction[] = [];
-    if (spoken || speakAndBack) oblActions.push({ action: '+speak' });
     if (speakAndBack)           oblActions.push({ action: ':back' });
-    if (navigates)              oblActions.push({ action: ':open_board', destination_board_id: action?.targetBoardId ?? undefined });
-    if (setsSlot)               oblActions.push({ action: 'ext_isaac_set_slot', ext_isaac_slot_id: action?.targetSlotId ?? undefined, destination_board_id: action?.targetBoardId ?? undefined });
+    if (navigates && action?.targetBoardId)
+                                oblActions.push({ action: ':open_board', destination_board_id: action.targetBoardId });
+    if (setsSlot && action?.targetBoardId)
+                                oblActions.push({ action: 'ext_isaac_set_slot', ext_isaac_slot_id: action?.targetSlotId ?? undefined, destination_board_id: action.targetBoardId });
 
     this.logButtonEvent({
       label:        item.label,
@@ -415,6 +465,15 @@ export class AacRuntimeService {
       color:        item.color    || undefined,
       wordType:     item.wordType || undefined,
     });
+
+    if (navigates && action?.targetBoardId) {
+      this.navigateToBoard(action.targetBoardId, pictogram as CellPictogram);
+    }
+
+    if (setsSlot && action?.targetSlotId != null && action?.targetBoardId) {
+      this.slotChanged$.next({ slotId: action.targetSlotId, boardId: action.targetBoardId });
+      this.logActionEvent(`:setSlot(${action.targetSlotId},${action.targetBoardId})`);
+    }
   }
 
   // ── Board navigation ──────────────────────────────────────────────────────
@@ -579,7 +638,11 @@ export class AacRuntimeService {
     const text = this.phrase.map(p => p.sound || p.label).join(' ');
     this.speakText(text, gender);
     this.logActionEvent(':speak');
-    this.logUtteranceEvent(text, this.phrase.map(p => p.id));
+    this.logUtteranceEvent(text, this.phrase.map(p => ({
+      id:       p.id,
+      label:    p.label,
+      board_id: p.boardId ?? '',
+    })));
     // Si el tablero tiene IA de reescritura activa, notificar para abrir el modal.
     // Se emite también el timestamp t1 para que el evento OBL de IA use el tiempo de HABLAR.
     if (this.aiRewriteEnabled && this.mode === 'communicator') {
@@ -594,12 +657,17 @@ export class AacRuntimeService {
     button_id: string; board_id: string; image_url: string; actions: OblAction[];
     color?: string; wordType?: string;
   }): void {
-    this.pushEvent({
+    const { image_url, ...rest } = data;
+    const ev: OblEvent = {
       id:        this.uuid(),
       type:      'button',
       timestamp: new Date().toISOString(),
-      ...data,
-    });
+      ...rest,
+    };
+    if (image_url && !image_url.startsWith('data:')) {
+      ev.image_url = image_url;
+    }
+    this.pushEvent(ev);
   }
 
   logActionEvent(action: string, destinationBoardId?: string): void {
@@ -612,13 +680,13 @@ export class AacRuntimeService {
     });
   }
 
-  logUtteranceEvent(text: string, buttonIds: string[]): void {
+  logUtteranceEvent(text: string, buttons: Array<{ id: string; label: string; board_id: string }>): void {
     this.pushEvent({
       id:        this.uuid(),
       type:      'utterance',
       timestamp: new Date().toISOString(),
       text,
-      buttons:   buttonIds,
+      buttons,
     });
   }
 
@@ -653,6 +721,7 @@ export class AacRuntimeService {
 
   private pushEvent(ev: OblEvent): void {
     if (!this.canLog) return; // preview/edit o usuario no final → solo consola
+    if (this.currentPhraseId) ev.ext_isaac_phrase_id = this.currentPhraseId;
     console.log('[OBL]', ev.type, ev.action ?? ev.label ?? ev.text ?? '');
     this.pendingEvents.push(ev);
     if (this.pendingEvents.length >= 10) {

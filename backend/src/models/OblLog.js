@@ -28,11 +28,13 @@ const oblEventSchema = new mongoose.Schema({
   destination_board_id: String,
   // utterance fields
   text:                 String,
-  buttons:              [String],
+  buttons:              { type: [mongoose.Schema.Types.Mixed], default: undefined },
   // extensión ISAAC: reformulación IA (action 'ext_isaac_ai_reformulation')
   ext_isaac_original_text:     String,
   ext_isaac_reformulated_text: String,
   ext_isaac_ai_tokens:         [mongoose.Schema.Types.Mixed],
+  // identificador estable de frase (compartido por button, :speak, utterance y ai_reformulation)
+  ext_isaac_phrase_id:         String,
 }, { _id: false });
 
 const oblLogSchema = new mongoose.Schema({
