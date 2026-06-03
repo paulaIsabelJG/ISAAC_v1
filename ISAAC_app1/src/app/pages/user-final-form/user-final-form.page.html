@@ -328,7 +328,8 @@
                   <!-- Estado: error -->
                   @if (customVoiceStep === 'error') {
                     <div class="voice-error">
-                      Error al crear la voz: {{ customVoiceError || 'Error desconocido' }}
+                      <strong>No se pudo crear la voz.</strong><br>
+                      {{ customVoiceError || 'Error desconocido' }}
                     </div>
                     <button type="button" class="rec-btn rec-btn--discard"
                             (click)="customVoiceStep = 'idle'; customVoiceError = ''">

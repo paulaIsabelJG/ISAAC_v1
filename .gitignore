@@ -105,3 +105,25 @@ DerivedData/
 *.ipa
 *.dSYM.zip
 *.dSYM
+
+
+
+cat >> .gitignore <<'EOF'
+
+# Python / voice service
+voice_service/venv/
+voice_service/__pycache__/
+voice_service/cache/
+voice_service/checkpoints_v2/
+voice_service/voices/
+voice_service/MeloTTS/
+voice_service/OpenVoice/
+
+# Backend generated uploads
+backend/uploads/tts-cache/
+backend/uploads/voice-samples/
+
+# Python cache
+__pycache__/
+*.pyc
+EOF

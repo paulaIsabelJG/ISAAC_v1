@@ -222,15 +222,13 @@ export class BoardService {
     );
   }
 
-  /** GET /api/boards/available-targets?assignedUserIds=id1,id2,…
-   *  Tableros disponibles como destino de navegación para un conjunto de usuarios asignados.
-   *  - 1 usuario: boards con assignedUserIds ∋ userId OR legacy userId
-   *  - N usuarios: boards con assignedUserIds ⊇ todos los IDs
+  /** GET /api/boards/available-targets?creatorId=…
+   *  Todos los tableros del creador (el frontend filtra por shape/role).
+   *  No depende de assignedUserIds: los secundarios no tienen usuarios asignados.
    */
-  getAvailableTargets(assignedUserIds: string[]): Observable<{ boards: Board[] }> {
-    const param = assignedUserIds.map(encodeURIComponent).join(',');
+  getAvailableTargets(creatorId: string): Observable<{ boards: Board[] }> {
     return this.http.get<{ boards: Board[] }>(
-      `${this.url}/available-targets?assignedUserIds=${param}`
+      `${this.url}/available-targets?creatorId=${encodeURIComponent(creatorId)}`
     );
   }
 

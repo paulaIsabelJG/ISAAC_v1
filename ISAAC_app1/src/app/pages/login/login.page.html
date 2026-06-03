@@ -18,6 +18,33 @@
         </div>
       }
 
+      @if (errorMessage) {
+        <div class="login-error">{{ errorMessage }}</div>
+      }
+
+      <!-- Botón biométrico: visible solo si está activado -->
+      @if (biometricEnabled) {
+        <div class="biometric-section">
+          <ion-button
+            expand="block"
+            class="biometric-button"
+            [disabled]="biometricLoading"
+            (click)="loginWithBiometric()"
+            aria-label="Entrar con Face ID, Touch ID o huella dactilar">
+            @if (biometricLoading) {
+              <ion-spinner name="crescent" slot="start"></ion-spinner>
+            } @else {
+              <ion-icon name="finger-print-outline" slot="start"></ion-icon>
+            }
+            Entrar con biometría
+          </ion-button>
+
+          <div class="biometric-divider">
+            <span>o continúa con contraseña</span>
+          </div>
+        </div>
+      }
+
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
         <ion-item class="login-item">
           <ion-label position="floating">Email</ion-label>
@@ -36,10 +63,6 @@
         </ion-item>
         @if (loginForm.get('password')?.invalid && loginForm.get('password')?.touched) {
           <div class="error-message"><span>La contraseña es obligatoria</span></div>
-        }
-
-        @if (errorMessage) {
-          <div class="login-error">{{ errorMessage }}</div>
         }
 
         <ion-button expand="block" type="submit" class="login-button"

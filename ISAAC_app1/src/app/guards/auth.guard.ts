@@ -3,41 +3,18 @@ import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
 /**
- * Decodifica el payload del JWT sin verificar la firma.
- * Sirve únicamente para inspeccionar el campo `exp` en el cliente antes de
- * hacer cualquier petición HTTP, evitando cargar rutas con token ya caducado.
- * La verificación real (con firma) siempre ocurre en el backend.
- */
-function isTokenExpired(token: string): boolean {
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    return typeof payload.exp === 'number' && payload.exp * 1000 < Date.now();
-  } catch {
-    return true; // Token malformado → tratar como expirado
-  }
-}
-
-/**
- * Guard funcional — protege las rutas privadas.
- *  - Sin token          → /login  (sin mensaje de expiración)
- *  - Token expirado     → /login?expired=true  (muestra banner)
- *  - Token válido       → deja pasar
+ * Protege las rutas privadas.
+ * Solo comprueba si hay un accessToken en memoria.
+ * Si no lo hay, redirige a /login (que puede mostrar biometría o formulario).
+ * La renovación automática del token expirado la gestiona el interceptor HTTP.
  */
 export const authGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
   const router      = inject(Router);
 
-  const token = localStorage.getItem('isaac_token');
-
-  if (!token) {
-    return router.createUrlTree(['/login']);
-  }
-
-  if (isTokenExpired(token)) {
-    // Limpia localStorage + BehaviorSubject antes de redirigir
-    authService.clearSession();
-    return router.createUrlTree(['/login'], { queryParams: { expired: 'true' } });
-  }
-
-  return true;
+  // Considera la sesión activa si hay accessToken o refreshToken (y perfil de usuario).
+  // El interceptor renovará el accessToken automáticamente en la primera petición.
+  return (authService.isLoggedIn() || (!!authService.getRefreshToken() && !!authService.getCurrentUser()))
+    ? true
+    : router.createUrlTree(['/login']);
 };

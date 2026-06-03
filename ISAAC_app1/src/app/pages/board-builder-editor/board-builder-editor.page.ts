@@ -328,6 +328,9 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     if (this.boardId) {
       void this.loadBoard().then(() => this.applyLinkedBoard());
     }
+    // loadUserBoards solo necesita creatorId (disponible ya en query params).
+    // Se lanza en paralelo con loadBoard y loadCenterUsers, sin esperar el board.
+    this.loadUserBoards();
     this.loadCenterUsers();
   }
 
@@ -348,7 +351,6 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
       };
       this.syncConfigFromBoard();
       const assignedIds = this.board.assignedUserIds ?? [];
-      this.loadUserBoards(assignedIds);
       this.loadPersonalPicts(assignedIds[0] || this.board.userId);
       if (this.isMultiBoard) {
         this.slotBoardData.clear();
@@ -446,13 +448,37 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   }
 
   private async loadCenterUsers(): Promise<void> {
-    const org = this.authSvc.getCurrentUser();
-    if (!org?.centro) return;
+    const currentUser = this.authSvc.getCurrentUser();
+    let centro: string | null | undefined = currentUser?.centro;
+
+    console.log('[BoardEditor] loadCenterUsers — usuario autenticado:', currentUser?.email, '| centro:', centro, '| contextCreatorId:', this.contextCreatorId);
+
+    // Si el usuario autenticado no tiene centro pero hay un contextCreatorId,
+    // se intenta obtener el centro del creador de contexto.
+    if (!centro && this.contextCreatorId) {
+      try {
+        const creatorRes = await firstValueFrom(this.userSvc.getUserById(this.contextCreatorId));
+        centro = creatorRes.user?.centro;
+        console.log('[BoardEditor] loadCenterUsers — centro obtenido de contextCreatorId:', centro);
+      } catch (err) {
+        console.warn('[BoardEditor] loadCenterUsers — no se pudo obtener el usuario contextCreatorId:', err);
+      }
+    }
+
+    if (!centro) {
+      console.warn('[BoardEditor] loadCenterUsers — sin centro disponible, no se cargarán usuarios del centro');
+      return;
+    }
+
     try {
-      const res = await firstValueFrom(this.userSvc.getUsersByCenter(org.centro));
+      const res = await firstValueFrom(this.userSvc.getUsersByCenter(centro));
+      console.log('[BoardEditor] loadCenterUsers — endpoint llamado: /api/users/centro/' + centro,
+        '| usuarios devueltos:', res.users.length,
+        '| tipos:', [...new Set(res.users.map(u => u.type))]);
       this.centerUsers = res.users.filter((u) => u.type === 'user');
-    } catch {
-      /* silencioso */
+      console.log('[BoardEditor] loadCenterUsers — usuarios finales (type=user):', this.centerUsers.length);
+    } catch (err) {
+      console.error('[BoardEditor] loadCenterUsers — error al cargar usuarios del centro:', err);
     }
   }
 
@@ -2168,39 +2194,28 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
 
   /** Tableros del mismo usuario contexto, creados por el creador del contexto actual,
    *  filtrando por shape y respetando la regla main→secondary. */
+  /** Siempre vacío: todos los secundarios navegables van por boardsUnassigned. */
   get boardsSameUser(): Board[] {
-    const creatorId = this.contextCreatorId || this.authSvc.getCurrentUser()?.id || '';
-    const shape = this._targetShape;
-    const byShape = this.userBoards.filter(b =>
-      (b.shape ?? 'grid') === shape &&
-      b.shape !== 'multi' &&
-      (!creatorId || b.createdBy === creatorId || b.creatorId === creatorId),
-    );
-    const currentRole = this.board?.boardRole ?? 'main';
-    if (currentRole === 'main') {
-      return byShape.filter(b => b.boardRole === 'secondary');
-    }
-    return byShape;
+    return [];
   }
 
-  /** Tableros secundarios sin usuarios asignados, del creador del contexto actual,
-   *  del mismo shape. Son candidatos a heredar assignedUserIds al enlazarse. */
+  /** Todos los tableros secundarios del creador con el mismo shape.
+   *  No depende de assignedUserIds: los secundarios no tienen usuarios asignados. */
   get boardsUnassigned(): Board[] {
     const creatorId = this.contextCreatorId || this.authSvc.getCurrentUser()?.id || '';
     const shape = this._targetShape;
     return this.allCreatorBoards.filter(b =>
       b._id !== this.boardId &&
       b.boardRole === 'secondary' &&
-      (!b.assignedUserIds || b.assignedUserIds.length === 0) &&
       (b.shape ?? 'grid') === shape &&
       b.shape !== 'multi' &&
       (!creatorId || b.createdBy === creatorId || b.creatorId === creatorId),
     );
   }
 
-  /** Unión de ambos grupos; se usa para validación de shape en onSaveCellRequest. */
+  /** Alias de boardsUnassigned; usado para validación de shape en onSaveCellRequest. */
   get sameShapeBoards(): Board[] {
-    return [...this.boardsSameUser, ...this.boardsUnassigned];
+    return this.boardsUnassigned;
   }
 
   // ── Navegación ────────────────────────────────────────────────────────────────

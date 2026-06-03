@@ -38,16 +38,14 @@
     </button>
   }
 
-  <!-- Usuario(s) asignado(s) -->
-  <label class="bbe-lbl">
-    Usuario(s) asignado(s)
-    @if (isSharedBoard) {
-      <span class="bbe-shared-badge">Compartido</span>
-    }
-  </label>
-
   @if (localBoardRole !== 'secondary') {
-    <!-- Tableros principales: selector con búsqueda -->
+    <!-- Tableros principales y multi: selector de usuarios -->
+    <label class="bbe-lbl">
+      Usuario(s) asignado(s)
+      @if (isSharedBoard) {
+        <span class="bbe-shared-badge">Compartido</span>
+      }
+    </label>
     @if (centerUsers.length === 0) {
       <p class="bbe-secondary-user-hint">No hay usuarios finales en el centro.</p>
     } @else {
@@ -88,18 +86,11 @@
       }
     }
   } @else {
-    <!-- Tableros secundarios: solo lectura -->
-    @if (localAssignedUserIds.length > 0) {
-      <div class="bbe-secondary-users">
-        @for (name of assignedUserNames; track name) {
-          <span class="bbe-secondary-user-chip">{{ name }}</span>
-        }
-      </div>
-    } @else {
-      <p class="bbe-secondary-user-hint">
-        Este tablero secundario heredará el usuario cuando se enlace desde un tablero principal.
-      </p>
-    }
+    <!-- Tablero secundario: no tiene usuarios ni configuración propia -->
+    <p class="bbe-secondary-user-hint">
+      Este tablero es secundario y hereda la configuración del tablero principal desde el que se accede.
+      No se le asignan usuarios directamente.
+    </p>
   }
 
   <!-- Filas / Columnas (solo tableros grid no-multi) -->

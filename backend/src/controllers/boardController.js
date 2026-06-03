@@ -29,7 +29,8 @@ exports.getMyBoards = async (req, res) => {
 
     const boards = await Board.find(query)
       .sort({ createdAt: -1 })
-      .select('-cells');
+      .select('-cells')
+      .lean();
 
     res.json({ boards });
   } catch (err) {
@@ -93,7 +94,8 @@ exports.getBoardsByCreator = async (req, res) => {
 
     const boards = await Board.find(query)
       .sort({ createdAt: -1 })
-      .select('-cells');
+      .select('-cells')
+      .lean();
 
     res.json({ boards });
   } catch (err) {
@@ -153,7 +155,8 @@ exports.getAssignedBoards = async (req, res) => {
       ],
     })
       .sort({ createdAt: -1 })
-      .select('-cells');
+      .select('-cells')
+      .lean();
 
     console.log('[getAssignedBoards]', {
       userId,
@@ -177,7 +180,8 @@ exports.getBoardsByUser = async (req, res) => {
     }
     const boards = await Board.find({ userId })
       .sort({ createdAt: -1 })
-      .select('-cells');
+      .select('-cells')
+      .lean();
     res.json({ boards });
   } catch (err) {
     console.error('getBoardsByUser error:', err);
@@ -192,37 +196,18 @@ exports.getBoardsByUser = async (req, res) => {
 //   - N usuarios: boards donde assignedUserIds $all ids
 exports.getAvailableTargets = async (req, res) => {
   try {
-    const { assignedUserIds: queryParam } = req.query;
-    if (!queryParam) {
+    const { creatorId } = req.query;
+    if (!creatorId || !validateObjectId(String(creatorId))) {
       return res.json({ boards: [] });
     }
-
-    const ids = String(queryParam)
-      .split(',')
-      .map((s) => s.trim())
-      .filter(validateObjectId);
-
-    if (ids.length === 0) {
-      return res.json({ boards: [] });
-    }
-
-    let query;
-    if (ids.length === 1) {
-      // Un solo usuario: nueva forma O legacy userId
-      query = {
-        $or: [
-          { assignedUserIds: ids[0] },
-          { userId: ids[0] },
-        ],
-      };
-    } else {
-      // Varios usuarios: el tablero debe estar asignado a TODOS ellos
-      query = { assignedUserIds: { $all: ids } };
-    }
-
-    const boards = await Board.find(query)
+    // Devuelve todos los tableros del creador (el frontend filtra por shape/role).
+    // No depende de assignedUserIds: los secundarios no tienen usuarios asignados.
+    const boards = await Board.find({
+      $or: [{ createdBy: creatorId }, { creatorId: creatorId }],
+    })
       .sort({ createdAt: -1 })
-      .select('-cells');
+      .select('-cells')
+      .lean();
 
     res.json({ boards });
   } catch (err) {
@@ -314,24 +299,25 @@ exports.createBoard = async (req, res) => {
     } = req.body;
 
     // Resolver lista efectiva de usuarios asignados.
-    // Si viene assignedUserIds válido: úsarlo. Si no, caer en userId.
     let effectiveAssignedUserIds = [];
     if (Array.isArray(assignedUserIds) && assignedUserIds.length > 0) {
       effectiveAssignedUserIds = assignedUserIds.filter(validateObjectId);
     }
-    // Primer usuario = userId efectivo (campo legacy)
-    const effectiveUserId = effectiveAssignedUserIds[0] || userId;
 
-    // Los tableros secundarios pueden crearse sin usuario asignado (lo heredarán al enlazarse).
+    // Los tableros secundarios no tienen usuarios asignados ni configuración propia.
     const isSecondary = boardRole === 'secondary';
+    if (isSecondary) {
+      effectiveAssignedUserIds = [];
+    }
+    const effectiveUserId = isSecondary ? undefined : (effectiveAssignedUserIds[0] || userId);
     if (!name || (!effectiveUserId && !isSecondary)) {
       return res.status(400).json({ error: 'name and userId are required' });
     }
     if (effectiveUserId && !validateObjectId(effectiveUserId)) {
       return res.status(400).json({ error: 'Invalid userId' });
     }
-    // Si sólo se envió userId sin assignedUserIds, usarlo como primer elemento
-    if (effectiveAssignedUserIds.length === 0 && validateObjectId(userId)) {
+    // Si sólo se envió userId sin assignedUserIds (y no es secundario), usarlo como primer elemento
+    if (!isSecondary && effectiveAssignedUserIds.length === 0 && validateObjectId(userId)) {
       effectiveAssignedUserIds = [userId];
     }
 
@@ -404,11 +390,12 @@ exports.createBoard = async (req, res) => {
       rows:                  rows                  || 3,
       columns:               columns               || 4,
       circleSlots:           circleSlots           || 8,
-      locationColumnEnabled: !!locationColumnEnabled,
+      // Secundarios: sin config de comunicación propia
+      locationColumnEnabled: isSecondary ? false : !!locationColumnEnabled,
       locationColumnSlots:   locationColumnSlots   || 6,
-      predictorEnabled:      !!predictorEnabled,
-      aiRewriteEnabled:      !!aiRewriteEnabled,
-      autoPersonalize:       !!autoPersonalize,
+      predictorEnabled:      isSecondary ? false : !!predictorEnabled,
+      aiRewriteEnabled:      isSecondary ? false : !!aiRewriteEnabled,
+      autoPersonalize:       isSecondary ? false : !!autoPersonalize,
       iaRows:                iaRows                || 5,
       iaCols:                iaCols                || 1,
       boardRole:             finalBoardRole,
@@ -453,31 +440,52 @@ exports.updateBoard = async (req, res) => {
     } = req.body;
     // (Si el body incluyese createdBy, se descarta silenciosamente al no desestructurarlo)
 
-    if (name                  !== undefined) board.name                  = name.trim();
-    if (imageUrl              !== undefined) board.imageUrl              = imageUrl;
-    // assignedUserIds y userId se sincronizan: assignedUserIds tiene precedencia
-    if (assignedUserIds !== undefined && Array.isArray(assignedUserIds)) {
-      const validIds = assignedUserIds.filter(validateObjectId);
-      board.assignedUserIds = validIds;
-      // Sincronizar userId: primer elemento si hay usuarios, null si se vacía explícitamente
-      board.userId = validIds.length > 0 ? validIds[0] : null;
-    } else if (userId !== undefined) {
-      board.userId = userId;
-      // Si no vienen assignedUserIds pero sí userId, asegura que el array contenga al menos ese ID
-      if (!board.assignedUserIds || board.assignedUserIds.length === 0) {
-        board.assignedUserIds = [userId];
+    // Determinar el rol efectivo: el incoming boardRole gana si viene; si no, el actual.
+    const effectiveRole = boardRole !== undefined ? boardRole : (board.boardRole ?? 'main');
+    const isSecondary   = effectiveRole === 'secondary'; // multi conserva su configuración
+
+    if (name     !== undefined) board.name     = name.trim();
+    if (imageUrl !== undefined) board.imageUrl = imageUrl;
+
+    // assignedUserIds / userId: nunca se guardan en secundarios
+    if (!isSecondary) {
+      if (assignedUserIds !== undefined && Array.isArray(assignedUserIds)) {
+        const validIds = assignedUserIds.filter(validateObjectId);
+        board.assignedUserIds = validIds;
+        board.userId = validIds.length > 0 ? validIds[0] : null;
+      } else if (userId !== undefined) {
+        board.userId = userId;
+        if (!board.assignedUserIds || board.assignedUserIds.length === 0) {
+          board.assignedUserIds = [userId];
+        }
       }
+    } else {
+      // Secundario: limpiar siempre aunque el body traiga valores
+      board.assignedUserIds = [];
+      board.userId          = null;
     }
-    if (rows                  !== undefined) board.rows                  = rows;
-    if (columns               !== undefined) board.columns               = columns;
-    if (circleSlots           !== undefined) board.circleSlots           = circleSlots;
-    if (locationColumnEnabled !== undefined) board.locationColumnEnabled = !!locationColumnEnabled;
-    if (locationColumnSlots   !== undefined) board.locationColumnSlots   = locationColumnSlots;
-    if (predictorEnabled      !== undefined) board.predictorEnabled      = !!predictorEnabled;
-    if (aiRewriteEnabled      !== undefined) board.aiRewriteEnabled      = !!aiRewriteEnabled;
-    if (iaRows                !== undefined) board.iaRows                = iaRows;
-    if (iaCols                !== undefined) board.iaCols                = iaCols;
-    if (boardRole             !== undefined) board.boardRole             = boardRole;
+
+    if (rows        !== undefined) board.rows        = rows;
+    if (columns     !== undefined) board.columns     = columns;
+    if (circleSlots !== undefined) board.circleSlots = circleSlots;
+
+    // Campos de config de comunicación: solo en principales/multi
+    if (!isSecondary) {
+      if (locationColumnEnabled !== undefined) board.locationColumnEnabled = !!locationColumnEnabled;
+      if (locationColumnSlots   !== undefined) board.locationColumnSlots   = locationColumnSlots;
+      if (predictorEnabled      !== undefined) board.predictorEnabled      = !!predictorEnabled;
+      if (aiRewriteEnabled      !== undefined) board.aiRewriteEnabled      = !!aiRewriteEnabled;
+      if (autoPersonalize       !== undefined) board.autoPersonalize       = !!autoPersonalize;
+    } else {
+      board.locationColumnEnabled = false;
+      board.predictorEnabled      = false;
+      board.aiRewriteEnabled      = false;
+      board.autoPersonalize       = false;
+    }
+
+    if (iaRows    !== undefined) board.iaRows    = iaRows;
+    if (iaCols    !== undefined) board.iaCols    = iaCols;
+    if (boardRole !== undefined) board.boardRole = boardRole;
     if (slotCount             !== undefined) board.slotCount             = slotCount;
     if (multiBoardSlots       !== undefined && Array.isArray(multiBoardSlots)) {
       board.multiBoardSlots = multiBoardSlots;
@@ -494,7 +502,6 @@ exports.updateBoard = async (req, res) => {
     if (multiBoardIaPosition !== undefined && validIaPositions.includes(multiBoardIaPosition)) {
       board.multiBoardIaPosition = multiBoardIaPosition;
     }
-    if (autoPersonalize       !== undefined) board.autoPersonalize       = !!autoPersonalize;
     if (visibleInProfile      !== undefined) board.visibleInProfile      = !!visibleInProfile;
     if (profileName           !== undefined) board.profileName           = profileName;
     if (profileImage          !== undefined) board.profileImage          = profileImage;

@@ -57,9 +57,10 @@ try:
 
     from melo.api import TTS as MeloTTS
     tts_model = MeloTTS(language="ES", device=DEVICE)
-    ES_SPEAKER_ID = tts_model.hps.data.spk2id.get(
-        "ES", list(tts_model.hps.data.spk2id.values())[0]
-    )
+    # spk2id puede ser un HParams (no dict) según la versión de MeloTTS
+    _spk2id = tts_model.hps.data.spk2id
+    _spk2id_dict = vars(_spk2id) if hasattr(_spk2id, '__dict__') and not isinstance(_spk2id, dict) else dict(_spk2id)
+    ES_SPEAKER_ID = _spk2id_dict.get("ES", list(_spk2id_dict.values())[0])
     # Embedding del speaker base (español)
     base_speaker_se_path = CHECKPOINTS_DIR / "base_speakers" / "ses" / "es.pth"
     BASE_SE = torch.load(str(base_speaker_se_path), map_location=DEVICE)

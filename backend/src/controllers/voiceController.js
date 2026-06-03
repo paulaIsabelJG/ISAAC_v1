@@ -67,6 +67,7 @@ exports.uploadVoiceSample = async (req, res) => {
       voiceCreatedAt:     null,
       lastError:          null,
     };
+    user.markModified('voiceSettings');
     await user.save();
 
     res.json({ message: 'Muestra subida correctamente', status: 'sample_uploaded' });
@@ -96,6 +97,7 @@ exports.createVoice = async (req, res) => {
     }
 
     user.voiceSettings.customVoice.status = 'processing';
+    user.markModified('voiceSettings');
     await user.save();
 
     // Respuesta inmediata; Python procesa en segundo plano
@@ -104,6 +106,9 @@ exports.createVoice = async (req, res) => {
     // Llamada asíncrona a Python (no bloquea la respuesta HTTP)
     setImmediate(async () => {
       try {
+        // Verificar accesibilidad del servicio antes de la llamada larga
+        await axios.get(`${PYTHON_URL}/health`, { timeout: 5_000 });
+
         const response = await axios.post(`${PYTHON_URL}/voice/create`, {
           userId,
           referenceAudioPath: cv.referenceAudioPath,
@@ -117,17 +122,26 @@ exports.createVoice = async (req, res) => {
         fresh.voiceSettings.customVoice.voiceCreatedAt     = new Date();
         fresh.voiceSettings.customVoice.lastError          = null;
         fresh.voiceSettings.voiceMode                      = 'custom';
+        fresh.markModified('voiceSettings');
         await fresh.save();
 
-        // Pregenerar frases frecuentes en segundo plano
-        setImmediate(() => pregenerateFrequentPhrases(userId, response.data.speakerProfilePath));
+        // Preregeneración deshabilitada: en CPU tarda varios minutos por frase
+        // y satura el servicio impidiendo síntesis en tiempo real.
 
       } catch (err) {
-        console.error('createVoice Python error:', err.message);
+        // Extraer el mensaje más descriptivo posible del error
+        const pythonDetail = err.response?.data?.detail;
+        const isConnectionError = err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ECONNRESET';
+        const errorMsg = isConnectionError
+          ? 'El servicio de síntesis de voz no está disponible. Contacta con el administrador.'
+          : (pythonDetail || err.message || 'Error desconocido al procesar la voz');
+
+        console.error('createVoice Python error:', err.code || '', err.message);
         const fresh = await User.findById(userId);
         if (fresh) {
           fresh.voiceSettings.customVoice.status    = 'error';
-          fresh.voiceSettings.customVoice.lastError = err.message || 'Error al crear la voz';
+          fresh.voiceSettings.customVoice.lastError = errorMsg;
+          fresh.markModified('voiceSettings');
           await fresh.save();
         }
       }
@@ -226,7 +240,7 @@ exports.customSpeak = async (req, res) => {
       userId,
       text: text.trim(),
       speakerProfilePath: cv.speakerProfilePath,
-    }, { responseType: 'arraybuffer', timeout: 30_000 });
+    }, { responseType: 'arraybuffer', timeout: 180_000 }); // 3 min — CPU synthesis es lento
 
     const userCacheDir = path.join(TTS_CACHE_DIR, userId);
     if (!fs.existsSync(userCacheDir)) fs.mkdirSync(userCacheDir, { recursive: true });
@@ -265,7 +279,7 @@ async function pregenerateFrequentPhrases(userId, speakerProfilePath) {
 
       const pyRes = await axios.post(`${PYTHON_URL}/voice/synthesize`, {
         userId, text: phrase, speakerProfilePath,
-      }, { responseType: 'arraybuffer', timeout: 30_000 });
+      }, { responseType: 'arraybuffer', timeout: 180_000 }); // 3 min — CPU synthesis es lento
 
       const userCacheDir = path.join(TTS_CACHE_DIR, userId);
       if (!fs.existsSync(userCacheDir)) fs.mkdirSync(userCacheDir, { recursive: true });

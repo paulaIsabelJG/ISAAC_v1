@@ -182,8 +182,8 @@
     <label class="bcp-lbl" style="margin-top:8px">Tablero destino</label>
     @if (!boardsReady) {
       <ion-spinner name="crescent" color="secondary" style="width:18px;height:18px;margin:6px 0;display:block"></ion-spinner>
-    } @else if (sameShapeBoards.length === 0 && boardsUnassigned.length === 0) {
-      <span class="bcp-empty-msg">No hay otros tableros del mismo tipo.</span>
+    } @else if (boardsUnassigned.length === 0) {
+      <span class="bcp-empty-msg">No hay tableros secundarios del mismo tipo.</span>
     } @else {
       <div class="bcp-search-wrap">
         <input class="bcp-search-inp" type="text"
@@ -191,37 +191,19 @@
                [(ngModel)]="boardSearchQ"/>
       </div>
       <div class="bcp-board-list">
-        @if (filteredSameShapeBoards.length > 0) {
-          <div class="bcp-board-group-lbl">Tableros del usuario</div>
-          @for (b of filteredSameShapeBoards; track b._id) {
-            <div class="bcp-board-row"
-                 [class.bcp-board-row--on]="actionForm.targetBoardId === b._id"
-                 (click)="actionForm.targetBoardId = b._id">
-              <span class="bcp-board-row-name">{{ b.name }}</span>
-              @if (actionForm.targetBoardId === b._id) {
-                <svg class="bcp-board-row-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-              }
-            </div>
-          }
+        @for (b of filteredBoardsUnassigned; track b._id) {
+          <div class="bcp-board-row"
+               [class.bcp-board-row--on]="actionForm.targetBoardId === b._id"
+               (click)="actionForm.targetBoardId = b._id">
+            <span class="bcp-board-row-name">{{ b.name }}</span>
+            @if (actionForm.targetBoardId === b._id) {
+              <svg class="bcp-board-row-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            }
+          </div>
         }
-        @if (filteredBoardsUnassigned.length > 0) {
-          <div class="bcp-board-group-lbl">Secundarios sin asignar</div>
-          @for (b of filteredBoardsUnassigned; track b._id) {
-            <div class="bcp-board-row"
-                 [class.bcp-board-row--on]="actionForm.targetBoardId === b._id"
-                 (click)="actionForm.targetBoardId = b._id">
-              <span class="bcp-board-row-name">{{ b.name }}</span>
-              @if (actionForm.targetBoardId === b._id) {
-                <svg class="bcp-board-row-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-              }
-            </div>
-          }
-        }
-        @if (filteredSameShapeBoards.length === 0 && filteredBoardsUnassigned.length === 0) {
+        @if (filteredBoardsUnassigned.length === 0) {
           <span class="bcp-empty-msg" style="display:block;padding:6px 8px">Sin resultados.</span>
         }
       </div>
@@ -249,7 +231,7 @@
     <label class="bcp-lbl" style="margin-top:6px">Tablero a mostrar</label>
     @if (!boardsReady) {
       <ion-spinner name="crescent" color="secondary" style="width:18px;height:18px;margin:6px 0;display:block"></ion-spinner>
-    } @else if (sameShapeBoards.length === 0 && boardsUnassigned.length === 0) {
+    } @else if (boardsUnassigned.length === 0) {
       <span class="bcp-empty-msg">No hay tableros disponibles.</span>
     } @else {
       <div class="bcp-search-wrap">
@@ -258,37 +240,19 @@
                [(ngModel)]="boardSearchQ"/>
       </div>
       <div class="bcp-board-list">
-        @if (filteredSameShapeBoards.length > 0) {
-          <div class="bcp-board-group-lbl">Tableros del usuario</div>
-          @for (b of filteredSameShapeBoards; track b._id) {
-            <div class="bcp-board-row"
-                 [class.bcp-board-row--on]="actionForm.targetBoardId === b._id"
-                 (click)="actionForm.targetBoardId = b._id">
-              <span class="bcp-board-row-name">{{ b.name }}</span>
-              @if (actionForm.targetBoardId === b._id) {
-                <svg class="bcp-board-row-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-              }
-            </div>
-          }
+        @for (b of filteredBoardsUnassigned; track b._id) {
+          <div class="bcp-board-row"
+               [class.bcp-board-row--on]="actionForm.targetBoardId === b._id"
+               (click)="actionForm.targetBoardId = b._id">
+            <span class="bcp-board-row-name">{{ b.name }}</span>
+            @if (actionForm.targetBoardId === b._id) {
+              <svg class="bcp-board-row-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            }
+          </div>
         }
-        @if (filteredBoardsUnassigned.length > 0) {
-          <div class="bcp-board-group-lbl">Secundarios sin asignar</div>
-          @for (b of filteredBoardsUnassigned; track b._id) {
-            <div class="bcp-board-row"
-                 [class.bcp-board-row--on]="actionForm.targetBoardId === b._id"
-                 (click)="actionForm.targetBoardId = b._id">
-              <span class="bcp-board-row-name">{{ b.name }}</span>
-              @if (actionForm.targetBoardId === b._id) {
-                <svg class="bcp-board-row-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-              }
-            </div>
-          }
-        }
-        @if (filteredSameShapeBoards.length === 0 && filteredBoardsUnassigned.length === 0) {
+        @if (filteredBoardsUnassigned.length === 0) {
           <span class="bcp-empty-msg" style="display:block;padding:6px 8px">Sin resultados.</span>
         }
       </div>

@@ -105,6 +105,9 @@ export class CommunicatorPage implements OnInit, OnDestroy {
         if (vs) {
           this.aac.configureSoundSettings(
             vs.soundEnabled,
+            vs.voiceMode,
+            vs.customVoice?.status === 'ready',
+            res.user._id,
             vs.catalogVoice?.voiceURI,
             vs.catalogVoice?.speechRate,
             vs.catalogVoice?.speechPitch,

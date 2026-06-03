@@ -234,7 +234,11 @@ exports.getUsersByCenter = async (req, res) => {
       return res.status(400).json({ error: 'Centro is required' });
     }
 
-    const users = await User.find({ centro }).select('-password');
+    // Seleccionar solo los campos mínimos necesarios para UI.
+    // Excluir customPictograms (array potencialmente grande) y datos sensibles.
+    const users = await User.find({ centro })
+      .select('_id name surname email type image centro gender')
+      .lean();
     res.json({ users });
   } catch (error) {
     console.error('Get users by center error:', error);
@@ -754,7 +758,7 @@ exports.getAssignedUsers = async (req, res) => {
     const users = await User.find({
       type: 'user',
       'assignedProfessionals.professionalId': professionalId,
-    }).select('name email image assignedProfessionals');
+    }).select('name surname email image assignedProfessionals').lean();
 
     const result = users.map((user) => {
       const ap = (user.assignedProfessionals || []).find(

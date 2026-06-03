@@ -1,7 +1,41 @@
-const jwt = require('jsonwebtoken');
-const mongoose = require('mongoose');
-const User = require('../models/User');
-const Phrase = require('../models/Phrase');
+const jwt          = require('jsonwebtoken');
+const crypto       = require('crypto');
+const mongoose     = require('mongoose');
+const User         = require('../models/User');
+const Phrase       = require('../models/Phrase');
+const RefreshToken = require('../models/RefreshToken');
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function buildUserResponse(user) {
+  return {
+    id:              user._id,
+    name:            user.name,
+    email:           user.email,
+    type:            user.type,
+    gender:          user.gender,
+    image:           user.image,
+    centro:          user.centro,
+    professionalType: user.professionalType || null,
+    latitude:        user.latitude,
+    longitude:       user.longitude,
+    city:            user.city,
+    country:         user.country,
+    createdAt:       user.createdAt,
+  };
+}
+
+function signAccessToken(userId) {
+  return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '2h' });
+}
+
+async function createRefreshToken(userId, deviceId = '') {
+  const raw       = crypto.randomBytes(64).toString('hex');
+  const tokenHash = crypto.createHash('sha256').update(raw).digest('hex');
+  const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000); // 90 días
+  await RefreshToken.create({ userId, tokenHash, deviceId, expiresAt });
+  return raw;
+}
 
 // Register endpoint
 exports.register = async (req, res) => {
@@ -52,23 +86,9 @@ exports.register = async (req, res) => {
 
     await user.save();
 
-    // Return user without password
-    const userResponse = {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      type: user.type,
-      gender: user.gender,
-      image: user.image,
-      centro: user.centro,
-      professionalType: user.professionalType || null,
-      createdAt: user.createdAt
-    };
-
-
     res.status(201).json({
       message: 'User registered successfully',
-      user: userResponse
+      user: buildUserResponse(user),
     });
   } catch (error) {
     console.error('Registration error:', error);
@@ -79,57 +99,83 @@ exports.register = async (req, res) => {
 // Login endpoint
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, deviceId = '' } = req.body;
 
-    // Validate input
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    // Find user by email
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    // Compare password
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    // Create JWT token
-    const token = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    // Return token and user without password
-    const userResponse = {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      type: user.type,
-      gender: user.gender,
-      image: user.image,
-      centro: user.centro,
-      professionalType: user.professionalType || null,
-      latitude: user.latitude,
-      longitude: user.longitude,
-      city: user.city,
-      country: user.country,
-      createdAt: user.createdAt
-    };
+    const accessToken  = signAccessToken(user._id);
+    const refreshToken = await createRefreshToken(user._id, deviceId);
 
     res.status(200).json({
       message: 'Login successful',
-      token,
-      user: userResponse
+      accessToken,
+      refreshToken,
+      user: buildUserResponse(user),
     });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Internal server error during login' });
+  }
+};
+
+// POST /api/auth/refresh
+exports.refresh = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      return res.status(400).json({ error: 'refreshToken is required' });
+    }
+
+    const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    const record    = await RefreshToken.findOne({ tokenHash });
+
+    if (!record) {
+      return res.status(401).json({ error: 'Token inválido o no encontrado' });
+    }
+    if (record.revokedAt) {
+      return res.status(401).json({ error: 'Token revocado' });
+    }
+    if (record.expiresAt < new Date()) {
+      return res.status(401).json({ error: 'Token caducado' });
+    }
+
+    const user = await User.findById(record.userId);
+    if (!user) {
+      return res.status(401).json({ error: 'Usuario no encontrado' });
+    }
+
+    const accessToken = signAccessToken(user._id);
+    res.json({ accessToken, user: buildUserResponse(user) });
+  } catch (error) {
+    console.error('Refresh error:', error);
+    res.status(500).json({ error: 'Internal server error during token refresh' });
+  }
+};
+
+// POST /api/auth/logout
+exports.logout = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    if (refreshToken) {
+      const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+      await RefreshToken.updateOne({ tokenHash }, { revokedAt: new Date() });
+    }
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({ error: 'Internal server error during logout' });
   }
 };
 
@@ -144,26 +190,9 @@ exports.getMe = async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Return user without password
-    const userResponse = {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      type: user.type,
-      gender: user.gender,
-      image: user.image,
-      centro: user.centro,
-      professionalType: user.professionalType || null,
-      latitude: user.latitude,
-      longitude: user.longitude,
-      city: user.city,
-      country: user.country,
-      createdAt: user.createdAt
-    };
-
     res.status(200).json({
       message: 'User retrieved successfully',
-      user: userResponse
+      user: buildUserResponse(user),
     });
   } catch (error) {
     console.error('Get user error:', error);

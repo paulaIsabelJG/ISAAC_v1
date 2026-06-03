@@ -113,6 +113,11 @@ export class AacRuntimeService {
   configuredVolume    = 1.0;
   /** Género del usuario — usado como fallback cuando no hay voiceURI configurada. */
   configuredGender    = '';
+  /** true cuando el usuario tiene voz personalizada lista y debe usarse en la sesión. */
+  customVoiceReady   = false;
+  /** userId necesario para llamar a /api/voice/tts/speak. */
+  customVoiceUserId  = '';
+  private customAudio: HTMLAudioElement | null = null;
   iaRows            = 5;
   iaCols            = 1;
   aiRewriteEnabled  = false;
@@ -242,7 +247,10 @@ export class AacRuntimeService {
     this.configuredPitch    = 1.0;
     this.configuredVolume   = 1.0;
     this.configuredGender   = '';
+    this.customVoiceReady   = false;
+    this.customVoiceUserId  = '';
     if (this.speakTimer !== null) { clearTimeout(this.speakTimer); this.speakTimer = null; }
+    this.stopCustomAudio();
     window.speechSynthesis?.cancel();
     this.phraseChanged$.next([]);
   }
@@ -380,19 +388,53 @@ export class AacRuntimeService {
    * Llamar tras startSession() desde CommunicatorPage.
    */
   configureSoundSettings(
-    soundEnabled: boolean,
-    voiceURI?:    string,
-    rate?:        number,
-    pitch?:       number,
-    volume?:      number,
-    gender?:      string,
+    soundEnabled:  boolean,
+    voiceMode?:    'catalog' | 'custom',
+    customReady?:  boolean,
+    customUserId?: string,
+    voiceURI?:     string,
+    rate?:         number,
+    pitch?:        number,
+    volume?:       number,
+    gender?:       string,
   ): void {
     this.soundEnabled       = soundEnabled;
+    this.customVoiceReady   = voiceMode === 'custom' && customReady === true;
+    this.customVoiceUserId  = this.customVoiceReady ? (customUserId ?? '') : '';
     this.configuredVoiceURI = voiceURI ?? '';
     this.configuredRate     = rate     ?? 0.9;
     this.configuredPitch    = pitch    ?? 1.0;
     this.configuredVolume   = volume   ?? 1.0;
     this.configuredGender   = gender   ?? '';
+  }
+
+  // ── Reproducción de voz personalizada (OpenVoice) ─────────────────────────
+
+  private speakCustomVoice(text: string, onEnd?: () => void): void {
+    this.stopCustomAudio();
+    this.http.post(
+      `${this.apiUrl}/voice/tts/speak`,
+      { userId: this.customVoiceUserId, text },
+      { responseType: 'blob' },
+    ).subscribe({
+      next: (blob: Blob) => {
+        const url   = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audio.volume  = this.configuredVolume;
+        audio.onended = () => { URL.revokeObjectURL(url); onEnd?.(); };
+        audio.onerror = () => { URL.revokeObjectURL(url); onEnd?.(); };
+        this.customAudio = audio;
+        audio.play().catch(() => { onEnd?.(); });
+      },
+      error: () => { onEnd?.(); },
+    });
+  }
+
+  private stopCustomAudio(): void {
+    if (this.customAudio) {
+      this.customAudio.pause();
+      this.customAudio = null;
+    }
   }
 
   // ── Pictogram press ───────────────────────────────────────────────────────
@@ -512,11 +554,18 @@ export class AacRuntimeService {
 
   speakText(text: string, gender?: string): void {
     if (!text?.trim()) return;
-    if (!window.speechSynthesis) { console.warn('[AAC] speechSynthesis not available'); return; }
 
-    // Cancelar speak pendiente y síntesis actual antes de iniciar uno nuevo
+    // Cancelar reproducción previa
     if (this.speakTimer !== null) { clearTimeout(this.speakTimer); this.speakTimer = null; }
-    window.speechSynthesis.cancel();
+    this.stopCustomAudio();
+    window.speechSynthesis?.cancel();
+
+    if (this.customVoiceReady && this.customVoiceUserId) {
+      this.speakCustomVoice(text);
+      return;
+    }
+
+    if (!window.speechSynthesis) { console.warn('[AAC] speechSynthesis not available'); return; }
 
     const utterance  = new SpeechSynthesisUtterance(this.normalizeTtsText(text));
     utterance.lang   = 'es-ES';
@@ -573,9 +622,16 @@ export class AacRuntimeService {
   /** Habla el texto y, al terminar (o tras timeout), ejecuta la callback. */
   speakTextAndThen(text: string, gender?: string, onEnd?: () => void): void {
     if (!text?.trim()) { onEnd?.(); return; }
-    if (!window.speechSynthesis) { onEnd?.(); return; }
 
-    window.speechSynthesis.cancel();
+    this.stopCustomAudio();
+    window.speechSynthesis?.cancel();
+
+    if (this.customVoiceReady && this.customVoiceUserId) {
+      this.speakCustomVoice(text, onEnd);
+      return;
+    }
+
+    if (!window.speechSynthesis) { onEnd?.(); return; }
     const utterance  = new SpeechSynthesisUtterance(this.normalizeTtsText(text));
     utterance.lang   = 'es-ES';
     utterance.rate   = this.configuredRate;
