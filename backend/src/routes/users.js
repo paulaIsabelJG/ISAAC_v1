@@ -14,6 +14,10 @@ router.delete('/pictograms/:id', userController.deleteCustomPictogram);
 // Listados de usuarios
 router.get('/centro/:centro', userController.getUsersByCenter);
 
+// Familiares (type='parent') vinculados a uno o varios usuarios finales
+// Query param: userIds=id1,id2,...
+router.get('/families-for-users', userController.getFamiliesForUsers);
+
 // Hijos de un padre
 router.get('/:parentId/children', userController.getChildrenByParentId);
 

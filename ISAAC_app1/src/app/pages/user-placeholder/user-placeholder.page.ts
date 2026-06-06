@@ -42,5 +42,11 @@ export class UserPlaceholderPage implements OnInit {
     this.router.navigate(['/own-pictograms-placeholder']);
   }
 
+  goToObjectives() {
+    this.router.navigate(['/objectives-list'], {
+      queryParams: { role: 'family', returnTo: '/user-placeholder' },
+    });
+  }
+
   logout() { this.authService.logout(); }
 }

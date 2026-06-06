@@ -1,0 +1,101 @@
+<div class="oc-panel">
+
+  <!-- ── Cargando ──────────────────────────────────────────────────────────── -->
+  @if (isLoading) {
+    <div class="oc-loading">
+      <ion-spinner name="crescent" color="medium"></ion-spinner>
+      <span>Cargando comentarios...</span>
+    </div>
+  }
+
+  <!-- ── Error de carga ────────────────────────────────────────────────────── -->
+  @else if (loadError) {
+    <p class="oc-load-error">{{ loadError }}</p>
+  }
+
+  <!-- ── Lista + formulario ─────────────────────────────────────────────────── -->
+  @else {
+
+    <!-- Lista de comentarios -->
+    @if (comments.length === 0) {
+      <p class="oc-empty">Aún no hay comentarios. ¡Sé el primero!</p>
+    } @else {
+      <div class="oc-list">
+        @for (comment of comments; track comment._id) {
+
+          <!-- Modo edición inline -->
+          @if (editingId === comment._id) {
+            <div class="oc-edit-block">
+              <textarea
+                class="oc-textarea"
+                [(ngModel)]="editText"
+                rows="3"
+                maxlength="1000"
+                placeholder="Edita tu comentario...">
+              </textarea>
+              <div class="oc-edit-actions">
+                <button class="oc-btn oc-btn--save"
+                        [disabled]="isUpdating || !editText.trim()"
+                        (click)="saveEdit()">
+                  @if (isUpdating) {
+                    <ion-spinner name="crescent" class="oc-btn-spinner"></ion-spinner>
+                  }
+                  Guardar
+                </button>
+                <button class="oc-btn oc-btn--cancel" (click)="cancelEdit()">
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          } @else {
+            <app-objective-comment-item
+              [comment]="comment"
+              [currentUserId]="currentUserId"
+              [isOrgAdmin]="isOrgAdmin"
+              (editRequest)="startEdit($event)"
+              (deleteRequest)="deleteComment($event)">
+            </app-objective-comment-item>
+          }
+
+        }
+      </div>
+    }
+
+    <!-- Error de acción -->
+    @if (saveError) {
+      <p class="oc-save-error">{{ saveError }}</p>
+    }
+
+    <!-- Formulario para añadir comentario -->
+    @if (canComment) {
+      <div class="oc-form">
+        <textarea
+          class="oc-textarea"
+          [(ngModel)]="newText"
+          rows="2"
+          maxlength="1000"
+          placeholder="Escribe un comentario..."
+          (keydown.control.enter)="addComment()">
+        </textarea>
+        <div class="oc-form-footer">
+          <span class="oc-char-count">{{ newText.length }}/1000</span>
+          <button class="oc-btn oc-btn--add"
+                  [disabled]="!newText.trim() || isSaving"
+                  (click)="addComment()">
+            @if (isSaving) {
+              <ion-spinner name="crescent" class="oc-btn-spinner"></ion-spinner>
+            } @else {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="oc-send-icon">
+                <line x1="22" y1="2" x2="11" y2="13"/>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+              </svg>
+            }
+            Comentar
+          </button>
+        </div>
+      </div>
+    }
+
+  }
+
+</div>

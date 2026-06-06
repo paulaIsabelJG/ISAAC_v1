@@ -863,3 +863,26 @@ exports.deleteCustomPictogram = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+// ── GET /api/users/families-for-users?userIds=id1,id2 ─────────────────────────
+// Devuelve familiares (type='parent') vinculados a los usuarios finales indicados.
+// Usado en el formulario de objetivos para mostrar qué familiares avisar.
+exports.getFamiliesForUsers = async (req, res) => {
+  try {
+    const { userIds } = req.query;
+    if (!userIds) return res.json({ families: [] });
+
+    const ids = userIds.split(',').map(id => id.trim()).filter(Boolean);
+    if (!ids.length) return res.json({ families: [] });
+
+    const families = await User.find({
+      type: 'parent',
+      'childrenAccess.childId': { $in: ids },
+    }).select('name surname email image').lean();
+
+    res.json({ families });
+  } catch (err) {
+    console.error('getFamiliesForUsers error:', err);
+    res.status(500).json({ error: err.message || 'Error interno' });
+  }
+};

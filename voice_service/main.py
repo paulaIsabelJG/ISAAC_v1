@@ -20,6 +20,16 @@ import tempfile
 import traceback
 from pathlib import Path
 
+# ── Limitar threads ANTES de importar torch/numpy ────────────────────────────
+# Por defecto PyTorch/OpenMP usan TODOS los núcleos de CPU, lo que satura el
+# sistema e impide que el proceso Node.js (backend) responda con normalidad.
+# Con 2 threads la síntesis sigue funcionando pero cede CPU al resto de procesos.
+_CPU_THREADS = int(os.environ.get("VOICE_CPU_THREADS", "2"))
+os.environ.setdefault("OMP_NUM_THREADS",     str(_CPU_THREADS))
+os.environ.setdefault("MKL_NUM_THREADS",     str(_CPU_THREADS))
+os.environ.setdefault("OPENBLAS_NUM_THREADS", str(_CPU_THREADS))
+os.environ.setdefault("NUMEXPR_NUM_THREADS",  str(_CPU_THREADS))
+
 import torch
 import numpy as np
 import soundfile as sf
@@ -39,6 +49,17 @@ CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"[voice_service] Dispositivo: {DEVICE}")
+
+# Aplicar límite de threads también vía PyTorch API (refuerza los env vars).
+# Wrapped en try/except: uvicorn reimporta el módulo y el segundo intento
+# lanza RuntimeError si los threads ya estaban iniciados.
+if DEVICE == "cpu":
+    try:
+        torch.set_num_threads(_CPU_THREADS)
+        torch.set_num_interop_threads(1)
+        print(f"[voice_service] CPU threads limitados a {_CPU_THREADS} (VOICE_CPU_THREADS)")
+    except RuntimeError:
+        pass  # ya iniciados en importación previa; los env vars OMP/MKL siguen activos
 
 # ── Cargar modelos al arranque ────────────────────────────────────────────────
 

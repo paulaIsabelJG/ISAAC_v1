@@ -127,6 +127,11 @@ $card-bg:      #ffffff;
     color: $blue;
     border: 1.5px solid darken($blue-light, 9%);
   }
+  &--teal {
+    background: #e0f2f1;
+    color: #00796b;
+    border: 1.5px solid #b2dfdb;
+  }
 }
 
 // Imagen dentro del botón-pictograma

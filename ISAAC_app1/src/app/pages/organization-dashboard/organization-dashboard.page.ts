@@ -162,6 +162,12 @@ export class OrganizationDashboardPage implements OnInit {
   /** Abre el board builder del propio usuario de sesión (la organización) */
   goToStatistics()   { this.router.navigate(['/organization-statistics']); }
 
+  goToObjectives() {
+    this.router.navigate(['/objectives-list'], {
+      queryParams: { returnTo: '/organization-dashboard' },
+    });
+  }
+
   goToBoardBuilder() {
     this.router.navigate(['/board-builder'], {
       queryParams: {

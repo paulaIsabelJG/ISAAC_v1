@@ -3,7 +3,10 @@ const router         = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
 const vc             = require('../controllers/voiceController');
 
-// Todos los endpoints requieren JWT válido
+// Health check — no requiere JWT (para que el frontend pueda comprobar disponibilidad)
+router.get('/health', vc.getVoiceHealth);
+
+// Todos los endpoints protegidos requieren JWT válido
 router.use(authMiddleware);
 
 // Muestra de voz de referencia

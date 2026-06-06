@@ -137,6 +137,12 @@ export class ProfessionalSessionPage implements OnInit {
     });
   }
 
+  goToObjectives() {
+    this.router.navigate(['/objectives-list'], {
+      queryParams: { returnTo: '/professional-session/' + this.professionalId },
+    });
+  }
+
   goToUserSession(userId: string) {
     this.router.navigate(['/user-session', userId]);
   }

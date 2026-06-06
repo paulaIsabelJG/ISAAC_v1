@@ -245,6 +245,13 @@ export class UserSessionPage implements OnInit {
     }
   }
 
+  goToObjectives() {
+    this.ttsSvc.speakIfEnabled('mis objetivos');
+    this.router.navigate(['/objectives-list'], {
+      queryParams: { role: 'user', userId: this.userId, returnTo: '/user-session/' + this.userId },
+    });
+  }
+
   goToPersonalData() {
     this.ttsSvc.speakIfEnabled('datos personales');
     this.router.navigate(['/user-final-form', this.userId]);

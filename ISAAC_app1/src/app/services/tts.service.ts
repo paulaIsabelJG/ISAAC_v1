@@ -38,12 +38,23 @@ export class TtsService {
   /** Carga la configuración de voz del usuario actual. Llamar en user-session al cargar perfil. */
   setFromVoiceSettings(vs: VoiceSettings | null | undefined, gender = ''): void {
     if (!vs) { this._soundEnabled = false; this._gender = ''; return; }
-    this._soundEnabled  = vs.soundEnabled;
-    this._voiceURI      = vs.catalogVoice?.voiceURI     ?? '';
-    this._speechRate    = vs.catalogVoice?.speechRate    ?? 0.9;
-    this._speechPitch   = vs.catalogVoice?.speechPitch   ?? 1.0;
-    this._speechVolume  = vs.catalogVoice?.speechVolume  ?? 1.0;
-    this._gender        = gender;
+    this._soundEnabled = vs.soundEnabled;
+    this._gender       = gender;
+    // Solo aplicar la voz del catálogo cuando el usuario está en modo catálogo.
+    // En modo custom, TtsService no puede llamar al API de voz personalizada,
+    // por lo que se limpia la URI y se usa la selección por género como fallback.
+    if (vs.voiceMode === 'catalog' || !vs.voiceMode) {
+      this._voiceURI     = vs.catalogVoice?.voiceURI     ?? '';
+      this._speechRate   = vs.catalogVoice?.speechRate    ?? 0.9;
+      this._speechPitch  = vs.catalogVoice?.speechPitch   ?? 1.0;
+      this._speechVolume = vs.catalogVoice?.speechVolume  ?? 1.0;
+    } else {
+      // voiceMode === 'custom': usar fallback por género del navegador
+      this._voiceURI     = '';
+      this._speechRate   = 0.9;
+      this._speechPitch  = 1.0;
+      this._speechVolume = 1.0;
+    }
   }
 
   /** Habla la etiqueta si el usuario tiene soundEnabled activado, usando su voz configurada. */

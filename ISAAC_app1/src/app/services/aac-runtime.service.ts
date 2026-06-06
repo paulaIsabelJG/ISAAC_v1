@@ -117,7 +117,11 @@ export class AacRuntimeService {
   customVoiceReady   = false;
   /** userId necesario para llamar a /api/voice/tts/speak. */
   customVoiceUserId  = '';
-  private customAudio: HTMLAudioElement | null = null;
+  // AudioContext compartido por la sesión. Se desbloquea dentro del gesto del usuario
+  // en speakText() para que la reproducción posterior (tras la petición HTTP) no sea
+  // bloqueada por la política de autoplay del navegador.
+  private audioCtx: AudioContext | null = null;
+  private customAudioSource: AudioBufferSourceNode | null = null;
   iaRows            = 5;
   iaCols            = 1;
   aiRewriteEnabled  = false;
@@ -251,6 +255,7 @@ export class AacRuntimeService {
     this.customVoiceUserId  = '';
     if (this.speakTimer !== null) { clearTimeout(this.speakTimer); this.speakTimer = null; }
     this.stopCustomAudio();
+    if (this.audioCtx) { this.audioCtx.close().catch(() => {}); this.audioCtx = null; }
     window.speechSynthesis?.cancel();
     this.phraseChanged$.next([]);
   }
@@ -410,30 +415,69 @@ export class AacRuntimeService {
 
   // ── Reproducción de voz personalizada (OpenVoice) ─────────────────────────
 
+  /**
+   * Devuelve el AudioContext de la sesión, creándolo si es necesario.
+   * Debe llamarse DENTRO del gesto del usuario para que el contexto quede
+   * desbloqueado y la reproducción posterior no sea vetada por autoplay policy.
+   */
+  private _getAudioContext(): AudioContext | null {
+    try {
+      const AC = (window as any).AudioContext || (window as any).webkitAudioContext;
+      if (!AC) return null;
+      if (!this.audioCtx || this.audioCtx.state === 'closed') {
+        this.audioCtx = new AC() as AudioContext;
+      }
+      if (this.audioCtx.state === 'suspended') {
+        this.audioCtx.resume().catch(() => {});
+      }
+      return this.audioCtx;
+    } catch {
+      return null;
+    }
+  }
+
   private speakCustomVoice(text: string, onEnd?: () => void): void {
     this.stopCustomAudio();
+    // audioCtx ya fue desbloqueado en speakText/speakTextAndThen (dentro del gesto)
+    const ctx = this.audioCtx;
+    if (!ctx) { onEnd?.(); return; }
+
     this.http.post(
       `${this.apiUrl}/voice/tts/speak`,
       { userId: this.customVoiceUserId, text },
-      { responseType: 'blob' },
+      { responseType: 'arraybuffer' },
     ).subscribe({
-      next: (blob: Blob) => {
-        const url   = URL.createObjectURL(blob);
-        const audio = new Audio(url);
-        audio.volume  = this.configuredVolume;
-        audio.onended = () => { URL.revokeObjectURL(url); onEnd?.(); };
-        audio.onerror = () => { URL.revokeObjectURL(url); onEnd?.(); };
-        this.customAudio = audio;
-        audio.play().catch(() => { onEnd?.(); });
+      next: (arrayBuffer: ArrayBuffer) => {
+        ctx.decodeAudioData(
+          arrayBuffer,
+          (audioBuffer) => {
+            const source = ctx.createBufferSource();
+            const gain   = ctx.createGain();
+            gain.gain.value = this.configuredVolume;
+            source.buffer   = audioBuffer;
+            source.connect(gain);
+            gain.connect(ctx.destination);
+            source.onended = () => { this.customAudioSource = null; onEnd?.(); };
+            source.start(0);
+            this.customAudioSource = source;
+          },
+          (err) => {
+            console.error('[AAC] decodeAudioData error:', err);
+            onEnd?.();
+          },
+        );
       },
-      error: () => { onEnd?.(); },
+      error: (err) => {
+        console.error('[AAC] customSpeak HTTP error:', err);
+        onEnd?.();
+      },
     });
   }
 
   private stopCustomAudio(): void {
-    if (this.customAudio) {
-      this.customAudio.pause();
-      this.customAudio = null;
+    if (this.customAudioSource) {
+      try { this.customAudioSource.stop(); } catch {}
+      this.customAudioSource = null;
     }
   }
 
@@ -555,6 +599,11 @@ export class AacRuntimeService {
   speakText(text: string, gender?: string): void {
     if (!text?.trim()) return;
 
+    // Desbloquear AudioContext dentro del gesto del usuario. Esto permite que la
+    // reproducción posterior (tras la petición HTTP de síntesis) no sea vetada por
+    // la política de autoplay aunque transcurra más de 1 segundo.
+    if (this.customVoiceReady) this._getAudioContext();
+
     // Cancelar reproducción previa
     if (this.speakTimer !== null) { clearTimeout(this.speakTimer); this.speakTimer = null; }
     this.stopCustomAudio();
@@ -622,6 +671,8 @@ export class AacRuntimeService {
   /** Habla el texto y, al terminar (o tras timeout), ejecuta la callback. */
   speakTextAndThen(text: string, gender?: string, onEnd?: () => void): void {
     if (!text?.trim()) { onEnd?.(); return; }
+
+    if (this.customVoiceReady) this._getAudioContext();
 
     this.stopCustomAudio();
     window.speechSynthesis?.cancel();

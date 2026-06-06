@@ -1,0 +1,281 @@
+.ol-content {
+  --background: #f0f2f5;
+}
+
+.ol-container {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+}
+
+// ── Barra de herramientas ─────────────────────────────────────────────────────
+
+.ol-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.ol-filter-select {
+  flex: 1;
+  min-width: 180px;
+  --background: #fff;
+  --border-radius: 10px;
+  --padding-start: 14px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+.ol-create-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--ion-color-primary, #5c6bc0);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.18s;
+
+  &:active { background: var(--ion-color-primary-shade, #3949ab); }
+}
+
+.ol-create-icon {
+  width: 16px;
+  height: 16px;
+}
+
+// ── Estado vacío ──────────────────────────────────────────────────────────────
+
+.ol-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 60px 20px;
+  color: #9e9e9e;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.ol-empty-icon {
+  width: 52px;
+  height: 52px;
+  color: #bdbdbd;
+}
+
+.ol-empty-btn {
+  background: var(--ion-color-primary, #5c6bc0);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 22px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+// ── Tarjeta de objetivo ───────────────────────────────────────────────────────
+
+.ol-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ol-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 18px 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.07);
+  border: 1.5px solid #f0f0f0;
+}
+
+.ol-card-header {
+  margin-bottom: 12px;
+}
+
+.ol-card-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.ol-card-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #212121;
+  flex: 1;
+}
+
+.ol-status-badge {
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 20px;
+  padding: 3px 10px;
+}
+
+.ol-card-desc {
+  font-size: 0.88rem;
+  color: #616161;
+  line-height: 1.45;
+  margin: 0;
+}
+
+// ── Metadatos ─────────────────────────────────────────────────────────────────
+
+.ol-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.ol-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ol-meta-icon {
+  width: 15px;
+  height: 15px;
+  color: #9e9e9e;
+  flex-shrink: 0;
+}
+
+.ol-meta-text {
+  font-size: 0.85rem;
+  color: #424242;
+
+  &--muted { color: #9e9e9e; }
+}
+
+// ── Avisos ────────────────────────────────────────────────────────────────────
+
+.ol-card-notices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.ol-notice {
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 20px;
+  padding: 2px 10px;
+
+  &--user   { background: #e3f2fd; color: #1565c0; }
+  &--family { background: #fce4ec; color: #c62828; }
+}
+
+// ── Acciones ──────────────────────────────────────────────────────────────────
+
+.ol-card-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  border-top: 1px solid #f5f5f5;
+  padding-top: 12px;
+}
+
+.ol-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity .15s;
+
+  svg { width: 14px; height: 14px; }
+
+  &:active { opacity: .75; }
+
+  &--edit     { background: #e8eaf6; color: #3949ab; }
+  &--complete { background: #e8f5e9; color: #2e7d32; }
+  &--cancel   { background: #fce4ec; color: #c62828; }
+
+  &--comments {
+    background: #f5f5f5;
+    color: #616161;
+    margin-left: auto;
+
+    &.ol-action-btn--comments-open {
+      background: #e3f2fd;
+      color: #1565c0;
+    }
+  }
+}
+
+// ── Panel de hilos de comentarios ────────────────────────────────────────────
+
+.ol-threads {
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ol-thread {
+  border: 1.5px solid #e8eaf6;
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: #fafafa;
+}
+
+.ol-thread-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.ol-thread-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #e8eaf6;
+  color: #3949ab;
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ol-thread-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #3949ab;
+}
+
+.ol-comments-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #5c6bc0;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 10px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  line-height: 1;
+}

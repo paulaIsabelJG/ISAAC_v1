@@ -1,0 +1,131 @@
+.oc-panel {
+  padding: 14px 0 4px;
+  border-top: 1.5px solid #f0f0f0;
+  margin-top: 4px;
+}
+
+// ── Estados ────────────────────────────────────────────────────────────────────
+
+.oc-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
+  font-size: 0.85rem;
+  color: #9e9e9e;
+
+  ion-spinner { --color: #9e9e9e; width: 18px; height: 18px; }
+}
+
+.oc-load-error,
+.oc-save-error {
+  font-size: 0.82rem;
+  color: #c62828;
+  background: #fce4ec;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 6px 0;
+}
+
+.oc-empty {
+  font-size: 0.85rem;
+  color: #9e9e9e;
+  padding: 6px 0 10px;
+  margin: 0;
+}
+
+// ── Lista ─────────────────────────────────────────────────────────────────────
+
+.oc-list {
+  display: flex;
+  flex-direction: column;
+}
+
+// ── Edición inline ────────────────────────────────────────────────────────────
+
+.oc-edit-block {
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.oc-edit-actions {
+  display: flex;
+  gap: 6px;
+}
+
+// ── Formulario nuevo comentario ───────────────────────────────────────────────
+
+.oc-form {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.oc-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: #fafafa;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: #212121;
+  resize: vertical;
+  outline: none;
+  transition: border-color .15s;
+
+  &:focus  { border-color: var(--ion-color-primary, #5c6bc0); background: #fff; }
+  &::placeholder { color: #bdbdbd; }
+}
+
+.oc-form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.oc-char-count {
+  font-size: 0.75rem;
+  color: #bdbdbd;
+  margin-right: auto;
+}
+
+// ── Botones ───────────────────────────────────────────────────────────────────
+
+.oc-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity .15s;
+
+  &:disabled { opacity: .5; cursor: not-allowed; }
+  &:not(:disabled):active { opacity: .75; }
+
+  &--add    { background: var(--ion-color-primary, #5c6bc0); color: #fff; }
+  &--save   { background: #e8f5e9; color: #2e7d32; }
+  &--cancel { background: #f5f5f5; color: #616161; }
+}
+
+.oc-btn-spinner {
+  --color: currentColor;
+  width: 14px;
+  height: 14px;
+}
+
+.oc-send-icon {
+  width: 13px;
+  height: 13px;
+}

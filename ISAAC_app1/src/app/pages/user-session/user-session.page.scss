@@ -220,6 +220,11 @@ app-page-header {
     color:      $violet;
     border:     1.5px solid darken($violet-light, 9%);
   }
+  &--teal {
+    background: #e0f2f1;
+    color:      #00796b;
+    border:     1.5px solid #b2dfdb;
+  }
 }
 
 .us-ctrl-icon {

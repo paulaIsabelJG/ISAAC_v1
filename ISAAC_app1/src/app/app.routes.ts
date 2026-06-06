@@ -148,6 +148,32 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
 
+  // ── Objetivos terapéuticos ──────────────────────────────────────────────────
+  {
+    path: 'objectives-list',
+    loadComponent: () =>
+      import('./pages/objectives-list/objectives-list.page').then(
+        (m) => m.ObjectivesListPage
+      ),
+    canActivate: [authGuard],
+  },
+  {
+    path: 'objective-form',
+    loadComponent: () =>
+      import('./pages/objective-form/objective-form.page').then(
+        (m) => m.ObjectiveFormPage
+      ),
+    canActivate: [authGuard],
+  },
+  {
+    path: 'objective-form/:id',
+    loadComponent: () =>
+      import('./pages/objective-form/objective-form.page').then(
+        (m) => m.ObjectiveFormPage
+      ),
+    canActivate: [authGuard],
+  },
+
   // ── Redirección por defecto ─────────────────────────────────────────────────
   {
     path: '',

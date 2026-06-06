@@ -1,0 +1,186 @@
+<app-page-header
+  [title]="isEditing ? 'EDITAR OBJETIVO' : 'NUEVO OBJETIVO'"
+  [backHref]="returnTo"
+  (backClick)="goBack()">
+</app-page-header>
+
+<ion-content class="of-content">
+
+  @if (isLoading || loadError) {
+    <app-loading-error-state
+      [loading]="isLoading"
+      [error]="loadError">
+    </app-loading-error-state>
+  } @else {
+
+    <div class="of-container">
+
+      <!-- ── Título ─────────────────────────────────────────────────────────── -->
+      <div class="of-field">
+        <label class="of-label">Título <span class="of-required">*</span></label>
+        <input
+          class="of-input"
+          type="text"
+          placeholder="Ej: Trabajar con el tablero de la ropa"
+          [(ngModel)]="title"
+          maxlength="120"/>
+      </div>
+
+      <!-- ── Descripción ────────────────────────────────────────────────────── -->
+      <div class="of-field">
+        <label class="of-label">Descripción</label>
+        <textarea
+          class="of-textarea"
+          rows="3"
+          placeholder="Describe el objetivo y lo que se espera conseguir..."
+          [(ngModel)]="description"
+          maxlength="600">
+        </textarea>
+      </div>
+
+      <!-- ── Usuarios finales ───────────────────────────────────────────────── -->
+      <div class="of-field">
+        <label class="of-label">
+          Usuarios finales asignados <span class="of-required">*</span>
+          <span class="of-count">({{ selectedUserIds.length }} seleccionado{{ selectedUserIds.length !== 1 ? 's' : '' }})</span>
+        </label>
+
+        @if (availableUsers.length === 0) {
+          <p class="of-empty-hint">No hay usuarios disponibles.</p>
+        } @else {
+          <div class="of-checkbox-list">
+            @for (u of availableUsers; track u._id) {
+              <button
+                type="button"
+                class="of-checkbox-item"
+                [class.of-checkbox-item--selected]="isUserSelected(u._id)"
+                (click)="toggleUser(u._id)">
+                <div class="of-checkbox-avatar">
+                  @if (isUserSelected(u._id)) {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  } @else {
+                    <span>{{ u.name.charAt(0).toUpperCase() }}</span>
+                  }
+                </div>
+                <span class="of-checkbox-label">{{ userName(u) }}</span>
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- ── Fechas ─────────────────────────────────────────────────────────── -->
+      <div class="of-row">
+        <div class="of-field of-field--half">
+          <label class="of-label">Inicio <span class="of-required">*</span></label>
+          <input
+            class="of-input"
+            type="datetime-local"
+            [(ngModel)]="startDate"/>
+        </div>
+        <div class="of-field of-field--half">
+          <label class="of-label">Fin <span class="of-required">*</span></label>
+          <input
+            class="of-input"
+            type="datetime-local"
+            [(ngModel)]="endDate"/>
+        </div>
+      </div>
+
+      <!-- ── Avisos ─────────────────────────────────────────────────────────── -->
+      <div class="of-section-title">Avisos</div>
+
+      <div class="of-toggle-row">
+        <div class="of-toggle-info">
+          <span class="of-toggle-label">Mostrar al usuario final</span>
+          <span class="of-toggle-sub">El usuario verá este objetivo en su perfil</span>
+        </div>
+        <ion-toggle [(ngModel)]="showToFinalUser" color="primary"></ion-toggle>
+      </div>
+
+      <div class="of-toggle-row">
+        <div class="of-toggle-info">
+          <span class="of-toggle-label">Mostrar a familiares</span>
+          <span class="of-toggle-sub">Los familiares seleccionados verán este objetivo</span>
+        </div>
+        <ion-toggle [(ngModel)]="showToFamily" color="primary" (ionChange)="onShowToFamilyChange()"></ion-toggle>
+      </div>
+
+      <!-- ── Selector de familiares ─────────────────────────────────────────── -->
+      @if (showToFamily) {
+        <div class="of-field of-field--indent">
+          <label class="of-label">
+            Familiares que deben ver el objetivo <span class="of-required">*</span>
+            <span class="of-count">({{ selectedFamilyIds.length }} seleccionado{{ selectedFamilyIds.length !== 1 ? 's' : '' }})</span>
+          </label>
+
+          @if (familiesLoading) {
+            <div class="of-loading-row">
+              <ion-spinner name="crescent" color="secondary"></ion-spinner>
+              <span>Cargando familiares...</span>
+            </div>
+          } @else if (availableFamilies.length === 0) {
+            <p class="of-empty-hint">
+              @if (selectedUserIds.length === 0) {
+                Selecciona primero un usuario final para ver sus familiares.
+              } @else {
+                No se encontraron familiares vinculados a los usuarios seleccionados.
+              }
+            </p>
+          } @else {
+            <div class="of-checkbox-list">
+              @for (f of availableFamilies; track f._id) {
+                <button
+                  type="button"
+                  class="of-checkbox-item"
+                  [class.of-checkbox-item--selected]="isFamilySelected(f._id)"
+                  (click)="toggleFamily(f._id)">
+                  <div class="of-checkbox-avatar of-checkbox-avatar--family">
+                    @if (isFamilySelected(f._id)) {
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    } @else {
+                      <span>{{ f.name.charAt(0).toUpperCase() }}</span>
+                    }
+                  </div>
+                  <div class="of-checkbox-meta">
+                    <span class="of-checkbox-label">{{ familyName(f) }}</span>
+                    <span class="of-checkbox-email">{{ f.email }}</span>
+                  </div>
+                </button>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- ── Error de guardado ──────────────────────────────────────────────── -->
+      @if (saveError) {
+        <div class="of-save-error">{{ saveError }}</div>
+      }
+
+      <!-- ── Botón guardar ──────────────────────────────────────────────────── -->
+      <button
+        class="of-save-btn"
+        [disabled]="isSaving"
+        (click)="save()">
+        @if (isSaving) {
+          <ion-spinner name="crescent" class="of-save-spinner"></ion-spinner>
+          Guardando...
+        } @else {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="of-save-icon">
+            <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+          {{ isEditing ? 'Guardar cambios' : 'Crear objetivo' }}
+        }
+      </button>
+
+    </div><!-- /of-container -->
+  }
+
+</ion-content>

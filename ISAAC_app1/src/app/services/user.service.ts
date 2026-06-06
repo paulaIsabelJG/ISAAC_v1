@@ -306,8 +306,10 @@ export class UserService {
   }
 
   // ── Voz personalizada ──────────────────────────────────────────────────────
+  // @deprecated Usa VoiceService (voice.service.ts) para llamadas de voz.
+  // Estos métodos se mantienen por compatibilidad con código existente.
 
-  /** POST /api/voice/:userId/sample — sube muestra de audio en base64 */
+  /** @deprecated Usa VoiceService.uploadSample() */
   uploadVoiceSample(
     userId:          string,
     audioDataUrl:    string,
@@ -320,7 +322,7 @@ export class UserService {
     );
   }
 
-  /** POST /api/voice/:userId/create — lanza la creación de voz en Python */
+  /** @deprecated Usa VoiceService.createVoice() */
   createVoice(userId: string): Observable<{ message: string; status: string }> {
     return this.http.post<{ message: string; status: string }>(
       `${this.voiceUrl}/${encodeURIComponent(userId)}/create`,
@@ -328,21 +330,21 @@ export class UserService {
     );
   }
 
-  /** GET /api/voice/:userId/status — devuelve el estado de voiceSettings */
+  /** @deprecated Usa VoiceService.getStatus() */
   getVoiceStatus(userId: string): Observable<{ voiceSettings: VoiceSettings }> {
     return this.http.get<{ voiceSettings: VoiceSettings }>(
       `${this.voiceUrl}/${encodeURIComponent(userId)}/status`
     );
   }
 
-  /** DELETE /api/voice/:userId/custom — elimina la voz personalizada */
+  /** @deprecated Usa VoiceService.deleteCustomVoice() */
   deleteCustomVoice(userId: string): Observable<{ message: string; status: string }> {
     return this.http.delete<{ message: string; status: string }>(
       `${this.voiceUrl}/${encodeURIComponent(userId)}/custom`
     );
   }
 
-  /** POST /api/voice/tts/speak — genera audio con la voz personalizada (devuelve Blob WAV) */
+  /** @deprecated Usa VoiceService.generateAudio() */
   speakCustom(userId: string, text: string): Observable<Blob> {
     return this.http.post(
       `${this.voiceUrl}/tts/speak`,
