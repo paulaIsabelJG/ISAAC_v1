@@ -42,6 +42,7 @@ export class AiAssistantService {
     phrase: AacPhraseItem[],
     locale = 'es',
     mode: 'statement' | 'request' | 'past' | 'future' = 'statement',
+    userGender: 'male' | 'female' | 'neutral' | 'unknown' = 'unknown',
   ): Observable<AiReformulationResponse> {
     const text = phrase.map(p => p.label).join(' ');
     return this.http.post<AiReformulationResponse>(
@@ -50,6 +51,7 @@ export class AiAssistantService {
         text,
         locale,
         mode,
+        userGender,
         tokens: phrase.map(p => ({
           label:             p.label,
           imageUrl:          p.imageUrl,

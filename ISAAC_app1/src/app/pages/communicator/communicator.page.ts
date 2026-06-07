@@ -166,6 +166,11 @@ export class CommunicatorPage implements OnInit, OnDestroy {
       void this.loadBoard(rootBoardId).then(() => this.loadPredictions());
     });
 
+    // Resolver contexto de ubicación (no bloquea el inicio de sesión)
+    if (this.userId) {
+      void this.resolveCurrentLocation();
+    }
+
     // Predictor IA: refrescar predicciones cada vez que cambia la frase.
     // BehaviorSubject emite inmediatamente al suscribirse → carga inicial incluida.
     this.phraseSub = this.aac.phraseChanged$.subscribe(() => {
@@ -198,10 +203,39 @@ export class CommunicatorPage implements OnInit, OnDestroy {
       currentPhrase:     this.aac.phrase.map(p => ({ label: p.label, wordType: p.wordType })),
       currentBoardRole:  this.board.boardRole  ?? 'main',
       currentBoardShape: this.board.shape ?? 'grid',
+      locationContext:   this.aac.locationContext,
     }).subscribe({
       next:  res  => { this.predictions = res.predictions; },
       error: ()   => { /* silencioso: el predictor no bloquea el comunicador */ },
     });
+  }
+
+  /**
+   * Obtiene la posición actual del dispositivo y la resuelve contra los lugares
+   * frecuentes del usuario. Actualiza el estado en AacRuntimeService.
+   * Completamente silencioso si falla o si el usuario rechaza los permisos.
+   */
+  private async resolveCurrentLocation(): Promise<void> {
+    if (!navigator.geolocation) return;
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const ctx = await firstValueFrom(
+            this.userSvc.resolveLocation(this.userId, pos.coords.latitude, pos.coords.longitude),
+          );
+          this.aac.locationContext = ctx.locationContext ?? 'general';
+          this.aac.locationId      = ctx.locationId      ?? null;
+          this.aac.locationName    = ctx.locationName    ?? null;
+          // Relanzar predicciones con el nuevo contexto si el predictor está activo
+          if (ctx.locationContext && ctx.locationContext !== 'general') {
+            this.loadPredictions();
+          }
+        } catch { /* silencioso */ }
+      },
+      () => { /* permiso denegado o error de GPS: locationContext permanece 'general' */ },
+      { timeout: 8000, maximumAge: 60000 },
+    );
   }
 
   /** Pulsar un pictograma del predictor: actúa como acción de voz y registra OBL. */
@@ -229,9 +263,14 @@ export class CommunicatorPage implements OnInit, OnDestroy {
 
   private async openAiModal(phrase: AacPhraseItem[], speakTimestamp: string): Promise<void> {
     this.aiModalActive = true;
+    const genderMap: Record<string, 'male' | 'female' | 'neutral' | 'unknown'> = {
+      male: 'male', female: 'female', other: 'neutral', prefer_not_to_say: 'unknown',
+    };
+    const userGender = genderMap[this.targetUser?.gender ?? ''] ?? 'unknown';
+
     const modal = await this.modalCtrl.create({
       component:      AiPhraseResultModalComponent,
-      componentProps: { originalPhrase: phrase, speakTimestamp },
+      componentProps: { originalPhrase: phrase, speakTimestamp, userGender },
       cssClass:       'ai-result-modal',
       breakpoints:    [0, 0.85, 1],
       initialBreakpoint: 0.85,

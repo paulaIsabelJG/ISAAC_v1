@@ -62,6 +62,10 @@ export interface OblEvent {
   ext_isaac_ai_tokens?:         any[];
   /** Identificador estable de la frase en curso. Compartido por button, :speak, utterance y ext_isaac_ai_reformulation. */
   ext_isaac_phrase_id?:         string;
+  // contexto de ubicación semántico (solo eventos button). Nunca se incluyen coordenadas.
+  location_context?: string;
+  location_id?:      string;
+  location_name?:    string;
 }
 
 /**
@@ -155,6 +159,11 @@ export class AacRuntimeService {
    */
   readonly returnToRoot$ = new Subject<string>();
 
+  /** Contexto de ubicación detectado al iniciar la sesión. 'general' = sin ubicación. */
+  locationContext = 'general';
+  locationId:   string | null = null;
+  locationName: string | null = null;
+
   private pendingEvents: OblEvent[] = [];
   private sessionStarted = '';
   /** UUID estable que identifica la frase en curso. Se genera al añadir el primer pictograma
@@ -198,7 +207,10 @@ export class AacRuntimeService {
     this.iaRows           = iaRows;
     this.iaCols           = iaCols;
     this.aiRewriteEnabled = aiRewriteEnabled;
-    this.sessionStarted = new Date().toISOString();
+    this.locationContext  = 'general';
+    this.locationId       = null;
+    this.locationName     = null;
+    this.sessionStarted   = new Date().toISOString();
     this.phraseChanged$.next([]);
 
     if (this.canLog && userId) {
@@ -253,6 +265,9 @@ export class AacRuntimeService {
     this.configuredGender   = '';
     this.customVoiceReady   = false;
     this.customVoiceUserId  = '';
+    this.locationContext    = 'general';
+    this.locationId         = null;
+    this.locationName       = null;
     if (this.speakTimer !== null) { clearTimeout(this.speakTimer); this.speakTimer = null; }
     this.stopCustomAudio();
     if (this.audioCtx) { this.audioCtx.close().catch(() => {}); this.audioCtx = null; }
@@ -700,6 +715,46 @@ export class AacRuntimeService {
     }
   }
 
+  /**
+   * Habla el texto usando SIEMPRE la voz de catálogo del dispositivo (Web Speech API),
+   * ignorando la voz personalizada aunque esté activa. Útil cuando la latencia importa
+   * (p.ej. botón "Escuchar" del modal IA, donde la voz clonada podría no estar en caché).
+   */
+  speakTextCatalog(text: string): void {
+    if (!text?.trim()) return;
+    if (this.speakTimer !== null) { clearTimeout(this.speakTimer); this.speakTimer = null; }
+    this.stopCustomAudio();
+    window.speechSynthesis?.cancel();
+
+    if (!window.speechSynthesis) { console.warn('[AAC] speechSynthesis not available'); return; }
+
+    const utterance  = new SpeechSynthesisUtterance(this.normalizeTtsText(text));
+    utterance.lang   = 'es-ES';
+    utterance.rate   = this.configuredRate;
+    utterance.pitch  = this.configuredPitch;
+    utterance.volume = this.configuredVolume;
+
+    const doSpeak = () => {
+      this.speakTimer = null;
+      const voices = window.speechSynthesis.getVoices();
+      if (this.configuredVoiceURI) {
+        const match = voices.find(v => v.voiceURI === this.configuredVoiceURI);
+        if (match) { utterance.voice = match; utterance.lang = match.lang; }
+      }
+      window.speechSynthesis.speak(utterance);
+    };
+
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length > 0) {
+      this.speakTimer = setTimeout(doSpeak, 50);
+    } else {
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.onvoiceschanged = null;
+        doSpeak();
+      };
+    }
+  }
+
   /** Habla el texto y, al terminar (o tras timeout), ejecuta la callback. */
   speakTextAndThen(text: string, gender?: string, onEnd?: () => void): void {
     if (!text?.trim()) { onEnd?.(); return; }
@@ -775,7 +830,11 @@ export class AacRuntimeService {
   speakPhrase(gender?: string): void {
     if (this.phrase.length === 0) return;
     const text = this.phrase.map(p => p.sound || p.label).join(' ');
-    this.speakText(text, gender);
+    // Con IA activa no se reproduce la frase en crudo: el modal IA la reformula
+    // y el usuario pulsa "Escuchar" allí para oírla.
+    if (!this.aiRewriteEnabled || this.mode !== 'communicator') {
+      this.speakText(text, gender);
+    }
     this.logActionEvent(':speak');
     this.logUtteranceEvent(text, this.phrase.map(p => ({
       id:       p.id,
@@ -805,6 +864,12 @@ export class AacRuntimeService {
     };
     if (image_url && !image_url.startsWith('data:')) {
       ev.image_url = image_url;
+    }
+    // Adjuntar contexto de ubicación semántico si está activo (nunca coordenadas)
+    if (this.locationContext && this.locationContext !== 'general') {
+      ev.location_context = this.locationContext;
+      if (this.locationId)   ev.location_id   = this.locationId;
+      if (this.locationName) ev.location_name  = this.locationName;
     }
     this.pushEvent(ev);
   }

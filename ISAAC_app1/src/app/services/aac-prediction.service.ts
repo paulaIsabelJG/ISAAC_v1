@@ -19,12 +19,13 @@ export interface PredictedPictogram {
   /** En multitablero: slotId del hueco donde vive este pictograma (calculado en frontend). */
   sourceSlotId?: number | null;
   reasons?: {
-    frequency:    number;
-    transition:   number;
-    wordType:     number;
-    boardContext: number;
-    timeContext:  number;
-    recency:      number;
+    frequency:       number;
+    transition:      number;
+    wordType:        number;
+    boardContext:    number;
+    timeContext:     number;
+    locationContext: number;
+    recency:         number;
   };
 }
 
@@ -35,6 +36,7 @@ export interface PredictionRequest {
   currentPhrase:     { label: string; wordType?: string }[];
   currentBoardRole:  string;
   currentBoardShape: string;
+  locationContext?:  string;
 }
 
 @Injectable({ providedIn: 'root' })

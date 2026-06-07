@@ -15,10 +15,11 @@ exports.suggest = async (req, res) => {
     const {
       userId,
       boardId,
-      limit        = 8,
-      currentPhrase  = [],
+      limit             = 8,
+      currentPhrase     = [],
       currentBoardRole  = 'main',
       currentBoardShape = 'grid',
+      locationContext   = 'general',
     } = req.body;
 
     if (!userId || !boardId) {
@@ -51,6 +52,7 @@ exports.suggest = async (req, res) => {
       currentPhrase,
       currentBoardRole,
       currentBoardShape,
+      locationContext,
     });
 
     return res.json({ predictions });

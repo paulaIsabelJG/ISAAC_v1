@@ -35,6 +35,10 @@ const oblEventSchema = new mongoose.Schema({
   ext_isaac_ai_tokens:         [mongoose.Schema.Types.Mixed],
   // identificador estable de frase (compartido por button, :speak, utterance y ai_reformulation)
   ext_isaac_phrase_id:         String,
+  // contexto de ubicación semántico (solo eventos button). Nunca se guardan coordenadas.
+  location_context:            String,
+  location_id:                 String,
+  location_name:               String,
 }, { _id: false });
 
 const oblLogSchema = new mongoose.Schema({

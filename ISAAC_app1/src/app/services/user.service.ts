@@ -35,7 +35,7 @@ export interface FullBackendUser {
   image?:  string | null;
   centro?: string | null;
   gender?:  string | null;
-  age?:     number | null;
+  birthDate?: string | null;
   address?: string | null;
   selfPermissions?:  SelfPermissions;
   voiceSettings?:    VoiceSettings;
@@ -110,13 +110,41 @@ export interface UpdateUserPayload {
   email?:            string;
   password?:         string;
   gender?:           string;
-  age?:              number | null;
+  birthDate?:        string | null;
   address?:          string | null;
   image?:            string | null;
   selfPermissions?:  SelfPermissions;
   voiceSettings?:    VoiceSettings;
   /** @deprecated usar voiceSettings */
   ttsConfig?:        TtsConfig;
+}
+
+// ─── Lugares frecuentes ───────────────────────────────────────────────────────
+
+export interface FrequentLocation {
+  _id:          string;
+  name:         string;
+  address?:     string | null;
+  photoUrl?:    string | null;
+  lat?:         number | null;
+  lng?:         number | null;
+  radiusMeters: number;
+  enabled:      boolean;
+}
+
+export interface LocationContext {
+  locationContext: string;
+  locationId:      string | null;
+  locationName:    string | null;
+  distanceMeters:  number | null;
+}
+
+export interface AddLocationPayload {
+  name:          string;
+  address?:      string | null;
+  photoUrl?:     string | null;
+  radiusMeters?: number;
+  enabled?:      boolean;
 }
 
 // ─── childrenAccess ───────────────────────────────────────────────────────────
@@ -302,6 +330,48 @@ export class UserService {
     return this.http.put<{ message: string; count: number }>(
       `${this.url}/${encodeURIComponent(userId)}/assigned-professionals`,
       { assignedProfessionals: assignments }
+    );
+  }
+
+  // ── Lugares frecuentes ─────────────────────────────────────────────────────
+
+  /** GET /api/users/:userId/locations */
+  getLocations(userId: string): Observable<{ locations: FrequentLocation[] }> {
+    return this.http.get<{ locations: FrequentLocation[] }>(
+      `${this.url}/${encodeURIComponent(userId)}/locations`,
+    );
+  }
+
+  /** POST /api/users/:userId/locations */
+  addLocation(userId: string, payload: AddLocationPayload): Observable<{ location: FrequentLocation }> {
+    return this.http.post<{ location: FrequentLocation }>(
+      `${this.url}/${encodeURIComponent(userId)}/locations`,
+      payload,
+    );
+  }
+
+  /** PUT /api/users/:userId/locations/:locationId */
+  updateLocation(
+    userId: string, locationId: string, payload: Partial<AddLocationPayload>,
+  ): Observable<{ location: FrequentLocation }> {
+    return this.http.put<{ location: FrequentLocation }>(
+      `${this.url}/${encodeURIComponent(userId)}/locations/${encodeURIComponent(locationId)}`,
+      payload,
+    );
+  }
+
+  /** DELETE /api/users/:userId/locations/:locationId */
+  deleteLocation(userId: string, locationId: string): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(
+      `${this.url}/${encodeURIComponent(userId)}/locations/${encodeURIComponent(locationId)}`,
+    );
+  }
+
+  /** POST /api/users/:userId/locations/resolve */
+  resolveLocation(userId: string, lat: number, lng: number): Observable<LocationContext> {
+    return this.http.post<LocationContext>(
+      `${this.url}/${encodeURIComponent(userId)}/locations/resolve`,
+      { lat, lng },
     );
   }
 

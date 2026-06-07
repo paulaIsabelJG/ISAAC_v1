@@ -38,8 +38,8 @@ const userSchema = new mongoose.Schema({
     enum: ['male', 'female', 'other', 'prefer_not_to_say'],
     default: 'prefer_not_to_say'
   },
-  age: {
-    type: Number,
+  birthDate: {
+    type: Date,
     default: null
   },
   image: {
@@ -130,6 +130,16 @@ const userSchema = new mongoose.Schema({
       lastError:          { type: String,  default: null },
     },
   },
+  // Lugares frecuentes (opcional). Se usan para context-awareness por ubicación en el predictor.
+  frequentLocations: [{
+    name:         { type: String, required: true },
+    address:      { type: String, default: null },
+    photoUrl:     { type: String, default: null },
+    lat:          { type: Number, default: null },
+    lng:          { type: Number, default: null },
+    radiusMeters: { type: Number, default: 150 },
+    enabled:      { type: Boolean, default: true },
+  }],
   customPictograms: [{
     id: {
       type: String,

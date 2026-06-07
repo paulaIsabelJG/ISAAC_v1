@@ -22,6 +22,8 @@ export class AiPhraseResultModalComponent implements OnInit {
   /** Timestamp ISO del momento en que el usuario pulsó HABLAR (t1).
    *  Se pasa al communicator al aceptar para usarlo como timestamp del evento OBL. */
   @Input() speakTimestamp = '';
+  /** Género gramatical del usuario AAC. Solo se usa para concordar adjetivos/participios; no es dato personal. */
+  @Input() userGender: 'male' | 'female' | 'neutral' | 'unknown' = 'unknown';
 
   loading = true;
   error:  string | null = null;
@@ -48,7 +50,7 @@ export class AiPhraseResultModalComponent implements OnInit {
     this.error   = null;
     try {
       this.result = await firstValueFrom(
-        this.aiAssistant.reformulatePhrase(this.originalPhrase),
+        this.aiAssistant.reformulatePhrase(this.originalPhrase, 'es', 'statement', this.userGender),
       );
     } catch (err: any) {
       this.error = err?.error?.error ?? err?.message ?? 'No se pudo conectar con el servicio de IA.';
@@ -123,7 +125,7 @@ export class AiPhraseResultModalComponent implements OnInit {
 
   speakReformulated(): void {
     if (!this.result) return;
-    this.aac.speakText(this.result.reformulatedText);
+    this.aac.speakTextCatalog(this.result.reformulatedText);
   }
 
   accept(): void {

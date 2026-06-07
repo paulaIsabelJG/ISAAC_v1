@@ -32,7 +32,7 @@ function normalizeToken(t) {
  */
 exports.reformulatePhrase = async (req, res) => {
   try {
-    const { text, locale = 'es', tokens: originalTokens = [], mode = 'statement' } = req.body;
+    const { text, locale = 'es', tokens: originalTokens = [], mode = 'statement', userGender } = req.body;
 
     if (!text || typeof text !== 'string' || !text.trim()) {
       return res.status(400).json({ error: 'El campo "text" es obligatorio y no puede estar vacío.' });
@@ -46,7 +46,13 @@ exports.reformulatePhrase = async (req, res) => {
     const validModes = new Set(['statement', 'request', 'past', 'future']);
     const safeMode = validModes.has(mode) ? mode : 'statement';
 
-    const aiResult = await openaiPhraseService.reformulatePhrase(trimmedText, locale, safeMode);
+    // Mapear gender del modelo (prefer_not_to_say → unknown, other → neutral).
+    // Primero intenta el body; si no, usa el usuario autenticado.
+    const rawGender = userGender ?? req.user?.gender ?? 'unknown';
+    const genderMap = { male: 'male', female: 'female', other: 'neutral', prefer_not_to_say: 'unknown' };
+    const safeGender = genderMap[rawGender] ?? 'unknown';
+
+    const aiResult = await openaiPhraseService.reformulatePhrase(trimmedText, locale, safeMode, safeGender);
 
     // Normalizar a Array<{text, wordType}> (acepta strings o objetos)
     let canonicals = aiResult.canonicalTokens.map(normalizeToken);

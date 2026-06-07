@@ -3,6 +3,7 @@ import {
   AbstractControl,
   FormBuilder,
   FormGroup,
+  FormsModule,
   ReactiveFormsModule,
   ValidatorFn,
   Validators,
@@ -13,7 +14,7 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { buildSafeUrl as buildSafeUrlUtil } from '../../shared/utils/image.utils';
 import { firstValueFrom } from 'rxjs';
 import { AuthService, AddressSuggestion } from '../../services/auth.service';
-import { UserService, UpdateUserPayload, SelfPermissions, VoiceSettings, CatalogVoice } from '../../services/user.service';
+import { UserService, UpdateUserPayload, SelfPermissions, VoiceSettings, CatalogVoice, FrequentLocation, AddLocationPayload } from '../../services/user.service';
 import { TtsService, VoiceOption } from '../../services/tts.service';
 import { VoiceService } from '../../services/voice.service';
 import { LoadingErrorStateComponent } from '../../components/loading-error-state/loading-error-state.component';
@@ -35,7 +36,7 @@ const passwordOptional: ValidatorFn = (c: AbstractControl) => {
   // Reutiliza los estilos visuales de add-user + override mínimo propio
   styleUrls: ['../add-user/add-user.page.scss', './user-final-form.page.scss'],
   standalone: true,
-  imports: [ReactiveFormsModule, IonicModule, LoadingErrorStateComponent, AppPageHeaderComponent],
+  imports: [ReactiveFormsModule, FormsModule, IonicModule, LoadingErrorStateComponent, AppPageHeaderComponent],
 })
 export class UserFinalFormPage implements OnInit, OnDestroy {
 
@@ -114,14 +115,21 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
     assignFamilies:     false,
   };
 
-  // ── Autocompletado de dirección ──────────────────────────────────────────────
-  suggestions:    AddressSuggestion[] = [];
-  showSuggestions = false;
-  private _lat:   number | null = null;
-  private _lng:   number | null = null;
-  private _city:  string | null = null;
-  private _cntry: string | null = null;
-  private _deb:   ReturnType<typeof setTimeout> | null = null;
+  // ── Lugares frecuentes ────────────────────────────────────────────────────────
+  locations:           FrequentLocation[] = [];
+  locationsLoading     = false;
+  showAddLocation      = false;
+  editingLocationId:   string | null = null;
+  locationForm = { name: '', address: '', photoUrl: '', radiusMeters: 150 };
+  locationSaving       = false;
+
+  // ── Autocompletado de dirección del formulario de lugar ─────────────────────
+  locSuggestions:    AddressSuggestion[] = [];
+  showLocSuggestions = false;
+  private _deb:      ReturnType<typeof setTimeout> | null = null;
+
+  // ── Fecha límite para el selector de nacimiento ──────────────────────────────
+  readonly today = new Date().toISOString().substring(0, 10);
 
   // ── Estados ──────────────────────────────────────────────────────────────────
   isLoading = true;
@@ -200,9 +208,8 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
       password: ['', pwdValidators],
       name:     ['', [Validators.required, Validators.minLength(2)]],
       surname:  ['', Validators.required],
-      age:      [null],
+      birthDate: [''],
       gender:   ['prefer_not_to_say'],
-      address:  [''],
     });
   }
 
@@ -232,9 +239,8 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
         email:   u.email,
         name,
         surname,
-        gender:  u.gender   ?? 'prefer_not_to_say',
-        age:     u.age      ?? null,
-        address: u.address  ?? '',
+        gender:    u.gender ?? 'prefer_not_to_say',
+        birthDate: u.birthDate ? (u.birthDate as string).substring(0, 10) : '',
         // password vacío → no cambia
       });
 
@@ -284,6 +290,9 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
       }
       // Cargar voces siempre (el selector está siempre visible)
       void this.loadVoicesForGender(u.gender);
+
+      // Cargar lugares frecuentes (no bloquea si falla)
+      void this.loadLocations();
     } catch {
       this.loadError = 'Error al cargar los datos del usuario.';
     } finally {
@@ -633,38 +642,142 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
     input.click();
   }
 
-  // ── Autocompletado de dirección ──────────────────────────────────────────────
+  // ── Lugares frecuentes ────────────────────────────────────────────────────────
 
-  onAddressInput(e: Event) {
+  async loadLocations(): Promise<void> {
+    if (!this.isEditMode) return;
+    this.locationsLoading = true;
+    try {
+      const res = await firstValueFrom(this.userSvc.getLocations(this.userId));
+      this.locations = res.locations ?? [];
+    } catch { /* silencioso */ } finally {
+      this.locationsLoading = false;
+    }
+  }
+
+  openAddLocation(): void {
+    this.editingLocationId  = null;
+    this.locationForm       = { name: '', address: '', photoUrl: '', radiusMeters: 150 };
+    this.locSuggestions     = [];
+    this.showLocSuggestions = false;
+    this.showAddLocation    = true;
+  }
+
+  openEditLocation(loc: FrequentLocation): void {
+    this.editingLocationId  = loc._id;
+    this.locationForm       = {
+      name:         loc.name,
+      address:      loc.address  ?? '',
+      photoUrl:     loc.photoUrl ?? '',
+      radiusMeters: loc.radiusMeters ?? 150,
+    };
+    this.locSuggestions     = [];
+    this.showLocSuggestions = false;
+    this.showAddLocation    = true;
+  }
+
+  cancelLocationForm(): void {
+    this.showAddLocation    = false;
+    this.editingLocationId  = null;
+    this.locSuggestions     = [];
+    this.showLocSuggestions = false;
+  }
+
+  async saveLocation(): Promise<void> {
+    if (!this.locationForm.name.trim()) {
+      (await this.toastCtrl.create({
+        message: 'El nombre del lugar es obligatorio', duration: 2000,
+        color: 'warning', position: 'top',
+      })).present();
+      return;
+    }
+
+    this.locationSaving = true;
+    const payload: AddLocationPayload = {
+      name:         this.locationForm.name.trim(),
+      address:      this.locationForm.address.trim() || null,
+      photoUrl:     this.locationForm.photoUrl.trim() || null,
+      radiusMeters: this.locationForm.radiusMeters || 150,
+    };
+
+    try {
+      if (this.editingLocationId) {
+        const res = await firstValueFrom(
+          this.userSvc.updateLocation(this.userId, this.editingLocationId, payload),
+        );
+        const idx = this.locations.findIndex(l => l._id === this.editingLocationId);
+        if (idx >= 0) this.locations[idx] = res.location;
+      } else {
+        const res = await firstValueFrom(this.userSvc.addLocation(this.userId, payload));
+        this.locations.push(res.location);
+      }
+      this.showAddLocation   = false;
+      this.editingLocationId = null;
+      (await this.toastCtrl.create({
+        message: 'Lugar guardado', duration: 2000, color: 'success', position: 'top',
+      })).present();
+    } catch {
+      (await this.toastCtrl.create({
+        message: 'Error al guardar el lugar', duration: 2500, color: 'danger', position: 'top',
+      })).present();
+    } finally {
+      this.locationSaving = false;
+    }
+  }
+
+  async deleteLocation(loc: FrequentLocation): Promise<void> {
+    const alert = await this.alertCtrl.create({
+      header: 'Eliminar lugar',
+      message: `¿Eliminar "${loc.name}"?`,
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        {
+          text: 'Eliminar', role: 'destructive',
+          handler: async () => {
+            try {
+              await firstValueFrom(this.userSvc.deleteLocation(this.userId, loc._id));
+              this.locations = this.locations.filter(l => l._id !== loc._id);
+            } catch {
+              (await this.toastCtrl.create({
+                message: 'Error al eliminar el lugar', duration: 2500, color: 'danger', position: 'top',
+              })).present();
+            }
+          },
+        },
+      ],
+    });
+    await alert.present();
+  }
+
+  // ── Autocompletado de dirección del formulario de lugar ─────────────────────
+
+  onLocAddressInput(e: Event): void {
     const val = (e.target as HTMLInputElement).value;
-    this._lat = this._lng = this._city = this._cntry = null;
     if (this._deb) clearTimeout(this._deb);
-    if (val.length < 3) { this.suggestions = []; this.showSuggestions = false; return; }
+    if (val.length < 3) { this.locSuggestions = []; this.showLocSuggestions = false; return; }
     this._deb = setTimeout(() => {
       this.authSvc.getPlaceSuggestions(val).subscribe({
-        next:  (r) => {
-          // Eliminar sugerencias duplicadas por dirección
+        next: (r) => {
           const seen = new Set<string>();
-          this.suggestions = r.suggestions.filter(s => {
+          this.locSuggestions = r.suggestions.filter(s => {
             if (seen.has(s.formattedAddress)) return false;
             seen.add(s.formattedAddress);
             return true;
           });
-          this.showSuggestions = this.suggestions.length > 0;
+          this.showLocSuggestions = this.locSuggestions.length > 0;
         },
-        error: ()  => { this.suggestions = []; this.showSuggestions = false; },
+        error: () => { this.locSuggestions = []; this.showLocSuggestions = false; },
       });
     }, 300);
   }
 
-  selectSuggestion(s: AddressSuggestion) {
-    this.form.get('address')!.setValue(s.formattedAddress);
-    this._lat = s.lat; this._lng = s.lng;
-    this._city = s.city; this._cntry = s.country;
-    this.showSuggestions = false; this.suggestions = [];
+  selectLocSuggestion(s: AddressSuggestion): void {
+    this.locationForm.address = s.formattedAddress;
+    this.locSuggestions       = [];
+    this.showLocSuggestions   = false;
   }
 
-  closeSuggestions() { setTimeout(() => { this.showSuggestions = false; }, 150); }
+  closeLocSuggestions(): void { setTimeout(() => { this.showLocSuggestions = false; }, 150); }
 
   // ── Guardar ──────────────────────────────────────────────────────────────────
 
@@ -674,13 +787,10 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.isSaving = true;
 
-    const { email, password, name, surname, gender, age, address } = this.form.value;
-    const trimName    = name?.trim()    ?? '';
-    const trimSurname = surname?.trim() ?? '';
-    const ageValue    = age != null && age !== '' ? Number(age) : null;
-    const addressValue = address?.trim() || null;
-
-    console.log('[DEBUG save] address raw:', address, '| addressValue:', addressValue);
+    const { email, password, name, surname, gender, birthDate } = this.form.value;
+    const trimName      = name?.trim()    ?? '';
+    const trimSurname   = surname?.trim() ?? '';
+    const birthDateValue = birthDate && birthDate.trim() ? birthDate.trim() : null;
 
     const selfPerms: SelfPermissions = {
       canEditPersonalData:    this.perms.editData,
@@ -715,8 +825,7 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
             surname:         trimSurname,
             email:           email?.trim(),
             gender:          gender || 'prefer_not_to_say',
-            age:             ageValue,
-            address:         addressValue,
+            birthDate:       birthDateValue,
             image:           this.imgB64 ?? undefined,
             selfPermissions: selfPerms,
             voiceSettings:   vs,
@@ -738,12 +847,11 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
           );
           targetUserId = regRes.user.id;
 
-          // Patch para guardar name/surname por separado, además de age, address, permisos y voz
+          // Patch para guardar name/surname por separado, además de birthDate, permisos y voz
           const patch: UpdateUserPayload = {
             name:            trimName,
             surname:         trimSurname,
-            age:             ageValue,
-            address:         addressValue,
+            birthDate:       birthDateValue,
             selfPermissions: selfPerms,
             voiceSettings:   vs,
           };
@@ -758,8 +866,7 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
           surname:         trimSurname,
           email:           email?.trim(),
           gender:          gender || 'prefer_not_to_say',
-          age:             ageValue,
-          address:         addressValue,
+          birthDate:       birthDateValue,
           image:           this.imgB64 ?? undefined,
           selfPermissions: selfPerms,
           voiceSettings:   vs,

@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const userController = require('../controllers/userController');
-const authMiddleware = require('../middleware/authMiddleware');
+const userController  = require('../controllers/userController');
+const locationCtrl    = require('../controllers/locationController');
+const authMiddleware  = require('../middleware/authMiddleware');
 
 // Todas las rutas requieren autenticación
 router.use(authMiddleware);
@@ -35,6 +36,14 @@ router.put('/:userId/assigned-professionals', userController.updateAssignedProfe
 
 // Usuarios finales asignados a un profesional (antes de /:userId genérico)
 router.get('/:professionalId/assigned-users', userController.getAssignedUsers);
+
+// Rutas de lugares frecuentes (antes de /:userId genérico para evitar conflictos)
+// El endpoint /resolve debe ir antes de /:locationId
+router.post('/:userId/locations/resolve',             locationCtrl.resolveLocation);
+router.get('/:userId/locations',                      locationCtrl.getLocations);
+router.post('/:userId/locations',                     locationCtrl.addLocation);
+router.put('/:userId/locations/:locationId',          locationCtrl.updateLocation);
+router.delete('/:userId/locations/:locationId',       locationCtrl.deleteLocation);
 
 // CRUD de usuario por ID (al final para evitar conflictos con rutas con sufijo)
 router.put('/:userId', userController.updateUserById);

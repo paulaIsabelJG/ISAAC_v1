@@ -5,12 +5,13 @@ const User   = require('../models/User');
 // ── Constantes ────────────────────────────────────────────────────────────────
 
 const WEIGHTS = {
-  frequency:    0.25,
-  transition:   0.35,
-  wordType:     0.15,
-  boardContext: 0.10,
-  timeContext:  0.10,
-  recency:      0.05,
+  frequency:       0.22,
+  transition:      0.32,
+  wordType:        0.13,
+  boardContext:    0.09,
+  timeContext:     0.08,
+  locationContext: 0.11,
+  recency:         0.05,
 };
 
 // Colores Fitzgerald (fuente de verdad: fitzgerald.ts del frontend)
@@ -236,6 +237,7 @@ exports.getSuggestions = async ({
   currentPhrase = [],
   currentBoardRole,
   currentBoardShape,
+  locationContext = 'general',
 }) => {
   // ── Árbol de tableros: labels válidos + pictogramas de fallback ─────────────
   // El predictor solo puede sugerir pictogramas que existen en el tablero actual
@@ -263,22 +265,24 @@ exports.getSuggestions = async ({
       wordType: p.wordType,
       action:   p.action,
       score:    0.5,
-      reasons:  { frequency: 0, transition: 0, wordType: 0, boardContext: 0, timeContext: 0, recency: 0 },
+      reasons:  { frequency: 0, transition: 0, wordType: 0, boardContext: 0, timeContext: 0, locationContext: 0, recency: 0 },
     }));
   }
 
   // ── Construir mapas a partir de eventos OBL ───────────────────────────────
 
-  // freqMap[label]          → nº total de pulsaciones
-  // pictData[label]         → { imageUrl, color, wordType } del último evento visto
-  // recencyMap[label]       → puntuación de recencia (1 / log2(rank+2)), solo primera aparición
-  // timeMap[`block|label`]  → nº de pulsaciones en ese bloque horario
-  // boardMap[`bId|label`]   → nº de pulsaciones en ese tablero
-  const freqMap    = {};
-  const pictData   = {};
-  const recencyMap = {};
-  const timeMap    = {};
-  const boardMap   = {};
+  // freqMap[label]                  → nº total de pulsaciones
+  // pictData[label]                 → { imageUrl, color, wordType } del último evento visto
+  // recencyMap[label]               → puntuación de recencia (1 / log2(rank+2)), solo primera aparición
+  // timeMap[`block|label`]          → nº de pulsaciones en ese bloque horario
+  // boardMap[`bId|label`]           → nº de pulsaciones en ese tablero
+  // locationMap[`context|label`]    → nº de pulsaciones en ese contexto de ubicación
+  const freqMap     = {};
+  const pictData    = {};
+  const recencyMap  = {};
+  const timeMap     = {};
+  const boardMap    = {};
+  const locationMap = {};
 
   // Ordenar desc por timestamp para asignar rango de recencia
   const sortedDesc = [...allButtonEvents].sort(
@@ -312,6 +316,10 @@ exports.getSuggestions = async ({
     if (e.board_id) {
       boardMap[`${e.board_id}|${lbl}`] = (boardMap[`${e.board_id}|${lbl}`] || 0) + 1;
     }
+
+    const evLocCtx = (e.location_context || '').trim() || 'general';
+    const locKey   = `${evLocCtx}|${lbl}`;
+    locationMap[locKey] = (locationMap[locKey] || 0) + 1;
   });
 
   // transitionMap[`from|to`] → nº de veces que `to` siguió a `from` en una sesión
@@ -348,6 +356,15 @@ exports.getSuggestions = async ({
   const boardTotal = Object.entries(boardMap)
     .filter(([k]) => k.startsWith(`${boardId}|`))
     .reduce((s, [, v]) => s + v, 0);
+
+  // Normalización de locationContext: solo tiene sentido si hay datos del contexto actual.
+  // Si locationContext es 'general' o no hay histórico en ese contexto, locationScore = 0.
+  const normLocCtx = (locationContext || 'general').trim();
+  const locationTotal = normLocCtx !== 'general'
+    ? Object.entries(locationMap)
+        .filter(([k]) => k.startsWith(`${normLocCtx}|`))
+        .reduce((s, [, v]) => s + v, 0)
+    : 0;
 
   const expectedTypes = lastWordType ? (WORD_TYPE_AFTER[lastWordType] || []) : [];
 
@@ -394,13 +411,18 @@ exports.getSuggestions = async ({
 
     const recencyScore = norm(recencyMap[lbl] || 0, maxRecency);
 
+    const locationScore = locationTotal > 0
+      ? norm(locationMap[`${normLocCtx}|${lbl}`] || 0, locationTotal)
+      : 0;
+
     const raw =
-      freqScore     * WEIGHTS.frequency    +
-      transScore    * WEIGHTS.transition   +
-      wordTypeScore * WEIGHTS.wordType     +
-      boardScore    * WEIGHTS.boardContext +
-      timeScore     * WEIGHTS.timeContext  +
-      recencyScore  * WEIGHTS.recency;
+      freqScore      * WEIGHTS.frequency       +
+      transScore     * WEIGHTS.transition      +
+      wordTypeScore  * WEIGHTS.wordType        +
+      boardScore     * WEIGHTS.boardContext    +
+      timeScore      * WEIGHTS.timeContext     +
+      locationScore  * WEIGHTS.locationContext +
+      recencyScore   * WEIGHTS.recency;
 
     // Penalizar fuertemente pictogramas ya pulsados en la frase actual.
     // Factor 0.05 → aparecen al fondo del ranking y fuera del top-N habitual.
@@ -416,12 +438,13 @@ exports.getSuggestions = async ({
       action:   boardCell?.action   || null,
       score:    round3(total),
       reasons: {
-        frequency:    round2(freqScore),
-        transition:   round2(transScore),
-        wordType:     wordTypeScore,
-        boardContext: round2(boardScore),
-        timeContext:  round2(timeScore),
-        recency:      round2(recencyScore),
+        frequency:       round2(freqScore),
+        transition:      round2(transScore),
+        wordType:        wordTypeScore,
+        boardContext:    round2(boardScore),
+        timeContext:     round2(timeScore),
+        locationContext: round2(locationScore),
+        recency:         round2(recencyScore),
       },
     };
   });

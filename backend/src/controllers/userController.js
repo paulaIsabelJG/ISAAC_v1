@@ -247,8 +247,8 @@ const validateUserPayload = async (payload, existingUser = null, isCreate = fals
     password: payload.password,
     gender:   payload.gender,
     image:    payload.image,
-    age:     payload.age     !== undefined ? (payload.age === null ? null : Number(payload.age)) : undefined,
-    address: payload.address !== undefined ? (payload.address || null)                         : undefined,
+    birthDate: payload.birthDate !== undefined ? (payload.birthDate || null) : undefined,
+    address:   payload.address  !== undefined ? (payload.address  || null) : undefined,
   };
 };
 
@@ -449,8 +449,8 @@ const applyUserUpdates = (user, updates) => {
   if (updates.password !== undefined) user.password = updates.password;
   if (updates.type !== undefined)     user.type     = updates.type;
   if (updates.gender !== undefined)   user.gender   = updates.gender;
-  if (updates.age     !== undefined)  user.age     = updates.age;
-  if (updates.address !== undefined)  user.address = updates.address;
+  if (updates.birthDate !== undefined)  user.birthDate = updates.birthDate;
+  if (updates.address   !== undefined)  user.address   = updates.address;
   if (updates.image   !== undefined)  user.image   = updates.image;
   if (updates.centro  !== undefined)  user.centro  = updates.centro;
   if (updates.hijos !== undefined)    user.hijos    = updates.hijos;
