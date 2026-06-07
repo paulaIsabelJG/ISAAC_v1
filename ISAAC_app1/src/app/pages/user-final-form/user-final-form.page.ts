@@ -15,8 +15,10 @@ import { firstValueFrom } from 'rxjs';
 import { AuthService, AddressSuggestion } from '../../services/auth.service';
 import { UserService, UpdateUserPayload, SelfPermissions, VoiceSettings, CatalogVoice } from '../../services/user.service';
 import { TtsService, VoiceOption } from '../../services/tts.service';
+import { VoiceService } from '../../services/voice.service';
 import { LoadingErrorStateComponent } from '../../components/loading-error-state/loading-error-state.component';
 import { AppPageHeaderComponent } from '../../components/app-page-header/app-page-header.component';
+import { environment } from '../../../environments/environment';
 
 const MAX_IMG = 2 * 1024 * 1024; // 2 MB
 
@@ -50,7 +52,7 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
   imgB64: string | null = null;
   imgUrl: SafeUrl | null = null;
   private _originalImgB64: string | null = null;
-  private _extraDirty = false;
+  _extraDirty = false;
 
   // ── Toggle contraseña ────────────────────────────────────────────────────────
   showPwd = false;
@@ -85,6 +87,7 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
   private audioChunks:    Blob[] = [];
   private activeStream:   MediaStream | null = null;
   private savedVoiceURI   = '';
+  private _audioCtx:      AudioContext | null = null;
 
   /** Progreso estimado del polling (0–1), máx 95 % hasta que Python confirme */
   get voiceProcessingProgress(): number {
@@ -131,6 +134,7 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
     private fb:         FormBuilder,
     private authSvc:    AuthService,
     private userSvc:    UserService,
+    private voiceSvc:   VoiceService,
     private ttsSvc:     TtsService,
     private toastCtrl:  ToastController,
     private alertCtrl:  AlertController,
@@ -143,6 +147,44 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
     this.mediaRec?.stop();
     this.activeStream?.getTracks().forEach(t => t.stop());
     if (this.recordedAudioUrl) URL.revokeObjectURL(this.recordedAudioUrl);
+    if (this._audioCtx) { this._audioCtx.close().catch(() => {}); this._audioCtx = null; }
+  }
+
+  // ── AudioContext para reproducción de voz personalizada ──────────────────────
+
+  /** Crea/devuelve el AudioContext y lo desbloquea. Llamar dentro del gesto del usuario. */
+  private _getAudioCtx(): AudioContext | null {
+    try {
+      const AC = (window as any).AudioContext || (window as any).webkitAudioContext;
+      if (!AC) return null;
+      if (!this._audioCtx || this._audioCtx.state === 'closed') {
+        this._audioCtx = new AC() as AudioContext;
+      }
+      if (this._audioCtx.state === 'suspended') this._audioCtx.resume().catch(() => {});
+      return this._audioCtx;
+    } catch { return null; }
+  }
+
+  /** Reproduce un Blob de audio usando AudioContext (sin restricción de autoplay). */
+  private async _playBlob(blob: Blob, ctx: AudioContext | null): Promise<void> {
+    if (!ctx) { console.warn('[VoiceTest] _playBlob: ctx is null, skipping'); return; }
+    console.log('[VoiceTest] ctx.state before resume:', ctx.state);
+    if (ctx.state === 'suspended') await ctx.resume();
+    console.log('[VoiceTest] ctx.state after resume:', ctx.state, '| blob size:', blob.size, 'bytes');
+    const buf         = await blob.arrayBuffer();
+    const audioBuffer = await ctx.decodeAudioData(buf);
+    console.log('[VoiceTest] audioBuffer duration:', audioBuffer.duration, 's | sampleRate:', audioBuffer.sampleRate);
+    const src = ctx.createBufferSource();
+    src.buffer = audioBuffer;
+    src.connect(ctx.destination);
+    await new Promise<void>((resolve) => {
+      let done = false;
+      const finish = (reason: string) => { if (!done) { done = true; console.log('[VoiceTest] finished:', reason); resolve(); } };
+      src.onended = () => finish('onended');
+      src.start(0);
+      console.log('[VoiceTest] source.start(0) called — ctx.state:', ctx.state, 'currentTime:', ctx.currentTime);
+      setTimeout(() => finish('timeout'), Math.max((audioBuffer.duration + 1) * 1000, 5000));
+    });
   }
 
   ngOnInit() {
@@ -390,12 +432,12 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
       }
 
       const audioDataUrl = await this.blobToBase64(this.recordedBlob);
-      await firstValueFrom(this.userSvc.uploadVoiceSample(
+      await firstValueFrom(this.voiceSvc.uploadSample(
         targetUserId, audioDataUrl, true,
         'Confirmo que tengo permiso para crear una voz sintética a partir de esta grabación y entiendo que se usará para generar mensajes de voz dentro de esta aplicación.',
       ));
 
-      await firstValueFrom(this.userSvc.createVoice(targetUserId));
+      await firstValueFrom(this.voiceSvc.createVoice(targetUserId));
 
       this.customVoiceStep      = 'processing';
       this.voicePollingAttempts = 0;
@@ -422,7 +464,7 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
       }
 
       try {
-        const res    = await firstValueFrom(this.userSvc.getVoiceStatus(userId));
+        const res    = await firstValueFrom(this.voiceSvc.getStatus(userId));
         const status = res.voiceSettings?.customVoice?.status;
 
         if (status === 'ready') {
@@ -443,41 +485,98 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
 
   private async autoPlayTestVoice(userId: string): Promise<void> {
     try {
-      const blob  = await firstValueFrom(
-        this.userSvc.speakCustom(userId, 'Tu voz personalizada está lista. Así es como sonaré en la aplicación.')
+      const blob = await firstValueFrom(
+        this.voiceSvc.generateAudio(userId, 'Tu voz personalizada está lista. Así es como sonaré en la aplicación.')
       );
-      const url   = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      audio.onended = () => URL.revokeObjectURL(url);
-      await audio.play();
-    } catch { /* si Python no está activo, no reproducir; la voz seguirá lista */ }
+      // Reutiliza el AudioContext si ya fue desbloqueado por un gesto previo del usuario.
+      // Si no hay contexto (la voz terminó por polling sin interacción), no reproducir.
+      const ctx = this._audioCtx && this._audioCtx.state !== 'closed' ? this._audioCtx : null;
+      await this._playBlob(blob, ctx);
+    } catch { /* si Python no está activo o autoplay bloqueado, no reproducir */ }
   }
 
   async testCustomVoice(): Promise<void> {
     const targetId = this.isEditMode ? this.userId : this.preRegisteredUserId;
     if (!targetId) return;
     this.customVoiceTesting = true;
+
+    // AudioContext debe crearse dentro del gesto de usuario (antes del primer await)
+    const AC: typeof AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
+    let audioCtx: AudioContext | null = null;
+    try { audioCtx = new AC(); } catch { /* navegador sin AudioContext */ }
+
+    const token   = this.authSvc.getToken();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const body = JSON.stringify({
+      userId: targetId,
+      text:   'Hola, esta es mi voz para comunicarme con esta aplicación.',
+    });
+
+    // Auto-retry: la primera petición puede disparar la síntesis en Python y
+    // expirar en el gateway; las siguientes ya encuentran el resultado en caché.
+    const MAX_ATTEMPTS = 4;
+    const RETRY_DELAY_MS = 10_000;
+    let arrayBuffer: ArrayBuffer | null = null;
+
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      try {
+        const resp = await fetch(`${environment.apiUrl}/voice/tts/speak`, {
+          method: 'POST', headers, body,
+        });
+        if (resp.ok) {
+          arrayBuffer = await resp.arrayBuffer();
+          break;
+        }
+        // 504 = gateway timeout: Python está sintetizando, reintentamos
+        if (resp.status === 504 && attempt < MAX_ATTEMPTS) {
+          await new Promise(r => setTimeout(r, RETRY_DELAY_MS));
+          continue;
+        }
+        throw new Error(`HTTP ${resp.status}`);
+      } catch (fetchErr: any) {
+        // Error de red también puede indicar síntesis en curso
+        if (attempt < MAX_ATTEMPTS) {
+          await new Promise(r => setTimeout(r, RETRY_DELAY_MS));
+        } else {
+          throw fetchErr;
+        }
+      }
+    }
+
     try {
-      const blob  = await firstValueFrom(
-        this.userSvc.speakCustom(targetId, 'Hola, esta es una prueba de mi voz personalizada.')
-      );
-      const url   = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      audio.onended = () => URL.revokeObjectURL(url);
-      await audio.play();
-    } catch {
+      if (!arrayBuffer) throw new Error('No se recibió audio tras varios intentos');
+      if (!audioCtx)    throw new Error('AudioContext no disponible en este navegador');
+
+      if (audioCtx.state === 'suspended') await audioCtx.resume();
+      const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+      const source = audioCtx.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(audioCtx.destination);
+
+      await new Promise<void>((resolve) => {
+        let done = false;
+        const finish = () => { if (!done) { done = true; resolve(); } };
+        source.onended = finish;
+        source.start(0);
+        setTimeout(finish, Math.max((audioBuffer.duration + 2) * 1000, 8000));
+      });
+
+    } catch (err) {
+      console.error('[VoiceTest] error:', err);
       (await this.toastCtrl.create({
-        message: 'No se pudo reproducir la voz. El servicio de síntesis puede no estar activo.',
-        duration: 3000, color: 'warning', position: 'top',
+        message: 'No se pudo reproducir la voz. Comprueba que el servicio de síntesis esté activo.',
+        duration: 4000, color: 'warning', position: 'top',
       })).present();
     } finally {
+      audioCtx?.close().catch(() => {});
       this.customVoiceTesting = false;
     }
   }
 
   async deleteCustomVoice(): Promise<void> {
     try {
-      await firstValueFrom(this.userSvc.deleteCustomVoice(this.userId));
+      await firstValueFrom(this.voiceSvc.deleteCustomVoice(this.userId));
       this.voiceMode       = 'catalog';
       this.customVoiceStep = 'idle';
       this.customVoiceConsent = false;

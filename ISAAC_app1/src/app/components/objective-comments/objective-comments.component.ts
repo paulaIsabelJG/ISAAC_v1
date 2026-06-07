@@ -59,6 +59,7 @@ export class ObjectiveCommentsComponent implements OnInit {
         this.commentsSvc.getObjectiveComments(this.objectiveId, this.targetUserId)
       );
       this.comments = res.comments;
+      this.commentsCountChanged.emit(this.comments.length);
     } catch {
       this.loadError = 'No se pudieron cargar los comentarios.';
     } finally {

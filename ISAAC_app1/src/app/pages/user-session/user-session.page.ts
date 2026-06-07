@@ -1,5 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActionSheetController, IonicModule, ToastController } from '@ionic/angular';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 import type { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
@@ -9,6 +11,7 @@ import { AuthService } from '../../services/auth.service';
 import { UserService, FullBackendUser } from '../../services/user.service';
 import { BoardService, Board } from '../../services/board.service';
 import { TtsService } from '../../services/tts.service';
+import { AacRuntimeService } from '../../services/aac-runtime.service';
 import { ObfExportService } from '../../services/obf-export.service';
 import { BoardPdfExportService } from '../../services/board-pdf-export.service';
 import { LoadingErrorStateComponent } from '../../components/loading-error-state/loading-error-state.component';
@@ -29,7 +32,7 @@ interface ViewPermissions {
   standalone: true,
   imports: [IonicModule, LoadingErrorStateComponent, AppPageHeaderComponent, BoardMiniCardComponent],
 })
-export class UserSessionPage implements OnInit {
+export class UserSessionPage implements OnInit, OnDestroy {
 
   userId     = '';
   targetUser: FullBackendUser | null = null;
@@ -49,6 +52,11 @@ export class UserSessionPage implements OnInit {
   boardsLoading  = true;
   boardsError    = '';
 
+  // ── Banner de carga de voz personalizada ────────────────────────────────────
+  voiceLoadingBanner = false;
+  voiceLoadingPct    = 0;
+  private _voicePollInterval?: ReturnType<typeof setInterval>;
+
   // ── Pulsación larga en tarjeta de tablero ────────────────────────────────────
   holdBoardId   = '';
   holdProgress  = 0;
@@ -66,11 +74,17 @@ export class UserSessionPage implements OnInit {
     private boardService: BoardService,
     private sanitizer:    DomSanitizer,
     private ttsSvc:       TtsService,
+    private aac:          AacRuntimeService,
     private obfExport:    ObfExportService,
     private pdfExport:    BoardPdfExportService,
     private actionSheet:  ActionSheetController,
     private toastCtrl:    ToastController,
+    private http:         HttpClient,
   ) {}
+
+  ngOnDestroy(): void {
+    this._stopVoicePoll();
+  }
 
   ngOnInit() {
     this.userId = this.route.snapshot.paramMap.get('userId') ?? '';
@@ -81,15 +95,19 @@ export class UserSessionPage implements OnInit {
    * sin destruir el componente.
    */
   ionViewWillEnter() {
+    console.log('[UserSession] ionViewWillEnter — userId:', this.userId);
     if (this.userId) {
       this.loadData();
       this.loadBoards();
+    } else {
+      console.warn('[UserSession] userId vacío, no se carga nada');
     }
   }
 
   // ── Carga de datos ──────────────────────────────────────────────────────────
 
   private async loadData(): Promise<void> {
+    console.log('[UserSession] loadData() start');
     this.isLoading = true;
     this.loadError = '';
 
@@ -97,12 +115,30 @@ export class UserSessionPage implements OnInit {
       const res = await firstValueFrom(this.userService.getUserById(this.userId));
       this.targetUser = res.user;
       this.avatarUrl  = this.buildSafeUrl(this.targetUser.image);
-      // Configurar TTS solo cuando es el propio usuario final (no un teacher/org navegando)
+      console.log('[UserSession] targetUser cargado — voiceMode:', this.targetUser?.voiceSettings?.voiceMode, '| customVoice status:', this.targetUser?.voiceSettings?.customVoice?.status);
+      // Configurar TTS con los ajustes del usuario objetivo (siempre, no solo fromLogin)
+      const vs = this.targetUser.voiceSettings;
       this.ttsSvc.setFromVoiceSettings(
-        this.fromLogin ? this.targetUser.voiceSettings : null,
+        this.fromLogin ? vs : null,
         this.fromLogin ? (this.targetUser.gender ?? '') : '',
       );
+      const customReady = vs?.voiceMode === 'custom' && vs?.customVoice?.status === 'ready';
+      this.aac.configureSoundSettings(
+        vs?.soundEnabled ?? true, vs?.voiceMode ?? 'catalog', customReady, this.userId,
+        vs?.catalogVoice?.voiceURI, vs?.catalogVoice?.speechRate,
+        vs?.catalogVoice?.speechPitch, vs?.catalogVoice?.speechVolume,
+        this.targetUser.gender ?? '',
+      );
+      if (customReady) {
+        this.aac.prewarmCache([
+          'salir', 'volver', 'mis objetivos', 'datos personales',
+          'estadísticas', 'tablero builder', 'tablero',
+        ]);
+      }
       await this.computePermissions();
+      // Verificar cobertura de caché (no bloquea la carga)
+      console.log('[UserSession] Llamando a checkVoiceCache()');
+      this.checkVoiceCache();
     } catch (err: unknown) {
       const status = (err as HttpErrorResponse)?.status;
       if (status === 401 || status === 403) {
@@ -127,6 +163,7 @@ export class UserSessionPage implements OnInit {
     try {
       const res = await firstValueFrom(this.boardService.getAssignedBoards(this.userId));
       this.assignedBoards = res.boards;
+      this.aac.prewarmCache(res.boards.map((b: Board) => b.name).filter(Boolean));
     } catch {
       this.boardsError = 'No se pudieron cargar los tableros.';
     } finally {
@@ -229,43 +266,115 @@ export class UserSessionPage implements OnInit {
     return this.targetUser?.surname ?? '';
   }
 
+  // ── Voz: banner de pre-calentado de caché ────────────────────────────────────
+
+  private async checkVoiceCache(): Promise<void> {
+    const vs = this.targetUser?.voiceSettings;
+    console.log('[checkVoiceCache] voiceMode:', vs?.voiceMode, '| status:', vs?.customVoice?.status);
+    if (vs?.voiceMode !== 'custom' || vs?.customVoice?.status !== 'ready') {
+      console.log('[checkVoiceCache] Saliendo: voz no lista o no es custom');
+      return;
+    }
+
+    // Limpiar poll anterior (si se entra/sale varias veces sin destruir el componente)
+    this._stopVoicePoll();
+
+    try {
+      const url = `${environment.apiUrl}/voice/${this.userId}/cache-status`;
+      console.log('[checkVoiceCache] Llamando a:', url);
+      const status: any = await firstValueFrom(this.http.get(url));
+      console.log('[checkVoiceCache] Respuesta cache-status:', status);
+
+      if (!status?.ready || status.missingCount === 0) {
+        console.log('[checkVoiceCache] Caché completa o voz no lista, no se muestra banner');
+        return;
+      }
+
+      this.voiceLoadingPct    = status.coveragePct ?? 0;
+      this.voiceLoadingBanner = true;
+      console.log('[checkVoiceCache] Banner activado —', status.missingCount, 'labels pendientes de', status.totalLabels);
+
+      // Lanzar prewarm en el backend
+      this.http.post(`${environment.apiUrl}/voice/${this.userId}/prewarm`, {}).subscribe({
+        next: () => console.log('[checkVoiceCache] Prewarm lanzado'),
+        error: (e) => console.warn('[checkVoiceCache] Error al lanzar prewarm:', e.status),
+      });
+
+      // Polling cada 12 s hasta cobertura completa
+      this._voicePollInterval = setInterval(async () => {
+        try {
+          const s: any = await firstValueFrom(
+            this.http.get(`${environment.apiUrl}/voice/${this.userId}/cache-status`)
+          );
+          this.voiceLoadingPct = s?.coveragePct ?? this.voiceLoadingPct;
+          console.log('[checkVoiceCache] Poll:', s?.cachedCount, '/', s?.totalLabels, '—', s?.coveragePct + '%');
+          if (!s?.ready || s.missingCount === 0) {
+            this.voiceLoadingBanner = false;
+            this._stopVoicePoll();
+            console.log('[checkVoiceCache] Caché completa, banner ocultado');
+          }
+        } catch { /* ignorar errores transitorios */ }
+      }, 12_000);
+
+    } catch (err: any) {
+      console.warn('[checkVoiceCache] Error al llamar cache-status:', err?.status, err?.message);
+    }
+  }
+
+  private _stopVoicePoll(): void {
+    if (this._voicePollInterval) {
+      clearInterval(this._voicePollInterval);
+      this._voicePollInterval = undefined;
+    }
+  }
+
+  // ── Voz ──────────────────────────────────────────────────────────────────────
+
+  private speakNav(text: string): void {
+    if (this.aac.customVoiceReady) {
+      this.aac.speakText(text);
+    } else {
+      this.ttsSvc.speakIfEnabled(text);
+    }
+  }
+
   // ── Navegación ───────────────────────────────────────────────────────────────
 
   goBack() {
     const viewer = this.authService.getCurrentUser();
     if (viewer?.type === 'user') {
-      this.ttsSvc.speakIfEnabled('salir');
+      this.speakNav('salir');
       this.authService.logout();
     } else if (viewer?.type === 'teacher' && viewer.professionalType) {
-      this.ttsSvc.speakIfEnabled('volver');
+      this.speakNav('volver');
       this.router.navigate(['/professional-session', viewer.id]);
     } else {
-      this.ttsSvc.speakIfEnabled('volver');
+      this.speakNav('volver');
       this.router.navigate(['/organization-dashboard']);
     }
   }
 
   goToObjectives() {
-    this.ttsSvc.speakIfEnabled('mis objetivos');
+    this.speakNav('mis objetivos');
     this.router.navigate(['/objectives-list'], {
       queryParams: { role: 'user', userId: this.userId, returnTo: '/user-session/' + this.userId },
     });
   }
 
   goToPersonalData() {
-    this.ttsSvc.speakIfEnabled('datos personales');
+    this.speakNav('datos personales');
     this.router.navigate(['/user-final-form', this.userId]);
   }
 
   goToStats() {
-    this.ttsSvc.speakIfEnabled('estadísticas');
+    this.speakNav('estadísticas');
     this.router.navigate(['/statistics-placeholder']);
   }
 
   /** Abre el board builder del usuario cuya sesión se está visualizando.
    *  creatorId = userId del perfil → el builder filtra por ese creador. */
   goToBoardBuilder() {
-    this.ttsSvc.speakIfEnabled('tablero builder');
+    this.speakNav('tablero builder');
     this.router.navigate(['/board-builder'], {
       queryParams: {
         returnTo:    '/user-session/' + this.userId,
@@ -283,7 +392,7 @@ export class UserSessionPage implements OnInit {
    * El Board Builder se accede únicamente desde el botón "Tablero Builder".
    */
   openBoard(board: Board): void {
-    this.ttsSvc.speakIfEnabled(board.name || 'tablero');
+    this.speakNav(board.name || 'tablero');
     this.router.navigate(['/communicator', board._id], {
       queryParams: {
         userId:   this.userId,
@@ -384,7 +493,7 @@ export class UserSessionPage implements OnInit {
   // ── Modo oculto ───────────────────────────────────────────────────────────────
 
   openBoardHidden(board: Board): void {
-    this.ttsSvc.speakIfEnabled(board.name || 'tablero');
+    this.speakNav(board.name || 'tablero');
     this.router.navigate(['/communicator', board._id], {
       queryParams: {
         userId:   this.userId,

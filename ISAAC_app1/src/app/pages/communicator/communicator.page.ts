@@ -297,6 +297,11 @@ export class CommunicatorPage implements OnInit, OnDestroy {
       const uid = (this.rootAutoPersonalize && this.userId) ? this.userId : undefined;
       const res = await firstValueFrom(this.boardSvc.getBoardById(boardId, uid));
       this.board = res.board;
+      // Pre-calentar caché TTS personalizada con todas las etiquetas del tablero
+      const labels = (res.board.cells ?? [])
+        .map((c: any) => c.pictogram?.sound || c.pictogram?.label)
+        .filter(Boolean);
+      this.aac.prewarmCache(labels);
     } catch {
       this.loadError = 'No se pudo cargar el tablero.';
     } finally {

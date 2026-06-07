@@ -199,10 +199,15 @@ exports.getObjectives = async (req, res) => {
 // Objetivos visibles para el familiar autenticado
 exports.getFamilyObjectives = async (req, res) => {
   try {
-    const viewer = await User.findById(req.userId).select('type');
+    const viewer = await User.findById(req.userId).select('type childrenAccess');
     if (viewer?.type !== 'parent') {
       return res.status(403).json({ error: 'Solo familiares pueden acceder a este endpoint' });
     }
+
+    // IDs de hijos accesibles para este familiar
+    const accessibleChildIds = new Set(
+      (viewer.childrenAccess ?? []).map(ca => ca.childId?.toString()).filter(Boolean)
+    );
 
     const objectives = await Objective.find({
       familyRecipientIds: req.userId,
@@ -213,7 +218,16 @@ exports.getFamilyObjectives = async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
-    res.json({ objectives: objectives.map(serializeList) });
+    // Serializar contando solo comentarios de hilos accesibles para este familiar
+    const serialized = objectives.map(o => {
+      const { comments, ...rest } = o;
+      const commentsCount = (comments ?? []).filter(
+        c => accessibleChildIds.has(c.targetUserId?.toString())
+      ).length;
+      return { ...rest, effectiveStatus: effectiveStatus(o), commentsCount };
+    });
+
+    res.json({ objectives: serialized });
   } catch (err) {
     console.error('getFamilyObjectives error:', err);
     res.status(500).json({ error: err.message || 'Error interno' });

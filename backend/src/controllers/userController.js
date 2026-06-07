@@ -1,5 +1,128 @@
 const mongoose = require('mongoose');
-const User = require('../models/User');
+const User  = require('../models/User');
+const Board = require('../models/Board');
+
+// ─── Helpers: personalización automática de tableros ─────────────────────────
+
+/**
+ * BFS desde tableros raíz siguiendo cell.action.targetBoardId y multiBoardSlots.boardId.
+ * Devuelve todos los tableros accesibles (raíz + subtableros).
+ */
+async function collectBoardsBFS(rootBoards) {
+  const visited = new Map();
+  const queue   = [...rootBoards];
+  for (const b of rootBoards) visited.set(String(b._id), b);
+
+  while (queue.length > 0) {
+    const board = queue.shift();
+    const linkedIds = [
+      ...(board.cells         ?? []).map(c => c.action?.targetBoardId),
+      ...(board.multiBoardSlots ?? []).map(s => s.boardId),
+    ].filter(id => id && !visited.has(String(id)));
+
+    if (linkedIds.length === 0) continue;
+
+    const subBoards = await Board.find({ _id: { $in: linkedIds } })
+      .select('_id cells multiBoardSlots').lean();
+
+    for (const sub of subBoards) {
+      visited.set(String(sub._id), sub);
+      queue.push(sub);
+    }
+  }
+  return [...visited.values()];
+}
+
+/**
+ * Para cada tablero de la lista, sustituye en sus celdas la imageUrl de los
+ * pictogramas cuyos label coincidan (case-insensitive) con algún customPictogram.
+ * Modifica la BD si hay cambios.
+ */
+async function applyPictoMapToBoards(boards, pictoMap) {
+  if (pictoMap.size === 0) return;
+  for (const board of boards) {
+    const cells = board.cells ?? [];
+    let changed = false;
+    const updatedCells = cells.map(cell => {
+      if (!cell.pictogram?.label) return cell;
+      const match = pictoMap.get(cell.pictogram.label.toLowerCase().trim());
+      if (!match) return cell;
+      changed = true;
+      return { ...cell, pictogram: { ...cell.pictogram, imageUrl: match.imageUrl, source: 'custom', id: String(match.id ?? '') } };
+    });
+    if (changed) {
+      await Board.findByIdAndUpdate(board._id, { $set: { cells: updatedCells } });
+    }
+  }
+}
+
+/**
+ * Aplica los customPictograms del usuario a todos sus tableros con autoPersonalize=true
+ * (raíz + subtableros por BFS). Se ejecuta en background; no bloquea la respuesta HTTP.
+ */
+async function applyCustomPictogramsToUserBoards(userId, customPictograms) {
+  if (!customPictograms?.length) return;
+
+  const pictoMap = new Map();
+  for (const p of customPictograms) {
+    if (p.label && p.imageUrl) pictoMap.set(p.label.toLowerCase().trim(), p);
+  }
+  if (pictoMap.size === 0) return;
+
+  const rootBoards = await Board.find({
+    autoPersonalize: true,
+    $or: [{ assignedUserIds: userId }, { userId }],
+  }).select('_id cells multiBoardSlots').lean();
+
+  if (rootBoards.length === 0) return;
+
+  const allBoards = await collectBoardsBFS(rootBoards);
+  await applyPictoMapToBoards(allBoards, pictoMap);
+  console.log(`[autoPersonalize] userId=${userId}: personalización aplicada en ${allBoards.length} tableros`);
+}
+
+/**
+ * Asigna el "Multitablero común" al nuevo usuario (si existe) y aplica
+ * la personalización si el usuario ya tiene pictogramas propios.
+ */
+async function assignCommonBoardToNewUser(userId, customPictograms) {
+  try {
+    // Búsqueda case-insensitive para tolerar variaciones de mayúsculas/tildes
+    const commonBoard = await Board.findOne({ name: /^multitablero\s+com[uú]n$/i });
+    console.log('[assignCommonBoard] Buscando "Multitablero común"... encontrado:', commonBoard
+      ? `id=${commonBoard._id} | boardRole=${commonBoard.boardRole} | visibleInProfile=${commonBoard.visibleInProfile}`
+      : 'NO ENCONTRADO');
+    if (!commonBoard) {
+      // Listar tableros existentes para diagnóstico
+      const allBoards = await Board.find({}).select('name boardRole visibleInProfile').lean();
+      console.warn('[assignCommonBoard] Tableros en BD:', allBoards.map(b => b.name));
+      return;
+    }
+    let dirty = false;
+    const alreadyAssigned = commonBoard.assignedUserIds.some(id => String(id) === String(userId));
+    if (!alreadyAssigned) {
+      commonBoard.assignedUserIds.push(userId);
+      if (!commonBoard.userId) commonBoard.userId = userId;
+      dirty = true;
+    }
+    // Garantizar que el tablero esté publicado (visibleInProfile=true) para que
+    // aparezca en la lista de tableros asignados del usuario
+    if (!commonBoard.visibleInProfile) {
+      commonBoard.visibleInProfile = true;
+      dirty = true;
+    }
+    if (dirty) await commonBoard.save();
+    console.log(`[createUser] "Multitablero común" asignado a userId=${userId}`);
+
+    if (customPictograms?.length > 0) {
+      await applyCustomPictogramsToUserBoards(userId, customPictograms);
+    }
+  } catch (err) {
+    console.warn('[createUser] Error al asignar Multitablero común:', err.message);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 const sanitizeUser = (user) => {
   if (!user) return null;
@@ -307,6 +430,11 @@ exports.createUser = async (req, res) => {
       await syncParentChildrenRelationship(user._id, user.hijos, []);
     }
 
+    // Asignar el "Multitablero común" siempre, antes de responder
+    if (user.type === 'user') {
+      await assignCommonBoardToNewUser(String(user._id), user.customPictograms ?? []);
+    }
+
     res.status(201).json({ user: sanitizeUser(user) });
   } catch (error) {
     console.error('Create user error:', error);
@@ -502,6 +630,10 @@ exports.addCustomPictogramToUserById = async (req, res) => {
     });
 
     await user.save();
+
+    // Aplicar en background la personalización en tableros con autoPersonalize
+    applyCustomPictogramsToUserBoards(userId, user.customPictograms)
+      .catch(err => console.warn('[addPictogram] Error en autoPersonalize:', err.message));
 
     res.status(201).json({
       message: 'Custom pictogram added successfully',
@@ -811,6 +943,10 @@ exports.addCustomPictogram = async (req, res) => {
     });
 
     await user.save();
+
+    // Aplicar en background la personalización en tableros con autoPersonalize
+    applyCustomPictogramsToUserBoards(String(user._id), user.customPictograms)
+      .catch(err => console.warn('[addPictogram] Error en autoPersonalize:', err.message));
 
     res.status(201).json({
       message: 'Custom pictogram added successfully',

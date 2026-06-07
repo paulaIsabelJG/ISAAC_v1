@@ -1,5 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { IonicModule } from '@ionic/angular';
+import { addIcons } from 'ionicons';
+import { chevronBackOutline } from 'ionicons/icons';
 
 /**
  * Cabecera de página reutilizable.
@@ -39,6 +41,7 @@ import { IonicModule } from '@ionic/angular';
   imports:     [IonicModule],
 })
 export class AppPageHeaderComponent {
+  constructor() { addIcons({ chevronBackOutline }); }
   /** Texto que aparece como título centrado. */
   @Input() title     = '';
 

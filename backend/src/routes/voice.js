@@ -19,5 +19,9 @@ router.get('/:userId/status',   vc.getVoiceStatus);
 router.delete('/:userId/custom', vc.deleteCustomVoice);
 // TTS con voz personalizada (devuelve audio WAV)
 router.post('/tts/speak',       vc.customSpeak);
+// Lanzar pre-calentado explícito (p.ej. nuevos tableros asignados)
+router.post('/:userId/prewarm',     vc.triggerPrewarm);
+// Diagnóstico: cobertura de caché
+router.get('/:userId/cache-status', vc.getCacheStatus);
 
 module.exports = router;

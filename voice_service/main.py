@@ -187,7 +187,15 @@ def synthesize_voice(body: SynthesizeRequest):
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
             tmp_path = tmp.name
 
+        print(f"[synthesize] texto ({len(text)} chars): {text!r}")
+        print(f"[synthesize] ES_SPEAKER_ID={ES_SPEAKER_ID}")
         tts_model.tts_to_file(text, ES_SPEAKER_ID, tmp_path, speed=1.0)
+
+        # Diagnóstico: duración del TTS base
+        import wave as _wave
+        with _wave.open(tmp_path) as _wf:
+            _dur = _wf.getnframes() / _wf.getframerate()
+        print(f"[synthesize] MeloTTS duración: {_dur:.2f} s  ({os.path.getsize(tmp_path)} bytes)")
 
         # 2. Conversión de color tonal (aplicar voz del usuario)
         target_se = torch.load(str(profile_path), map_location=DEVICE)

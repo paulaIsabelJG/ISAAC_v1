@@ -15,6 +15,30 @@ $text-dark:    #222222;
 $text-muted:   #6b5462;
 $card-bg:      #ffffff;
 
+// ── Banner de carga de voz personalizada ─────────────────────────────────────
+.us-voice-banner {
+  display:         flex;
+  align-items:     center;
+  gap:             10px;
+  background:      $mint-light;
+  border-bottom:   2px solid $mint;
+  padding:         10px 18px;
+  font-size:       13px;
+  color:           $mint-dark;
+  font-weight:     500;
+
+  .us-voice-spinner {
+    --color: #{$mint-dark};
+    width:   18px;
+    height:  18px;
+    flex-shrink: 0;
+  }
+
+  .us-voice-banner-text {
+    flex: 1;
+  }
+}
+
 // ── Header ────────────────────────────────────────────────────────────────────
 // .us-toolbar se mantiene para el header @if (fromLogin) que permanece raw
 .us-toolbar {

@@ -436,6 +436,38 @@ export class AacRuntimeService {
     }
   }
 
+  // ── Pre-calentado de caché TTS personalizada ─────────────────────────────
+
+  private _prewarmInProgress = false;
+
+  /**
+   * Sintetiza en background todos los textos recibidos para que queden en caché.
+   * Solo actúa cuando la voz personalizada está lista. Procesa uno a uno para no
+   * saturar el servicio Python (CPU-bound, un hilo de síntesis).
+   */
+  prewarmCache(labels: string[]): void {
+    if (!this.customVoiceReady || !this.customVoiceUserId || this._prewarmInProgress) return;
+
+    const unique = [...new Set(
+      labels.map(l => l?.trim().toLowerCase()).filter(Boolean)
+    )];
+    if (unique.length === 0) return;
+
+    this._prewarmInProgress = true;
+    const processNext = (idx: number) => {
+      if (idx >= unique.length) { this._prewarmInProgress = false; return; }
+      this.http.post(
+        `${this.apiUrl}/voice/tts/speak`,
+        { userId: this.customVoiceUserId, text: unique[idx] },
+        { responseType: 'arraybuffer' },
+      ).subscribe({
+        next:  () => processNext(idx + 1),
+        error: () => processNext(idx + 1),
+      });
+    };
+    processNext(0);
+  }
+
   private speakCustomVoice(text: string, onEnd?: () => void): void {
     this.stopCustomAudio();
     // audioCtx ya fue desbloqueado en speakText/speakTextAndThen (dentro del gesto)

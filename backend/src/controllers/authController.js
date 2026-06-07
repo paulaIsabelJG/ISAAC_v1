@@ -2,6 +2,7 @@ const jwt          = require('jsonwebtoken');
 const crypto       = require('crypto');
 const mongoose     = require('mongoose');
 const User         = require('../models/User');
+const Board        = require('../models/Board');
 const Phrase       = require('../models/Phrase');
 const RefreshToken = require('../models/RefreshToken');
 
@@ -85,6 +86,31 @@ exports.register = async (req, res) => {
     });
 
     await user.save();
+
+    // Asignar "Multitablero común" a todos los usuarios finales
+    if (user.type === 'user') {
+      try {
+        const commonBoard = await Board.findOne({ name: /^multitablero\s+com[uú]n$/i });
+        if (commonBoard) {
+          let dirty = false;
+          if (!commonBoard.assignedUserIds.some(id => String(id) === String(user._id))) {
+            commonBoard.assignedUserIds.push(user._id);
+            if (!commonBoard.userId) commonBoard.userId = user._id;
+            dirty = true;
+          }
+          if (!commonBoard.visibleInProfile) {
+            commonBoard.visibleInProfile = true;
+            dirty = true;
+          }
+          if (dirty) await commonBoard.save();
+          console.log(`[register] "Multitablero común" asignado a userId=${user._id}`);
+        } else {
+          console.warn('[register] "Multitablero común" no encontrado en BD');
+        }
+      } catch (boardErr) {
+        console.warn('[register] Error al asignar Multitablero común:', boardErr.message);
+      }
+    }
 
     res.status(201).json({
       message: 'User registered successfully',

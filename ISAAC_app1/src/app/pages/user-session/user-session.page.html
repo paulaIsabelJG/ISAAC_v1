@@ -39,6 +39,16 @@
 
   <!-- ── Contenido principal ───────────────────────────────────────────────── -->
   @else {
+
+    @if (voiceLoadingBanner) {
+      <div class="us-voice-banner">
+        <ion-spinner name="dots" class="us-voice-spinner"></ion-spinner>
+        <span class="us-voice-banner-text">
+          Preparando tu voz personalizada… {{ voiceLoadingPct }}%
+        </span>
+      </div>
+    }
+
     <div class="us-container">
 
       <!-- ── Cabecera del usuario ─────────────────────────────────────────── -->

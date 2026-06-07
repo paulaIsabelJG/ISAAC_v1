@@ -38,6 +38,25 @@ export class ObjectivesListPage implements OnInit {
 
   expandedObjectiveId: string | null = null;
 
+  // objectiveId → targetUserId → count (para calcular el badge en rol family)
+  private readonly threadCounts = new Map<string, Map<string, number>>();
+
+  updateThreadCount(objectiveId: string, targetUserId: string, count: number): void {
+    if (!this.threadCounts.has(objectiveId)) {
+      this.threadCounts.set(objectiveId, new Map());
+    }
+    this.threadCounts.get(objectiveId)!.set(targetUserId, count);
+  }
+
+  commentsCountFor(obj: Objective): number {
+    if (this.role !== 'family') return obj.commentsCount;
+    const tmap = this.threadCounts.get(obj._id);
+    if (!tmap || tmap.size === 0) return obj.commentsCount;
+    let sum = 0;
+    for (const v of tmap.values()) sum += v;
+    return sum;
+  }
+
   get viewerType():   string  { return this.authSvc.getCurrentUser()?.type ?? ''; }
   get currentUserId(): string { return this.authSvc.getCurrentUser()?.id  ?? ''; }
   get isCreator():    boolean { return this.role === 'creator'; }

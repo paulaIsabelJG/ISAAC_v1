@@ -156,8 +156,8 @@
                     <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
                   </svg>
                   Comentarios
-                  @if (obj.commentsCount > 0) {
-                    <span class="ol-comments-count">{{ obj.commentsCount }}</span>
+                  @if (commentsCountFor(obj) > 0) {
+                    <span class="ol-comments-count">{{ commentsCountFor(obj) }}</span>
                   }
                 </button>
               </div>
@@ -185,7 +185,8 @@
                         <app-objective-comments
                           [objectiveId]="obj._id"
                           [targetUserId]="u._id"
-                          [canComment]="true">
+                          [canComment]="true"
+                          (commentsCountChanged)="updateThreadCount(obj._id, u._id, $event)">
                         </app-objective-comments>
                       </div>
                     }

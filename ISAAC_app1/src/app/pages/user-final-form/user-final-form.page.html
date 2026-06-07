@@ -221,10 +221,12 @@
                 } @else {
                   <label class="field-label">Voz de los tableros asignados</label>
                   <select class="field-input voice-select"
-                          [value]="selectedVoiceURI"
                           (change)="onVoiceChange($event)">
                     @for (v of voices; track v.voiceURI) {
-                      <option [value]="v.voiceURI">{{ v.name }} ({{ v.lang }})</option>
+                      <option [value]="v.voiceURI"
+                              [selected]="v.voiceURI === selectedVoiceURI">
+                        {{ v.name }} ({{ v.lang }})
+                      </option>
                     }
                   </select>
                   <p class="voice-list-hint">Pulsa ▶ para escuchar cada voz antes de elegirla</p>
@@ -232,7 +234,7 @@
                     @for (v of voices; track v.voiceURI) {
                       <div class="voice-row"
                            [class.voice-row--selected]="v.voiceURI === selectedVoiceURI"
-                           (click)="selectedVoiceURI = v.voiceURI">
+                           (click)="selectedVoiceURI = v.voiceURI; _extraDirty = true">
                         <div class="voice-info">
                           <span class="voice-name">{{ v.name }}</span>
                           <span class="voice-meta">
@@ -357,7 +359,7 @@
                     @if (customVoiceConsent) {
                       <div class="record-prompt-block">
                         <p class="record-prompt-label">Lee en voz alta:</p>
-                        <p class="record-text">"Hola, esta es mi voz para comunicarme con esta aplicación. Gracias por ayudarme."</p>
+                        <p class="record-text">"Hola, esta es mi voz para comunicarme con esta aplicación. Me llamo y uso este sistema todos los días para expresarme. El sol sale cada mañana y el cielo es azul. Me gusta la música, los libros y pasear al aire libre. Gracias por ayudarme a comunicarme mejor."</p>
                       </div>
 
                       @if (customVoiceStep === 'idle') {
