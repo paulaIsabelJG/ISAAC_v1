@@ -21,6 +21,10 @@ import {
   ActionType,
   CircularControlsConfig,
   DEFAULT_CIRCULAR_CONTROLS_CONFIG,
+  PredictiveCircularConfig,
+  PredictiveCategory,
+  PredictivePictogram,
+  ArasaacResult,
 } from '../../services/board.service';
 import { WordType, FITZGERALD } from '../../shared/constants/fitzgerald';
 import { AacRuntimeService } from '../../services/aac-runtime.service';
@@ -272,6 +276,34 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   personalPicts: BackendPictogram[] = [];
   personalLoading = false;
 
+  // ── Circular predictivo: estado local ─────────────────────────────────────────
+  localPredictiveConfig: PredictiveCircularConfig | null = null;
+  isPredictiveConfigSaving = false;
+  /** Índice de la categoría cuya edición está expandida (-1 = ninguna). */
+  expandedCatIdx = -1;
+  /** Estado de búsqueda ARASAAC para el icono de la categoría en edición. */
+  catIconQuery    = '';
+  catIconResults: ArasaacResult[] = [];
+  catIconSearching = false;
+  private _catIconDeb: ReturnType<typeof setTimeout> | null = null;
+
+  /** Candidato predictivo seleccionado para edición en el panel derecho. */
+  selectedManualPict: { catIdx: number; pictIdx: number } | null = null;
+
+  get editingManualPictData(): PredictivePictogram | null {
+    if (!this.selectedManualPict || !this.localPredictiveConfig) return null;
+    const { catIdx, pictIdx } = this.selectedManualPict;
+    return this.localPredictiveConfig.categories[catIdx]?.manualPictograms?.[pictIdx] ?? null;
+  }
+
+  /** Estado de búsqueda ARASAAC para pictogramas candidatos manuales. */
+  activePictSearchCatIdx = -1;   // índice de la categoría con búsqueda abierta (-1=ninguna)
+  manualPictQuery        = '';
+  manualPictResults: ArasaacResult[] = [];
+  manualPictSearching    = false;
+  manualPictDupeWarnIdx  = -1;   // índice de categoría con aviso de duplicado activo
+  private _manualPictDeb: ReturnType<typeof setTimeout> | null = null;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -350,6 +382,17 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
           res.board.circularControlsConfig ?? this.previewCircularControlsConfig,
       };
       this.syncConfigFromBoard();
+      // Inicializar configuración predictiva local desde el board (o vacío si es predictivo sin config)
+      if (this.board.isPredictiveCircular) {
+        this.localPredictiveConfig = this.board.predictiveCircularConfig
+          ? JSON.parse(JSON.stringify(this.board.predictiveCircularConfig))
+          : { suggestionsPerCategory: 8, categories: [] };
+      } else {
+        this.localPredictiveConfig = null;
+      }
+      this.expandedCatIdx  = -1;
+      this.catIconQuery    = '';
+      this.catIconResults  = [];
       const assignedIds = this.board.assignedUserIds ?? [];
       this.loadPersonalPicts(assignedIds[0] || this.board.userId);
       if (this.isMultiBoard) {
@@ -676,10 +719,11 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
     }
 
     // Siempre nuevo objeto → ngOnChanges del panel detecta el cambio
-    this.selectedCell = { row, col };
-    const existing    = this.getCellData(row, col);
-    this.cellData     = existing;
-    this.isEditingCell = !!existing?.pictogram;
+    this.selectedCell       = { row, col };
+    this.selectedManualPict = null;
+    const existing          = this.getCellData(row, col);
+    this.cellData           = existing;
+    this.isEditingCell      = !!existing?.pictogram;
   }
 
   // ── Guardar/eliminar celda (delegado desde BoardCellPanelComponent) ───────────
@@ -956,6 +1000,288 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
       })).present();
     } finally {
       this.sidebarSaving = false;
+    }
+  }
+
+  // ── Circular predictivo: getters y métodos ────────────────────────────────────
+
+  get isPredictiveCircular(): boolean {
+    return !!this.board?.isPredictiveCircular;
+  }
+
+  getBoardName(boardId: string | null | undefined): string {
+    if (!boardId) return '';
+    return this.userBoards.find(b => b._id === boardId)?.name ?? boardId;
+  }
+
+  /**
+   * Devuelve un board "visual" donde los slots exteriores del circular están
+   * rellenos con los iconos/colores de las categorías predictivas.
+   * Solo se usa en modo edición para preview — nunca se guarda ni afecta a board.cells.
+   */
+  get circularDisplayBoard(): Board | null {
+    if (!this.board) return null;
+    if (
+      !this.isPredictiveCircular ||
+      !this.localPredictiveConfig?.categories?.length
+    ) {
+      return this.board;
+    }
+    const n = this.board.circleSlots ?? 8;
+    const cats = this.localPredictiveConfig.categories;
+
+    // Celdas sintéticas: una por categoría, mapeadas a slot i (row=i, col=0)
+    const syntheticCells: BoardCell[] = cats.slice(0, n).map((cat, i) => ({
+      row: i,
+      col: 0,
+      pictogram: {
+        source:            (cat.icon?.imageUrl ? 'arasaac' : 'new') as 'arasaac' | 'new',
+        id:                cat.icon?.arasaacId || cat.id,
+        label:             cat.label || 'Categoría',
+        imageUrl:          cat.icon?.imageUrl || '',
+        sound:             cat.label || '',
+        tags:              [],
+        description:       '',
+        wordType:          'misc' as const,
+        fitzgeraldEnabled: false,
+        color:             cat.color || '#9c27b0',
+      },
+      action: { type: 'voice' as const, targetBoardId: null },
+    }));
+
+    // Conservar el resto de celdas (centro, columna ubicación, slots sin categoría)
+    const takenRows = new Set(syntheticCells.map(c => c.row));
+    const otherCells = this.board.cells.filter(
+      c => c.col !== 0 || !takenRows.has(c.row),
+    );
+
+    return { ...this.board, cells: [...syntheticCells, ...otherCells] };
+  }
+
+  addPredictiveCategory(): void {
+    if (!this.localPredictiveConfig) return;
+    const newCat: PredictiveCategory = {
+      id:               'cat_' + Date.now(),
+      label:            '',
+      icon:             { label: '', imageUrl: '', arasaacId: '', wordType: '' },
+      color:            '#9c27b0',
+      sourceType:       'manual',
+      sourceBoardId:    null,
+      manualPictograms: [],
+    };
+    this.localPredictiveConfig.categories = [...this.localPredictiveConfig.categories, newCat];
+    this.expandedCatIdx         = this.localPredictiveConfig.categories.length - 1;
+    this.catIconQuery            = '';
+    this.catIconResults          = [];
+    this.activePictSearchCatIdx  = -1;
+    this.manualPictQuery         = '';
+    this.manualPictResults       = [];
+    this.manualPictDupeWarnIdx   = -1;
+  }
+
+  removePredictiveCategory(index: number): void {
+    if (!this.localPredictiveConfig) return;
+    this.localPredictiveConfig.categories = this.localPredictiveConfig.categories.filter((_, i) => i !== index);
+    if (this.expandedCatIdx === index) { this.expandedCatIdx = -1; }
+    else if (this.expandedCatIdx > index) { this.expandedCatIdx--; }
+  }
+
+  movePredictiveCategoryUp(index: number): void {
+    if (!this.localPredictiveConfig || index === 0) return;
+    const cats = [...this.localPredictiveConfig.categories];
+    [cats[index - 1], cats[index]] = [cats[index], cats[index - 1]];
+    this.localPredictiveConfig.categories = cats;
+    if (this.expandedCatIdx === index) { this.expandedCatIdx = index - 1; }
+    else if (this.expandedCatIdx === index - 1) { this.expandedCatIdx = index; }
+  }
+
+  movePredictiveCategoryDown(index: number): void {
+    if (!this.localPredictiveConfig) return;
+    const cats = [...this.localPredictiveConfig.categories];
+    if (index >= cats.length - 1) return;
+    [cats[index], cats[index + 1]] = [cats[index + 1], cats[index]];
+    this.localPredictiveConfig.categories = cats;
+    if (this.expandedCatIdx === index) { this.expandedCatIdx = index + 1; }
+    else if (this.expandedCatIdx === index + 1) { this.expandedCatIdx = index; }
+  }
+
+  toggleExpandCat(index: number): void {
+    this.expandedCatIdx = this.expandedCatIdx === index ? -1 : index;
+    this.catIconQuery          = '';
+    this.catIconResults        = [];
+    this.activePictSearchCatIdx = -1;
+    this.manualPictQuery        = '';
+    this.manualPictResults      = [];
+    this.manualPictDupeWarnIdx  = -1;
+  }
+
+  updateCatField(index: number, field: keyof PredictiveCategory, value: unknown): void {
+    if (!this.localPredictiveConfig) return;
+    const cats = [...this.localPredictiveConfig.categories];
+    cats[index] = { ...cats[index], [field]: value };
+    this.localPredictiveConfig.categories = cats;
+  }
+
+  onCatIconInput(val: string): void {
+    this.catIconQuery = val;
+    if (this._catIconDeb) clearTimeout(this._catIconDeb);
+    if (!val.trim()) { this.catIconResults = []; return; }
+    this._catIconDeb = setTimeout(() => this.doSearchCatIcon(val.trim()), 400);
+  }
+
+  private doSearchCatIcon(q: string): void {
+    this.catIconSearching = true;
+    firstValueFrom(this.boardSvc.searchArasaac(q)).then(
+      data => { this.catIconResults = Array.isArray(data) ? data.slice(0, 16) : []; },
+      ()   => { this.catIconResults = []; },
+    ).finally(() => { this.catIconSearching = false; });
+  }
+
+  selectCatIcon(catIdx: number, result: ArasaacResult): void {
+    if (!this.localPredictiveConfig) return;
+    const cats = [...this.localPredictiveConfig.categories];
+    cats[catIdx] = {
+      ...cats[catIdx],
+      icon: {
+        label:     result.label,
+        imageUrl:  result.imageUrl,
+        arasaacId: String(result.id),
+        wordType:  '',
+      },
+    };
+    this.localPredictiveConfig.categories = cats;
+    this.catIconQuery   = result.label;
+    this.catIconResults = [];
+  }
+
+  clearCatIcon(catIdx: number): void {
+    if (!this.localPredictiveConfig) return;
+    const cats = [...this.localPredictiveConfig.categories];
+    cats[catIdx] = { ...cats[catIdx], icon: { label: '', imageUrl: '', arasaacId: '', wordType: '' } };
+    this.localPredictiveConfig.categories = cats;
+    this.catIconQuery   = '';
+    this.catIconResults = [];
+  }
+
+  // ── Pictogramas candidatos manuales ──────────────────────────────────────────
+
+  toggleManualPictSearch(catIdx: number): void {
+    if (this.activePictSearchCatIdx === catIdx) {
+      this.activePictSearchCatIdx = -1;
+    } else {
+      this.activePictSearchCatIdx = catIdx;
+    }
+    this.manualPictQuery       = '';
+    this.manualPictResults     = [];
+    this.manualPictDupeWarnIdx = -1;
+  }
+
+  onManualPictInput(val: string): void {
+    this.manualPictQuery = val;
+    if (this._manualPictDeb) clearTimeout(this._manualPictDeb);
+    if (!val.trim() || val.length < 2) { this.manualPictResults = []; return; }
+    this._manualPictDeb = setTimeout(() => this.doSearchManualPict(val.trim()), 400);
+  }
+
+  private doSearchManualPict(q: string): void {
+    this.manualPictSearching = true;
+    firstValueFrom(this.boardSvc.searchArasaac(q)).then(
+      data => { this.manualPictResults = Array.isArray(data) ? data.slice(0, 24) : []; },
+      ()   => { this.manualPictResults = []; },
+    ).finally(() => { this.manualPictSearching = false; });
+  }
+
+  addManualPictogram(catIdx: number, result: ArasaacResult): void {
+    if (!this.localPredictiveConfig) return;
+    const cats     = [...this.localPredictiveConfig.categories];
+    const cat      = cats[catIdx];
+    const existing = cat.manualPictograms ?? [];
+    const norm     = this.normalizePictLabel(result.label);
+
+    if (existing.some(p => this.normalizePictLabel(p.label) === norm)) {
+      this.manualPictDupeWarnIdx = catIdx;
+      setTimeout(() => { this.manualPictDupeWarnIdx = -1; }, 3000);
+      return;
+    }
+
+    const wordType = this.inferWordTypeFromKw(result.keywords ?? []);
+    const newPict: PredictivePictogram = {
+      label:             result.label,
+      imageUrl:          result.imageUrl,
+      arasaacId:         String(result.id ?? ''),
+      wordType,
+      color:             FITZGERALD[wordType as WordType] ?? '#f5f5f5',
+      fitzgeraldEnabled: true,
+      action:            { type: 'voice' },
+    };
+    cats[catIdx] = { ...cat, manualPictograms: [...existing, newPict] };
+    this.localPredictiveConfig.categories = cats;
+    this.manualPictDupeWarnIdx            = -1;
+  }
+
+  removeManualPictogram(catIdx: number, pictIdx: number): void {
+    if (!this.localPredictiveConfig) return;
+    if (this.selectedManualPict?.catIdx === catIdx && this.selectedManualPict?.pictIdx === pictIdx) {
+      this.selectedManualPict = null;
+    }
+    const cats = [...this.localPredictiveConfig.categories];
+    cats[catIdx] = {
+      ...cats[catIdx],
+      manualPictograms: (cats[catIdx].manualPictograms ?? []).filter((_, i) => i !== pictIdx),
+    };
+    this.localPredictiveConfig.categories = cats;
+  }
+
+  selectManualPictogram(catIdx: number, pictIdx: number): void {
+    this.selectedCell       = null;
+    this.selectedManualPict = { catIdx, pictIdx };
+  }
+
+  onSaveManualPict(updated: PredictivePictogram): void {
+    if (!this.selectedManualPict || !this.localPredictiveConfig) return;
+    const { catIdx, pictIdx }  = this.selectedManualPict;
+    const cats                 = [...this.localPredictiveConfig.categories];
+    const picts                = [...(cats[catIdx].manualPictograms ?? [])];
+    picts[pictIdx]             = updated;
+    cats[catIdx]               = { ...cats[catIdx], manualPictograms: picts };
+    this.localPredictiveConfig.categories = cats;
+    void this.savePredictiveConfig();
+  }
+
+  private normalizePictLabel(label: string): string {
+    return (label ?? '').toLowerCase().trim();
+  }
+
+  private inferWordTypeFromKw(keywords: string[]): WordType {
+    const kw = keywords.map(k => k.toLowerCase());
+    if (kw.some(k => k.includes('verb')))                               return 'verb';
+    if (kw.some(k => k.includes('pronoun') || k.includes('pronombre'))) return 'pronoun';
+    if (kw.some(k => k.includes('adject') || k.includes('adjetiv') || k.includes('descript'))) return 'descriptor';
+    if (kw.some(k => k.includes('social') || k.includes('saludo')))    return 'social';
+    if (kw.some(k => k.includes('noun')   || k.includes('sust')  || k.includes('nombre')))    return 'noun';
+    return 'misc';
+  }
+
+  async savePredictiveConfig(): Promise<void> {
+    if (!this.board || !this.localPredictiveConfig) return;
+    this.isPredictiveConfigSaving = true;
+    try {
+      const res = await firstValueFrom(
+        this.boardSvc.updateBoard(this.boardId, {
+          isPredictiveCircular:     true,
+          predictiveCircularConfig: this.localPredictiveConfig,
+        }),
+      );
+      this.board = { ...this.board, ...res.board };
+      (await this.toastCtrl.create({
+        message: '✓ Configuración predictiva guardada', duration: 1800, color: 'success', position: 'top',
+      })).present();
+    } catch {
+      (await this.toastCtrl.create({
+        message: 'Error al guardar la configuración predictiva.', duration: 2500, color: 'danger', position: 'top',
+      })).present();
+    } finally {
+      this.isPredictiveConfigSaving = false;
     }
   }
 

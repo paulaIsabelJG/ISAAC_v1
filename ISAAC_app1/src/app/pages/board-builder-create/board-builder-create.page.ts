@@ -89,6 +89,10 @@ export class BoardBuilderCreatePage implements OnInit {
     return !!this.form?.get('locationColumnEnabled')?.value;
   }
 
+  get isPredictiveCircularChecked(): boolean {
+    return !!this.form?.get('isPredictiveCircular')?.value;
+  }
+
   /** Nombre del creador a mostrar en el formulario (contexto, no sesión). */
   get creatorName(): string {
     return this.contextCreatorName || this.authSvc.getCurrentUser()?.name || '';
@@ -123,6 +127,7 @@ export class BoardBuilderCreatePage implements OnInit {
       autoPersonalize:        [false],
       iaRows:                 [5,  [Validators.min(1), Validators.max(20)]],
       iaCols:                 [1,  [Validators.min(1), Validators.max(5)]],
+      isPredictiveCircular:   [false],
     });
   }
 
@@ -209,6 +214,7 @@ export class BoardBuilderCreatePage implements OnInit {
       autoPersonalize:       false,
       iaRows:                5,
       iaCols:                1,
+      isPredictiveCircular:  false,
     });
 
   }
@@ -292,6 +298,7 @@ export class BoardBuilderCreatePage implements OnInit {
       name, shape, rows, columns,
       circleSlots, locationColumnEnabled, locationColumnSlots,
       predictorEnabled, aiRewriteEnabled, autoPersonalize, iaRows, iaCols,
+      isPredictiveCircular,
     } = this.form.value;
 
     const userId = this.cfgAssignedUserIds[0];
@@ -314,6 +321,13 @@ export class BoardBuilderCreatePage implements OnInit {
           assignedUserIds:  this.cfgAssignedUserIds,
           boardRole:        this.cfgBoardRole,
           contextCreatorId: this.contextCreatorId || undefined,
+          // Circular predictivo
+          ...(shape === 'circular' ? {
+            isPredictiveCircular: !!isPredictiveCircular,
+            ...(isPredictiveCircular ? {
+              predictiveCircularConfig: { suggestionsPerCategory: 8, categories: [] },
+            } : {}),
+          } : {}),
           // Multitablero
           ...(isMulti ? {
             slotCount:       this.cfgSlotCount,

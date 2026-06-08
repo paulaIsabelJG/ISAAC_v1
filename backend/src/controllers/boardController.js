@@ -291,11 +291,13 @@ exports.createBoard = async (req, res) => {
       locationColumnEnabled, locationColumnSlots,
       predictorEnabled, aiRewriteEnabled, iaRows, iaCols, imageUrl,
       boardRole,
-      autoPersonalize,    // personalización automática de pictogramas al cargar por usuario
-      contextCreatorId,   // opcional: ID del creador de contexto (builder que se está editando)
-      assignedUserIds,    // nuevo: array de IDs de usuarios asignados (1-N)
-      slotCount,          // multitablero: número de huecos (2 | 3 | 4)
-      multiBoardSlots,    // multitablero: [{slotId, boardId}]
+      autoPersonalize,          // personalización automática de pictogramas al cargar por usuario
+      contextCreatorId,         // opcional: ID del creador de contexto (builder que se está editando)
+      assignedUserIds,          // nuevo: array de IDs de usuarios asignados (1-N)
+      slotCount,                // multitablero: número de huecos (2 | 3 | 4)
+      multiBoardSlots,          // multitablero: [{slotId, boardId}]
+      isPredictiveCircular,     // circular predictivo inteligente
+      predictiveCircularConfig, // configuración de categorías predictivas
     } = req.body;
 
     // Resolver lista efectiva de usuarios asignados.
@@ -404,6 +406,17 @@ exports.createBoard = async (req, res) => {
         slotCount:       slotCount || 2,
         multiBoardSlots: Array.isArray(multiBoardSlots) ? multiBoardSlots : [],
       } : {}),
+      // Circular predictivo inteligente: solo en tableros circulares principales
+      ...(shape === 'circular' && !isSecondary ? {
+        isPredictiveCircular: !!isPredictiveCircular,
+        ...(isPredictiveCircular ? {
+          predictiveCircularConfig: {
+            suggestionsPerCategory: predictiveCircularConfig?.suggestionsPerCategory ?? 8,
+            categories: Array.isArray(predictiveCircularConfig?.categories)
+              ? predictiveCircularConfig.categories : [],
+          },
+        } : {}),
+      } : {}),
       cells: [],
     });
 
@@ -434,9 +447,13 @@ exports.updateBoard = async (req, res) => {
       locationColumnEnabled, locationColumnSlots,
       predictorEnabled, aiRewriteEnabled, iaRows, iaCols, cells,
       boardRole, visibleInProfile, profileName, profileImage, profileDescription,
-      autoPersonalize,  // personalización automática al publicar
-      assignedUserIds,  // nuevo: array de usuarios asignados (1-N)
+      autoPersonalize,          // personalización automática al publicar
+      assignedUserIds,          // nuevo: array de usuarios asignados (1-N)
       slotCount, multiBoardSlots, multiBoardLayout, multiBoardIaPosition, // multitablero
+      controlsConfig,           // configuración de la barra AAC (visibleButtons + order)
+      circularControlsConfig,   // configuración de barras circulares (topBar + rightBar)
+      isPredictiveCircular,     // circular predictivo inteligente
+      predictiveCircularConfig, // categorías y config del predictor circular
     } = req.body;
     // (Si el body incluyese createdBy, se descarta silenciosamente al no desestructurarlo)
 
@@ -506,6 +523,35 @@ exports.updateBoard = async (req, res) => {
     if (profileName           !== undefined) board.profileName           = profileName;
     if (profileImage          !== undefined) board.profileImage          = profileImage;
     if (profileDescription    !== undefined) board.profileDescription    = profileDescription;
+    // Barra AAC: solo en tableros principales
+    if (!isSecondary && controlsConfig !== undefined && controlsConfig !== null) {
+      board.controlsConfig = {
+        visibleButtons: Array.isArray(controlsConfig.visibleButtons) ? controlsConfig.visibleButtons : [],
+        order:          Array.isArray(controlsConfig.order)          ? controlsConfig.order          : [],
+      };
+      board.markModified('controlsConfig');
+    }
+    // Barras circulares: solo en tableros circulares principales
+    if (!isSecondary && circularControlsConfig !== undefined && circularControlsConfig !== null) {
+      board.circularControlsConfig = {
+        topBar:         Array.isArray(circularControlsConfig.topBar)         ? circularControlsConfig.topBar         : [],
+        rightBar:       Array.isArray(circularControlsConfig.rightBar)       ? circularControlsConfig.rightBar       : [],
+        visibleButtons: Array.isArray(circularControlsConfig.visibleButtons) ? circularControlsConfig.visibleButtons : [],
+      };
+      board.markModified('circularControlsConfig');
+    }
+    // Circular predictivo: solo en tableros circulares principales
+    if (!isSecondary && isPredictiveCircular !== undefined) {
+      board.isPredictiveCircular = !!isPredictiveCircular;
+    }
+    if (!isSecondary && predictiveCircularConfig !== undefined && predictiveCircularConfig !== null) {
+      board.predictiveCircularConfig = {
+        suggestionsPerCategory: predictiveCircularConfig.suggestionsPerCategory ?? 8,
+        categories: Array.isArray(predictiveCircularConfig.categories)
+          ? predictiveCircularConfig.categories : [],
+      };
+      board.markModified('predictiveCircularConfig');
+    }
     if (cells                 !== undefined) {
       board.cells = cells;
       board.markModified('cells');

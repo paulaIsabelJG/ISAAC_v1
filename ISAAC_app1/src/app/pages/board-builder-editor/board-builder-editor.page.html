@@ -168,7 +168,7 @@
                 <!-- Fila: tablero circular + barra derecha simulada -->
                 <div class="bbe-circ-edit-row">
                   <app-board-circular
-                    [board]="board"
+                    [board]="circularDisplayBoard"
                     mode="edit"
                     [circularLayout]="true"
                     [centerLocked]="isSecondaryCircular"
@@ -387,6 +387,313 @@
 
           </div><!-- /bbe-comm-wrapper -->
         </div><!-- /bbe-comm-outer -->
+
+        <!-- ── PANEL: Configuración circular predictiva ───────────────────── -->
+        @if (isCircular && isPredictiveCircular && localPredictiveConfig) {
+          <div class="bbe-pred-panel">
+
+            <!-- Cabecera sticky -->
+            <div class="bbe-pred-header">
+              <svg class="bbe-pred-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/>
+                <line x1="12" y1="3" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="21"/>
+                <line x1="3" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="21" y2="12"/>
+              </svg>
+              <span class="bbe-pred-title">Configuración circular predictiva</span>
+              <button class="bbe-pred-save-btn"
+                      (click)="savePredictiveConfig()"
+                      [disabled]="isPredictiveConfigSaving">
+                @if (isPredictiveConfigSaving) {
+                  <ion-spinner name="crescent" style="width:13px;height:13px"></ion-spinner>
+                } @else {
+                  Guardar
+                }
+              </button>
+            </div>
+
+            <div class="bbe-pred-body">
+
+              <!-- Sugerencias por categoría -->
+              <div class="bbe-pred-field-row">
+                <label class="bbe-pred-lbl">Sugerencias por categoría</label>
+                <input type="number" class="bbe-pred-num"
+                       [(ngModel)]="localPredictiveConfig.suggestionsPerCategory"
+                       min="1" max="20"/>
+              </div>
+
+              <!-- Aviso máximo de categorías -->
+              @if ((localPredictiveConfig.categories?.length ?? 0) > 8) {
+                <p class="bbe-pred-warn">Se recomienda un máximo de 8 categorías para mantener la claridad visual.</p>
+              }
+
+              <!-- Cabecera de lista de categorías -->
+              <div class="bbe-pred-cats-bar">
+                <span class="bbe-pred-lbl">Categorías ({{ localPredictiveConfig.categories?.length ?? 0 }})</span>
+                <button class="bbe-pred-add-btn" (click)="addPredictiveCategory()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                  Añadir categoría
+                </button>
+              </div>
+
+              <!-- Lista de categorías -->
+              @for (cat of localPredictiveConfig.categories; track cat.id; let i = $index) {
+                <div class="bbe-pred-cat" [class.bbe-pred-cat--expanded]="expandedCatIdx === i">
+
+                  <!-- Fila de resumen (siempre visible) -->
+                  <div class="bbe-pred-cat-row" (click)="toggleExpandCat(i)">
+                    <div class="bbe-pred-cat-thumb" [style.background]="cat.color || '#9c27b0'">
+                      @if (cat.icon?.imageUrl) {
+                        <img [src]="cat.icon.imageUrl" [alt]="cat.icon.label"/>
+                      } @else {
+                        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" width="14" height="14">
+                          <circle cx="12" cy="12" r="9"/>
+                        </svg>
+                      }
+                    </div>
+                    <span class="bbe-pred-cat-name">{{ cat.label || 'Sin nombre' }}</span>
+                    <span class="bbe-pred-cat-source">
+                      @if (cat.sourceType === 'board') { Tablero }
+                      @else { {{ cat.manualPictograms?.length ?? 0 }} candidato(s) }
+                    </span>
+                    <div class="bbe-pred-cat-btns">
+                      <button class="bbe-pred-cat-btn" [disabled]="i === 0"
+                              (click)="$event.stopPropagation(); movePredictiveCategoryUp(i)" title="Subir">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><polyline points="18 15 12 9 6 15"/></svg>
+                      </button>
+                      <button class="bbe-pred-cat-btn"
+                              [disabled]="i === localPredictiveConfig.categories.length - 1"
+                              (click)="$event.stopPropagation(); movePredictiveCategoryDown(i)" title="Bajar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><polyline points="6 9 12 15 18 9"/></svg>
+                      </button>
+                      <button class="bbe-pred-cat-btn bbe-pred-cat-btn--del"
+                              (click)="$event.stopPropagation(); removePredictiveCategory(i)" title="Eliminar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
+                          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Cuerpo de edición (solo visible cuando expandida) -->
+                  @if (expandedCatIdx === i) {
+                    <div class="bbe-pred-cat-body">
+
+                      <!-- Nombre -->
+                      <div class="bbe-pred-field-row">
+                        <label class="bbe-pred-lbl">Nombre de categoría</label>
+                        <input type="text" class="bbe-pred-input"
+                               [value]="cat.label"
+                               (input)="updateCatField(i, 'label', $any($event.target).value)"
+                               placeholder="Ej: Ayuda"/>
+                      </div>
+
+                      <!-- Color -->
+                      <div class="bbe-pred-field-row">
+                        <label class="bbe-pred-lbl">Color</label>
+                        <div class="bbe-pred-color-row">
+                          <input type="color" class="bbe-pred-color"
+                                 [value]="cat.color || '#9c27b0'"
+                                 (input)="updateCatField(i, 'color', $any($event.target).value)"/>
+                          <span class="bbe-pred-color-val">{{ cat.color || '#9c27b0' }}</span>
+                        </div>
+                      </div>
+
+                      <!-- Icono de categoría (búsqueda ARASAAC) -->
+                      <div class="bbe-pred-icon-section">
+                        <label class="bbe-pred-lbl">Icono de categoría</label>
+                        @if (cat.icon?.imageUrl) {
+                          <div class="bbe-pred-icon-current">
+                            <img [src]="cat.icon.imageUrl" [alt]="cat.icon.label" class="bbe-pred-icon-img"/>
+                            <span>{{ cat.icon.label }}</span>
+                            <button class="bbe-pred-icon-clear" (click)="clearCatIcon(i)">Quitar</button>
+                          </div>
+                        }
+                        <div class="bbe-pred-search-row">
+                          <input type="text" class="bbe-pred-input"
+                                 [value]="catIconQuery"
+                                 (input)="onCatIconInput($any($event.target).value)"
+                                 placeholder="Buscar icono en ARASAAC…"/>
+                          @if (catIconSearching) {
+                            <ion-spinner name="crescent" style="width:16px;height:16px;margin-left:6px"></ion-spinner>
+                          }
+                        </div>
+                        @if (catIconResults.length > 0) {
+                          <div class="bbe-pred-icon-results">
+                            @for (r of catIconResults; track r.id) {
+                              <button class="bbe-pred-icon-result" (click)="selectCatIcon(i, r)" [title]="r.label">
+                                <img [src]="r.imageUrl" [alt]="r.label"/>
+                                <span>{{ r.label }}</span>
+                              </button>
+                            }
+                          </div>
+                        }
+                      </div>
+
+                      <!-- Fuente de pictogramas -->
+                      <div class="bbe-pred-field-row">
+                        <label class="bbe-pred-lbl">Fuente de pictogramas</label>
+                        <div class="bbe-pred-source-btns">
+                          <button class="bbe-pred-source-btn"
+                                  [class.bbe-pred-source-btn--active]="cat.sourceType === 'manual'"
+                                  (click)="updateCatField(i, 'sourceType', 'manual')">
+                            Seleccionar manualmente
+                          </button>
+                          <button class="bbe-pred-source-btn"
+                                  [class.bbe-pred-source-btn--active]="cat.sourceType === 'board'"
+                                  (click)="updateCatField(i, 'sourceType', 'board')">
+                            Usar tablero existente
+                          </button>
+                        </div>
+                      </div>
+
+                      <!-- Tablero fuente (si sourceType=board) -->
+                      @if (cat.sourceType === 'board') {
+                        <div class="bbe-pred-field-row">
+                          <label class="bbe-pred-lbl">Tablero fuente</label>
+                          @if (userBoards.length === 0) {
+                            <p class="bbe-pred-empty">No hay tableros disponibles.</p>
+                          } @else {
+                            <select class="bbe-pred-select"
+                                    [value]="cat.sourceBoardId ?? ''"
+                                    (change)="updateCatField(i, 'sourceBoardId', $any($event.target).value || null)">
+                              <option value="">— Seleccionar tablero —</option>
+                              @for (b of userBoards; track b._id) {
+                                <option [value]="b._id">{{ b.name }}</option>
+                              }
+                            </select>
+                            @if (cat.sourceBoardId) {
+                              <p class="bbe-pred-hint">Fuente: {{ getBoardName(cat.sourceBoardId) }}</p>
+                            }
+                          }
+                        </div>
+                      }
+
+                      <!-- Pictogramas candidatos manuales (si sourceType=manual) -->
+                      @if (cat.sourceType === 'manual') {
+                        <div class="bbe-pred-manual">
+
+                          <!-- Cabecera: contador + botón añadir -->
+                          <div class="bbe-pred-cats-bar">
+                            <label class="bbe-pred-lbl">
+                              Pictogramas candidatos
+                              <span class="bbe-pred-cat-count">({{ cat.manualPictograms?.length ?? 0 }})</span>
+                            </label>
+                            <button class="bbe-pred-add-btn"
+                                    (click)="toggleManualPictSearch(i)"
+                                    [class.bbe-pred-add-btn--active]="activePictSearchCatIdx === i">
+                              @if (activePictSearchCatIdx === i) {
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13">
+                                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
+                                Cerrar búsqueda
+                              } @else {
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13">
+                                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                                </svg>
+                                Añadir pictograma candidato
+                              }
+                            </button>
+                          </div>
+
+                          <!-- Texto de ayuda -->
+                          <p class="bbe-pred-hint">
+                            Estos pictogramas forman el conjunto de candidatos. Durante el uso, el sistema mostrará los más relevantes según el historial y el contexto.
+                          </p>
+
+                          <!-- Panel de búsqueda inline -->
+                          @if (activePictSearchCatIdx === i) {
+                            <div class="bbe-pred-manual-search">
+                              <div class="bbe-pred-search-row">
+                                <input type="text"
+                                       class="bbe-pred-input"
+                                       placeholder="Buscar pictograma ARASAAC…"
+                                       [value]="manualPictQuery"
+                                       (input)="onManualPictInput($any($event.target).value)"
+                                       autocomplete="off"/>
+                                @if (manualPictSearching) {
+                                  <ion-spinner name="crescent" color="secondary" style="width:16px;height:16px;flex-shrink:0"></ion-spinner>
+                                }
+                              </div>
+
+                              @if (manualPictDupeWarnIdx === i) {
+                                <p class="bbe-pred-warn">Este pictograma ya está añadido a la categoría.</p>
+                              }
+
+                              @if (!manualPictSearching && manualPictQuery.length >= 2 && manualPictResults.length === 0) {
+                                <p class="bbe-pred-empty">Sin resultados para "{{ manualPictQuery }}".</p>
+                              }
+
+                              @if (manualPictResults.length > 0) {
+                                <div class="bbe-pred-icon-results bbe-pred-manual-results">
+                                  @for (r of manualPictResults; track r.id) {
+                                    <button class="bbe-pred-icon-result"
+                                            (click)="addManualPictogram(i, r)"
+                                            [title]="r.label">
+                                      <img [src]="r.imageUrl" [alt]="r.label"
+                                           onerror="this.style.opacity='0.3'"/>
+                                      <span>{{ r.label }}</span>
+                                    </button>
+                                  }
+                                </div>
+                              }
+                            </div>
+                          }
+
+                          <!-- Lista de candidatos -->
+                          @if ((cat.manualPictograms?.length ?? 0) === 0) {
+                            <p class="bbe-pred-empty">Todavía no hay pictogramas candidatos en esta categoría.</p>
+                          } @else {
+                            <div class="bbe-pred-manual-list">
+                              @for (p of cat.manualPictograms; track p.arasaacId + p.label; let pi = $index) {
+                                <div class="bbe-pred-manual-row"
+                                     [class.bbe-pred-manual-row--selected]="selectedManualPict?.catIdx === i && selectedManualPict?.pictIdx === pi"
+                                     (click)="selectManualPictogram(i, pi)"
+                                     title="Pulsa para editar este candidato en el panel derecho">
+                                  <img class="bbe-pred-manual-thumb"
+                                       [src]="p.imageUrl" [alt]="p.label"
+                                       onerror="this.style.opacity='0.3'"/>
+                                  <div class="bbe-pred-manual-info">
+                                    <span class="bbe-pred-manual-lbl">{{ p.label }}</span>
+                                    @if (p.wordType) {
+                                      <span class="bbe-pred-manual-badge"
+                                            [style.background]="p.color || '#e0e0e0'">
+                                        {{ p.wordType }}
+                                      </span>
+                                    }
+                                  </div>
+                                  <button class="bbe-pred-cat-btn bbe-pred-cat-btn--del"
+                                          (click)="$event.stopPropagation(); removeManualPictogram(i, pi)"
+                                          title="Eliminar candidato">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13">
+                                      <polyline points="3 6 5 6 21 6"/>
+                                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                                      <path d="M10 11v6M14 11v6"/>
+                                      <path d="M9 6V4h6v2"/>
+                                    </svg>
+                                  </button>
+                                </div>
+                              }
+                            </div>
+                          }
+
+                        </div>
+                      }
+
+                    </div><!-- /cat-body -->
+                  }
+
+                </div><!-- /bbe-pred-cat -->
+              }
+
+              @if ((localPredictiveConfig.categories?.length ?? 0) === 0) {
+                <p class="bbe-pred-empty">Pulsa "Añadir categoría" para crear la primera categoría predictiva.</p>
+              }
+
+            </div><!-- /bbe-pred-body -->
+          </div><!-- /bbe-pred-panel -->
+        }
 
       </div><!-- /col-center -->
 
@@ -650,9 +957,11 @@
           [boardsReady]="boardsReady"
           [personalPicts]="personalPicts"
           [personalLoading]="personalLoading"
+          [editingManualPict]="editingManualPictData"
           (saveCellRequest)="onSaveCellRequest($event)"
           (removeCellRequest)="onRemoveCellRequest()"
-          (createBoardAndLink)="navigateToCreateBoard($event)">
+          (createBoardAndLink)="navigateToCreateBoard($event)"
+          (saveManualPictRequest)="onSaveManualPict($event)">
         </app-board-cell-panel>
 
       }

@@ -17,6 +17,7 @@ import {
   CellPictogram,
   CellAction,
   ActionType,
+  PredictivePictogram,
 } from '../../services/board.service';
 import { WordType, FITZGERALD, WORD_TYPE_LABELS } from '../../shared/constants/fitzgerald';
 import { buildSafeUrl as buildSafeUrlUtil } from '../../shared/utils/image.utils';
@@ -118,14 +119,21 @@ export class BoardCellPanelComponent implements OnChanges {
   @Input() personalPicts:     BackendPictogram[] = [];
   /** true mientras se cargan los pictogramas personales. */
   @Input() personalLoading:   boolean = false;
+  /**
+   * Cuando está definido, el panel entra en modo edición de candidato predictivo:
+   * muestra solo label, sonido, tipo de palabra y fitzgerald (sin tabs ni acción).
+   */
+  @Input() editingManualPict: PredictivePictogram | null = null;
 
   // ── Outputs ────────────────────────────────────────────────────────────────
   /** La page recibe el payload y llama a boardSvc.updateCell(). */
-  @Output() saveCellRequest    = new EventEmitter<CellPanelSavePayload>();
+  @Output() saveCellRequest       = new EventEmitter<CellPanelSavePayload>();
   /** La page lanza el alert de confirmación y llama a boardSvc.updateCell(null). */
-  @Output() removeCellRequest  = new EventEmitter<void>();
+  @Output() removeCellRequest     = new EventEmitter<void>();
   /** La page hace router.navigate a /board-builder-create con los queryParams de contexto. */
-  @Output() createBoardAndLink = new EventEmitter<CellPanelCreateBoardPayload>();
+  @Output() createBoardAndLink    = new EventEmitter<CellPanelCreateBoardPayload>();
+  /** La page actualiza manualPictograms[idx] con el candidato editado. */
+  @Output() saveManualPictRequest = new EventEmitter<PredictivePictogram>();
 
   // ── Estado local: tab ───────────────────────────────────────────────────────
   rightMode: 'arasaac' | 'personal' | 'new' = 'arasaac';
@@ -186,10 +194,17 @@ export class BoardCellPanelComponent implements OnChanges {
   // ── ngOnChanges ────────────────────────────────────────────────────────────
 
   ngOnChanges(changes: SimpleChanges): void {
+    if (changes['editingManualPict']) {
+      if (this.editingManualPict) {
+        this.loadManualPictIntoForm(this.editingManualPict);
+      } else if (!this.selectedCell) {
+        this.resetForm();
+      }
+    }
     // Cuando la celda seleccionada cambia (nueva referencia en cada click):
     if (changes['selectedCell']) {
       if (!this.selectedCell) {
-        this.resetForm();
+        if (!this.editingManualPict) this.resetForm();
       } else if (this.cellData?.pictogram) {
         this.loadCellIntoForm(this.cellData);
       } else {
@@ -197,6 +212,23 @@ export class BoardCellPanelComponent implements OnChanges {
         this.resetForm();
       }
     }
+  }
+
+  private loadManualPictIntoForm(p: PredictivePictogram): void {
+    this.pictForm = {
+      source:            'arasaac',
+      id:                p.arasaacId ?? '',
+      label:             p.label,
+      sound:             p.sound || p.label,
+      imageUrl:          p.imageUrl,
+      tags:              '',
+      description:       '',
+      wordType:          (p.wordType as WordType) || 'misc',
+      fitzgeraldEnabled: p.fitzgeraldEnabled ?? true,
+      color:             p.color || '#f5f5f5',
+    };
+    this.newImgB64 = null;
+    this.newImgUrl = null;
   }
 
   private resetForm(): void {
@@ -242,8 +274,13 @@ export class BoardCellPanelComponent implements OnChanges {
 
   // ── Getters computados ─────────────────────────────────────────────────────
 
+  /** true cuando se está editando un candidato predictivo manual. */
+  get isManualPictMode(): boolean {
+    return !!this.editingManualPict;
+  }
+
   get hasSelectedCell(): boolean {
-    return !!this.selectedCell;
+    return !!this.selectedCell || this.isManualPictMode;
   }
 
   get fitzgeraldColor(): string {
@@ -434,6 +471,21 @@ export class BoardCellPanelComponent implements OnChanges {
 
   onCreateBoardAndLink(): void {
     this.createBoardAndLink.emit({ actionType: this.actionForm.type });
+  }
+
+  onSaveManualPict(): void {
+    if (!this.editingManualPict) return;
+    const updated: PredictivePictogram = {
+      ...this.editingManualPict,
+      label:             this.pictForm.label.trim() || this.editingManualPict.label,
+      sound:             this.pictForm.sound.trim() || this.pictForm.label.trim(),
+      wordType:          this.pictForm.wordType,
+      fitzgeraldEnabled: this.pictForm.fitzgeraldEnabled,
+      color:             this.pictForm.fitzgeraldEnabled
+                           ? (FITZGERALD[this.pictForm.wordType] ?? '#f5f5f5')
+                           : this.pictForm.color,
+    };
+    this.saveManualPictRequest.emit(updated);
   }
 
   // ── Helpers privados ───────────────────────────────────────────────────────

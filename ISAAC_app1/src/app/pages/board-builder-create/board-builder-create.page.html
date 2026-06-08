@@ -349,6 +349,20 @@
             </div>
           </div>
 
+          <!-- Circular predictivo inteligente: solo tableros circulares -->
+          @if (selectedShape === 'circular') {
+            <div class="bbc-toggle-row" (click)="form.get('isPredictiveCircular')!.setValue(!form.get('isPredictiveCircular')!.value)">
+              <div class="bbc-toggle-info">
+                <span class="bbc-toggle-label">Circular predictivo inteligente</span>
+                <span class="bbc-toggle-sub">Permite configurar categorías fijas y fuentes de pictogramas para que el sistema proponga sugerencias dinámicas durante la comunicación.</span>
+              </div>
+              <div class="bbc-toggle-switch"
+                   [class.bbc-toggle-switch--on]="isPredictiveCircularChecked">
+                <div class="bbc-toggle-thumb"></div>
+              </div>
+            </div>
+          }
+
           <!-- Predictor IA: solo grid y multi (columna lateral de predicción) -->
           @if (selectedShape === 'grid' || isMultiBoard) {
             <div class="bbc-toggle-row" (click)="form.get('predictorEnabled')!.setValue(!form.get('predictorEnabled')!.value)">

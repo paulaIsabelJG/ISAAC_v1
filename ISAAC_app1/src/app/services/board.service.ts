@@ -46,6 +46,48 @@ export const DEFAULT_CIRCULAR_CONTROLS_CONFIG: CircularControlsConfig = {
 };
 export type PictSource  = 'arasaac' | 'custom' | 'new';
 
+// ─── Circular predictivo inteligente ─────────────────────────────────────────
+
+export interface PredictiveIcon {
+  label:     string;
+  imageUrl:  string;
+  arasaacId: string;
+  wordType:  string;
+}
+
+export interface PredictivePictogram {
+  label:              string;
+  sound?:             string;
+  imageUrl:           string;
+  arasaacId:          string;
+  wordType:           string;
+  color:              string;
+  fitzgeraldEnabled?: boolean;
+  action:             { type: string };
+}
+
+export interface PredictiveCategory {
+  id:               string;
+  label:            string;
+  icon:             PredictiveIcon;
+  color:            string;
+  sourceType:       'board' | 'manual';
+  sourceBoardId?:   string | null;
+  manualPictograms: PredictivePictogram[];
+}
+
+export interface PredictiveCircularConfig {
+  suggestionsPerCategory: number;
+  categories:             PredictiveCategory[];
+}
+
+export interface ArasaacResult {
+  id:       string | number;
+  label:    string;
+  imageUrl: string;
+  keywords: string[];
+}
+
 // WordType, FITZGERALD, FITZGERALD_COLORS y WORD_TYPE_LABELS → shared/constants/fitzgerald.ts
 
 // ─── Interfaces ───────────────────────────────────────────────────────────────
@@ -121,6 +163,9 @@ export interface Board {
   controlsConfig?:            ControlsConfig;
   // Configuración de barras superior + derecha para tableros circulares
   circularControlsConfig?:    CircularControlsConfig;
+  // Circular predictivo inteligente
+  isPredictiveCircular?:        boolean;
+  predictiveCircularConfig?:    PredictiveCircularConfig;
   // Personalización automática al publicar
   autoPersonalize?:    boolean;
   // Carpeta a la que pertenece el tablero (opcional)
@@ -155,6 +200,8 @@ export interface CreateBoardPayload {
   multiBoardIaPosition?:  string;
   controlsConfig?:           ControlsConfig;
   circularControlsConfig?:   CircularControlsConfig;
+  isPredictiveCircular?:     boolean;
+  predictiveCircularConfig?: PredictiveCircularConfig;
   autoPersonalize?:          boolean;
 }
 
@@ -184,8 +231,10 @@ export interface UpdateBoardPayload {
   multiBoardSlots?:       MultiBoardSlot[];
   multiBoardLayout?:      { widths: number[]; heights: number[] };
   multiBoardIaPosition?:  string;
-  controlsConfig?:          ControlsConfig;
-  circularControlsConfig?:  CircularControlsConfig;
+  controlsConfig?:           ControlsConfig;
+  circularControlsConfig?:   CircularControlsConfig;
+  isPredictiveCircular?:     boolean;
+  predictiveCircularConfig?: PredictiveCircularConfig;
 }
 
 export interface UpdateCellPayload {
@@ -199,7 +248,8 @@ export interface UpdateCellPayload {
 
 @Injectable({ providedIn: 'root' })
 export class BoardService {
-  private readonly url = `${environment.apiUrl}/boards`;
+  private readonly url         = `${environment.apiUrl}/boards`;
+  private readonly arasaacBase = `${environment.apiUrl}/arasaac`;
 
   constructor(private http: HttpClient) {}
 
@@ -245,6 +295,13 @@ export class BoardService {
     const base = `${this.url}/${encodeURIComponent(boardId)}`;
     const url  = userId ? `${base}?userId=${encodeURIComponent(userId)}` : base;
     return this.http.get<{ board: Board }>(url);
+  }
+
+  /** GET /api/arasaac/search — búsqueda de pictogramas ARASAAC */
+  searchArasaac(query: string, lang = 'es'): Observable<ArasaacResult[]> {
+    return this.http.get<ArasaacResult[]>(
+      `${this.arasaacBase}/search?query=${encodeURIComponent(query)}&lang=${lang}`
+    );
   }
 
   /** POST /api/boards — crear tablero */

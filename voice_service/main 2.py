@@ -73,7 +73,7 @@ try:
     config_path = CHECKPOINTS_DIR / "converter" / "config.json"
     ckpt_path   = CHECKPOINTS_DIR / "converter" / "checkpoint.pth"
 
-    tone_color_converter = ToneColorConverter(str(config_path), device=DEVICE, enable_watermark=False)
+    tone_color_converter = ToneColorConverter(str(config_path), device=DEVICE)
     tone_color_converter.load_ckpt(str(ckpt_path))
 
     from melo.api import TTS as MeloTTS
@@ -205,6 +205,7 @@ def synthesize_voice(body: SynthesizeRequest):
             src_se=BASE_SE,
             tgt_se=target_se,
             output_path=str(cache_file),
+            message="@ISAAC",
         )
 
         os.unlink(tmp_path)

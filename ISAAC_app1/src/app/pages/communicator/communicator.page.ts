@@ -4,7 +4,9 @@ import { CommonModule }  from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription, firstValueFrom } from 'rxjs';
 import { AacRuntimeService, AacPhraseItem } from '../../services/aac-runtime.service';
-import { BoardService, Board, CellPictogram } from '../../services/board.service';
+import {
+  BoardService, Board, BoardCell, CellPictogram, PredictivePictogram,
+} from '../../services/board.service';
 import { UserService, FullBackendUser } from '../../services/user.service';
 import { BoardLayoutService } from '../../services/board-layout.service';
 import { BoardGridComponent } from '../../components/board-grid/board-grid.component';
@@ -69,6 +71,12 @@ export class CommunicatorPage implements OnInit, OnDestroy {
   private boardSourcePicts = new Map<string, CellPictogram | null>();
   /** Pictograma que originó la navegación al tablero actualmente visible. */
   navSourcePict: CellPictogram | null | undefined;
+
+  // ── Circular predictivo inteligente ────────────────────────────────────────
+  /** Índice de la categoría seleccionada (-1 = vista de categorías). */
+  predActiveCatIdx: number = -1;
+  /** Pictograma que aparece en el centro durante la vista de candidatos. */
+  predCenterPict: CellPictogram | null = null;
 
   constructor(
     private route:          ActivatedRoute,
@@ -335,7 +343,9 @@ export class CommunicatorPage implements OnInit, OnDestroy {
       // Pasar userId solo cuando el tablero raíz tiene autoPersonalize activo.
       const uid = (this.rootAutoPersonalize && this.userId) ? this.userId : undefined;
       const res = await firstValueFrom(this.boardSvc.getBoardById(boardId, uid));
-      this.board = res.board;
+      this.board            = res.board;
+      this.predActiveCatIdx = -1;
+      this.predCenterPict   = null;
       // Pre-calentar caché TTS personalizada con todas las etiquetas del tablero
       const labels = (res.board.cells ?? [])
         .map((c: any) => c.pictogram?.sound || c.pictogram?.label)
@@ -367,10 +377,83 @@ export class CommunicatorPage implements OnInit, OnDestroy {
 
   /** Back: volver al tablero anterior en el historial de navegación. */
   onBack(): void {
+    // En modo predictivo con candidatos visibles: retroceder a vista de categorías
+    if (this.isPredictiveCircular && this.predActiveCatIdx !== -1) {
+      this.predActiveCatIdx = -1;
+      this.predCenterPict   = null;
+      return;
+    }
     if (this.aac.boardStack.length > 0) {
       this.aac.goBack();
     } else {
       this.router.navigateByUrl(this.returnTo);
+    }
+  }
+
+  // ── Circular predictivo: lógica de interacción ───────────────────────────
+
+  /**
+   * Gestiona el press en un slot del circular predictivo.
+   * Vista de categorías: seleccionar categoría → centro + candidatos.
+   * Vista de candidatos: hablar/añadir el pictograma pulsado.
+   * Centro o location column: volver a vista de categorías.
+   */
+  onPredCellPress(row: number, col: number): void {
+    if (!this.board?.predictiveCircularConfig) return;
+
+    // Centro o columna de ubicación → volver a vista de categorías
+    if (col !== 0) {
+      this.predActiveCatIdx = -1;
+      this.predCenterPict   = null;
+      return;
+    }
+
+    const config = this.board.predictiveCircularConfig;
+    const cats   = config.categories ?? [];
+
+    if (this.predActiveCatIdx === -1) {
+      // ── Vista de categorías: seleccionar la categoría del slot pulsado
+      const cat = cats[row];
+      if (!cat) return;
+      this.predActiveCatIdx = row;
+      this.predCenterPict   = {
+        source:            cat.icon?.imageUrl ? 'arasaac' : 'new',
+        id:                cat.icon?.arasaacId || cat.id,
+        label:             cat.label || 'Categoría',
+        sound:             cat.label || '',
+        imageUrl:          cat.icon?.imageUrl || '',
+        tags:              [],
+        description:       '',
+        wordType:          'misc',
+        fitzgeraldEnabled: false,
+        color:             cat.color || '#9c27b0',
+      } as CellPictogram;
+    } else {
+      // ── Vista de candidatos: hablar el candidato pulsado
+      const cat        = cats[this.predActiveCatIdx];
+      const n          = Math.min(config.suggestionsPerCategory ?? 8, this.board.circleSlots ?? 8);
+      const candidates = (cat.manualPictograms ?? []).slice(0, n);
+      const pict       = candidates[row];
+      if (!pict) return;
+
+      const cellPict: CellPictogram = {
+        source:            'arasaac',
+        id:                pict.arasaacId || '',
+        label:             pict.label,
+        sound:             pict.sound || pict.label,
+        imageUrl:          pict.imageUrl,
+        tags:              [],
+        description:       '',
+        wordType:          (pict.wordType || 'misc') as CellPictogram['wordType'],
+        fitzgeraldEnabled: pict.fitzgeraldEnabled ?? true,
+        color:             pict.color || '#f5f5f5',
+      };
+      const fakeCell: BoardCell = {
+        row, col,
+        pictogram: cellPict,
+        action:    { type: 'voice', targetBoardId: null },
+      };
+      this.aac.handlePictogramPress(fakeCell, this.board._id);
     }
   }
 
@@ -386,6 +469,74 @@ export class CommunicatorPage implements OnInit, OnDestroy {
 
   get isSecondaryCircular(): boolean {
     return this.board?.shape === 'circular' && this.board?.boardRole === 'secondary';
+  }
+
+  get isPredictiveCircular(): boolean {
+    return !!(
+      this.board?.shape === 'circular' &&
+      this.board.isPredictiveCircular &&
+      this.board.predictiveCircularConfig?.categories?.length
+    );
+  }
+
+  /**
+   * Board sintético para el tablero circular predictivo.
+   * Vista categorías (predActiveCatIdx === -1): outer slots = iconos de categoría.
+   * Vista candidatos (predActiveCatIdx >= 0): outer slots = candidatos de esa categoría.
+   */
+  get predDisplayBoard(): Board | null {
+    if (!this.board || !this.isPredictiveCircular) return this.board;
+    const config     = this.board.predictiveCircularConfig!;
+    const cats       = config.categories;
+    const nSlots     = this.board.circleSlots ?? 8;
+
+    let syntheticCells: BoardCell[];
+
+    if (this.predActiveCatIdx === -1) {
+      // ── Vista de categorías
+      syntheticCells = cats.slice(0, nSlots).map((cat, i) => ({
+        row: i, col: 0,
+        pictogram: {
+          source:            (cat.icon?.imageUrl ? 'arasaac' : 'new') as 'arasaac' | 'new',
+          id:                cat.icon?.arasaacId || cat.id,
+          label:             cat.label || 'Categoría',
+          sound:             cat.label || '',
+          imageUrl:          cat.icon?.imageUrl || '',
+          tags:              [],
+          description:       '',
+          wordType:          'misc' as const,
+          fitzgeraldEnabled: false,
+          color:             cat.color || '#9c27b0',
+        },
+        action: { type: 'voice' as const, targetBoardId: null },
+      }));
+    } else {
+      // ── Vista de candidatos
+      const cat        = cats[this.predActiveCatIdx];
+      const nCandidates = Math.min(config.suggestionsPerCategory ?? 8, nSlots);
+      const candidates = (cat.manualPictograms ?? []).slice(0, nCandidates);
+      syntheticCells   = candidates.map((pict, i) => ({
+        row: i, col: 0,
+        pictogram: {
+          source:            'arasaac' as const,
+          id:                pict.arasaacId || '',
+          label:             pict.label,
+          sound:             pict.sound || pict.label,
+          imageUrl:          pict.imageUrl,
+          tags:              [],
+          description:       '',
+          wordType:          (pict.wordType || 'misc') as CellPictogram['wordType'],
+          fitzgeraldEnabled: pict.fitzgeraldEnabled ?? true,
+          color:             pict.color || '#f5f5f5',
+        },
+        action: { type: 'voice' as const, targetBoardId: null },
+      }));
+    }
+
+    // Conservar celdas no-slot (centro, columna ubicación)
+    const takenRows = new Set(syntheticCells.map(c => c.row));
+    const other     = (this.board.cells ?? []).filter(c => c.col !== 0 || !takenRows.has(c.row));
+    return { ...this.board, cells: [...syntheticCells, ...other] };
   }
 
   get effectiveCircularConfig() {

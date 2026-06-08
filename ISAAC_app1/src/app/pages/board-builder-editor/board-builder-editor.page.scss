@@ -44,7 +44,7 @@ $panel-bg:     #faf5f8;
 // ── Columna central ───────────────────────────────────────────────────────────
 .bbe-col-center {
   flex:           1;
-  overflow:       hidden;    // no scroll → el grid rellena el alto disponible
+  overflow-y:     auto;
   padding:        12px 12px 12px;
   box-sizing:     border-box;
   display:        flex;
@@ -93,10 +93,13 @@ $panel-bg:     #faf5f8;
   justify-content: center;
 }
 
-// Circulares en edición: el wrapper debe llenarse verticalmente para que el
-// tablero circular reciba toda la altura disponible (container queries).
+// Circulares en edición: altura fija basada en viewport para que el tablero
+// sea siempre visible y el panel predictivo quede debajo (la columna scrollea).
+// flex: none evita que flex: 1 colapse a 0 en un scroll-container.
 .bbe-comm-outer--circular {
   align-items: stretch;
+  flex:        none;
+  height:      calc(100svh - 160px);
 }
 
 // flex: 1 → ocupa todo el ancho horizontal del outer (flex row).
@@ -152,6 +155,428 @@ $panel-bg:     #faf5f8;
   flex: 1;
   min-height: 0;
   min-width:  0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  PANEL: Configuración circular predictiva
+//  Aparece debajo de bbe-comm-outer en bbe-col-center (flex column).
+//  Altura máxima fija + scroll interno para no comprimir el preview en exceso.
+// ─────────────────────────────────────────────────────────────────────────────
+
+.bbe-pred-panel {
+  flex:           0 0 auto;
+  border:         1.5px solid $border;
+  border-radius:  12px;
+  background:     $card-bg;
+}
+
+.bbe-pred-header {
+  display:       flex;
+  align-items:   center;
+  gap:           8px;
+  padding:       10px 14px;
+  background:    $violet-light;
+  border-bottom: 1.5px solid $border;
+  border-radius: 12px 12px 0 0;
+}
+
+.bbe-pred-icon { width: 15px; height: 15px; stroke: $violet; flex-shrink: 0; }
+
+.bbe-pred-title {
+  flex:        1;
+  font-size:   12px;
+  font-weight: 700;
+  color:       $violet;
+  letter-spacing: 0.3px;
+}
+
+.bbe-pred-save-btn {
+  display:       flex;
+  align-items:   center;
+  gap:           5px;
+  padding:       5px 14px;
+  border:        1.5px solid $violet;
+  border-radius: 8px;
+  background:    $violet;
+  color:         #fff;
+  font-size:     12px;
+  font-weight:   600;
+  font-family:   inherit;
+  cursor:        pointer;
+  transition:    opacity 0.15s;
+  &:disabled { opacity: 0.55; cursor: default; }
+  &:not(:disabled):hover { opacity: 0.85; }
+}
+
+.bbe-pred-body {
+  padding:        10px 14px 12px;
+  display:        flex;
+  flex-direction: column;
+  gap:            10px;
+}
+
+.bbe-pred-field-row {
+  display:        flex;
+  align-items:    center;
+  gap:            10px;
+  flex-wrap:      wrap;
+}
+
+.bbe-pred-lbl {
+  font-size:   11px;
+  font-weight: 600;
+  color:       $text-muted;
+  white-space: nowrap;
+  min-width:   fit-content;
+}
+
+.bbe-pred-num {
+  width:         60px;
+  padding:       4px 8px;
+  border:        1.5px solid $border;
+  border-radius: 8px;
+  font-size:     13px;
+  font-family:   inherit;
+  text-align:    center;
+  outline:       none;
+  &:focus { border-color: $violet; }
+}
+
+.bbe-pred-input {
+  flex:          1;
+  min-width:     120px;
+  padding:       5px 10px;
+  border:        1.5px solid $border;
+  border-radius: 8px;
+  font-size:     12px;
+  font-family:   inherit;
+  outline:       none;
+  &:focus { border-color: $violet; }
+}
+
+.bbe-pred-select {
+  flex:          1;
+  min-width:     140px;
+  padding:       5px 8px;
+  border:        1.5px solid $border;
+  border-radius: 8px;
+  font-size:     12px;
+  font-family:   inherit;
+  outline:       none;
+  &:focus { border-color: $violet; }
+}
+
+.bbe-pred-warn {
+  font-size:   11px;
+  color:       #e65100;
+  background:  #fff3e0;
+  border:      1px solid #ffcc80;
+  border-radius: 6px;
+  padding:     5px 8px;
+  margin:      0;
+}
+
+.bbe-pred-hint { font-size: 11px; color: $text-muted; margin: 2px 0 0; }
+.bbe-pred-empty { font-size: 11px; color: $text-muted; font-style: italic; margin: 4px 0 0; }
+
+.bbe-pred-cats-bar {
+  display:     flex;
+  align-items: center;
+  gap:         10px;
+}
+
+.bbe-pred-add-btn {
+  display:       flex;
+  align-items:   center;
+  gap:           5px;
+  padding:       4px 10px;
+  border:        1.5px solid $violet;
+  border-radius: 8px;
+  background:    transparent;
+  color:         $violet;
+  font-size:     11px;
+  font-weight:   600;
+  font-family:   inherit;
+  cursor:        pointer;
+  transition:    background 0.15s;
+  &:hover:not(:disabled) { background: $violet-light; }
+  &:disabled { opacity: 0.4; cursor: default; }
+}
+
+// ── Categoría individual ──────────────────────────────────────────────────────
+
+.bbe-pred-cat {
+  border:        1.5px solid $border;
+  border-radius: 10px;
+  overflow:      hidden;
+  background:    $panel-bg;
+  transition:    border-color 0.15s;
+  &--expanded { border-color: $violet; }
+}
+
+.bbe-pred-cat-row {
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+  padding:     7px 10px;
+  cursor:      pointer;
+  user-select: none;
+  &:hover { background: $violet-light; }
+}
+
+.bbe-pred-cat-thumb {
+  width:         28px;
+  height:        28px;
+  border-radius: 6px;
+  display:       flex;
+  align-items:   center;
+  justify-content: center;
+  flex-shrink:   0;
+  overflow:      hidden;
+  img { width: 100%; height: 100%; object-fit: contain; }
+}
+
+.bbe-pred-cat-name {
+  flex:      1;
+  font-size: 12px;
+  font-weight: 600;
+  color:     $text-dark;
+  min-width: 0;
+  overflow:  hidden;
+  text-overflow: ellipsis;
+  white-space:   nowrap;
+}
+
+.bbe-pred-cat-source {
+  font-size:  11px;
+  color:      $text-muted;
+  white-space: nowrap;
+}
+
+.bbe-pred-cat-btns {
+  display:  flex;
+  gap:      2px;
+  flex-shrink: 0;
+}
+
+.bbe-pred-cat-btn {
+  display:       flex;
+  align-items:   center;
+  justify-content: center;
+  width:         22px;
+  height:        22px;
+  border:        1.5px solid $border;
+  border-radius: 5px;
+  background:    $card-bg;
+  cursor:        pointer;
+  transition:    border-color 0.15s;
+  padding:       0;
+  &:disabled { opacity: 0.3; cursor: default; }
+  &:not(:disabled):hover { border-color: $violet; }
+  &--del:not(:disabled):hover { border-color: #e53935; svg { stroke: #e53935; } }
+}
+
+.bbe-pred-cat-body {
+  padding:    10px 12px 12px;
+  display:    flex;
+  flex-direction: column;
+  gap:        10px;
+  border-top: 1.5px solid $border;
+}
+
+// ── Icono de categoría ────────────────────────────────────────────────────────
+
+.bbe-pred-icon-section { display: flex; flex-direction: column; gap: 6px; }
+
+.bbe-pred-icon-current {
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+  font-size:   12px;
+  color:       $text-muted;
+}
+
+.bbe-pred-icon-img {
+  width:        32px;
+  height:       32px;
+  object-fit:   contain;
+  border:       1.5px solid $border;
+  border-radius: 6px;
+}
+
+.bbe-pred-icon-clear {
+  padding:       2px 8px;
+  border:        1px solid $border;
+  border-radius: 5px;
+  background:    $card-bg;
+  font-size:     11px;
+  cursor:        pointer;
+  &:hover { border-color: #e53935; color: #e53935; }
+}
+
+.bbe-pred-search-row {
+  display:     flex;
+  align-items: center;
+}
+
+.bbe-pred-icon-results {
+  display:    flex;
+  flex-wrap:  wrap;
+  gap:        5px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.bbe-pred-icon-result {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            3px;
+  width:          54px;
+  padding:        4px;
+  border:         1.5px solid $border;
+  border-radius:  6px;
+  background:     $card-bg;
+  cursor:         pointer;
+  font-size:      9px;
+  color:          $text-muted;
+  transition:     border-color 0.12s;
+  img { width: 36px; height: 36px; object-fit: contain; }
+  span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; text-align: center; }
+  &:hover { border-color: $violet; }
+}
+
+// ── Fuente manual ─────────────────────────────────────────────────────────────
+
+.bbe-pred-source-btns {
+  display: flex;
+  gap:     6px;
+  flex-wrap: wrap;
+}
+
+.bbe-pred-source-btn {
+  padding:       4px 10px;
+  border:        1.5px solid $border;
+  border-radius: 8px;
+  background:    $card-bg;
+  font-size:     11px;
+  font-family:   inherit;
+  cursor:        pointer;
+  color:         $text-muted;
+  transition:    border-color 0.12s, color 0.12s, background 0.12s;
+  &--active {
+    border-color: $violet;
+    color:        $violet;
+    background:   $violet-light;
+    font-weight:  600;
+  }
+  &:not(.bbe-pred-source-btn--active):hover { border-color: $text-muted; }
+}
+
+.bbe-pred-color-row { display: flex; align-items: center; gap: 8px; }
+
+.bbe-pred-color {
+  width:        36px;
+  height:       28px;
+  border:       none;
+  border-radius: 6px;
+  cursor:       pointer;
+  padding:      2px;
+}
+
+.bbe-pred-color-val { font-size: 11px; color: $text-muted; }
+
+.bbe-pred-manual { display: flex; flex-direction: column; gap: 6px; }
+
+// Contador numérico de candidatos junto al label
+.bbe-pred-cat-count { font-weight: 400; color: $text-muted; margin-left: 2px; }
+
+// Botón "Añadir" activo (búsqueda abierta)
+.bbe-pred-add-btn--active {
+  background:   $violet-light !important;
+  color:        $violet !important;
+  border-color: $violet !important;
+}
+
+// Contenedor del panel de búsqueda inline de pictogramas manuales
+.bbe-pred-manual-search {
+  display:        flex;
+  flex-direction: column;
+  gap:            6px;
+  padding:        8px 10px;
+  background:     $panel-bg;
+  border:         1.5px dashed $border;
+  border-radius:  8px;
+}
+
+// Grid de resultados de búsqueda manual (más compacto que el de iconos de categoría)
+.bbe-pred-manual-results {
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+// Lista vertical de candidatos añadidos
+.bbe-pred-manual-list {
+  display:        flex;
+  flex-direction: column;
+  gap:            4px;
+}
+
+// Fila de un candidato: thumbnail + info + botón eliminar
+.bbe-pred-manual-row {
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+  padding:     5px 8px;
+  background:  $card-bg;
+  border:      1.5px solid $border;
+  border-radius: 8px;
+  cursor:      pointer;
+  transition:  border-color 0.12s, box-shadow 0.12s;
+  &:hover { border-color: $violet; }
+
+  &--selected {
+    border-color: $violet;
+    box-shadow:   0 0 0 2px rgba($violet, 0.2);
+    background:   $violet-light;
+  }
+}
+
+.bbe-pred-manual-thumb {
+  width:         36px;
+  height:        36px;
+  object-fit:    contain;
+  border:        1.5px solid $border;
+  border-radius: 6px;
+  flex-shrink:   0;
+}
+
+.bbe-pred-manual-info {
+  flex:       1;
+  display:    flex;
+  align-items: center;
+  gap:        6px;
+  min-width:  0;
+}
+
+.bbe-pred-manual-lbl {
+  font-size:     12px;
+  font-weight:   600;
+  color:         $text-dark;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+  white-space:   nowrap;
+}
+
+.bbe-pred-manual-badge {
+  font-size:     9px;
+  font-weight:   700;
+  color:         #fff;
+  padding:       1px 5px;
+  border-radius: 4px;
+  white-space:   nowrap;
+  flex-shrink:   0;
+  text-transform: capitalize;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -52,13 +52,24 @@
         }
 
         <!-- Tablero circular centrado -->
-        <app-board-circular
-          [board]="board"
-          mode="communicator"
-          [circularLayout]="true"
-          [centerPict]="isSecondaryCircular ? navSourcePict : undefined"
-          (cellClick)="onCellPress($event.row, $event.col)">
-        </app-board-circular>
+        @if (isPredictiveCircular) {
+          <!-- Circular predictivo: board sintético + máquina de estados propia -->
+          <app-board-circular
+            [board]="predDisplayBoard"
+            mode="communicator"
+            [circularLayout]="true"
+            [centerPict]="predCenterPict"
+            (cellClick)="onPredCellPress($event.row, $event.col)">
+          </app-board-circular>
+        } @else {
+          <app-board-circular
+            [board]="board"
+            mode="communicator"
+            [circularLayout]="true"
+            [centerPict]="isSecondaryCircular ? navSourcePict : undefined"
+            (cellClick)="onCellPress($event.row, $event.col)">
+          </app-board-circular>
+        }
 
         <!-- Barra vertical derecha: Atrás + Hablar + Borrar + Limpiar -->
         <app-aac-circular-right-bar

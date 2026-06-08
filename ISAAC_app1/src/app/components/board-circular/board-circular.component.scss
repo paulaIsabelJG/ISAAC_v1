@@ -238,7 +238,14 @@ $mint:         #20c997;
 .bcc-loc-cell,
 .bcc-slot,
 .bcc-center {
-  touch-action: manipulation;
+  touch-action:        manipulation;
+  user-select:         none;
+  -webkit-user-select: none;
+
+  // Los hijos (imagen, etiqueta, etc.) no deben interceptar eventos de puntero.
+  // Así los eventos dragover / drop / dblclick llegan siempre al contenedor
+  // de la celda, que tiene los bindings de Angular.
+  > * { pointer-events: none; }
 }
 
 // ── Drag and drop ──────────────────────────────────────────────────────────────

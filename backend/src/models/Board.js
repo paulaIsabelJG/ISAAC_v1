@@ -36,6 +36,37 @@ const cellSchema = new mongoose.Schema({
   action:    { type: actionSchema,    default: () => ({ type: 'voice', targetBoardId: null }) },
 }, { _id: false });
 
+// ── Subdocumento: icono de categoría predictiva ────────────────────────────────
+const predictiveIconSchema = new mongoose.Schema({
+  label:     { type: String, default: '' },
+  imageUrl:  { type: String, default: '' },
+  arasaacId: { type: String, default: '' },
+  wordType:  { type: String, default: '' },
+}, { _id: false });
+
+// ── Subdocumento: pictograma candidato manual ──────────────────────────────────
+const predictivePictogramSchema = new mongoose.Schema({
+  label:             { type: String,  default: '' },
+  sound:             { type: String,  default: '' },
+  imageUrl:          { type: String,  default: '' },
+  arasaacId:         { type: String,  default: '' },
+  wordType:          { type: String,  default: 'misc' },
+  color:             { type: String,  default: '' },
+  fitzgeraldEnabled: { type: Boolean, default: true },
+  action:            { type: mongoose.Schema.Types.Mixed, default: () => ({ type: 'voice' }) },
+}, { _id: false });
+
+// ── Subdocumento: categoría predictiva circular ────────────────────────────────
+const predictiveCategorySchema = new mongoose.Schema({
+  id:               { type: String, required: true },
+  label:            { type: String, default: '' },
+  icon:             { type: predictiveIconSchema, default: () => ({}) },
+  color:            { type: String, default: '#9c27b0' },
+  sourceType:       { type: String, enum: ['board', 'manual'], default: 'manual' },
+  sourceBoardId:    { type: String, default: null },
+  manualPictograms: [predictivePictogramSchema],
+}, { _id: false });
+
 // ── Esquema principal ──────────────────────────────────────────────────────────
 const boardSchema = new mongoose.Schema({
   name:             { type: String, required: true, trim: true },
@@ -91,6 +122,20 @@ const boardSchema = new mongoose.Schema({
     _id: false,
   },
   autoPersonalize:    { type: Boolean, default: false },
+  // ── Configuración de barras circulares (topBar + rightBar) ───────────────────
+  circularControlsConfig: {
+    topBar:         { type: [String], default: ['home', 'phraseBar'] },
+    rightBar:       { type: [String], default: ['back', 'speak', 'deleteLast', 'clearAll'] },
+    visibleButtons: { type: [String], default: ['home', 'back', 'speak', 'deleteLast', 'clearAll'] },
+    _id: false,
+  },
+  // ── Tablero circular predictivo inteligente ───────────────────────────────────
+  isPredictiveCircular:    { type: Boolean, default: false },
+  predictiveCircularConfig: {
+    suggestionsPerCategory: { type: Number, default: 8 },
+    categories:             [predictiveCategorySchema],
+    _id: false,
+  },
   visibleInProfile:   { type: Boolean, default: false },
   profileName:        { type: String,  default: '' },
   profileImage:       { type: String,  default: '' },
