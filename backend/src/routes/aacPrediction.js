@@ -8,4 +8,7 @@ router.use(auth);
 // POST /api/aac-prediction/suggest
 router.post('/suggest', ctrl.suggest);
 
+// POST /api/aac-prediction/circular
+router.post('/circular', ctrl.suggestCircular);
+
 module.exports = router;

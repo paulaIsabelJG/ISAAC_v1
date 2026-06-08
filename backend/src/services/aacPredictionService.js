@@ -453,3 +453,262 @@ exports.getSuggestions = async ({
   return scored.slice(0, limit);
 };
 
+// ── Predictor circular inteligente ────────────────────────────────────────────
+
+const CIRCULAR_WEIGHTS = {
+  frequency:       0.18,
+  transition:      0.30,
+  wordType:        0.12,
+  categoryContext: 0.15,
+  timeContext:     0.08,
+  locationContext: 0.12,
+  recency:         0.05,
+};
+
+/** Clave normalizada para mapas internos. No elimina tildes para no confundir "sí"/"si". */
+function keyLabel(s) {
+  return (s || '').toLowerCase().trim();
+}
+
+/**
+ * Extrae candidatos de una categoría predictiva.
+ * sourceType 'manual'  → manualPictograms del propio config.
+ * sourceType 'board'   → traverseBoardTree sobre sourceBoardId (reutiliza el BFS del predictor normal).
+ */
+async function extractCircularCandidates(category, userId) {
+  const src = category.sourceType || 'manual';
+
+  if (src === 'manual') {
+    return {
+      candidates: (category.manualPictograms || []).map(p => ({
+        label:             p.label || '',
+        imageUrl:          p.imageUrl || '',
+        color:             p.color || '#f5f5f5',
+        wordType:          p.wordType || 'misc',
+        action:            p.action || { type: 'voice' },
+        fitzgeraldEnabled: !!p.fitzgeraldEnabled,
+      })),
+      source: 'manual',
+    };
+  }
+
+  // sourceType === 'board'
+  if (!category.sourceBoardId) return { candidates: [], source: 'board' };
+
+  const { fallbackPicts } = await traverseBoardTree(category.sourceBoardId, userId);
+  return {
+    candidates: fallbackPicts.map(p => ({
+      label:             p.label,
+      imageUrl:          p.imageUrl,
+      color:             p.color,
+      wordType:          p.wordType,
+      action:            p.action,
+      fitzgeraldEnabled: false,
+    })),
+    source: 'board',
+  };
+}
+
+/**
+ * Devuelve hasta `limit` sugerencias ordenadas por probabilidad para la categoría
+ * dada de un tablero circular predictivo.
+ *
+ * Pesos: frecuencia 0.18 · transición 0.30 · tipo gramatical 0.12 ·
+ *        categoría 0.15 · hora 0.08 · ubicación 0.12 · recencia 0.05
+ */
+exports.getCircularSuggestions = async ({
+  userId,
+  boardId,
+  categoryId,
+  limit           = 8,
+  currentPhrase   = [],
+  locationContext = 'general',
+}) => {
+  // ── Cargar tablero y encontrar la categoría ─────────────────────────────
+  const board = await Board
+    .findById(boardId)
+    .select('predictiveCircularConfig')
+    .lean();
+
+  if (!board?.predictiveCircularConfig) {
+    throw new Error('El tablero no tiene configuración predictiva circular');
+  }
+
+  const cats = board.predictiveCircularConfig.categories || [];
+  const category = cats.find(c => c.id === categoryId);
+  if (!category) return [];
+
+  const categoryLabel = category.label || '';
+  const { candidates, source } = await extractCircularCandidates(category, userId);
+  if (candidates.length === 0) return [];
+
+  // ── Cargar sesiones OBL ─────────────────────────────────────────────────
+  const sessions = await OblLog
+    .find({ userId })
+    .sort({ started: -1 })
+    .limit(100)
+    .lean();
+
+  const allButtonEvents = sessions
+    .flatMap(s => s.events || [])
+    .filter(e => e.type === 'button' && e.label);
+
+  // ── Sin historial → fallback ordenado con score neutro ─────────────────
+  if (allButtonEvents.length === 0) {
+    return candidates.slice(0, limit).map(p => ({
+      ...p,
+      score: 0.5,
+      source,
+      categoryId,
+      categoryLabel,
+      reasons: {
+        frequency: 0, transition: 0, wordType: 0,
+        categoryContext: 1, timeContext: 0, locationContext: 0, recency: 0,
+      },
+    }));
+  }
+
+  // ── Construir mapas desde eventos OBL ──────────────────────────────────
+  const freqMap     = {};
+  const recencyMap  = {};
+  const timeMap     = {};
+  const locationMap = {};
+  // categoryMap[`catId|label`] → nº de veces pulsado en esa categoría circular
+  const categoryMap = {};
+
+  // Ordenar desc por timestamp para asignar rango de recencia
+  const sortedDesc = [...allButtonEvents].sort(
+    (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+  );
+
+  sortedDesc.forEach((e, idx) => {
+    const lbl = keyLabel(e.label);
+    freqMap[lbl] = (freqMap[lbl] || 0) + 1;
+
+    if (recencyMap[lbl] === undefined) {
+      recencyMap[lbl] = 1 / Math.log2(idx + 2);
+    }
+
+    const block = getTimeBlock(e.timestamp);
+    timeMap[`${block}|${lbl}`] = (timeMap[`${block}|${lbl}`] || 0) + 1;
+
+    const evLocCtx = (e.location_context || '').trim() || 'general';
+    locationMap[`${evLocCtx}|${lbl}`] = (locationMap[`${evLocCtx}|${lbl}`] || 0) + 1;
+
+    if (e.category_id) {
+      categoryMap[`${e.category_id}|${lbl}`] = (categoryMap[`${e.category_id}|${lbl}`] || 0) + 1;
+    }
+  });
+
+  // transitionMap[`from|to`] → nº de veces que `to` siguió a `from`
+  const transitionMap = {};
+  for (const session of sessions) {
+    const btns = (session.events || []).filter(e => e.type === 'button' && e.label);
+    for (let i = 0; i < btns.length - 1; i++) {
+      const key = `${keyLabel(btns[i].label)}|${keyLabel(btns[i + 1].label)}`;
+      transitionMap[key] = (transitionMap[key] || 0) + 1;
+    }
+  }
+
+  // ── Contexto actual ─────────────────────────────────────────────────────
+  const currentBlock  = getTimeBlock(new Date().toISOString());
+  const lastItem      = currentPhrase.length > 0 ? currentPhrase[currentPhrase.length - 1] : null;
+  const lastLabel     = lastItem?.label ? keyLabel(lastItem.label) : null;
+  const lastWordType  = lastItem?.wordType ?? null;
+  const normLocCtx    = (locationContext || 'general').trim();
+
+  const maxFreq    = Math.max(...Object.values(freqMap), 1);
+  const maxRecency = Math.max(...Object.values(recencyMap), 1);
+
+  const transFromTotal = lastLabel
+    ? Object.entries(transitionMap)
+        .filter(([k]) => k.startsWith(`${lastLabel}|`))
+        .reduce((s, [, v]) => s + v, 0)
+    : 0;
+
+  const timeTotalForBlock = Object.entries(timeMap)
+    .filter(([k]) => k.startsWith(`${currentBlock}|`))
+    .reduce((s, [, v]) => s + v, 0);
+
+  const locationTotal = normLocCtx !== 'general'
+    ? Object.entries(locationMap)
+        .filter(([k]) => k.startsWith(`${normLocCtx}|`))
+        .reduce((s, [, v]) => s + v, 0)
+    : 0;
+
+  // Total de eventos registrados en esta categoría
+  const categoryTotal = Object.entries(categoryMap)
+    .filter(([k]) => k.startsWith(`${categoryId}|`))
+    .reduce((s, [, v]) => s + v, 0);
+
+  const expectedTypes = lastWordType ? (WORD_TYPE_AFTER[lastWordType] || []) : [];
+  const phraseSet = new Set((currentPhrase || []).map(p => keyLabel(p.label || '')));
+
+  // ── Puntuar cada candidato ──────────────────────────────────────────────
+  const scored = candidates.map(candidate => {
+    const lbl = keyLabel(candidate.label);
+
+    const freqScore = norm(freqMap[lbl] || 0, maxFreq);
+
+    const transKey   = lastLabel ? `${lastLabel}|${lbl}` : null;
+    const transScore = transFromTotal > 0 && transKey
+      ? norm(transitionMap[transKey] || 0, transFromTotal)
+      : 0;
+
+    const wordTypeScore = expectedTypes.length > 0 && expectedTypes.includes(candidate.wordType) ? 1 : 0;
+
+    // categoryScore: histórico si existen datos de esta categoría; 0.5 si no hay todavía.
+    // Un 0.5 uniforme no favorece ni penaliza a ningún candidato en ausencia de datos.
+    const categoryScore = categoryTotal > 0
+      ? norm(categoryMap[`${categoryId}|${lbl}`] || 0, categoryTotal)
+      : 0.5;
+
+    const timeScore = timeTotalForBlock > 0
+      ? norm(timeMap[`${currentBlock}|${lbl}`] || 0, timeTotalForBlock)
+      : 0;
+
+    const locationScore = locationTotal > 0
+      ? norm(locationMap[`${normLocCtx}|${lbl}`] || 0, locationTotal)
+      : 0;
+
+    const recencyScore = norm(recencyMap[lbl] || 0, maxRecency);
+
+    const raw =
+      freqScore      * CIRCULAR_WEIGHTS.frequency       +
+      transScore     * CIRCULAR_WEIGHTS.transition      +
+      wordTypeScore  * CIRCULAR_WEIGHTS.wordType        +
+      categoryScore  * CIRCULAR_WEIGHTS.categoryContext +
+      timeScore      * CIRCULAR_WEIGHTS.timeContext     +
+      locationScore  * CIRCULAR_WEIGHTS.locationContext +
+      recencyScore   * CIRCULAR_WEIGHTS.recency;
+
+    // Penalización fuerte si el candidato ya está en la frase actual
+    const inPhrase = phraseSet.has(lbl);
+    const total    = inPhrase ? raw * 0.05 : raw;
+
+    return {
+      label:         candidate.label,
+      imageUrl:      candidate.imageUrl,
+      color:         candidate.color,
+      wordType:      candidate.wordType,
+      action:        candidate.action,
+      score:         round3(total),
+      source,
+      categoryId,
+      categoryLabel,
+      reasons: {
+        frequency:       round2(freqScore),
+        transition:      round2(transScore),
+        wordType:        wordTypeScore,
+        categoryContext: round2(categoryScore),
+        timeContext:     round2(timeScore),
+        locationContext: round2(locationScore),
+        recency:         round2(recencyScore),
+      },
+    };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, limit);
+};
+

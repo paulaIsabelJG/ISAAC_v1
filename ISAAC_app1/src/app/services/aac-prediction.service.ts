@@ -3,6 +3,37 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
+/** Sugerencia del predictor circular inteligente. */
+export interface CircularSuggestion {
+  label:         string;
+  imageUrl:      string;
+  color:         string;
+  wordType:      string;
+  action?:       { type: string; targetBoardId?: string; targetSlotId?: number } | null;
+  score:         number;
+  source:        'manual' | 'board';
+  categoryId:    string;
+  categoryLabel: string;
+  reasons?: {
+    frequency:       number;
+    transition:      number;
+    wordType:        number;
+    categoryContext: number;
+    timeContext:     number;
+    locationContext: number;
+    recency:         number;
+  };
+}
+
+export interface CircularPredictionRequest {
+  userId:          string;
+  boardId:         string;
+  categoryId:      string;
+  limit?:          number;
+  currentPhrase?:  { label: string; wordType?: string }[];
+  locationContext?: string;
+}
+
 /** Pictograma sugerido por el Predictor IA. */
 export interface PredictedPictogram {
   label:    string;
@@ -49,6 +80,14 @@ export class AacPredictionService {
   getSuggestions(req: PredictionRequest): Observable<{ predictions: PredictedPictogram[] }> {
     return this.http.post<{ predictions: PredictedPictogram[] }>(
       `${this.apiUrl}/aac-prediction/suggest`,
+      req,
+    );
+  }
+
+  /** Solicita sugerencias para una categoría del tablero circular predictivo. */
+  getCircularSuggestions(req: CircularPredictionRequest): Observable<{ suggestions: CircularSuggestion[] }> {
+    return this.http.post<{ suggestions: CircularSuggestion[] }>(
+      `${this.apiUrl}/aac-prediction/circular`,
       req,
     );
   }

@@ -19,7 +19,11 @@ import { IaPredictorColumnComponent } from '../../components/ia-predictor-column
 import { DEFAULT_CIRCULAR_CONTROLS_CONFIG } from '../../services/board.service';
 import { AiPhraseResultModalComponent } from '../../components/ai-phrase-result-modal/ai-phrase-result-modal.component';
 import { AiReformulationResponse } from '../../services/ai-assistant.service';
-import { AacPredictionService, PredictedPictogram } from '../../services/aac-prediction.service';
+import {
+  AacPredictionService,
+  CircularSuggestion,
+  PredictedPictogram,
+} from '../../services/aac-prediction.service';
 
 @Component({
   selector: 'app-communicator',
@@ -77,6 +81,10 @@ export class CommunicatorPage implements OnInit, OnDestroy {
   predActiveCatIdx: number = -1;
   /** Pictograma que aparece en el centro durante la vista de candidatos. */
   predCenterPict: CellPictogram | null = null;
+  /** Sugerencias devueltas por el predictor circular para la categoría activa. */
+  circularSuggestions: CircularSuggestion[] = [];
+  /** true mientras se espera respuesta del predictor circular. */
+  circularSuggestionsLoading = false;
 
   constructor(
     private route:          ActivatedRoute,
@@ -194,7 +202,9 @@ export class CommunicatorPage implements OnInit, OnDestroy {
     this.phraseSub?.unsubscribe();
     this.boardSourcePicts.clear();
     this.navSourcePict = undefined;
-    this.predictions   = [];
+    this.predictions             = [];
+    this.circularSuggestions     = [];
+    this.circularSuggestionsLoading = false;
     this.privateMode   = false;   // limpia el modo oculto al salir
   }
 
@@ -343,9 +353,11 @@ export class CommunicatorPage implements OnInit, OnDestroy {
       // Pasar userId solo cuando el tablero raíz tiene autoPersonalize activo.
       const uid = (this.rootAutoPersonalize && this.userId) ? this.userId : undefined;
       const res = await firstValueFrom(this.boardSvc.getBoardById(boardId, uid));
-      this.board            = res.board;
-      this.predActiveCatIdx = -1;
-      this.predCenterPict   = null;
+      this.board                   = res.board;
+      this.predActiveCatIdx        = -1;
+      this.predCenterPict          = null;
+      this.circularSuggestions     = [];
+      this.circularSuggestionsLoading = false;
       // Pre-calentar caché TTS personalizada con todas las etiquetas del tablero
       const labels = (res.board.cells ?? [])
         .map((c: any) => c.pictogram?.sound || c.pictogram?.label)
@@ -379,8 +391,10 @@ export class CommunicatorPage implements OnInit, OnDestroy {
   onBack(): void {
     // En modo predictivo con candidatos visibles: retroceder a vista de categorías
     if (this.isPredictiveCircular && this.predActiveCatIdx !== -1) {
-      this.predActiveCatIdx = -1;
-      this.predCenterPict   = null;
+      this.predActiveCatIdx        = -1;
+      this.predCenterPict          = null;
+      this.circularSuggestions     = [];
+      this.circularSuggestionsLoading = false;
       return;
     }
     if (this.aac.boardStack.length > 0) {
@@ -394,8 +408,8 @@ export class CommunicatorPage implements OnInit, OnDestroy {
 
   /**
    * Gestiona el press en un slot del circular predictivo.
-   * Vista de categorías: seleccionar categoría → centro + candidatos.
-   * Vista de candidatos: hablar/añadir el pictograma pulsado.
+   * Vista de categorías: seleccionar categoría → llama al predictor y muestra candidatos.
+   * Vista de candidatos: hablar/añadir el pictograma pulsado y registrar OBL con categoría.
    * Centro o location column: volver a vista de categorías.
    */
   onPredCellPress(row: number, col: number): void {
@@ -403,8 +417,10 @@ export class CommunicatorPage implements OnInit, OnDestroy {
 
     // Centro o columna de ubicación → volver a vista de categorías
     if (col !== 0) {
-      this.predActiveCatIdx = -1;
-      this.predCenterPict   = null;
+      this.predActiveCatIdx        = -1;
+      this.predCenterPict          = null;
+      this.circularSuggestions     = [];
+      this.circularSuggestionsLoading = false;
       return;
     }
 
@@ -416,6 +432,7 @@ export class CommunicatorPage implements OnInit, OnDestroy {
       const cat = cats[row];
       if (!cat) return;
       this.predActiveCatIdx = row;
+      this.circularSuggestions = [];
       this.predCenterPict   = {
         source:            cat.icon?.imageUrl ? 'arasaac' : 'new',
         id:                cat.icon?.arasaacId || cat.id,
@@ -428,33 +445,88 @@ export class CommunicatorPage implements OnInit, OnDestroy {
         fitzgeraldEnabled: false,
         color:             cat.color || '#9c27b0',
       } as CellPictogram;
+
+      // Solicitar sugerencias al predictor (no bloquea la UI, candidatos del logopeda como fallback)
+      this.loadCircularSuggestions(cat.id, config.suggestionsPerCategory ?? 8);
     } else {
       // ── Vista de candidatos: hablar el candidato pulsado
-      const cat        = cats[this.predActiveCatIdx];
-      const n          = Math.min(config.suggestionsPerCategory ?? 8, this.board.circleSlots ?? 8);
-      const candidates = (cat.manualPictograms ?? []).slice(0, n);
-      const pict       = candidates[row];
+      const cat = cats[this.predActiveCatIdx];
+      const n   = Math.min(config.suggestionsPerCategory ?? 8, this.board.circleSlots ?? 8);
+
+      // Usar sugerencias del predictor si están disponibles; si no, fallback a manualPictograms
+      let pict: CircularSuggestion | null = null;
+      if (this.circularSuggestions.length > 0) {
+        pict = this.circularSuggestions[row] ?? null;
+      } else {
+        const mp = (cat.manualPictograms ?? []).slice(0, n)[row];
+        if (mp) {
+          pict = {
+            label:         mp.label,
+            imageUrl:      mp.imageUrl || '',
+            color:         mp.color || '#f5f5f5',
+            wordType:      mp.wordType || 'misc',
+            action:        mp.action || { type: 'voice' },
+            score:         0.5,
+            source:        'manual',
+            categoryId:    cat.id,
+            categoryLabel: cat.label || '',
+          };
+        }
+      }
       if (!pict) return;
 
-      const cellPict: CellPictogram = {
-        source:            'arasaac',
-        id:                pict.arasaacId || '',
+      // Registrar OBL con category_id y category_label para que el predictor aprenda
+      this.aac.logButtonEvent({
+        label:          pict.label,
+        vocalization:   pict.label,
+        spoken:         true,
+        button_id:      pict.label,
+        board_id:       this.board!._id,
+        image_url:      pict.imageUrl ?? '',
+        actions:        [],
+        color:          pict.color   ?? undefined,
+        wordType:       pict.wordType ?? undefined,
+        category_id:    pict.categoryId,
+        category_label: pict.categoryLabel,
+      });
+
+      // Añadir a la frase y hablar
+      this.aac.addToPhrase({
+        id:                pict.label,
         label:             pict.label,
-        sound:             pict.sound || pict.label,
         imageUrl:          pict.imageUrl,
-        tags:              [],
-        description:       '',
-        wordType:          (pict.wordType || 'misc') as CellPictogram['wordType'],
-        fitzgeraldEnabled: pict.fitzgeraldEnabled ?? true,
-        color:             pict.color || '#f5f5f5',
-      };
-      const fakeCell: BoardCell = {
-        row, col,
-        pictogram: cellPict,
-        action:    { type: 'voice', targetBoardId: null },
-      };
-      this.aac.handlePictogramPress(fakeCell, this.board._id);
+        sound:             pict.label,
+        boardId:           this.board!._id,
+        color:             pict.color,
+        wordType:          pict.wordType,
+        fitzgeraldEnabled: false,
+      }, { type: 'none' });
+      this.aac.speakText(pict.label, this.gender);
     }
+  }
+
+  /** Llama al backend para obtener sugerencias predichas para la categoría dada. */
+  private loadCircularSuggestions(categoryId: string, limit: number): void {
+    if (!this.userId || !this.board) return;
+    this.circularSuggestionsLoading = true;
+    this.predictionSvc.getCircularSuggestions({
+      userId:         this.userId,
+      boardId:        this.board._id,
+      categoryId,
+      limit,
+      currentPhrase:  this.aac.phrase.map(p => ({ label: p.label, wordType: p.wordType })),
+      locationContext: this.aac.locationContext,
+    }).subscribe({
+      next:  res => {
+        this.circularSuggestions    = res.suggestions ?? [];
+        this.circularSuggestionsLoading = false;
+      },
+      error: () => {
+        // Silencioso: si falla el predictor se muestran los candidatos del logopeda
+        this.circularSuggestions    = [];
+        this.circularSuggestionsLoading = false;
+      },
+    });
   }
 
   // ── Getters ───────────────────────────────────────────────────────────────
@@ -512,25 +584,46 @@ export class CommunicatorPage implements OnInit, OnDestroy {
       }));
     } else {
       // ── Vista de candidatos
-      const cat        = cats[this.predActiveCatIdx];
+      const cat         = cats[this.predActiveCatIdx];
       const nCandidates = Math.min(config.suggestionsPerCategory ?? 8, nSlots);
-      const candidates = (cat.manualPictograms ?? []).slice(0, nCandidates);
-      syntheticCells   = candidates.map((pict, i) => ({
-        row: i, col: 0,
-        pictogram: {
-          source:            'arasaac' as const,
-          id:                pict.arasaacId || '',
-          label:             pict.label,
-          sound:             pict.sound || pict.label,
-          imageUrl:          pict.imageUrl,
-          tags:              [],
-          description:       '',
-          wordType:          (pict.wordType || 'misc') as CellPictogram['wordType'],
-          fitzgeraldEnabled: pict.fitzgeraldEnabled ?? true,
-          color:             pict.color || '#f5f5f5',
-        },
-        action: { type: 'voice' as const, targetBoardId: null },
-      }));
+
+      // Usar sugerencias del predictor si ya llegaron; si no, mostrar manualPictograms como fallback
+      if (this.circularSuggestions.length > 0) {
+        syntheticCells = this.circularSuggestions.slice(0, nCandidates).map((s, i) => ({
+          row: i, col: 0,
+          pictogram: {
+            source:            'arasaac' as const,
+            id:                s.label,
+            label:             s.label,
+            sound:             s.label,
+            imageUrl:          s.imageUrl,
+            tags:              [],
+            description:       '',
+            wordType:          (s.wordType || 'misc') as CellPictogram['wordType'],
+            fitzgeraldEnabled: false,
+            color:             s.color || '#f5f5f5',
+          },
+          action: { type: 'voice' as const, targetBoardId: null },
+        }));
+      } else {
+        const candidates = (cat.manualPictograms ?? []).slice(0, nCandidates);
+        syntheticCells   = candidates.map((pict, i) => ({
+          row: i, col: 0,
+          pictogram: {
+            source:            'arasaac' as const,
+            id:                pict.arasaacId || '',
+            label:             pict.label,
+            sound:             pict.sound || pict.label,
+            imageUrl:          pict.imageUrl,
+            tags:              [],
+            description:       '',
+            wordType:          (pict.wordType || 'misc') as CellPictogram['wordType'],
+            fitzgeraldEnabled: pict.fitzgeraldEnabled ?? true,
+            color:             pict.color || '#f5f5f5',
+          },
+          action: { type: 'voice' as const, targetBoardId: null },
+        }));
+      }
     }
 
     // Conservar celdas no-slot (centro, columna ubicación)

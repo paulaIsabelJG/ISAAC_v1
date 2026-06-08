@@ -39,6 +39,9 @@ const oblEventSchema = new mongoose.Schema({
   location_context:            String,
   location_id:                 String,
   location_name:               String,
+  // categoría del tablero circular predictivo (solo eventos button de circular-ai)
+  category_id:                 String,
+  category_label:              String,
 }, { _id: false });
 
 const oblLogSchema = new mongoose.Schema({

@@ -66,6 +66,9 @@ export interface OblEvent {
   location_context?: string;
   location_id?:      string;
   location_name?:    string;
+  // categoría del tablero circular predictivo (solo eventos button de circular-ai)
+  category_id?:    string;
+  category_label?: string;
 }
 
 /**
@@ -854,8 +857,9 @@ export class AacRuntimeService {
     label: string; vocalization: string; spoken: boolean;
     button_id: string; board_id: string; image_url: string; actions: OblAction[];
     color?: string; wordType?: string;
+    category_id?: string; category_label?: string;
   }): void {
-    const { image_url, ...rest } = data;
+    const { image_url, category_id, category_label, ...rest } = data;
     const ev: OblEvent = {
       id:        this.uuid(),
       type:      'button',
@@ -871,6 +875,9 @@ export class AacRuntimeService {
       if (this.locationId)   ev.location_id   = this.locationId;
       if (this.locationName) ev.location_name  = this.locationName;
     }
+    // Adjuntar categoría circular si se proporcionó
+    if (category_id)    ev.category_id    = category_id;
+    if (category_label) ev.category_label = category_label;
     this.pushEvent(ev);
   }
 
