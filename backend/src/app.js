@@ -16,7 +16,25 @@ const objectiveRoutes     = require('./routes/objectives');
 
 const app = express();
 
-app.use(cors());
+// Orígenes permitidos: desarrollo local + URL de producción del frontend (Render).
+// FRONTEND_URL se configura en las variables de entorno de Render.
+// Si no está definida en producción, solo se permite localhost (más seguro).
+const ALLOWED_ORIGINS = [
+  'http://localhost:8100',
+  'http://localhost:4200',
+  'http://localhost:4000',
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Permitir peticiones sin origin (herramientas, mobile nativo, curl)
+    if (!origin) return callback(null, true);
+    if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS: origen no permitido — ${origin}`));
+  },
+  credentials: true,
+}));
 app.use(express.json({ limit: '15mb' })); // 15 MB: las muestras de audio en base64 pueden superar 10 MB
 
 // Auth routes

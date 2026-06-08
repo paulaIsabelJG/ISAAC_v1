@@ -1,0 +1,55 @@
+# ============================================================
+# ISAAC — render.yaml  (plantilla de referencia, sin secretos)
+#
+# Este archivo documenta los servicios. Las variables marcadas
+# con 'sync: false' deben introducirse manualmente en el
+# dashboard de Render (Environment → Add Environment Variable).
+# ============================================================
+
+services:
+
+  # ── Backend Node.js / Express ──────────────────────────────
+  - type: web
+    name: isaac-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false          # introducir en Render dashboard
+      - key: JWT_SECRET
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+      - key: FRONTEND_URL
+        sync: false          # URL del Static Site de Render
+      - key: VOICE_ENABLED
+        value: "false"       # deshabilitar voice_service si no se despliega
+      - key: PYTHON_VOICE_URL
+        sync: false          # URL del voice_service si se despliega
+
+  # ── Frontend Angular / Ionic (Static Site) ─────────────────
+  - type: static
+    name: isaac-frontend
+    rootDir: ISAAC_app1
+    buildCommand: npm install && npm run build
+    staticPublishPath: www    # Ionic genera la web en la carpeta www/
+
+  # ── Voice service Python / FastAPI ─────────────────────────
+  # NOTA: este servicio requiere PyTorch + OpenVoice + MeloTTS instalados
+  # manualmente (no son instalables con pip de forma estándar).
+  # Solo desplegarlo si el entorno de Render lo permite.
+  # - type: web
+  #   name: isaac-voice
+  #   runtime: python
+  #   rootDir: voice_service
+  #   buildCommand: pip install -r requirements.txt
+  #   startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+  #   envVars:
+  #     - key: VOICE_CPU_THREADS
+  #       value: "2"

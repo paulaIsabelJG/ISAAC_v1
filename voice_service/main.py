@@ -226,4 +226,6 @@ def synthesize_voice(body: SynthesizeRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=False)
+    # En Render, $PORT se inyecta como variable de entorno. Localmente usa 8000.
+    _port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=_port, reload=False)
