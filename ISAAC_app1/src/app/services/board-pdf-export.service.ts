@@ -487,17 +487,18 @@ export class BoardPdfExportService {
     let cells = '';
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
-        const cell = cellMap.get(`${r}-${c}`);
-        const p    = cell?.pictogram;
-        const bg   = p ? this.cellBg(p) : '#ede8fd';
-        const tc   = this.contrast(bg);
-        const img  = p?.imageUrl
+        const cell   = cellMap.get(`${r}-${c}`);
+        const p      = cell?.pictogram;
+        const bg     = p ? this.cellBg(p)     : '#ede8fd';
+        const border = p ? this.cellBorder(p) : '#d8c8f0';
+        const tc     = this.contrast(bg);
+        const img    = p?.imageUrl
           ? `<img src="${e(p.imageUrl)}" crossorigin="anonymous" style="max-width:${imgSz}px;max-height:${imgSz}px;object-fit:contain;display:block;">`
           : '';
-        const lbl  = p
+        const lbl    = p
           ? `<span style="text-transform:uppercase;font-weight:900;font-size:${fSize}px;color:${tc};text-align:center;word-break:break-word;line-height:1.2;margin-top:3px;">${e(p.label)}</span>`
           : '';
-        cells += `<div style="background:${bg};border-radius:7px;min-height:${cellH}px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:5px;box-sizing:border-box;opacity:${p ? 1 : 0.18};">${img}${lbl}</div>`;
+        cells += `<div style="background:${bg};border:2px solid ${border};border-radius:7px;min-height:${cellH}px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:5px;box-sizing:border-box;opacity:${p ? 1 : 0.18};">${img}${lbl}</div>`;
       }
     }
 
@@ -518,11 +519,17 @@ export class BoardPdfExportService {
   /** Tablero circular con barra AAC encima */
   private circularHtml(board: Board): string {
     const n      = board.circleSlots ?? 8;
-    const ctnSz  = Math.min(HTML_W - 80, 680);
-    const R      = 38;
-    const slotSz = Math.max(56, Math.round(2 * ctnSz * 0.5 * Math.sin(Math.PI / n) * 0.72));
+    // R=44 coincide con board-layout.service (ref. app real)
+    const R      = 44;
+    // Canvas cuadrado con margen suficiente para que los slots no se corten
+    const ctnSz  = Math.min(HTML_W - 80, 660);
+    // Cuerda entre centros de slots adyacentes a radio R% del contenedor
+    const chord  = 2 * (R / 100) * ctnSz * Math.sin(Math.PI / n);
+    // Tamaño de slot: 78% de la cuerda, limitado a un máximo relativo al contenedor
+    const maxSz  = Math.round(ctnSz * 0.19);
+    const slotSz = Math.max(56, Math.min(Math.round(chord * 0.78), maxSz));
     const imgSz  = Math.round(slotSz * 0.52);
-    const fSize  = Math.max(8, Math.min(12, Math.round(slotSz / 7)));
+    const fSize  = Math.max(7, Math.min(12, Math.round(slotSz / 7)));
 
     const centerCell = (board.cells ?? []).find(c => c.row === 0 && c.col === -1);
     const outer      = new Map<number, BoardCell>();
@@ -530,22 +537,28 @@ export class BoardPdfExportService {
 
     let slots = '';
     for (let i = 0; i < n; i++) {
-      const ang  = ((i / n) * 360 - 90) * Math.PI / 180;
-      const left = 50 + R * Math.cos(ang);
-      const top  = 50 + R * Math.sin(ang);
-      const cell = outer.get(i);
-      const p    = cell?.pictogram;
-      const bg   = p ? this.cellBg(p) : '#ede8fd';
-      const tc   = this.contrast(bg);
-      const img  = p?.imageUrl ? `<img src="${e(p.imageUrl)}" crossorigin="anonymous" style="max-width:${imgSz}px;max-height:${imgSz}px;object-fit:contain;">` : '';
-      const lbl  = p ? `<span style="text-transform:uppercase;font-weight:900;font-size:${fSize}px;color:${tc};text-align:center;word-break:break-word;">${e(p.label)}</span>` : '';
-      slots += `<div style="position:absolute;left:calc(${left}% - ${slotSz/2}px);top:calc(${top}% - ${slotSz/2}px);width:${slotSz}px;height:${slotSz}px;background:${bg};border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;padding:3px;box-sizing:border-box;">${img}${lbl}</div>`;
+      const ang    = ((i / n) * 360 - 90) * Math.PI / 180;
+      const left   = 50 + R * Math.cos(ang);
+      const top    = 50 + R * Math.sin(ang);
+      const cell   = outer.get(i);
+      const p      = cell?.pictogram;
+      const bg     = p ? this.cellBg(p)     : '#ede8fd';
+      const border = p ? this.cellBorder(p) : '#d8c8f0';
+      const tc     = this.contrast(bg);
+      const img    = p?.imageUrl
+        ? `<img src="${e(p.imageUrl)}" crossorigin="anonymous" style="max-width:${imgSz}px;max-height:${imgSz}px;object-fit:contain;">`
+        : '';
+      const lbl    = p
+        ? `<span style="text-transform:uppercase;font-weight:900;font-size:${fSize}px;color:${tc};text-align:center;word-break:break-word;">${e(p.label)}</span>`
+        : '';
+      slots += `<div style="position:absolute;left:calc(${left}% - ${slotSz/2}px);top:calc(${top}% - ${slotSz/2}px);width:${slotSz}px;height:${slotSz}px;background:${bg};border:2px solid ${border};border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;padding:3px;box-sizing:border-box;">${img}${lbl}</div>`;
     }
 
-    const cp  = centerCell?.pictogram;
-    const cSz = Math.round(ctnSz * 0.19);
-    const cBg = cp ? this.cellBg(cp) : '#fff';
-    const cTc = this.contrast(cBg);
+    const cp      = centerCell?.pictogram;
+    const cSz     = Math.round(ctnSz * 0.19);
+    const cBg     = cp ? this.cellBg(cp)     : '#fff';
+    const cBorder = cp ? this.cellBorder(cp) : '#b59ef5';
+    const cTc     = this.contrast(cBg);
 
     return `<div style="width:${HTML_W}px;background:#fdf5f9;padding:18px;font-family:Arial,Helvetica,sans-serif;box-sizing:border-box;">
       <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px;">
@@ -553,10 +566,10 @@ export class BoardPdfExportService {
         <span style="font-size:11px;color:#9c78cc;">Circular · ${n} ranuras</span>
       </div>
       ${this.aacBarHtml(board)}
-      <div style="background:#fff;border:2px solid #ddd0f8;border-top:none;border-radius:0 0 10px 10px;padding:20px;display:flex;justify-content:center;">
-        <div style="position:relative;width:${ctnSz}px;height:${ctnSz}px;background:#f3eeff;border-radius:50%;">
+      <div style="background:#fff;border:2px solid #ddd0f8;border-top:none;border-radius:0 0 10px 10px;padding:20px;display:flex;justify-content:center;overflow:visible;">
+        <div style="position:relative;width:${ctnSz}px;height:${ctnSz}px;background:#f3eeff;border-radius:50%;overflow:visible;">
           ${slots}
-          <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:${cSz}px;height:${cSz}px;background:${cBg};border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;border:2px solid #b59ef5;overflow:hidden;">
+          <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:${cSz}px;height:${cSz}px;background:${cBg};border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;border:2px solid ${cBorder};overflow:hidden;">
             ${cp?.imageUrl ? `<img src="${e(cp.imageUrl)}" crossorigin="anonymous" style="max-width:${Math.round(cSz*.5)}px;max-height:${Math.round(cSz*.5)}px;object-fit:contain;">` : ''}
             ${cp ? `<span style="font-weight:900;font-size:${Math.max(7,Math.round(cSz/9))}px;text-transform:uppercase;color:${cTc};text-align:center;">${e(cp.label)}</span>` : ''}
           </div>
@@ -629,13 +642,14 @@ export class BoardPdfExportService {
     let cells = '';
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
-        const cell = cellMap.get(`${r}-${c}`);
-        const p    = cell?.pictogram;
-        const bg   = p ? this.cellBg(p) : '#ede8fd';
-        const tc   = this.contrast(bg);
-        const img  = p?.imageUrl ? `<img src="${e(p.imageUrl)}" crossorigin="anonymous" style="max-width:${imgSz}px;max-height:${imgSz}px;object-fit:contain;display:block;">` : '';
-        const lbl  = p ? `<span style="text-transform:uppercase;font-weight:900;font-size:${fSize}px;color:${tc};text-align:center;word-break:break-word;line-height:1.1;">${e(p.label)}</span>` : '';
-        cells += `<div style="width:${cSz}px;height:${cSz}px;background:${bg};border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;padding:2px;box-sizing:border-box;opacity:${p ? 1 : 0.18};">${img}${lbl}</div>`;
+        const cell   = cellMap.get(`${r}-${c}`);
+        const p      = cell?.pictogram;
+        const bg     = p ? this.cellBg(p)     : '#ede8fd';
+        const border = p ? this.cellBorder(p) : '#d8c8f0';
+        const tc     = this.contrast(bg);
+        const img    = p?.imageUrl ? `<img src="${e(p.imageUrl)}" crossorigin="anonymous" style="max-width:${imgSz}px;max-height:${imgSz}px;object-fit:contain;display:block;">` : '';
+        const lbl    = p ? `<span style="text-transform:uppercase;font-weight:900;font-size:${fSize}px;color:${tc};text-align:center;word-break:break-word;line-height:1.1;">${e(p.label)}</span>` : '';
+        cells += `<div style="width:${cSz}px;height:${cSz}px;background:${bg};border:1.5px solid ${border};border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;padding:2px;box-sizing:border-box;opacity:${p ? 1 : 0.18};">${img}${lbl}</div>`;
       }
     }
 
@@ -678,9 +692,32 @@ export class BoardPdfExportService {
 
   // ── Utilidades ─────────────────────────────────────────────────────────────
 
+  /** Mezcla un color hex con blanco. amount=1 → color puro, amount=0 → blanco. */
+  private blendWhite(hex: string, amount: number): string {
+    const m = hex.replace('#', '').match(/.{2}/g);
+    if (!m || m.length < 3) return '#f5f5f5';
+    const [r, g, b] = m.map(x => parseInt(x, 16));
+    const mix = (c: number) => Math.round(c * amount + 255 * (1 - amount));
+    return `#${[mix(r), mix(g), mix(b)].map(v => v.toString(16).padStart(2, '0')).join('')}`;
+  }
+
+  /** Color base (Fitzgerald o manual) de un pictograma. */
+  private baseColor(p: CellPictogram): string {
+    return p.fitzgeraldEnabled
+      ? ((FITZGERALD as Record<string, string>)[p.wordType] ?? '#f5f5f5')
+      : (p.color || '#f5f5f5');
+  }
+
+  /** Fondo: tinte muy claro (20% color + 80% blanco) — igual que la app. */
   private cellBg(p: CellPictogram): string {
-    if (!p.fitzgeraldEnabled) return p.color || '#f5f5f5';
-    return (FITZGERALD as Record<string, string>)[p.wordType] ?? '#f5f5f5';
+    return this.blendWhite(this.baseColor(p), 0.20);
+  }
+
+  /** Borde: tinte semisaturado (55% color + 45% blanco) — igual que la app. */
+  private cellBorder(p: CellPictogram): string {
+    const base = this.baseColor(p);
+    if (base === '#ffffff' || base === '#f5f5f5') return '#cccccc';
+    return this.blendWhite(base, 0.55);
   }
 
   private contrast(hex: string): string {

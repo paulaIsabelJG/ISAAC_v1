@@ -449,6 +449,69 @@ $orange-l:   #fff3eb;
   &[disabled]              { opacity: 0.5; cursor: not-allowed; }
 }
 
+// ── PDF export form ───────────────────────────────────────────────────────────
+.os-pdf-form {
+  display:        flex;
+  flex-direction: column;
+  gap:            18px;
+}
+
+.os-pdf-filters-summary {
+  background:    $violet-l;
+  border:        1.5px solid $violet-m;
+  border-radius: 12px;
+  padding:       16px 18px;
+  display:       flex;
+  flex-direction: column;
+  gap:           8px;
+}
+
+.os-pdf-filter-row {
+  display:     flex;
+  align-items: baseline;
+  gap:         10px;
+}
+
+.os-pdf-filter-label {
+  font-size:   12px;
+  font-weight: 700;
+  color:       $violet;
+  min-width:   90px;
+  flex-shrink: 0;
+}
+
+.os-pdf-filter-value {
+  font-size: 13px;
+  color:     $text-mid;
+}
+
+.os-pdf-hint {
+  margin:    6px 0 0;
+  font-size: 11.5px;
+  color:     $text-muted;
+  line-height: 1.45;
+}
+
+.os-pdf-content-list {
+  display:        flex;
+  flex-direction: column;
+  gap:            8px;
+}
+
+.os-pdf-content-item {
+  display:     flex;
+  align-items: center;
+  gap:         10px;
+  font-size:   13px;
+  color:       $text-mid;
+
+  svg { flex-shrink: 0; }
+}
+
+.os-export-btn--pdf {
+  background: linear-gradient(135deg, #e53935, #c62828);
+}
+
 // ── Espaciado final ───────────────────────────────────────────────────────────
 .os-bottom-spacer { height: 40px; }
 

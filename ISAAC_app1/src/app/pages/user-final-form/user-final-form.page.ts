@@ -692,6 +692,35 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
       return;
     }
 
+    // En modo creación: acumular localmente; se enviarán a la API al guardar el usuario.
+    if (!this.isEditMode) {
+      if (this.editingLocationId) {
+        const idx = this.locations.findIndex(l => l._id === this.editingLocationId);
+        if (idx >= 0) {
+          this.locations[idx] = {
+            ...this.locations[idx],
+            name:         this.locationForm.name.trim(),
+            address:      this.locationForm.address.trim() || null,
+            photoUrl:     this.locationForm.photoUrl.trim() || null,
+            radiusMeters: this.locationForm.radiusMeters || 150,
+          };
+        }
+      } else {
+        this.locations.push({
+          _id:          'tmp_' + Date.now(),
+          name:         this.locationForm.name.trim(),
+          address:      this.locationForm.address.trim() || null,
+          photoUrl:     this.locationForm.photoUrl.trim() || null,
+          radiusMeters: this.locationForm.radiusMeters || 150,
+          enabled:      true,
+        });
+      }
+      this.showAddLocation   = false;
+      this.editingLocationId = null;
+      return;
+    }
+
+    // En modo edición: llamar a la API directamente.
     this.locationSaving = true;
     const payload: AddLocationPayload = {
       name:         this.locationForm.name.trim(),
@@ -734,6 +763,11 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
         {
           text: 'Eliminar', role: 'destructive',
           handler: async () => {
+            // En modo creación: eliminar solo del array local.
+            if (!this.isEditMode) {
+              this.locations = this.locations.filter(l => l._id !== loc._id);
+              return;
+            }
             try {
               await firstValueFrom(this.userSvc.deleteLocation(this.userId, loc._id));
               this.locations = this.locations.filter(l => l._id !== loc._id);
@@ -856,6 +890,18 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
             voiceSettings:   vs,
           };
           await firstValueFrom(this.userSvc.updateUserById(targetUserId, patch));
+        }
+
+        // Guardar lugares frecuentes capturados durante la creación (silencioso si falla)
+        for (const loc of this.locations) {
+          try {
+            await firstValueFrom(this.userSvc.addLocation(targetUserId, {
+              name:         loc.name,
+              address:      loc.address ?? null,
+              photoUrl:     loc.photoUrl ?? null,
+              radiusMeters: loc.radiusMeters ?? 150,
+            }));
+          } catch { /* el logopeda puede añadirlos después desde el perfil */ }
         }
 
       } else {

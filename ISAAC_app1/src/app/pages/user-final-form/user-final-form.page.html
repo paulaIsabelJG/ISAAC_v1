@@ -456,90 +456,93 @@
             </div>
           </div>
 
-          <!-- Lugares frecuentes (solo en modo edición) -->
-          @if (isEditMode) {
-            <div class="perms-section">
-              <span class="section-label">Lugares frecuentes <span class="field-label-hint">(opcional)</span></span>
-              <p class="field-hint">Añade lugares habituales para que la app adapte las sugerencias de pictogramas al contexto. La ubicación no se envía a la IA.</p>
-
-              @if (locationsLoading) {
-                <ion-spinner name="crescent" style="margin: 8px 0;"></ion-spinner>
+          <!-- Lugares frecuentes -->
+          <div class="perms-section">
+            <span class="section-label">Lugares frecuentes <span class="field-label-hint">(opcional)</span></span>
+            <p class="field-hint">
+              Añade lugares habituales para que la app adapte las sugerencias de pictogramas al contexto. La ubicación no se envía a la IA.
+              @if (!isEditMode) {
+                <br><span class="field-label-hint">Se guardarán al añadir el usuario.</span>
               }
+            </p>
 
-              <!-- Lista de lugares -->
-              @for (loc of locations; track loc._id) {
-                <div class="location-item">
-                  @if (loc.photoUrl) {
-                    <img [src]="loc.photoUrl" class="location-photo" alt=""/>
+            @if (locationsLoading) {
+              <ion-spinner name="crescent" style="margin: 8px 0;"></ion-spinner>
+            }
+
+            <!-- Lista de lugares -->
+            @for (loc of locations; track loc._id) {
+              <div class="location-item">
+                @if (loc.photoUrl) {
+                  <img [src]="loc.photoUrl" class="location-photo" alt=""/>
+                }
+                <div class="location-info">
+                  <span class="location-name">{{ loc.name }}</span>
+                  @if (loc.address) {
+                    <span class="location-address">{{ loc.address }}</span>
                   }
-                  <div class="location-info">
-                    <span class="location-name">{{ loc.name }}</span>
-                    @if (loc.address) {
-                      <span class="location-address">{{ loc.address }}</span>
-                    }
-                    @if (!loc.lat) {
-                      <span class="location-geocoding">Geocodificando…</span>
-                    }
-                  </div>
-                  <div class="location-actions">
-                    <button type="button" class="loc-btn loc-btn--edit" (click)="openEditLocation(loc)">Editar</button>
-                    <button type="button" class="loc-btn loc-btn--delete" (click)="deleteLocation(loc)">Eliminar</button>
-                  </div>
+                  @if (!loc.lat && isEditMode) {
+                    <span class="location-geocoding">Geocodificando…</span>
+                  }
                 </div>
-              }
+                <div class="location-actions">
+                  <button type="button" class="loc-btn loc-btn--edit" (click)="openEditLocation(loc)">Editar</button>
+                  <button type="button" class="loc-btn loc-btn--delete" (click)="deleteLocation(loc)">Eliminar</button>
+                </div>
+              </div>
+            }
 
-              <!-- Formulario inline añadir/editar -->
-              @if (showAddLocation) {
-                <div class="location-form">
-                  <div class="field">
-                    <label class="field-label">Nombre del lugar *</label>
-                    <input type="text" class="field-input" placeholder="Ej: Colegio, Fundación, Casa"
-                           [(ngModel)]="locationForm.name" [ngModelOptions]="{standalone: true}"/>
-                  </div>
-                  <div class="field">
-                    <label class="field-label">Dirección <span class="field-label-hint">(para geocodificar)</span></label>
-                    <div class="autocomplete-wrap">
-                      <input type="text" class="field-input" placeholder="Empieza a escribir para ver sugerencias…"
-                             autocomplete="off"
-                             [(ngModel)]="locationForm.address" [ngModelOptions]="{standalone: true}"
-                             (input)="onLocAddressInput($event)"
-                             (blur)="closeLocSuggestions()"/>
-                      @if (showLocSuggestions && locSuggestions.length > 0) {
-                        <div class="suggestions-dropdown">
-                          @for (s of locSuggestions; track s.formattedAddress) {
-                            <div class="suggestion-item" (mousedown)="selectLocSuggestion(s)">
-                              <svg class="suggestion-pin" viewBox="0 0 24 24" fill="none"
-                                   stroke="currentColor" stroke-width="2">
-                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                                <circle cx="12" cy="10" r="3"/>
-                              </svg>
-                              <span>{{ s.formattedAddress }}</span>
-                            </div>
-                          }
-                        </div>
-                      }
-                    </div>
-                  </div>
-                  <div class="field">
-                    <label class="field-label">Radio de detección (metros)</label>
-                    <input type="number" class="field-input" min="50" max="2000"
-                           [(ngModel)]="locationForm.radiusMeters" [ngModelOptions]="{standalone: true}"/>
-                  </div>
-                  <div class="location-form-actions">
-                    <button type="button" class="loc-btn loc-btn--save" (click)="saveLocation()" [disabled]="locationSaving">
-                      @if (locationSaving) { <ion-spinner name="crescent" style="width:14px;height:14px;"></ion-spinner> }
-                      {{ editingLocationId ? 'Actualizar' : 'Añadir lugar' }}
-                    </button>
-                    <button type="button" class="loc-btn" (click)="cancelLocationForm()">Cancelar</button>
+            <!-- Formulario inline añadir/editar -->
+            @if (showAddLocation) {
+              <div class="location-form">
+                <div class="field">
+                  <label class="field-label">Nombre del lugar *</label>
+                  <input type="text" class="field-input" placeholder="Ej: Colegio, Fundación, Casa"
+                         [(ngModel)]="locationForm.name" [ngModelOptions]="{standalone: true}"/>
+                </div>
+                <div class="field">
+                  <label class="field-label">Dirección <span class="field-label-hint">(para geocodificar)</span></label>
+                  <div class="autocomplete-wrap">
+                    <input type="text" class="field-input" placeholder="Empieza a escribir para ver sugerencias…"
+                           autocomplete="off"
+                           [(ngModel)]="locationForm.address" [ngModelOptions]="{standalone: true}"
+                           (input)="onLocAddressInput($event)"
+                           (blur)="closeLocSuggestions()"/>
+                    @if (showLocSuggestions && locSuggestions.length > 0) {
+                      <div class="suggestions-dropdown">
+                        @for (s of locSuggestions; track s.formattedAddress) {
+                          <div class="suggestion-item" (mousedown)="selectLocSuggestion(s)">
+                            <svg class="suggestion-pin" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="2">
+                              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                              <circle cx="12" cy="10" r="3"/>
+                            </svg>
+                            <span>{{ s.formattedAddress }}</span>
+                          </div>
+                        }
+                      </div>
+                    }
                   </div>
                 </div>
-              } @else {
-                <button type="button" class="loc-btn loc-btn--add" (click)="openAddLocation()">
-                  + Añadir lugar
-                </button>
-              }
-            </div>
-          }
+                <div class="field">
+                  <label class="field-label">Radio de detección (metros)</label>
+                  <input type="number" class="field-input" min="50" max="2000"
+                         [(ngModel)]="locationForm.radiusMeters" [ngModelOptions]="{standalone: true}"/>
+                </div>
+                <div class="location-form-actions">
+                  <button type="button" class="loc-btn loc-btn--save" (click)="saveLocation()" [disabled]="locationSaving">
+                    @if (locationSaving) { <ion-spinner name="crescent" style="width:14px;height:14px;"></ion-spinner> }
+                    {{ editingLocationId ? 'Actualizar' : 'Añadir lugar' }}
+                  </button>
+                  <button type="button" class="loc-btn" (click)="cancelLocationForm()">Cancelar</button>
+                </div>
+              </div>
+            } @else {
+              <button type="button" class="loc-btn loc-btn--add" (click)="openAddLocation()">
+                + Añadir lugar
+              </button>
+            }
+          </div>
 
           <!-- Botón guardar -->
           <button type="submit" class="submit-btn"

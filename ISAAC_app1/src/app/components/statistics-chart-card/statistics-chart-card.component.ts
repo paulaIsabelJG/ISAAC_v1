@@ -18,4 +18,19 @@ export class StatisticsChartCardComponent {
   @Input() loading        = false;
   @Input() height         = '260px';
   @Input() emptyMessage   = 'Sin datos para el período seleccionado.';
+
+  private _echartsInstance: any = null;
+
+  onChartInit(ec: any): void { this._echartsInstance = ec; }
+
+  getDataUrl(): string | null {
+    if (!this._echartsInstance) return null;
+    try {
+      return this._echartsInstance.getDataURL({
+        type:            'png',
+        pixelRatio:      2,
+        backgroundColor: '#ffffff',
+      });
+    } catch { return null; }
+  }
 }

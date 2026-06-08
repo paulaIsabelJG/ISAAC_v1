@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChildren, QueryList } from '@angular/core';
 import { IonicModule, AlertController, ToastController } from '@ionic/angular';
 import { CommonModule }      from '@angular/common';
 import { FormsModule }       from '@angular/forms';
@@ -17,6 +17,7 @@ import {
 import { StatisticsSummaryCardsComponent } from '../../components/statistics-summary-cards/statistics-summary-cards.component';
 import { StatisticsChartCardComponent }    from '../../components/statistics-chart-card/statistics-chart-card.component';
 import { PhraseLogCardComponent }          from '../../components/phrase-log-card/phrase-log-card.component';
+import { StatisticsPdfExportService, StatsPdfMeta } from '../../services/statistics-pdf-export.service';
 
 export type DashSection = 'resumen' | 'tableros' | 'frases' | 'exportacion';
 
@@ -36,6 +37,9 @@ export type DashSection = 'resumen' | 'tableros' | 'frases' | 'exportacion';
 })
 export class OrganizationStatisticsPage implements OnInit {
 
+  @ViewChildren(StatisticsChartCardComponent)
+  private chartCards!: QueryList<StatisticsChartCardComponent>;
+
   // ── Nombre de organización ────────────────────────────────────────────────
   orgName = '';
 
@@ -54,6 +58,8 @@ export class OrganizationStatisticsPage implements OnInit {
 
   // ── Exportación ───────────────────────────────────────────────────────────
   exportFormat:      'obla' | 'pdf'                          = 'obla';
+  downloadPdfLoading = false;
+
   exportDateFilter:  'all' | 'today' | '7days' | '30days' | 'custom' = 'all';
   exportDateFrom     = '';
   exportDateTo       = '';
@@ -117,6 +123,7 @@ export class OrganizationStatisticsPage implements OnInit {
     private statsSvc:    AacStatisticsService,
     private alertCtrl:   AlertController,
     private toastCtrl:   ToastController,
+    private pdfSvc:      StatisticsPdfExportService,
   ) {}
 
   ngOnInit(): void {
@@ -330,6 +337,123 @@ export class OrganizationStatisticsPage implements OnInit {
     } finally {
       this.exportLoading = false;
     }
+  }
+
+  async downloadStatsPdf(): Promise<void> {
+    this.downloadPdfLoading = true;
+    try {
+      const filters = this.exportFiltersForPdf();
+      const dateFilters: StatsFilters = { from: filters.from, to: filters.to };
+
+      // Cuando se filtra por usuario concreto, las frases van por su endpoint específico
+      const phrasesObs = this.exportScope === 'user' && this.exportUserId
+        ? this.statsSvc.getUserPhrases(this.exportUserId, { ...dateFilters, page: 1, pageSize: 500 })
+        : this.statsSvc.getOrganizationPhrases({ ...filters, page: 1, pageSize: 500 });
+
+      const [freshSummary, freshCharts, boardsRes, phrasesRes] = await Promise.all([
+        firstValueFrom(this.statsSvc.getOrganizationSummary(filters)).catch(() => null),
+        firstValueFrom(this.statsSvc.getOrganizationCharts(filters)).catch(() => null),
+        firstValueFrom(this.statsSvc.getOrganizationBoards(filters)).catch(() => ({ boards: [] as BoardStat[] })),
+        firstValueFrom(phrasesObs).catch(() => ({ phrases: [] as ReconstructedPhrase[] })),
+      ]);
+
+      const savedCharts = this.charts;
+      this.charts = freshCharts;
+      const chartOptions = [
+        this.buildTemporalChart(),
+        this.buildHBarChart(freshCharts?.topPictograms,      '#4a9eff'),
+        this.buildDonutChart(freshCharts?.actionDistribution),
+        this.buildVBarChart(freshCharts?.userActivity,       '#ff69b4'),
+        this.buildHBarChart(freshCharts?.topBoards,          '#20c997'),
+      ];
+      this.charts = savedCharts;
+
+      const chartDataUrls = await this.renderChartsOffscreen(chartOptions);
+
+      let scopeLabel: string;
+      if (this.exportScope === 'user' && this.exportUserId) {
+        const u = this.allOrgUsers.find(x => x._id === this.exportUserId);
+        scopeLabel = u ? u.name : 'Usuario concreto';
+      } else if (this.exportScope === 'family' && this.exportFamilyUserId) {
+        const u = this.allFinalUsers.find(x => x._id === this.exportFamilyUserId);
+        scopeLabel = u ? `Familia de ${u.name}` : 'Familia';
+      } else {
+        const opt = this.scopeOptions.find(o => o.value === filters.scope);
+        scopeLabel = filters.scope === 'all' ? this.orgName : (opt?.label ?? 'Toda la organización');
+      }
+      const meta: StatsPdfMeta = {
+        orgName:    this.orgName,
+        filterFrom: filters.from ?? '',
+        filterTo:   filters.to   ?? '',
+        scopeLabel,
+      };
+
+      await this.pdfSvc.export(meta, freshSummary, chartDataUrls, boardsRes?.boards ?? [], phrasesRes?.phrases ?? []);
+      await this._showToast('PDF generado correctamente.', 'success');
+    } catch (e) {
+      console.error('[PDF export]', e);
+      await this._showToast('Error al generar el PDF.', 'danger');
+    } finally {
+      this.downloadPdfLoading = false;
+    }
+  }
+
+  private exportFiltersForPdf(): StatsFilters {
+    const today = new Date();
+    const fmt = (d: Date) => d.toISOString().split('T')[0];
+    let from: string | undefined;
+    let to: string | undefined;
+    if (this.exportDateFilter === 'today') {
+      from = to = fmt(today);
+    } else if (this.exportDateFilter === '7days') {
+      const d = new Date(today); d.setDate(d.getDate() - 7);
+      from = fmt(d); to = fmt(today);
+    } else if (this.exportDateFilter === '30days') {
+      const d = new Date(today); d.setDate(d.getDate() - 30);
+      from = fmt(d); to = fmt(today);
+    } else if (this.exportDateFilter === 'custom') {
+      from = this.exportDateFrom || undefined;
+      to   = this.exportDateTo   || undefined;
+    }
+    let scope: StatsScope = 'all';
+    if (this.exportScope === 'userType') {
+      scope = this.exportUserType === 'professional' ? 'professionals'
+            : this.exportUserType === 'parent'        ? 'families'
+            : 'users';
+    } else if (this.exportScope === 'family') {
+      scope = 'families';
+    }
+    return { from, to, scope };
+  }
+
+  private async renderChartsOffscreen(optionsList: (EChartsOption | null)[]): Promise<(string | null)[]> {
+    const SIZES = [
+      { w: 820, h: 280 },
+      { w: 540, h: 340 },
+      { w: 540, h: 420 },  // donut: más alto para que la leyenda no se corte
+      { w: 540, h: 340 },
+      { w: 540, h: 340 },
+    ];
+    const ecModule = await import('echarts');
+    const results: (string | null)[] = [];
+    for (let i = 0; i < optionsList.length; i++) {
+      const opts = optionsList[i];
+      if (!opts) { results.push(null); continue; }
+      const { w, h } = SIZES[i] ?? { w: 600, h: 340 };
+      const el = document.createElement('div');
+      el.style.cssText = `width:${w}px;height:${h}px;position:fixed;left:-${w + 100}px;top:0;background:#fff`;
+      document.body.appendChild(el);
+      try {
+        const chart = ecModule.init(el, null, { renderer: 'canvas' });
+        chart.setOption(opts as any);
+        await new Promise(r => setTimeout(r, 250));
+        const url = chart.getDataURL({ type: 'png', pixelRatio: 2, backgroundColor: '#ffffff' });
+        chart.dispose();
+        results.push(url || null);
+      } catch { results.push(null); }
+      finally { document.body.removeChild(el); }
+    }
+    return results;
   }
 
   userTypeLabel(type: string): string {
