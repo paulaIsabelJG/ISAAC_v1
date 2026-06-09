@@ -16,7 +16,7 @@ import { AacControlsBarComponent } from '../../components/aac-controls-bar/aac-c
 import { AacCircularTopBarComponent } from '../../components/aac-circular-top-bar/aac-circular-top-bar.component';
 import { AacCircularRightBarComponent } from '../../components/aac-circular-right-bar/aac-circular-right-bar.component';
 import { IaPredictorColumnComponent } from '../../components/ia-predictor-column/ia-predictor-column.component';
-import { DEFAULT_CIRCULAR_CONTROLS_CONFIG } from '../../services/board.service';
+import { DEFAULT_CIRCULAR_CONTROLS_CONFIG, ControlButtonId } from '../../services/board.service';
 import { AiPhraseResultModalComponent } from '../../components/ai-phrase-result-modal/ai-phrase-result-modal.component';
 import { AiReformulationResponse } from '../../services/ai-assistant.service';
 import {
@@ -81,8 +81,14 @@ export class CommunicatorPage implements OnInit, OnDestroy {
   predActiveCatIdx: number = -1;
   /** Pictograma que aparece en el centro durante la vista de candidatos. */
   predCenterPict: CellPictogram | null = null;
-  /** Sugerencias devueltas por el predictor circular para la categoría activa. */
-  circularSuggestions: CircularSuggestion[] = [];
+  /** Lista completa de sugerencias devueltas por el predictor (hasta circularSuggestionsLimit). */
+  allCircularSuggestions:    CircularSuggestion[] = [];
+  /** Slice visible en la página actual (suggestionsPerPage elementos). */
+  visibleCircularSuggestions: CircularSuggestion[] = [];
+  /** Página activa de sugerencias (0-indexed). */
+  predictionPage = 0;
+  readonly suggestionsPerPage       = 8;
+  readonly circularSuggestionsLimit = 24;
   /** true mientras se espera respuesta del predictor circular. */
   circularSuggestionsLoading = false;
 
@@ -142,8 +148,10 @@ export class CommunicatorPage implements OnInit, OnDestroy {
     // Esto evita personalizar tableros cuyo creador no activó la opción.
     this.rootAutoPersonalize = false;
     if (this.userId) {
-      const rootMeta = await firstValueFrom(this.boardSvc.getBoardById(boardId));
-      this.rootAutoPersonalize = !!rootMeta.board.autoPersonalize;
+      try {
+        const rootMeta = await firstValueFrom(this.boardSvc.getBoardById(boardId));
+        this.rootAutoPersonalize = !!rootMeta.board.autoPersonalize;
+      } catch { /* si falla, se carga sin personalización */ }
     }
     // controlsConfig se carga en loadBoard → está disponible después de este await
     await this.loadBoard(boardId);
@@ -202,10 +210,12 @@ export class CommunicatorPage implements OnInit, OnDestroy {
     this.phraseSub?.unsubscribe();
     this.boardSourcePicts.clear();
     this.navSourcePict = undefined;
-    this.predictions             = [];
-    this.circularSuggestions     = [];
+    this.predictions               = [];
+    this.allCircularSuggestions    = [];
+    this.visibleCircularSuggestions = [];
+    this.predictionPage            = 0;
     this.circularSuggestionsLoading = false;
-    this.privateMode   = false;   // limpia el modo oculto al salir
+    this.privateMode = false;   // limpia el modo oculto al salir
   }
 
   // ── Predictor IA ──────────────────────────────────────────────────────────
@@ -353,10 +363,41 @@ export class CommunicatorPage implements OnInit, OnDestroy {
       // Pasar userId solo cuando el tablero raíz tiene autoPersonalize activo.
       const uid = (this.rootAutoPersonalize && this.userId) ? this.userId : undefined;
       const res = await firstValueFrom(this.boardSvc.getBoardById(boardId, uid));
-      this.board                   = res.board;
-      this.predActiveCatIdx        = -1;
-      this.predCenterPict          = null;
-      this.circularSuggestions     = [];
+      this.board                      = res.board;
+
+      // Migración en memoria: tableros circulares antiguos pueden no tener
+      // botones añadidos al DEFAULT después de su creación (p.ej. reloadBoard).
+      if (this.board.circularControlsConfig) {
+        const cfg = this.board.circularControlsConfig;
+        const defaultBtns: ControlButtonId[] = [
+          ...(DEFAULT_CIRCULAR_CONTROLS_CONFIG.rightBar as ControlButtonId[]),
+          ...(DEFAULT_CIRCULAR_CONTROLS_CONFIG.topBar.filter(i => i !== 'phraseBar') as ControlButtonId[]),
+        ];
+        const newRightBar      = [...cfg.rightBar];
+        const newVisibleButtons = [...cfg.visibleButtons];
+        let changed = false;
+        for (const btn of defaultBtns) {
+          if (!cfg.topBar.includes(btn) && !newRightBar.includes(btn)) {
+            newRightBar.push(btn);
+            if (DEFAULT_CIRCULAR_CONTROLS_CONFIG.visibleButtons.includes(btn)) {
+              newVisibleButtons.push(btn);
+            }
+            changed = true;
+          }
+        }
+        if (changed) {
+          this.board = {
+            ...this.board,
+            circularControlsConfig: { ...cfg, rightBar: newRightBar, visibleButtons: newVisibleButtons },
+          };
+        }
+      }
+
+      this.predActiveCatIdx           = -1;
+      this.predCenterPict             = null;
+      this.allCircularSuggestions     = [];
+      this.visibleCircularSuggestions = [];
+      this.predictionPage             = 0;
       this.circularSuggestionsLoading = false;
       // Pre-calentar caché TTS personalizada con todas las etiquetas del tablero
       const labels = (res.board.cells ?? [])
@@ -391,10 +432,7 @@ export class CommunicatorPage implements OnInit, OnDestroy {
   onBack(): void {
     // En modo predictivo con candidatos visibles: retroceder a vista de categorías
     if (this.isPredictiveCircular && this.predActiveCatIdx !== -1) {
-      this.predActiveCatIdx        = -1;
-      this.predCenterPict          = null;
-      this.circularSuggestions     = [];
-      this.circularSuggestionsLoading = false;
+      this.backToCircularCategories();
       return;
     }
     if (this.aac.boardStack.length > 0) {
@@ -417,10 +455,7 @@ export class CommunicatorPage implements OnInit, OnDestroy {
 
     // Centro o columna de ubicación → volver a vista de categorías
     if (col !== 0) {
-      this.predActiveCatIdx        = -1;
-      this.predCenterPict          = null;
-      this.circularSuggestions     = [];
-      this.circularSuggestionsLoading = false;
+      this.backToCircularCategories();
       return;
     }
 
@@ -431,9 +466,11 @@ export class CommunicatorPage implements OnInit, OnDestroy {
       // ── Vista de categorías: seleccionar la categoría del slot pulsado
       const cat = cats[row];
       if (!cat) return;
-      this.predActiveCatIdx = row;
-      this.circularSuggestions = [];
-      this.predCenterPict   = {
+      this.predActiveCatIdx           = row;
+      this.allCircularSuggestions     = [];
+      this.visibleCircularSuggestions = [];
+      this.predictionPage             = 0;
+      this.predCenterPict             = {
         source:            cat.icon?.imageUrl ? 'arasaac' : 'new',
         id:                cat.icon?.arasaacId || cat.id,
         label:             cat.label || 'Categoría',
@@ -447,7 +484,7 @@ export class CommunicatorPage implements OnInit, OnDestroy {
       } as CellPictogram;
 
       // Solicitar sugerencias al predictor (no bloquea la UI, candidatos del logopeda como fallback)
-      this.loadCircularSuggestions(cat.id, config.suggestionsPerCategory ?? 8);
+      this.loadCircularSuggestions(cat.id);
     } else {
       // ── Vista de candidatos: hablar el candidato pulsado
       const cat = cats[this.predActiveCatIdx];
@@ -455,8 +492,8 @@ export class CommunicatorPage implements OnInit, OnDestroy {
 
       // Usar sugerencias del predictor si están disponibles; si no, fallback a manualPictograms
       let pict: CircularSuggestion | null = null;
-      if (this.circularSuggestions.length > 0) {
-        pict = this.circularSuggestions[row] ?? null;
+      if (this.allCircularSuggestions.length > 0) {
+        pict = this.visibleCircularSuggestions[row] ?? null;
       } else {
         const mp = (cat.manualPictograms ?? []).slice(0, n)[row];
         if (mp) {
@@ -502,31 +539,69 @@ export class CommunicatorPage implements OnInit, OnDestroy {
         fitzgeraldEnabled: false,
       }, { type: 'none' });
       this.aac.speakText(pict.label, this.gender);
+
+      // Recargar predictor con la nueva frase, manteniendo categoría activa
+      this.predictionPage = 0;
+      this.loadCircularSuggestions(cat.id);
     }
   }
 
   /** Llama al backend para obtener sugerencias predichas para la categoría dada. */
-  private loadCircularSuggestions(categoryId: string, limit: number): void {
+  private loadCircularSuggestions(categoryId: string): void {
     if (!this.userId || !this.board) return;
     this.circularSuggestionsLoading = true;
     this.predictionSvc.getCircularSuggestions({
-      userId:         this.userId,
-      boardId:        this.board._id,
+      userId:          this.userId,
+      boardId:         this.board._id,
       categoryId,
-      limit,
-      currentPhrase:  this.aac.phrase.map(p => ({ label: p.label, wordType: p.wordType })),
+      limit:           this.circularSuggestionsLimit,
+      currentPhrase:   this.aac.phrase.map(p => ({ label: p.label, wordType: p.wordType })),
       locationContext: this.aac.locationContext,
     }).subscribe({
-      next:  res => {
-        this.circularSuggestions    = res.suggestions ?? [];
+      next: res => {
+        this.allCircularSuggestions    = res.suggestions ?? [];
+        this.predictionPage            = 0;
+        this.updateVisibleCircularSuggestions();
         this.circularSuggestionsLoading = false;
       },
       error: () => {
         // Silencioso: si falla el predictor se muestran los candidatos del logopeda
-        this.circularSuggestions    = [];
+        this.allCircularSuggestions    = [];
+        this.visibleCircularSuggestions = [];
         this.circularSuggestionsLoading = false;
       },
     });
+  }
+
+  private updateVisibleCircularSuggestions(): void {
+    const start = this.predictionPage * this.suggestionsPerPage;
+    this.visibleCircularSuggestions = this.allCircularSuggestions.slice(start, start + this.suggestionsPerPage);
+  }
+
+  /** Avanza a la siguiente página de sugerencias (o vuelve a la primera si ya es la última). */
+  showMoreCircularSuggestions(): void {
+    if (this.predActiveCatIdx === -1 || this.allCircularSuggestions.length <= this.suggestionsPerPage) return;
+    const maxPage = Math.ceil(this.allCircularSuggestions.length / this.suggestionsPerPage) - 1;
+    this.predictionPage = this.predictionPage < maxPage ? this.predictionPage + 1 : 0;
+    this.updateVisibleCircularSuggestions();
+    // TODO: registrar evento OBL tipo 'action' (more_suggestions) cuando el servicio lo soporte
+  }
+
+  /** Recarga el tablero actual desde el backend (resetea navegación circular si procede). */
+  onReloadBoard(): void {
+    if (!this.board) return;
+    this.backToCircularCategories();
+    void this.loadBoard(this.board._id).then(() => this.loadPredictions());
+  }
+
+  /** Vuelve a la vista de categorías en el tablero circular predictivo. */
+  backToCircularCategories(): void {
+    this.predActiveCatIdx           = -1;
+    this.predCenterPict             = null;
+    this.allCircularSuggestions     = [];
+    this.visibleCircularSuggestions = [];
+    this.predictionPage             = 0;
+    this.circularSuggestionsLoading = false;
   }
 
   // ── Getters ───────────────────────────────────────────────────────────────
@@ -588,8 +663,8 @@ export class CommunicatorPage implements OnInit, OnDestroy {
       const nCandidates = Math.min(config.suggestionsPerCategory ?? 8, nSlots);
 
       // Usar sugerencias del predictor si ya llegaron; si no, mostrar manualPictograms como fallback
-      if (this.circularSuggestions.length > 0) {
-        syntheticCells = this.circularSuggestions.slice(0, nCandidates).map((s, i) => ({
+      if (this.visibleCircularSuggestions.length > 0) {
+        syntheticCells = this.visibleCircularSuggestions.slice(0, nCandidates).map((s, i) => ({
           row: i, col: 0,
           pictogram: {
             source:            'arasaac' as const,
@@ -634,6 +709,18 @@ export class CommunicatorPage implements OnInit, OnDestroy {
 
   get effectiveCircularConfig() {
     return this.board?.circularControlsConfig ?? DEFAULT_CIRCULAR_CONTROLS_CONFIG;
+  }
+
+  /** Muestra el botón "Más opciones" solo en tableros circulares predictivos con varias páginas. */
+  get canShowMoreOptions(): boolean {
+    return this.isPredictiveCircular &&
+           this.predActiveCatIdx !== -1 &&
+           this.allCircularSuggestions.length > this.suggestionsPerPage;
+  }
+
+  /** Muestra el botón "Categorías" cuando hay una categoría activa en el circular predictivo. */
+  get canShowBackToCategories(): boolean {
+    return this.isPredictiveCircular && this.predActiveCatIdx !== -1;
   }
 
   get canGoBack(): boolean {

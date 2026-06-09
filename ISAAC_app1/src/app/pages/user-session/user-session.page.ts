@@ -393,9 +393,12 @@ export class UserSessionPage implements OnInit, OnDestroy {
    */
   openBoard(board: Board): void {
     this.speakNav(board.name || 'tablero');
+    // Usar el ID del usuario autenticado para el registro OBL:
+    // si es el usuario final él mismo → mismo ID; si es org/profesional → su propio ID.
+    const logUserId = this.authService.getCurrentUser()?.id ?? this.userId;
     this.router.navigate(['/communicator', board._id], {
       queryParams: {
-        userId:   this.userId,
+        userId:   logUserId,
         returnTo: '/user-session/' + this.userId,
       },
     });
@@ -494,9 +497,10 @@ export class UserSessionPage implements OnInit, OnDestroy {
 
   openBoardHidden(board: Board): void {
     this.speakNav(board.name || 'tablero');
+    const logUserId = this.authService.getCurrentUser()?.id ?? this.userId;
     this.router.navigate(['/communicator', board._id], {
       queryParams: {
-        userId:   this.userId,
+        userId:   logUserId,
         returnTo: '/user-session/' + this.userId,
       },
       state: { privateMode: true },

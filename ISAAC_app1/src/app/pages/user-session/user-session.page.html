@@ -159,8 +159,9 @@
                    (pointerdown)="startHold($event, board)"
                    (pointerup)="cancelHold()"
                    (pointermove)="onHoldPointerMove($event)"
-                   (pointerleave)="cancelHold()">
-                <app-board-mini-card [board]="board" (cardClick)="onBoardCardClick($event)">
+                   (pointerleave)="cancelHold()"
+                   (click)="onBoardCardClick(board)">
+                <app-board-mini-card [board]="board">
                 </app-board-mini-card>
                 @if (holdBoardId === board._id && holdProgress >= 25) {
                   <div class="us-hold-overlay">

@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth.guard';
+import { unsavedChangesGuard } from './guards/unsaved-changes.guard';
 
 export const routes: Routes = [
   // ── Rutas públicas ──────────────────────────────────────────────────────────
@@ -55,7 +56,8 @@ export const routes: Routes = [
       import('./pages/board-builder-editor/board-builder-editor.page').then(
         (m) => m.BoardBuilderEditorPage
       ),
-    canActivate: [authGuard],
+    canActivate:   [authGuard],
+    canDeactivate: [unsavedChangesGuard],
   },
   {
     path: 'user-placeholder',

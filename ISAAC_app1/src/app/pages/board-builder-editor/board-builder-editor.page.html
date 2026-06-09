@@ -44,7 +44,7 @@
   <!-- ══════════════════════ MODO VISTA PREVIA — TABLERO NORMAL ═══════════ -->
   } @else if (previewMode) {
     <app-board-preview-container
-      [board]="board"
+      [board]="circularDisplayBoard ?? board"
       [isCircular]="isCircular"
       [previewCenterPict]="previewCenterPict"
       [circularSimMode]="circularSimMode"
@@ -75,7 +75,8 @@
         (openBoard)="openBoard($event)"
         (selectSlot)="onSlotSelected($event)"
         (controlsConfigChange)="onControlsConfigChange($event)"
-        (circularControlsConfigChange)="onCircularControlsConfigChange($event)">
+        (circularControlsConfigChange)="onCircularControlsConfigChange($event)"
+        (dirtyChange)="sidebarIsDirty = $event">
       </app-board-sidebar-left>
 
       <!-- ── COLUMNA CENTRAL ────────────────────────────────────────────── -->
@@ -556,11 +557,10 @@
                             <p class="bbe-pred-empty">No hay tableros disponibles.</p>
                           } @else {
                             <select class="bbe-pred-select"
-                                    [value]="cat.sourceBoardId ?? ''"
                                     (change)="updateCatField(i, 'sourceBoardId', $any($event.target).value || null)">
-                              <option value="">— Seleccionar tablero —</option>
+                              <option value="" [selected]="!cat.sourceBoardId">— Seleccionar tablero —</option>
                               @for (b of userBoards; track b._id) {
-                                <option [value]="b._id">{{ b.name }}</option>
+                                <option [value]="b._id" [selected]="b._id === cat.sourceBoardId">{{ b.name }}</option>
                               }
                             </select>
                             @if (cat.sourceBoardId) {

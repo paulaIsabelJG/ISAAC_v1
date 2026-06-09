@@ -40,8 +40,9 @@ export class AacCircularTopBarComponent implements OnInit, OnDestroy {
   }
   private _config: CircularControlsConfig | null = null;
 
-  @Output() homeClick = new EventEmitter<void>();
-  @Output() backClick = new EventEmitter<void>();
+  @Output() homeClick        = new EventEmitter<void>();
+  @Output() backClick        = new EventEmitter<void>();
+  @Output() reloadBoardClick = new EventEmitter<void>();
 
   phrase: AacPhraseItem[] = [];
   private phraseSub?: Subscription;
@@ -74,11 +75,12 @@ export class AacCircularTopBarComponent implements OnInit, OnDestroy {
 
   get hasPhrase(): boolean { return this.phrase.length > 0; }
 
-  onHome(): void  { this.voiceAction('Inicio',        () => this.homeClick.emit()); }
-  onBack(): void  { this.voiceAction('Atrás',         () => this.backClick.emit()); }
-  onSpeak(): void { this.aac.speakPhrase(this.gender); }
-  onErase(): void { this.voiceAction('Borrar último', () => this.aac.deleteLast()); }
-  onClear(): void { this.voiceAction('Borrar todo',   () => this.aac.clearPhraseAndGoRoot()); }
+  onHome(): void        { this.voiceAction('Inicio',        () => this.homeClick.emit()); }
+  onBack(): void        { this.voiceAction('Atrás',         () => this.backClick.emit()); }
+  onSpeak(): void       { this.aac.speakPhrase(this.gender); }
+  onErase(): void       { this.voiceAction('Borrar último', () => this.aac.deleteLast()); }
+  onClear(): void       { this.voiceAction('Borrar todo',   () => this.aac.clearPhraseAndGoRoot()); }
+  onReloadBoard(): void { this.voiceAction('Recargar',      () => this.reloadBoardClick.emit()); }
 
   private voiceAction(label: string, action: () => void): void {
     if (this.mode === 'preview' || (this.mode === 'communicator' && (this.voiceEnabled || this.aac.soundEnabled))) {

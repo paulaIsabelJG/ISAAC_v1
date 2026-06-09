@@ -11,7 +11,7 @@ export type ActionType  = 'voice' | 'navigate' | 'voice+navigate' | 'disabled' |
 
 // ─── Configuración de la barra de controles AAC ───────────────────────────────
 
-export type ControlButtonId = 'home' | 'back' | 'speak' | 'deleteLast' | 'clearAll';
+export type ControlButtonId = 'home' | 'back' | 'speak' | 'deleteLast' | 'clearAll' | 'reloadBoard';
 export type ControlsBarItem = ControlButtonId | 'phraseBar';
 
 export interface ControlsConfig {
@@ -41,8 +41,8 @@ export interface CircularControlsConfig {
 
 export const DEFAULT_CIRCULAR_CONTROLS_CONFIG: CircularControlsConfig = {
   topBar:         ['home', 'phraseBar'],
-  rightBar:       ['back', 'speak', 'deleteLast', 'clearAll'],
-  visibleButtons: ['home', 'back', 'speak', 'deleteLast', 'clearAll'],
+  rightBar:       ['back', 'speak', 'deleteLast', 'clearAll', 'reloadBoard'],
+  visibleButtons: ['home', 'back', 'speak', 'deleteLast', 'clearAll', 'reloadBoard'],
 };
 export type PictSource  = 'arasaac' | 'custom' | 'new';
 

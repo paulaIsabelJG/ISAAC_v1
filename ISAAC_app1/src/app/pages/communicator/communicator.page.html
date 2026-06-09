@@ -36,7 +36,8 @@
         [gender]="gender"
         [canGoBack]="canGoBack"
         (homeClick)="onHome()"
-        (backClick)="onBack()">
+        (backClick)="onBack()"
+        (reloadBoardClick)="onReloadBoard()">
       </app-aac-circular-top-bar>
 
       <div class="comm-circular-row">
@@ -71,15 +72,20 @@
           </app-board-circular>
         }
 
-        <!-- Barra vertical derecha: Atrás + Hablar + Borrar + Limpiar -->
+        <!-- Barra vertical derecha: Atrás + Hablar + Borrar + Limpiar + Recargar + Categorías + Más opciones -->
         <app-aac-circular-right-bar
           mode="communicator"
           [config]="effectiveCircularConfig"
           [voiceEnabled]="voiceEnabled"
           [gender]="gender"
           [canGoBack]="canGoBack"
+          [showBackToCategories]="canShowBackToCategories"
+          [showMoreOptions]="canShowMoreOptions"
           (homeClick)="onHome()"
-          (backClick)="onBack()">
+          (backClick)="onBack()"
+          (reloadBoardClick)="onReloadBoard()"
+          (backToCategoriesClick)="backToCircularCategories()"
+          (moreOptionsClick)="showMoreCircularSuggestions()">
         </app-aac-circular-right-bar>
 
       </div><!-- /comm-circular-row -->

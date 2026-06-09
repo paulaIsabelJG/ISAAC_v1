@@ -15,7 +15,7 @@
 
   <!-- Nombre -->
   <label class="bbe-lbl">Nombre</label>
-  <input class="bbe-inp" [(ngModel)]="localName" type="text" placeholder="Nombre del tablero"/>
+  <input class="bbe-inp" [(ngModel)]="localName" type="text" placeholder="Nombre del tablero" (input)="onFormChange()"/>
 
   <!-- Imagen de portada -->
   <label class="bbe-lbl">Imagen <span class="bbe-lbl-opt">(opcional)</span></label>
@@ -98,11 +98,11 @@
     <div class="bbe-cfg-row">
       <div class="bbe-cfg-field">
         <label class="bbe-lbl">Filas</label>
-        <input class="bbe-inp bbe-inp--num" type="number" min="1" max="10" [(ngModel)]="localRows"/>
+        <input class="bbe-inp bbe-inp--num" type="number" min="1" max="10" [(ngModel)]="localRows" (input)="onFormChange()"/>
       </div>
       <div class="bbe-cfg-field">
         <label class="bbe-lbl">Columnas</label>
-        <input class="bbe-inp bbe-inp--num" type="number" min="1" max="10" [(ngModel)]="localCols"/>
+        <input class="bbe-inp bbe-inp--num" type="number" min="1" max="10" [(ngModel)]="localCols" (input)="onFormChange()"/>
       </div>
     </div>
   }
@@ -113,7 +113,7 @@
     <div class="bbe-role-selector">
       <button type="button" class="bbe-role-btn"
               [class.bbe-role-btn--active]="localSlotCount === 2"
-              (click)="localSlotCount = 2"
+              (click)="localSlotCount = 2; onFormChange()"
               title="2 huecos en fila">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="2" y="4" width="9" height="16" rx="1.5"/>
@@ -122,7 +122,7 @@
       </button>
       <button type="button" class="bbe-role-btn"
               [class.bbe-role-btn--active]="localSlotCount === 3"
-              (click)="localSlotCount = 3"
+              (click)="localSlotCount = 3; onFormChange()"
               title="3 huecos en fila">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="1" y="4" width="6" height="16" rx="1.5"/>
@@ -132,7 +132,7 @@
       </button>
       <button type="button" class="bbe-role-btn"
               [class.bbe-role-btn--active]="localSlotCount === 4"
-              (click)="localSlotCount = 4"
+              (click)="localSlotCount = 4; onFormChange()"
               title="4 huecos en cuadrícula 2×2">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="2"  y="2"  width="9" height="9" rx="1.5"/>
@@ -147,7 +147,7 @@
   <!-- Ranuras exteriores (solo circular) -->
   @if (isCircular) {
     <label class="bbe-lbl">Ranuras exteriores</label>
-    <input class="bbe-inp bbe-inp--num" type="number" min="3" max="20" [(ngModel)]="localCircleSlots"/>
+    <input class="bbe-inp bbe-inp--num" type="number" min="3" max="20" [(ngModel)]="localCircleSlots" (input)="onFormChange()"/>
   }
 
   <!-- Tipo de tablero -->
@@ -156,7 +156,7 @@
     <button type="button"
             class="bbe-role-btn"
             [class.bbe-role-btn--active]="localBoardRole === 'main'"
-            (click)="localBoardRole = 'main'">
+            (click)="localBoardRole = 'main'; onFormChange()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
         <polyline points="9 22 9 12 15 12 15 22"/>
@@ -166,7 +166,7 @@
     <button type="button"
             class="bbe-role-btn"
             [class.bbe-role-btn--active]="localBoardRole === 'secondary'"
-            (click)="localBoardRole = 'secondary'">
+            (click)="localBoardRole = 'secondary'; onFormChange()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <polyline points="15 3 21 3 21 9"/>
         <polyline points="9 21 3 21 3 15"/>
@@ -182,7 +182,7 @@
 
     <!-- Columna ubicación: solo circular -->
     @if (isCircular) {
-      <div class="bbe-toggle-row" (click)="localLocationEnabled = !localLocationEnabled">
+      <div class="bbe-toggle-row" (click)="localLocationEnabled = !localLocationEnabled; onFormChange()">
         <span class="bbe-toggle-lbl">Columna ubicación</span>
         <div class="bbe-toggle" [class.bbe-toggle--on]="localLocationEnabled">
           <div class="bbe-toggle-thumb"></div>
@@ -190,12 +190,12 @@
       </div>
       @if (localLocationEnabled) {
         <label class="bbe-lbl">Ranuras ubicación</label>
-        <input class="bbe-inp bbe-inp--num" type="number" min="1" max="20" [(ngModel)]="localLocationSlots"/>
+        <input class="bbe-inp bbe-inp--num" type="number" min="1" max="20" [(ngModel)]="localLocationSlots" (input)="onFormChange()"/>
       }
     }
 
     <!-- Corrector IA: todos los tipos de tablero principal -->
-    <div class="bbe-toggle-row" (click)="localAiRewrite = !localAiRewrite">
+    <div class="bbe-toggle-row" (click)="localAiRewrite = !localAiRewrite; onFormChange()">
       <span class="bbe-toggle-lbl">Corrector IA</span>
       <div class="bbe-toggle" [class.bbe-toggle--on]="localAiRewrite">
         <div class="bbe-toggle-thumb"></div>
@@ -203,7 +203,7 @@
     </div>
 
     <!-- Personalización automática: todos los tipos de tablero principal -->
-    <div class="bbe-toggle-row" (click)="localAutoPersonalize = !localAutoPersonalize">
+    <div class="bbe-toggle-row" (click)="localAutoPersonalize = !localAutoPersonalize; onFormChange()">
       <span class="bbe-toggle-lbl">Personalización automática</span>
       <div class="bbe-toggle" [class.bbe-toggle--on]="localAutoPersonalize">
         <div class="bbe-toggle-thumb"></div>
@@ -217,7 +217,7 @@
 
     <!-- Predictor IA: solo tableros no circulares (columna lateral de cuadrícula) -->
     @if (!isCircular) {
-      <div class="bbe-toggle-row" (click)="localPredictor = !localPredictor">
+      <div class="bbe-toggle-row" (click)="localPredictor = !localPredictor; onFormChange()">
         <span class="bbe-toggle-lbl">Predictor IA</span>
         <div class="bbe-toggle" [class.bbe-toggle--on]="localPredictor">
           <div class="bbe-toggle-thumb"></div>
@@ -229,11 +229,11 @@
           <div class="bbe-cfg-row">
             <div class="bbe-cfg-field">
               <label class="bbe-lbl">Filas IA</label>
-              <input class="bbe-inp bbe-inp--num" type="number" min="1" max="20" [(ngModel)]="localIaRows"/>
+              <input class="bbe-inp bbe-inp--num" type="number" min="1" max="20" [(ngModel)]="localIaRows" (input)="onFormChange()"/>
             </div>
             <div class="bbe-cfg-field">
               <label class="bbe-lbl">Columnas IA</label>
-              <input class="bbe-inp bbe-inp--num" type="number" min="1" max="5" [(ngModel)]="localIaCols"/>
+              <input class="bbe-inp bbe-inp--num" type="number" min="1" max="5" [(ngModel)]="localIaCols" (input)="onFormChange()"/>
             </div>
           </div>
         </div>
@@ -359,6 +359,12 @@
                     <path d="M10 11v6M14 11v6M9 6V4h6v2"/>
                   </svg>
                 }
+                @case ('reloadBoard') {
+                  <svg class="bbe-ctrl-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 4 23 10 17 10"/>
+                    <path d="M20.49 15a9 9 0 1 1-.49-3.55"/>
+                  </svg>
+                }
               }
             </div>
 
@@ -457,6 +463,12 @@
                       <path d="M10 11v6M14 11v6M9 6V4h6v2"/>
                     </svg>
                   }
+                  @case ('reloadBoard') {
+                    <svg class="bbe-ctrl-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="23 4 23 10 17 10"/>
+                      <path d="M20.49 15a9 9 0 1 1-.49-3.55"/>
+                    </svg>
+                  }
                 }
               </div>
 
@@ -498,6 +510,15 @@
         </ion-reorder-group>
       </ion-list>
     }
+
+    <!-- Guardar al pie del panel para no tener que subir al inicio del sidebar -->
+    <button class="bbe-save-cfg" (click)="onSaveClick()" [disabled]="isSaving"
+            style="margin-top:12px">
+      @if (isSaving) {
+        <ion-spinner name="crescent" style="width:16px;height:16px"></ion-spinner>
+      }
+      Guardar configuración
+    </button>
 
   </div>
 }
@@ -620,6 +641,16 @@
 
       </ion-reorder-group>
     </ion-list>
+
+    <!-- Guardar al pie del panel para no tener que subir al inicio del sidebar -->
+    <button class="bbe-save-cfg" (click)="onSaveClick()" [disabled]="isSaving"
+            style="margin-top:12px">
+      @if (isSaving) {
+        <ion-spinner name="crescent" style="width:16px;height:16px"></ion-spinner>
+      }
+      Guardar configuración
+    </button>
+
   </div>
 }
 

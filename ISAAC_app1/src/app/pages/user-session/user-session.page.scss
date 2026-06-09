@@ -363,7 +363,7 @@ $board-rows:  2;
   position:    relative;
   user-select: none;
   -webkit-user-select: none;
-  touch-action: pan-y;    // permite scroll vertical; capturamos el hold
+  touch-action: manipulation;  // permite tap/pan sin delay de 300ms; capturamos el hold
 }
 
 .us-hold-overlay {

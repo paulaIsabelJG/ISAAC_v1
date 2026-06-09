@@ -57,6 +57,7 @@ import { AacControlsBarComponent } from '../../components/aac-controls-bar/aac-c
 import { AacCircularTopBarComponent } from '../../components/aac-circular-top-bar/aac-circular-top-bar.component';
 import { AacCircularRightBarComponent } from '../../components/aac-circular-right-bar/aac-circular-right-bar.component';
 import { IaPredictorColumnComponent } from '../../components/ia-predictor-column/ia-predictor-column.component';
+import { HasUnsavedChanges } from '../../guards/has-unsaved-changes';
 
 @Component({
   selector: 'app-board-builder-editor',
@@ -82,7 +83,11 @@ import { IaPredictorColumnComponent } from '../../components/ia-predictor-column
     IaPredictorColumnComponent,
   ],
 })
-export class BoardBuilderEditorPage implements OnInit, OnDestroy {
+export class BoardBuilderEditorPage implements OnInit, OnDestroy, HasUnsavedChanges {
+  // ── Cambios sin guardar ──────────────────────────────────────────────────────
+  sidebarIsDirty = false;
+  hasUnsavedChanges(): boolean { return this.sidebarIsDirty; }
+
   // ── Routing ─────────────────────────────────────────────────────────────────
   boardId = '';
   returnTo = '/board-builder';
@@ -371,15 +376,13 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
   private async loadBoard(): Promise<void> {
     this.isLoading = true;
     this.loadError = '';
+    this.previewCircularControlsConfig = undefined;
+    this.sidebarIsDirty = false;
     try {
       const res = await firstValueFrom(this.boardSvc.getBoardById(this.boardId));
-      // Prioridad: API (fuente de verdad guardada) > previewCircularControlsConfig
-      // (cambios en curso sin guardar) > nada.
-      // Así el formulario del sidebar nunca diverge de la representación visual.
       this.board = {
         ...res.board,
-        circularControlsConfig:
-          res.board.circularControlsConfig ?? this.previewCircularControlsConfig,
+        circularControlsConfig: res.board.circularControlsConfig,
       };
       this.syncConfigFromBoard();
       // Inicializar configuración predictiva local desde el board (o vacío si es predictivo sin config)
@@ -964,6 +967,10 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
           // circularControlsConfig: solo para tableros circulares principales
           ...(payload.boardRole === 'main' && payload.circularControlsConfig
             ? { circularControlsConfig: payload.circularControlsConfig } : {}),
+          // predictiveCircularConfig: sincroniza las categorías locales al guardar config
+          ...(this.isPredictiveCircular && this.localPredictiveConfig
+            ? { isPredictiveCircular: true, predictiveCircularConfig: this.localPredictiveConfig }
+            : {}),
           // Dimensiones solo para tableros normales (no multi):
           ...(!isMulti && {
             rows:                  payload.rows,
@@ -982,6 +989,7 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
       // Sincronizamos previewCircularControlsConfig con lo recién guardado para que
       // si el usuario navega y vuelve, loadBoard() lo use como fallback correcto.
       this.previewCircularControlsConfig = savedCircularConfig;
+      this.sidebarIsDirty = false;
       // Nuevo objeto → ngOnChanges en el sidebar resetea el formulario
       this.syncConfigFromBoard();
       if (isMulti) {
@@ -1273,6 +1281,10 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy {
         }),
       );
       this.board = { ...this.board, ...res.board };
+      // Sincronizar localPredictiveConfig con lo que se guardó en el backend
+      if (res.board.predictiveCircularConfig) {
+        this.localPredictiveConfig = JSON.parse(JSON.stringify(res.board.predictiveCircularConfig));
+      }
       (await this.toastCtrl.create({
         message: '✓ Configuración predictiva guardada', duration: 1800, color: 'success', position: 'top',
       })).present();

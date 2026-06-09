@@ -58,11 +58,14 @@ $text-muted: #6b5462;
 
   &:active:not([disabled]) { transform: scale(0.92); }
 
-  &--home  { background: $violet-l;  border-color: rgba($violet, 0.3); svg { stroke: $violet; }  }
-  &--back  { background: $violet-l;  border-color: rgba($violet, 0.3); svg { stroke: $violet; }  }
-  &--speak { background: $violet;    border-color: darken($violet, 8%); svg { stroke: #fff; }     }
-  &--erase { background: $orange-l;  border-color: rgba($orange, 0.35); svg { stroke: $orange; } }
-  &--clear { background: $red-l;     border-color: rgba($red, 0.3);    svg { stroke: $red; }     }
+  &--home       { background: $violet-l;  border-color: rgba($violet, 0.3); svg { stroke: $violet; }  }
+  &--back       { background: $violet-l;  border-color: rgba($violet, 0.3); svg { stroke: $violet; }  }
+  &--speak      { background: $violet;    border-color: darken($violet, 8%); svg { stroke: #fff; }     }
+  &--erase      { background: $orange-l;  border-color: rgba($orange, 0.35); svg { stroke: $orange; } }
+  &--clear      { background: $red-l;     border-color: rgba($red, 0.3);    svg { stroke: $red; }     }
+  &--reload     { background: #e0f7fa;    border-color: rgba(#00bcd4, 0.3); svg { stroke: #0097a7; }  }
+  &--categories { background: #e8f5e9;    border-color: rgba(#4caf50, 0.3); svg { stroke: #388e3c; }  }
+  &--more       { background: #e3f2fd;    border-color: rgba(#1976d2, 0.3); svg { stroke: #1565c0; }  }
 
   &--disabled,
   &[disabled] { opacity: 0.35; cursor: not-allowed; }

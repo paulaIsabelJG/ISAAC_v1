@@ -99,6 +99,8 @@ export class BoardSidebarLeftComponent implements OnChanges {
   @Output() controlsConfigChange = new EventEmitter<ControlsConfig>();
   /** Emite en tiempo real cuando el usuario modifica la config de barras circulares. */
   @Output() circularControlsConfigChange = new EventEmitter<CircularControlsConfig>();
+  /** Emite true cuando el formulario tiene cambios sin guardar; false tras guardar/cargar. */
+  @Output() dirtyChange = new EventEmitter<boolean>();
 
   // ── Getters ────────────────────────────────────────────────────────────────
 
@@ -222,6 +224,29 @@ export class BoardSidebarLeftComponent implements OnChanges {
     this.localCircularControlsConfig = circ
       ? { topBar: [...circ.topBar], rightBar: [...circ.rightBar], visibleButtons: [...circ.visibleButtons] }
       : { topBar: [...DEFAULT_CIRCULAR_CONTROLS_CONFIG.topBar], rightBar: [...DEFAULT_CIRCULAR_CONTROLS_CONFIG.rightBar], visibleButtons: [...DEFAULT_CIRCULAR_CONTROLS_CONFIG.visibleButtons] };
+
+    // Migrar botones del DEFAULT que no están en ninguna barra (configs de tableros antiguos).
+    // Garantiza que cualquier botón nuevo añadido al DEFAULT aparezca en el formulario.
+    const defaultBtns = [
+      ...(DEFAULT_CIRCULAR_CONTROLS_CONFIG.rightBar as ControlButtonId[]),
+      ...(DEFAULT_CIRCULAR_CONTROLS_CONFIG.topBar.filter(i => i !== 'phraseBar') as ControlButtonId[]),
+    ];
+    for (const btn of defaultBtns) {
+      const inTop   = this.localCircularControlsConfig.topBar.includes(btn as ControlsBarItem);
+      const inRight = this.localCircularControlsConfig.rightBar.includes(btn);
+      if (!inTop && !inRight) {
+        this.localCircularControlsConfig.rightBar = [...this.localCircularControlsConfig.rightBar, btn];
+        if (DEFAULT_CIRCULAR_CONTROLS_CONFIG.visibleButtons.includes(btn)) {
+          this.localCircularControlsConfig.visibleButtons = [...this.localCircularControlsConfig.visibleButtons, btn];
+        }
+      }
+    }
+
+  }
+
+  /** Llamado desde el template o desde métodos internos cuando el usuario modifica el formulario. */
+  onFormChange(): void {
+    this.dirtyChange.emit(true);
   }
 
   // ── Acciones ───────────────────────────────────────────────────────────────
@@ -265,10 +290,12 @@ export class BoardSidebarLeftComponent implements OnChanges {
     this.localAssignedUserIds = this.localAssignedUserIds.includes(id)
       ? this.localAssignedUserIds.filter(x => x !== id)
       : [...this.localAssignedUserIds, id];
+    this.onFormChange();
   }
 
   selectAllUsers(): void {
     this.localAssignedUserIds = this.centerUsers.map(u => u._id);
+    this.onFormChange();
   }
 
   // ── Filtro lista de tableros ──────────────────────────────────────────────
@@ -350,6 +377,7 @@ export class BoardSidebarLeftComponent implements OnChanges {
   }
 
   private emitControlsConfig(): void {
+    this.onFormChange();
     this.controlsConfigChange.emit({
       visibleButtons: [...this.localControlsConfig.visibleButtons],
       order:          [...this.localControlsConfig.order],
@@ -360,11 +388,12 @@ export class BoardSidebarLeftComponent implements OnChanges {
 
   /** Metadatos de los botones movibles entre barras circulares. */
   readonly circularButtonsMeta: Record<ControlButtonId, { label: string }> = {
-    home:       { label: 'Inicio'        },
-    back:       { label: 'Atrás'         },
-    speak:      { label: 'Hablar'        },
-    deleteLast: { label: 'Borrar último' },
-    clearAll:   { label: 'Limpiar todo'  },
+    home:        { label: 'Inicio'          },
+    back:        { label: 'Atrás'           },
+    speak:       { label: 'Hablar'          },
+    deleteLast:  { label: 'Borrar último'   },
+    clearAll:    { label: 'Limpiar todo'    },
+    reloadBoard: { label: 'Recargar tablero' },
   };
 
   /** Items de la barra superior con sus metadatos. */
@@ -479,6 +508,7 @@ export class BoardSidebarLeftComponent implements OnChanges {
   }
 
   private emitCircularControlsConfig(): void {
+    this.onFormChange();
     this.circularControlsConfigChange.emit({
       topBar:         [...this.localCircularControlsConfig.topBar],
       rightBar:       [...this.localCircularControlsConfig.rightBar],
@@ -511,6 +541,7 @@ export class BoardSidebarLeftComponent implements OnChanges {
       const reader = new FileReader();
       reader.onload = (ev) => {
         this.localImageB64 = ev.target!.result as string;
+        this.onFormChange();
       };
       reader.readAsDataURL(file);
     };
@@ -519,5 +550,6 @@ export class BoardSidebarLeftComponent implements OnChanges {
 
   removeBoardImage(): void {
     this.localImageB64 = null;
+    this.onFormChange();
   }
 }
