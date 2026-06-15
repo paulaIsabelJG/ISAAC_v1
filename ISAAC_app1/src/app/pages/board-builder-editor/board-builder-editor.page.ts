@@ -594,7 +594,33 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy, HasUnsavedChan
     this.draggedCell  = null;
     this.dragOverCell = null;
     if (src.row === row && src.col === col) return;
+
+    // Circular predictivo: las celdas mostradas son sintéticas (categorías),
+    // no existen en board.cells → reordenar categorías en lugar de mover celdas.
+    if (this.isPredictiveCircular) {
+      this.swapPredictiveCategories(src.row, row);
+      return;
+    }
     void this.executeCellMove(src.row, src.col, row, col);
+  }
+
+  private async swapPredictiveCategories(srcIdx: number, dstIdx: number): Promise<void> {
+    if (!this.localPredictiveConfig?.categories) return;
+    const cats = [...this.localPredictiveConfig.categories];
+    if (srcIdx < 0 || dstIdx < 0 || srcIdx >= cats.length || dstIdx >= cats.length) return;
+    const srcLabel = cats[srcIdx].label || 'Categoría';
+    const dstLabel = cats[dstIdx].label || 'Categoría';
+    [cats[srcIdx], cats[dstIdx]] = [cats[dstIdx], cats[srcIdx]];
+    this.localPredictiveConfig = { ...this.localPredictiveConfig, categories: cats };
+    // Mantener expandedCatIdx apuntando a la misma categoría tras el swap
+    if (this.expandedCatIdx === srcIdx)      this.expandedCatIdx = dstIdx;
+    else if (this.expandedCatIdx === dstIdx) this.expandedCatIdx = srcIdx;
+    (await this.toastCtrl.create({
+      message:  `✓ "${srcLabel}" ⇆ "${dstLabel}"`,
+      duration: 1600,
+      color:    'success',
+      position: 'top',
+    })).present();
   }
 
   onCellDragEnd(): void {
@@ -620,6 +646,19 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy, HasUnsavedChan
           duration: 3000, color: 'dark', position: 'bottom',
         })).present();
       }
+      return;
+    }
+
+    // Circular predictivo: las celdas son sintéticas (categorías), no están en board.cells
+    if (this.isPredictiveCircular) {
+      const cat = this.localPredictiveConfig?.categories?.[row];
+      if (!cat) return;
+      this.moveSrcCell  = { row, col };
+      this.selectedCell = null;
+      (await this.toastCtrl.create({
+        message:  `Toca una categoría destino para mover "${cat.label || 'Categoría'}". Doble toque para cancelar.`,
+        duration: 3000, color: 'dark', position: 'bottom',
+      })).present();
       return;
     }
 
@@ -717,6 +756,10 @@ export class BoardBuilderEditorPage implements OnInit, OnDestroy, HasUnsavedChan
       const src = { ...this.moveSrcCell };
       this.moveSrcCell = null;
       if (src.row === row && src.col === col) return;
+      if (this.isPredictiveCircular) {
+        this.swapPredictiveCategories(src.row, row);
+        return;
+      }
       void this.executeCellMove(src.row, src.col, row, col);
       return;
     }
