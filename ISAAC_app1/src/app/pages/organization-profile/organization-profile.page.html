@@ -1,16 +1,7 @@
-<ion-header class="ion-no-border">
-  <ion-toolbar class="op-toolbar">
-    <ion-buttons slot="start">
-      <ion-button fill="clear" class="op-back-btn" (click)="goBack()">
-        <ion-icon slot="start" name="chevron-back-outline"></ion-icon>
-        Volver
-      </ion-button>
-    </ion-buttons>
-    <ion-title class="op-title">Perfil organización</ion-title>
-  </ion-toolbar>
-</ion-header>
-
 <ion-content class="profile-content">
+<div class="op-layout">
+  <app-org-sidebar activeItem="profile"></app-org-sidebar>
+  <div class="op-main">
   <div class="profile-container">
 
     <div class="profile-card">
@@ -135,5 +126,7 @@
 
       </form>
     </div>
-  </div>
+  </div><!-- /profile-container -->
+  </div><!-- /op-main -->
+</div><!-- /op-layout -->
 </ion-content>

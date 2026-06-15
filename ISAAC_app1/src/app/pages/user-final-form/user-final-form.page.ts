@@ -41,6 +41,7 @@ const passwordOptional: ValidatorFn = (c: AbstractControl) => {
 export class UserFinalFormPage implements OnInit, OnDestroy {
 
   userId = '';
+  returnTo = '/add-user';
 
   /** true → PATCH sobre usuario existente; false → registro nuevo */
   get isEditMode(): boolean { return this.userId !== 'new'; }
@@ -196,7 +197,8 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.userId = this.route.snapshot.paramMap.get('userId') ?? '';
+    this.userId   = this.route.snapshot.paramMap.get('userId') ?? '';
+    this.returnTo = this.route.snapshot.queryParamMap.get('returnTo') ?? '/add-user';
 
     // En creación la contraseña es obligatoria; en edición es opcional
     const pwdValidators = this.isEditMode
@@ -955,14 +957,14 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
   async goBack() {
     this.ttsSvc.speakIfEnabled('volver');
     if (this.hasUnsavedChanges) {
-      const dest = this.isEditMode ? ['/user-session', this.userId] : ['/add-user'];
+      const dest = this.isEditMode ? ['/user-session', this.userId] : [this.returnTo];
       await this.confirmDiscard(() => this.router.navigate(dest));
       return;
     }
     if (this.isEditMode) {
       this.router.navigate(['/user-session', this.userId]);
     } else {
-      this.router.navigate(['/add-user']);
+      this.router.navigate([this.returnTo]);
     }
   }
 

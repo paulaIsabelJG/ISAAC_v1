@@ -259,6 +259,19 @@ export class UserService {
     );
   }
 
+  /**
+   * GET /api/users/families-for-users?userIds=id1,id2,...
+   * Devuelve los familiares (type='parent') vinculados a los usuarios finales indicados
+   * a través de childrenAccess.childId. Los familiares no tienen centro, por eso
+   * no aparecen en getUsersByCenter y hay que obtenerlos con esta llamada separada.
+   */
+  getFamiliesForUsers(userIds: string[]): Observable<{ families: BackendUser[] }> {
+    const param = userIds.join(',');
+    return this.http.get<{ families: BackendUser[] }>(
+      `${this.url}/families-for-users?userIds=${encodeURIComponent(param)}`
+    );
+  }
+
   // ── Pictogramas personalizados de un usuario ─────────────────────────────────
 
   /** GET /api/users/:userId/pictograms */

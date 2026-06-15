@@ -1,4 +1,4 @@
-// ── Variables ─────────────────────────────────────────────────────────────────
+// ── Tokens ────────────────────────────────────────────────────────────────────
 $pink:         #ff69b4;
 $pink-dark:    #e91e8c;
 $pink-light:   #fff0f7;
@@ -9,169 +9,79 @@ $violet:       #7c4dff;
 $violet-light: #f0ebff;
 $blue:         #4a9eff;
 $blue-light:   #e8f4ff;
+$peach:        #ff8a65;
+$peach-light:  #fff3ee;
+$teal:         #26a69a;
+$teal-light:   #e0f2f1;
 $border:       #ffb6c1;
 $bg:           #fdf5f9;
 $text-dark:    #222222;
 $text-muted:   #6b5462;
-$card-bg:      #ffffff;
 
-// ── Contenedor raíz ───────────────────────────────────────────────────────────
-.dash-content {
+// ── Raíz ──────────────────────────────────────────────────────────────────────
+.home-content {
   --background: #{$bg};
 }
 
-.dash-container {
-  // pantalla completa — sin max-width
-  width: 100%;
-  padding: 20px 24px 32px;
-  box-sizing: border-box;
+// ── Layout: sidebar | main | right ────────────────────────────────────────────
+.home-layout {
+  display: grid;
+  grid-template-columns: 72px 1fr 264px;
+  height: 100%;
+  overflow: hidden;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: 72px 1fr;
+    .home-right { display: none; }
+  }
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+    app-org-sidebar { display: none; }
+  }
 }
 
-// ── Cabecera ──────────────────────────────────────────────────────────────────
-.dash-header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-  margin-bottom: 8px;
-}
-
-.dash-brand {
+// ── Main area ─────────────────────────────────────────────────────────────────
+.home-main {
   display: flex;
   flex-direction: column;
+  gap: 20px;
+  padding: 24px 28px;
+  box-sizing: border-box;
+  height: 100%;
+  overflow: hidden;
+}
+
+// ── Header saludo ─────────────────────────────────────────────────────────────
+.home-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   flex: 0 0 auto;
 }
 
-.brand-name {
-  font-size: 26px;
-  font-weight: 800;
-  color: $pink;
-  letter-spacing: 3px;
-  line-height: 1;
+.greeting {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.brand-label {
-  font-size: 10px;
+.greeting-title {
+  font-size: 22px;
+  font-weight: 400;
+  color: $text-dark;
+  margin: 0;
+  strong { color: $pink-dark; font-weight: 800; }
+}
+
+.greeting-sub {
+  font-size: 11px;
   color: $text-muted;
+  text-transform: uppercase;
   letter-spacing: 0.5px;
-  text-transform: uppercase;
-  margin-top: 2px;
 }
 
-// ── Fila de acciones ──────────────────────────────────────────────────────────
-.action-row {
-  display: flex;
-  gap: 16px;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin: 0 0 20px;
-}
-
-.action-btn {
-  // Tarjeta casi cuadrada tipo pictograma
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 10px;
-  width: 118px;
-  min-height: 126px;
-  padding: 18px 12px 14px;
-  box-sizing: border-box;
-
-  // Tipografía
-  font-size: 10px;
-  font-weight: 700;
-  font-family: inherit;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  text-align: center;
-  line-height: 1.3;
-
-  // Forma
-  border-radius: 18px;
-  cursor: pointer;
-
-  // Sombra suave base
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-
-  // Hover / active sutiles
-  &:hover  {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.12);
-  }
-  &:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-  }
-
-  // Variantes de color (fondo claro + borde ligeramente más oscuro)
-  &--pink {
-    background: $pink-light;
-    color: $pink-dark;
-    border: 1.5px solid darken($pink-light, 9%);
-  }
-  &--mint {
-    background: $mint-light;
-    color: $mint-dark;
-    border: 1.5px solid darken($mint-light, 9%);
-  }
-  &--violet {
-    background: $violet-light;
-    color: $violet;
-    border: 1.5px solid darken($violet-light, 9%);
-  }
-  &--blue {
-    background: $blue-light;
-    color: $blue;
-    border: 1.5px solid darken($blue-light, 9%);
-  }
-  &--teal {
-    background: #e0f2f1;
-    color: #00796b;
-    border: 1.5px solid #b2dfdb;
-  }
-}
-
-// Imagen dentro del botón-pictograma
-.action-icon {
-  width: 58px;
-  height: 58px;
-  object-fit: contain;
-  display: block;
-  flex: 0 0 auto;
-}
-
-// Icono SVG inline (sin img): mismo tamaño que action-icon
-.action-icon--svg {
-  width: 58px;
-  height: 58px;
-}
-
-// Responsive: pantallas estrechas → tarjetas algo más pequeñas
-@media (max-width: 480px) {
-  .action-btn {
-    width: 100px;
-    min-height: 110px;
-    padding: 14px 8px 12px;
-    font-size: 9px;
-  }
-  .action-icon {
-    width: 48px;
-    height: 48px;
-  }
-}
-
-// ── Área usuario / avatar / logout ────────────────────────────────────────────
-.dash-user {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex: 0 0 auto;
-}
-
-.dash-org-avatar {
+.header-avatar {
   width: 42px;
   height: 42px;
   border-radius: 50%;
@@ -180,264 +90,225 @@ $card-bg:      #ffffff;
   flex: 0 0 auto;
 }
 
-.org-avatar-img {
+.avatar-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
 
-.org-avatar-placeholder {
+.avatar-placeholder {
   width: 100%;
   height: 100%;
   background: $pink-light;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
   color: $pink-dark;
 }
 
-.dash-user-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.dash-user-name {
-  font-size: 14px;
-  font-weight: 700;
-  color: $text-dark;
-  line-height: 1.2;
-  max-width: 140px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.dash-user-type {
-  font-size: 11px;
-  color: $text-muted;
-}
-
-.logout-btn {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  background: none;
-  border: 1.5px solid $border;
-  border-radius: 20px;
-  color: $text-muted;
-  font-size: 12px;
-  font-weight: 500;
-  padding: 6px 14px;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.2s;
-  white-space: nowrap;
-
-  svg { width: 14px; height: 14px; }
-
-  &:hover {
-    background: $pink-light;
-    border-color: $pink;
-    color: $pink-dark;
-    svg { stroke: $pink-dark; }
-  }
-}
-
-// ── Divisor ───────────────────────────────────────────────────────────────────
-.dash-divider {
-  height: 1px;
-  background: linear-gradient(to right, transparent, $border, transparent);
-  margin: 12px 0 20px;
-}
-
-// ── Body: 2 columnas ──────────────────────────────────────────────────────────
-.dash-body {
-  display: flex;
-  gap: 20px;
-  align-items: flex-start;
-
-  @media (max-width: 700px) {
-    flex-direction: column;
-  }
-}
-
-.dash-col {
-  flex: 1;
-  min-width: 0;
-}
-
-// ── Encabezado de columna ─────────────────────────────────────────────────────
-.col-header {
-  margin-bottom: 14px;
-}
-
-.col-title-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.col-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: $text-dark;
-  margin: 0;
-}
-
-.col-count {
-  background: $pink-light;
-  color: $pink-dark;
-  font-size: 12px;
-  font-weight: 700;
-  border-radius: 10px;
-  padding: 2px 10px;
-
-  &--mint {
-    background: $mint-light;
-    color: $mint-dark;
-  }
-}
-
-// Searchbar personalizado
-.col-searchbar {
-  --background: #fff;
-  --border-radius: 14px;
-  --box-shadow: none;
-  --placeholder-color: #ccc;
-  --color: #{$text-dark};
-  border: 1.5px solid $border;
-  border-radius: 14px;
-  padding: 0;
-  height: 42px;
-}
-
-// ── Grid de usuarios (4 cols × 3 filas visibles + scroll) ─────────────────────
-$card-h:   116px;  // altura de cada tarjeta
-$grid-gap:   8px;
-$visible-rows: 3;
-
-.users-grid {
+// ── Menú principal 3×3 ────────────────────────────────────────────────────────
+.menu-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: $grid-gap;
-  // 3 filas visibles: 3 × card-h + 2 × gap
-  max-height: calc(#{$visible-rows} * #{$card-h} + #{($visible-rows - 1)} * #{$grid-gap});
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 28px;
+  flex: 1 1 0;
+  min-height: 0;
   overflow-y: auto;
-  padding-right: 2px;
 
-  // Scrollbar fino
   scrollbar-width: thin;
   scrollbar-color: $border transparent;
   &::-webkit-scrollbar       { width: 4px; }
-  &::-webkit-scrollbar-track { background: transparent; }
   &::-webkit-scrollbar-thumb { background: $border; border-radius: 4px; }
 
-  @media (max-width: 1100px) { grid-template-columns: repeat(3, 1fr); }
-  @media (max-width:  700px) { grid-template-columns: repeat(4, 1fr); }
-  @media (max-width:  480px) { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 600px) {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: auto;
+  }
 }
 
-// ── Tarjeta de usuario ────────────────────────────────────────────────────────
-.user-card {
-  height: $card-h;
-  background: $card-bg;
-  border: 1.5px solid $border;
-  border-radius: 14px;
+// ── Tarjeta de menú (estilo pictograma) ───────────────────────────────────────
+.menu-card {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 8px 6px;
-  box-sizing: border-box;
-  transition: transform 0.15s;
+  align-items: stretch;
+  padding: 0;
+  gap: 0;
+  border-radius: 18px;
+  border: 1.5px solid transparent;
+  overflow: hidden;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.07);
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+  min-height: 0;
 
-  &--add {
-    border-color: $mint;
-    border-style: dashed;
-    cursor: pointer;
-    &:hover { background: $mint-light; transform: scale(1.03); }
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.13);
   }
 
-  &--clickable {
-    cursor: pointer;
-    &:hover {
-      background: $blue-light;
-      border-color: $blue;
-      transform: scale(1.03);
-    }
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
   }
+
+  &--pink   { background: $pink-light;   color: $pink-dark; border-color: rgba($pink,   0.35); }
+  &--mint   { background: $mint-light;   color: $mint-dark; border-color: rgba($mint,   0.35); }
+  &--violet { background: $violet-light; color: $violet;    border-color: rgba($violet, 0.30); }
+  &--blue   { background: $blue-light;   color: $blue;      border-color: rgba($blue,   0.35); }
+  &--peach  { background: $peach-light;  color: $peach;     border-color: rgba($peach,  0.35); }
+  &--teal   { background: $teal-light;   color: $teal;      border-color: rgba($teal,   0.35); }
 }
 
-.user-card-avatar {
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
+// Zona de imagen: ocupa todo el espacio sobrante sobre el título
+.menu-card-icon {
+  flex: 1 1 0;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  padding: 8px 10px 6px;
+
+  svg {
+    width: 64px;
+    height: 64px;
+  }
+
+  img {
+    width: 100%;
+    max-width: 96px;
+    height: auto;
+    max-height: 96px;
+    object-fit: contain;
+    display: block;
+  }
+}
+
+// Etiqueta en franja inferior, como en los pictogramas
+.menu-card-title {
   flex: 0 0 auto;
-
-  img { width: 100%; height: 100%; object-fit: cover; }
-
-  &--blue { background: $blue-light;  color: $blue;      }
-  &--mint { background: $mint-light;  color: $mint-dark; }
-  &--add  { background: $mint-light;  color: $mint-dark;
-             svg { width: 22px; height: 22px; } }
-}
-
-.user-card-initial {
-  font-size: 18px;
+  padding: 6px 8px 8px;
+  text-align: center;
+  font-size: 12px;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  line-height: 1.3;
+  border-top: 1.5px solid rgba(0, 0, 0, 0.07);
+  background: rgba(255, 255, 255, 0.5);
 }
 
-.user-card-name {
-  font-size: 11px;
+// ── Panel derecho ─────────────────────────────────────────────────────────────
+.home-right {
+  border-left: 1.5px solid $border;
+  background: #fff;
+  height: 100%;
+  overflow-y: auto;
+  padding: 24px 18px;
+  box-sizing: border-box;
+
+  scrollbar-width: thin;
+  scrollbar-color: $border transparent;
+  &::-webkit-scrollbar       { width: 4px; }
+  &::-webkit-scrollbar-thumb { background: $border; border-radius: 4px; }
+}
+
+// ── Resumen rápido ────────────────────────────────────────────────────────────
+.quick-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.summary-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
   font-weight: 700;
   color: $text-dark;
-  text-align: center;
-  line-height: 1.2;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  margin: 0 0 4px;
+
+  svg { width: 18px; height: 18px; stroke: $pink-dark; }
 }
 
-.user-card-surname {
-  font-size: 10px;
-  color: $text-muted;
-  text-align: center;
-  line-height: 1.2;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-// ── Sin resultados ────────────────────────────────────────────────────────────
-.no-results {
-  grid-column: 1 / -1;
-  text-align: center;
-  color: $text-muted;
-  font-size: 13px;
-  padding: 20px 0;
-}
-
-// ── Estado cargando ───────────────────────────────────────────────────────────
-.col-loading {
-  grid-column: 1 / -1;
+.summary-group {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 32px 0;
+  flex-direction: column;
+  gap: 8px;
 }
 
-// ── Estado error ──────────────────────────────────────────────────────────────
-.col-error {
-  color: #c0392b;
+.summary-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1.5px solid;
+
+  &--blue   { background: $blue-light;   border-color: darken($blue-light, 8%);   }
+  &--mint   { background: $mint-light;   border-color: darken($mint-light, 8%);   }
+  &--peach  { background: $peach-light;  border-color: darken($peach-light, 8%);  }
+  &--violet { background: $violet-light; border-color: darken($violet-light, 8%); }
+  &--teal   { background: $teal-light;   border-color: darken($teal-light, 8%);   }
+}
+
+.summary-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+
+  svg { width: 16px; height: 16px; }
+}
+
+.summary-label {
+  font-size: 11px;
+  color: $text-muted;
+  font-weight: 500;
+  flex: 1;
+}
+
+.summary-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: $text-dark;
+  line-height: 1;
+  &--dash { color: $text-muted; font-size: 18px; }
+}
+
+.summary-divider {
+  height: 1px;
+  background: $border;
+  margin: 2px 0;
+}
+
+.summary-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  padding: 11px 16px;
+  background: $pink-dark;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: background 0.15s;
+
+  svg { width: 16px; height: 16px; stroke: #fff; }
+  &:hover { background: darken($pink-dark, 8%); }
 }

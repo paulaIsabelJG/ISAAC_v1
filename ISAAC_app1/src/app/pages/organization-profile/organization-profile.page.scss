@@ -6,27 +6,22 @@ $border:     #ffb6c1;
 $text-dark:  #222222;
 $text-muted: #7a5163;
 
-// ── Barra superior ────────────────────────────────────────────────────────────
-.op-toolbar {
-  --background: #fdf5f9;
-  --border-color: #{$border};
+// ── Layout: sidebar | main ────────────────────────────────────────────────────
+.op-layout {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  height: 100%;
+  overflow: hidden;
 
-  .op-back-btn {
-    --color:         #{$text-dark};
-    --padding-start: 4px;
-    --padding-end:   8px;
-    font-size:       14px;
-    font-weight:     500;
-    text-transform:  none;
-    letter-spacing:  0;
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+    app-org-sidebar { display: none; }
   }
 }
 
-.op-title {
-  font-size:   15px;
-  font-weight: 700;
-  color:       $text-dark;
-  text-align:  center;
+.op-main {
+  overflow-y: auto;
+  height: 100%;
 }
 
 // ── Contenido ─────────────────────────────────────────────────────────────────

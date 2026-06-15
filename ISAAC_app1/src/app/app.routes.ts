@@ -23,6 +23,14 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    path: 'organization-users',
+    loadComponent: () =>
+      import('./pages/organization-users/organization-users.page').then(
+        (m) => m.OrganizationUsersPage
+      ),
+    canActivate: [authGuard],
+  },
+  {
     path: 'organization-profile',
     loadComponent: () =>
       import('./pages/organization-profile/organization-profile.page').then(

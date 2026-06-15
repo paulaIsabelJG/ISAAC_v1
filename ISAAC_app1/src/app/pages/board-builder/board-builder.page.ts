@@ -20,7 +20,7 @@ import { ObfExportService } from '../../services/obf-export.service';
 import { BoardPdfExportService } from '../../services/board-pdf-export.service';
 import { ObzImportService } from '../../services/obz-import.service';
 import { LoadingErrorStateComponent } from '../../components/loading-error-state/loading-error-state.component';
-import { AppPageHeaderComponent } from '../../components/app-page-header/app-page-header.component';
+import { OrgSidebarComponent } from '../../components/org-sidebar/org-sidebar.component';
 
 export type FilterKey =
   | 'all' | 'favorites' | 'published' | 'draft'
@@ -47,7 +47,7 @@ export const FILTER_OPTIONS: { value: FilterKey; label: string }[] = [
   imports: [
     IonicModule, FormsModule, DragDropModule,
     NgClass,
-    LoadingErrorStateComponent, AppPageHeaderComponent,
+    LoadingErrorStateComponent, OrgSidebarComponent,
   ],
 })
 export class BoardBuilderPage implements OnInit {

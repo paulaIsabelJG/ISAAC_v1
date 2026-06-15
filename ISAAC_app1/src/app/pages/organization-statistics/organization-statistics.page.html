@@ -1,12 +1,10 @@
 <ion-content class="os-content">
+<div class="os-layout">
+  <app-org-sidebar activeItem="stats"></app-org-sidebar>
+  <div class="os-main">
 
   <!-- ════════════════════ CABECERA ════════════════════ -->
   <div class="os-header">
-    <button class="os-back-btn" (click)="goBack()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <polyline points="15 18 9 12 15 6"/>
-      </svg>
-    </button>
     <div class="os-header-text">
       <h1 class="os-title">Estadísticas</h1>
       <p class="os-subtitle">{{ orgName }}</p>
@@ -439,4 +437,6 @@
 
   <div class="os-bottom-spacer"></div>
 
+  </div><!-- /os-main -->
+</div><!-- /os-layout -->
 </ion-content>

@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { AlertController, IonicModule, ToastController } from '@ionic/angular';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { buildSafeUrl as buildSafeUrlUtil } from '../../shared/utils/image.utils';
 import { firstValueFrom } from 'rxjs';
@@ -37,8 +37,10 @@ interface FamUserRow {
 })
 export class AddUserPage implements OnInit {
 
-  view: View = 'select';
-  isSaving   = false;
+  view:         View    = 'select';
+  returnTo:     string  = '/organization-dashboard';
+  directEntry:  boolean = false;
+  isSaving:     boolean = false;
 
   profForm!: FormGroup;
   famForm!:  FormGroup;
@@ -72,6 +74,7 @@ export class AddUserPage implements OnInit {
     private fb:        FormBuilder,
     private authSvc:   AuthService,
     private userSvc:   UserService,
+    private route:     ActivatedRoute,
     private router:    Router,
     private toastCtrl: ToastController,
     private alertCtrl: AlertController,
@@ -80,13 +83,25 @@ export class AddUserPage implements OnInit {
   ) {}
 
   ionViewWillEnter(): void {
-    this.view = 'select';
     this.profForm?.reset({ professionalType: 'Terapeuta' });
     this.famForm?.reset();
     this.profImgB64 = null; this.profImgUrl = null;
     this.famImgB64  = null; this.famImgUrl  = null;
     this.famRows    = [];
     this.selectedChildId = '';
+
+    const type = this.route.snapshot.queryParamMap.get('type');
+    this.returnTo    = this.route.snapshot.queryParamMap.get('returnTo') ?? '/organization-dashboard';
+    this.directEntry = !!type;
+
+    if (type === 'parent') {
+      this.view = 'family';
+      if (this.centerFinalUsers.length === 0 && !this.famUsersLoading) {
+        this.loadFinalUsersForFamily();
+      }
+    } else {
+      this.view = 'select';
+    }
   }
 
   ngOnInit() {
@@ -118,8 +133,16 @@ export class AddUserPage implements OnInit {
   }
 
   async goBack() {
-    if (this.view === 'select') {
-      this.router.navigate(['/organization-dashboard']);
+    if (this.view === 'select' || this.directEntry) {
+      if (this.hasUnsavedChanges) {
+        await this.confirmDiscard(() => {
+          this.resetCurrentForm();
+          this.router.navigate([this.returnTo]);
+        });
+        return;
+      }
+      this.resetCurrentForm();
+      this.router.navigate([this.returnTo]);
       return;
     }
     if (this.hasUnsavedChanges) {

@@ -1,0 +1,178 @@
+<ion-content class="users-content">
+  <div class="users-layout">
+
+    <!-- ═══════════════════════════════════════════════════ SIDEBAR ══ -->
+    <app-org-sidebar activeItem="users"></app-org-sidebar>
+
+    <!-- ═══════════════════════════════════════════════════ MAIN ══════ -->
+    <main class="users-main">
+
+      <!-- Toolbar: pestañas + botón añadir -->
+      <div class="users-toolbar">
+
+        <div class="tabs">
+          <button class="tab-btn" [class.tab-btn--active]="activeTab === 'finales'"
+                  (click)="setTab('finales')">
+            Finales
+            <span class="tab-count">{{ allFinalUsers.length }}</span>
+          </button>
+          <button class="tab-btn" [class.tab-btn--active]="activeTab === 'profesionales'"
+                  (click)="setTab('profesionales')">
+            Profesionales
+            <span class="tab-count">{{ allProfessionals.length }}</span>
+          </button>
+          <button class="tab-btn" [class.tab-btn--active]="activeTab === 'familiares'"
+                  (click)="setTab('familiares')">
+            Familiares
+            <span class="tab-count">{{ allFamiliares.length }}</span>
+          </button>
+        </div>
+
+        <button class="add-btn" (click)="openAddPopover($event)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5"  y1="12" x2="19" y2="12"/>
+          </svg>
+          Añadir
+        </button>
+
+      </div>
+
+      <!-- Buscador -->
+      <ion-searchbar
+        class="users-searchbar"
+        [placeholder]="'Buscar ' + activeTab + '...'"
+        [value]="searchQuery"
+        (ionInput)="onSearch($event)"
+        debounce="150"
+        animated>
+      </ion-searchbar>
+
+      <!-- Grid de tarjetas -->
+      <div class="users-grid">
+
+        @if (isLoading) {
+          <div class="grid-state">
+            <ion-spinner name="crescent" color="primary"></ion-spinner>
+          </div>
+        } @else if (loadError) {
+          <div class="grid-state grid-state--error">{{ loadError }}</div>
+        } @else {
+
+          @for (u of filteredUsers; track u._id) {
+            <button class="user-card"
+                    [class.user-card--selected]="isSelected(u)"
+                    (click)="selectUser(u)">
+              <div class="user-card-avatar"
+                   [class.user-card-avatar--blue]="u.type === 'user'"
+                   [class.user-card-avatar--mint]="u.type === 'teacher'"
+                   [class.user-card-avatar--peach]="u.type === 'parent'">
+                @if (u.image) {
+                  <img [src]="buildSafeUrl(u.image)" [alt]="u.name"/>
+                } @else {
+                  <span>{{ getInitial(u) }}</span>
+                }
+              </div>
+              <span class="user-card-name">{{ u.name }}</span>
+              <span class="user-card-surname">{{ u.surname }}</span>
+            </button>
+          }
+
+          @if (filteredUsers.length === 0 && searchQuery) {
+            <p class="grid-empty">Sin resultados para "{{ searchQuery }}"</p>
+          }
+          @if (activeUsers.length === 0 && !searchQuery && !isLoading) {
+            <p class="grid-empty">Aún no hay {{ activeTab }}</p>
+          }
+
+        }
+
+      </div><!-- /users-grid -->
+
+    </main><!-- /users-main -->
+
+    <!-- ══════════════════════════════════════════════ PANEL DERECHO ══ -->
+    <aside class="users-right">
+
+      @if (selectedUser) {
+
+        <!-- Detalle del usuario seleccionado -->
+        <div class="detail-panel">
+
+          <button class="detail-close" (click)="clearSelection()" title="Cerrar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="18" y1="6" x2="6"  y2="18"/>
+              <line x1="6"  y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+
+          <div class="detail-avatar"
+               [class.detail-avatar--blue]="selectedUser.type === 'user'"
+               [class.detail-avatar--mint]="selectedUser.type === 'teacher'"
+               [class.detail-avatar--peach]="selectedUser.type === 'parent'">
+            @if (selectedUser.image) {
+              <img [src]="buildSafeUrl(selectedUser.image)" [alt]="selectedUser.name"/>
+            } @else {
+              <span>{{ getInitial(selectedUser) }}</span>
+            }
+          </div>
+
+          <h3 class="detail-name">{{ selectedUser.name }} {{ selectedUser.surname }}</h3>
+          <p class="detail-email">{{ selectedUser.email }}</p>
+
+          <span class="detail-badge"
+                [class.detail-badge--blue]="selectedUser.type === 'user'"
+                [class.detail-badge--mint]="selectedUser.type === 'teacher'"
+                [class.detail-badge--peach]="selectedUser.type === 'parent'">
+            @switch (selectedUser.type) {
+              @case ('user')    { Usuario final }
+              @case ('teacher') { Profesional   }
+              @case ('parent')  { Familiar      }
+            }
+          </span>
+
+          <div class="detail-divider"></div>
+
+          <div class="detail-stats">
+            <div class="detail-stat">
+              <span class="detail-stat-label">Tablero asignado</span>
+              <span class="detail-stat-value">—</span>
+            </div>
+            <div class="detail-stat">
+              <span class="detail-stat-label">Progreso semanal</span>
+              <div class="detail-progress">
+                <div class="detail-progress-bar"></div>
+              </div>
+            </div>
+          </div>
+
+          <button class="detail-go-btn" (click)="goToSession(selectedUser)">
+            Ver detalle completo
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="5" y1="12" x2="19" y2="12"/>
+              <polyline points="12 5 19 12 12 19"/>
+            </svg>
+          </button>
+
+        </div><!-- /detail-panel -->
+
+      } @else {
+
+        <!-- Estado vacío: ningún usuario seleccionado -->
+        <div class="no-selection">
+          <div class="no-selection-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </div>
+          <p class="no-selection-text">Selecciona un usuario para ver su información</p>
+        </div>
+
+      }
+
+    </aside><!-- /users-right -->
+
+  </div><!-- /users-layout -->
+</ion-content>

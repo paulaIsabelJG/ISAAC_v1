@@ -1,0 +1,229 @@
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { IonicModule } from '@ionic/angular';
+import { PopoverController } from '@ionic/angular/standalone';
+import { Router } from '@angular/router';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import { Subscription } from 'rxjs';
+import { buildSafeUrl as buildSafeUrlUtil } from '../../shared/utils/image.utils';
+import { AuthService, User } from '../../services/auth.service';
+import { UserService, BackendUser } from '../../services/user.service';
+import {
+  OrganizationUsersService,
+  UserCardData,
+  UsersTab,
+} from '../../services/organization-users.service';
+import { PictogramStateService } from '../../services/pictogram-state.service';
+import { OrgSidebarComponent } from '../../components/org-sidebar/org-sidebar.component';
+import { AddUserPopoverComponent } from '../../components/add-user-popover/add-user-popover.component';
+
+@Component({
+  selector: 'app-organization-users',
+  templateUrl: './organization-users.page.html',
+  styleUrls: ['./organization-users.page.scss'],
+  standalone: true,
+  imports: [IonicModule, OrgSidebarComponent],
+})
+export class OrganizationUsersPage implements OnInit, OnDestroy {
+
+  user: User | null = null;
+
+  allFinalUsers:    UserCardData[] = [];
+  allProfessionals: UserCardData[] = [];
+  allFamiliares:    UserCardData[] = [];
+  isLoading = false;
+  loadError = '';
+
+  // ── Estado desde servicio ────────────────────────────────────────────────────
+  activeTab:    UsersTab        = 'finales';
+  selectedUser: UserCardData | null = null;
+  searchQuery  = '';
+
+  private subs = new Subscription();
+
+  constructor(
+    private authService:    AuthService,
+    private userService:    UserService,
+    private usersService:   OrganizationUsersService,
+    private pictogramState: PictogramStateService,
+    private popoverCtrl:    PopoverController,
+    private router:         Router,
+    private sanitizer:      DomSanitizer,
+  ) {}
+
+  ngOnInit(): void {
+    this.subs.add(this.usersService.activeTab$.subscribe(t => this.activeTab = t));
+    this.subs.add(this.usersService.selectedUser$.subscribe(u => this.selectedUser = u));
+    this.subs.add(this.usersService.searchQuery$.subscribe(q => this.searchQuery = q));
+  }
+
+  ionViewWillEnter(): void {
+    this.user = this.authService.getCurrentUser();
+    this.loadUsers();
+  }
+
+  ngOnDestroy(): void {
+    this.subs.unsubscribe();
+  }
+
+  private loadUsers(): void {
+    const centro = this.user?.centro;
+    if (!centro) {
+      this.loadError = 'No se encontró el centro asociado a esta cuenta.';
+      return;
+    }
+    this.isLoading = true;
+    this.loadError = '';
+
+    // Paso 1: usuarios del centro (teachers + users finales).
+    // Los familiares (type='parent') NO tienen centro, por lo que no aparecen aquí.
+    this.userService.getUsersByCenter(centro).subscribe({
+      next: (res) => {
+        const myEmail = this.user?.email;
+        this.allFinalUsers    = res.users.filter(u => u.type === 'user').map(u => this.toCard(u));
+        this.allProfessionals = res.users.filter(u => u.type === 'teacher' && u.email !== myEmail).map(u => this.toCard(u));
+
+        // Paso 2: familiares vinculados a los usuarios finales del centro.
+        const finalUserIds = this.allFinalUsers.map(u => u._id);
+        if (finalUserIds.length === 0) {
+          this.allFamiliares = [];
+          this.isLoading = false;
+          return;
+        }
+
+        this.userService.getFamiliesForUsers(finalUserIds).subscribe({
+          next: (famRes) => {
+            this.allFamiliares = famRes.families.map(u => this.toCard(u));
+            this.isLoading = false;
+          },
+          error: () => {
+            // No bloquear la vista si falla la carga de familiares
+            this.allFamiliares = [];
+            this.isLoading = false;
+          },
+        });
+      },
+      error: () => {
+        this.loadError = 'Error al cargar usuarios. Inténtalo de nuevo.';
+        this.isLoading = false;
+      },
+    });
+  }
+
+  private toCard(u: BackendUser): UserCardData {
+    return {
+      _id:     u._id,
+      name:    u.name,
+      surname: u.surname ?? '',
+      email:   u.email,
+      image:   u.image ?? undefined,
+      type:    u.type,
+    };
+  }
+
+  // ── Getters ──────────────────────────────────────────────────────────────────
+
+  get activeUsers(): UserCardData[] {
+    switch (this.activeTab) {
+      case 'finales':       return this.allFinalUsers;
+      case 'profesionales': return this.allProfessionals;
+      case 'familiares':    return this.allFamiliares;
+    }
+  }
+
+  get filteredUsers(): UserCardData[] {
+    return this.usersService.filter(this.activeUsers, this.searchQuery);
+  }
+
+  get activeCount(): number { return this.activeUsers.length; }
+
+  // ── Handlers ─────────────────────────────────────────────────────────────────
+
+  setTab(tab: UsersTab): void        { this.usersService.setTab(tab); }
+  selectUser(u: UserCardData): void  { this.usersService.selectUser(u); }
+  clearSelection(): void             { this.usersService.clearSelection(); }
+
+  onSearch(event: Event): void {
+    const val = (event as CustomEvent<{ value: string }>).detail?.value ?? '';
+    this.usersService.setSearch(val);
+  }
+
+  isSelected(u: UserCardData): boolean {
+    return this.selectedUser?._id === u._id;
+  }
+
+  getInitial(u: UserCardData): string {
+    return u.name.charAt(0).toUpperCase();
+  }
+
+  buildSafeUrl(imageStr?: string | null): SafeUrl | string {
+    return buildSafeUrlUtil(imageStr, this.sanitizer);
+  }
+
+  goToSession(u: UserCardData): void {
+    if (u.type === 'user') {
+      this.router.navigate(['/user-session', u._id]);
+    } else if (u.type === 'teacher') {
+      this.router.navigate(['/professional-session', u._id]);
+    } else {
+      this.router.navigate(['/user-placeholder']);
+    }
+  }
+
+  async openAddPopover(event: Event): Promise<void> {
+    const popover = await this.popoverCtrl.create({
+      component:       AddUserPopoverComponent,
+      event,
+      translucent:     false,
+      showBackdrop:    true,
+      backdropDismiss: true,
+      cssClass:        'isaac-add-popover',
+      alignment:       'end',
+      side:            'bottom',
+    });
+
+    await popover.present();
+
+    const { data } = await popover.onDidDismiss<{ action: string }>();
+    if (!data?.action) return;
+
+    switch (data.action) {
+      case 'add-final-user':     this.onAddFinalUser();      break;
+      case 'add-family-member':  this.onAddFamilyMember();   break;
+      case 'add-professional':   this.onAddProfessional();   break;
+      case 'own-pictograms':     this.onOwnPictograms();     break;
+      case 'assign-professional': this.onAssignProfessional(); break;
+    }
+  }
+
+  private onAddFinalUser(): void {
+    this.router.navigate(['/user-final-form', 'new'], {
+      queryParams: { returnTo: '/organization-users' },
+    });
+  }
+
+  private onAddFamilyMember(): void {
+    this.router.navigate(['/add-user'], {
+      queryParams: { type: 'parent', returnTo: '/organization-users' },
+    });
+  }
+
+  private onAddProfessional(): void {
+    this.router.navigate(['/add-user'], {
+      queryParams: { returnTo: '/organization-users' },
+    });
+  }
+
+  private onOwnPictograms(): void {
+    this.pictogramState.userId       = null;
+    this.pictogramState.returnTo     = '/organization-users';
+    this.pictogramState.allowedUsers = null;
+    this.router.navigate(['/own-pictograms-placeholder']);
+  }
+
+  private onAssignProfessional(): void {
+    this.pictogramState.userId       = null;
+    this.pictogramState.returnTo     = '/organization-users';
+    this.pictogramState.allowedUsers = null;
+    this.router.navigate(['/assigned-professionals-placeholder']);
+  }
+}

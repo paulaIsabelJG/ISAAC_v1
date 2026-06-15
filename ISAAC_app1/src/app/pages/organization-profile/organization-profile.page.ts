@@ -4,6 +4,7 @@ import { AlertController, IonicModule, ToastController } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { AuthService, User, AddressSuggestion } from '../../services/auth.service';
+import { OrgSidebarComponent } from '../../components/org-sidebar/org-sidebar.component';
 
 /** Tamaño máximo permitido para imagen base64 (2 MB) */
 const MAX_IMAGE_SIZE_BYTES = 2 * 1024 * 1024;
@@ -13,7 +14,7 @@ const MAX_IMAGE_SIZE_BYTES = 2 * 1024 * 1024;
   templateUrl: './organization-profile.page.html',
   styleUrls: ['./organization-profile.page.scss'],
   standalone: true,
-  imports: [ReactiveFormsModule, IonicModule],
+  imports: [ReactiveFormsModule, IonicModule, OrgSidebarComponent],
 })
 export class OrganizationProfilePage implements OnInit {
   profileForm!: FormGroup;

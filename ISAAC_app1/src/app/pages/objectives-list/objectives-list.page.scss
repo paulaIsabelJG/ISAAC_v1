@@ -2,6 +2,28 @@
   --background: #f0f2f5;
 }
 
+// ── Layout: sidebar | main ────────────────────────────────────────────────────
+.ol-layout {
+  height: 100%;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr;
+
+  &--sidebar {
+    grid-template-columns: 72px 1fr;
+  }
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr !important;
+    app-org-sidebar { display: none; }
+  }
+}
+
+.ol-main {
+  overflow-y: auto;
+  height: 100%;
+}
+
 .ol-container {
   max-width: 860px;
   margin: 0 auto;

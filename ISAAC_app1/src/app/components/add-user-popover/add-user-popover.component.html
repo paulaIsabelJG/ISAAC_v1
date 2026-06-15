@@ -1,0 +1,13 @@
+<ion-list class="aup-list" lines="none">
+  @for (opt of options; track opt.action) {
+    <ion-item class="aup-item" button detail="false" (click)="select(opt.action)">
+      <div class="aup-img-wrap" slot="start">
+        <img [src]="opt.img" [alt]="opt.label" class="aup-img"/>
+      </div>
+      <ion-label class="aup-label">
+        <span class="aup-title">{{ opt.label }}</span>
+        <span class="aup-sub">{{ opt.subtitle }}</span>
+      </ion-label>
+    </ion-item>
+  }
+</ion-list>

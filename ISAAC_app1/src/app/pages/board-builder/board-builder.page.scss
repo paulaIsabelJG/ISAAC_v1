@@ -12,16 +12,50 @@ $text-dark:    #222222;
 $text-muted:   #6b5462;
 $card-bg:      #ffffff;
 
-// ── Header ────────────────────────────────────────────────────────────────────
-app-page-header { --aph-title-color: #{$violet}; }
-
 // ── Content ───────────────────────────────────────────────────────────────────
 .bb-content { --background: #{$bg}; }
+
+// ── Layout: sidebar | main ────────────────────────────────────────────────────
+.bb-layout {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  height: 100%;
+  overflow: hidden;
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+    app-org-sidebar { display: none; }
+  }
+}
+
+.bb-main {
+  overflow-y: auto;
+  height: 100%;
+  position: relative;
+
+  scrollbar-width: thin;
+  scrollbar-color: $border transparent;
+  &::-webkit-scrollbar       { width: 4px; }
+  &::-webkit-scrollbar-thumb { background: $border; border-radius: 4px; }
+}
+
+// ── Título de página ─────────────────────────────────────────────────────────
+.bb-page-header {
+  padding: 20px 20px 0;
+}
+
+.bb-page-title {
+  font-size:   20px;
+  font-weight: 800;
+  color:       $violet;
+  margin:      0 0 20px;
+  letter-spacing: -0.2px;
+}
 
 .bb-container {
   max-width:  720px;
   margin:     0 auto;
-  padding:    24px 20px 80px;
+  padding:    0 20px 80px;
   box-sizing: border-box;
 }
 
@@ -602,7 +636,7 @@ app-page-header { --aph-title-color: #{$violet}; }
 
 // ── Barra de acciones modo selección (fija abajo) ─────────────────────────────
 .bb-select-bar {
-  position:        fixed;
+  position:        sticky;
   bottom:          0;
   left:            0;
   right:           0;

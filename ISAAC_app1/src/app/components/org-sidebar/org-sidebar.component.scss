@@ -1,0 +1,88 @@
+$pink:      #ff69b4;
+$pink-dark: #e91e8c;
+$pink-light:#fff0f7;
+$border:    #ffb6c1;
+$text-muted:#6b5462;
+
+:host {
+  display: contents; // el <aside> interno controla su propio sizing
+}
+
+.org-sidebar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 0 16px;
+  background: #ffffff;
+  border-right: 1.5px solid $border;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.sidebar-logo {
+  margin-bottom: 24px;
+}
+
+.sidebar-brand {
+  font-size: 16px;
+  font-weight: 900;
+  color: $pink-dark;
+  letter-spacing: 2px;
+  background: $pink-light;
+  border: 1.5px solid $border;
+  border-radius: 12px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 8px;
+}
+
+.sidebar-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: none;
+  background: transparent;
+  color: $text-muted;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  &:hover {
+    background: $pink-light;
+    color: $pink-dark;
+  }
+
+  &--active {
+    background: $pink-light;
+    color: $pink-dark;
+    box-shadow: 0 0 0 1.5px $border;
+  }
+
+  &--logout:hover {
+    background: #fff0f0;
+    color: #c0392b;
+    svg { stroke: #c0392b; }
+  }
+}

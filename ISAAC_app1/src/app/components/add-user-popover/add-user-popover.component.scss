@@ -1,0 +1,71 @@
+$pink:      #ff69b4;
+$pink-dark: #e91e8c;
+$pink-light: #fff0f7;
+$border:    #ffb6c1;
+$text-dark: #222222;
+$text-muted: #7a5163;
+
+:host {
+  display: block;
+}
+
+.aup-list {
+  padding: 6px 0;
+  background: transparent;
+}
+
+.aup-item {
+  --background:         #ffffff;
+  --background-hover:   #{$pink-light};
+  --background-focused: #{$pink-light};
+  --border-radius:      14px;
+  --padding-start:      12px;
+  --padding-end:        16px;
+  --inner-padding-end:  0;
+  --min-height:         64px;
+  margin: 4px 6px;
+  border-radius: 14px;
+  border: 1.5px solid transparent;
+  transition: border-color 0.15s, background 0.15s;
+
+  &:hover {
+    border-color: $border;
+  }
+}
+
+.aup-img-wrap {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $pink-light;
+  border-radius: 12px;
+  flex-shrink: 0;
+  margin-right: 12px;
+}
+
+.aup-img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
+.aup-label {
+  display: flex !important;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.aup-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: $text-dark;
+  line-height: 1.2;
+}
+
+.aup-sub {
+  font-size: 11px;
+  color: $text-muted;
+  line-height: 1.3;
+}

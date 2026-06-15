@@ -1,221 +1,214 @@
-<ion-content class="dash-content">
-  <div class="dash-container">
+<ion-content class="home-content">
+  <div class="home-layout">
 
-    <!-- ── Cabecera ──────────────────────────────────────────────────────────── -->
-    <div class="dash-header">
+    <!-- ═══════════════════════════════════════════════════ SIDEBAR ══ -->
+    <app-org-sidebar activeItem="home"></app-org-sidebar>
 
-      <!-- Marca -->
-      <div class="dash-brand">
-        <span class="brand-name">ISAAC</span>
-        <span class="brand-label">Panel de organización</span>
-      </div>
+    <!-- ══════════════════════════════════════════════════ MAIN AREA ══ -->
+    <main class="home-main">
 
-      <!-- Usuario / avatar / logout -->
-      <div class="dash-user">
-        <div class="dash-org-avatar">
+      <!-- Saludo -->
+      <header class="home-header">
+        <div class="greeting">
+          <h1 class="greeting-title">
+            Hola,&nbsp;<strong>{{ user?.name ?? 'Organización' }}</strong>
+          </h1>
+          <span class="greeting-sub">Panel de organización</span>
+        </div>
+        <div class="header-avatar">
           @if (orgAvatarUrl) {
-            <img [src]="orgAvatarUrl" class="org-avatar-img" alt="Avatar organización"/>
+            <img [src]="orgAvatarUrl" class="avatar-img" alt="Avatar"/>
           } @else {
-            <div class="org-avatar-placeholder">
+            <div class="avatar-placeholder">
               {{ user?.name?.charAt(0)?.toUpperCase() ?? 'O' }}
             </div>
           }
         </div>
-        <div class="dash-user-info">
-          <span class="dash-user-name">{{ user?.name }}</span>
-          <span class="dash-user-type">Organización</span>
-        </div>
-        <button class="logout-btn" (click)="logout()">
+      </header>
+
+      <!-- ── Menú principal 3×3 ───────────────────────────────────────────── -->
+      <section class="menu-grid">
+
+        <!-- 1 · Configurar perfil -->
+        <button class="menu-card menu-card--pink" (click)="goToProfile()">
+          <div class="menu-card-icon">
+            <img src="assets/controlApp/configuration.png" alt=""/>
+          </div>
+          <span class="menu-card-title">Configurar perfil</span>
+        </button>
+
+        <!-- 2 · Añadir usuario final -->
+        <button class="menu-card menu-card--blue" (click)="goToAddUser()">
+          <div class="menu-card-icon">
+            <img src="assets/pictograms/final-user.png" alt=""/>
+          </div>
+          <span class="menu-card-title">Añadir usuario final</span>
+        </button>
+
+        <!-- 3 · Añadir profesional -->
+        <button class="menu-card menu-card--mint" (click)="goToAddProfessional()">
+          <div class="menu-card-icon">
+            <img src="assets/pictograms/professionals.png" alt=""/>
+          </div>
+          <span class="menu-card-title">Añadir profesional</span>
+        </button>
+
+        <!-- 4 · Añadir familiar -->
+        <button class="menu-card menu-card--violet" (click)="goToAddFamiliar()">
+          <div class="menu-card-icon">
+            <img src="assets/pictograms/family.png" alt=""/>
+          </div>
+          <span class="menu-card-title">Añadir familiar</span>
+        </button>
+
+        <!-- 5 · Añadir pictograma -->
+        <button class="menu-card menu-card--peach" (click)="goToAddPictogram()">
+          <div class="menu-card-icon">
+            <img src="assets/pictograms/custom-pictograms.png" alt=""/>
+          </div>
+          <span class="menu-card-title">Añadir pictograma</span>
+        </button>
+
+        <!-- 6 · Asignar profesional -->
+        <button class="menu-card menu-card--teal" (click)="goToAssignProfessional()">
+          <div class="menu-card-icon">
+            <img src="assets/pictograms/assigned-professionals.png" alt=""/>
+          </div>
+          <span class="menu-card-title">Asignar profesional</span>
+        </button>
+
+        <!-- 7 · Tablero builder -->
+        <button class="menu-card menu-card--blue" (click)="goToBoardBuilder()">
+          <div class="menu-card-icon">
+            <img src="assets/controlApp/boardBuilder.png" alt=""/>
+          </div>
+          <span class="menu-card-title">Tablero builder</span>
+        </button>
+
+        <!-- 8 · Estadísticas -->
+        <button class="menu-card menu-card--pink" (click)="goToStatistics()">
+          <div class="menu-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"/>
+              <line x1="12" y1="20" x2="12" y2="4"/>
+              <line x1="6"  y1="20" x2="6"  y2="14"/>
+              <line x1="2"  y1="20" x2="22" y2="20"/>
+            </svg>
+          </div>
+          <span class="menu-card-title">Estadísticas</span>
+        </button>
+
+        <!-- 9 · Objetivos -->
+        <button class="menu-card menu-card--violet" (click)="goToObjectives()">
+          <div class="menu-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 11 12 14 22 4"/>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+            </svg>
+          </div>
+          <span class="menu-card-title">Objetivos</span>
+        </button>
+
+      </section>
+
+    </main><!-- /home-main -->
+
+    <!-- ══════════════════════════════════════════════ RESUMEN RÁPIDO ══ -->
+    <aside class="home-right">
+
+      <div class="quick-summary">
+
+        <h3 class="summary-title">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16 17 21 12 16 7"/>
-            <line x1="21" y1="12" x2="9" y2="12"/>
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <path d="M3 9h18M9 21V9"/>
           </svg>
-          Salir
-        </button>
-      </div>
+          Resumen rápido
+        </h3>
 
-    </div>
+        <div class="summary-group">
 
-    <!-- ── Divisor ───────────────────────────────────────────────────────────── -->
-    <div class="dash-divider"></div>
-
-    <!-- Botones de acción centrales -->
-      <div class="action-row">
-        <button class="action-btn action-btn--pink" (click)="goToProfile()">
-          <img src="assets/controlApp/configuration.png" class="action-icon" alt="Perfil"/>
-          <span>Configurar perfil</span>
-        </button>
-
-        <button class="action-btn action-btn--mint" (click)="goToAddUser()">
-          <img src="assets/controlApp/user.png" class="action-icon" alt="Añadir Usuario"/>
-          <span>Agregar usuario</span>
-        </button>
-
-        <button class="action-btn action-btn--violet" (click)="goToBoardBuilder()">
-          <img src="assets/controlApp/boardBuilder.png" class="action-icon" alt="Creación de tableros"/>
-          <span>Crear tablero</span>
-        </button>
-
-        <button class="action-btn action-btn--blue" (click)="goToStatistics()">
-          <svg class="action-icon action-icon--svg" viewBox="0 0 58 58" fill="none">
-            <rect x="6"  y="32" width="10" height="20" rx="3" fill="#4a9eff" opacity=".8"/>
-            <rect x="20" y="22" width="10" height="30" rx="3" fill="#4a9eff" opacity=".9"/>
-            <rect x="34" y="14" width="10" height="38" rx="3" fill="#4a9eff"/>
-            <rect x="48" y="6"  width="10" height="46" rx="3" fill="#4a9eff"/>
-          </svg>
-          <span>Estadísticas</span>
-        </button>
-
-        <button class="action-btn action-btn--teal" (click)="goToObjectives()">
-          <svg class="action-icon action-icon--svg" viewBox="0 0 58 58" fill="none">
-            <path d="M10 14h38M10 22h28M10 30h20" stroke="#26a69a" stroke-width="4" stroke-linecap="round"/>
-            <circle cx="44" cy="38" r="10" fill="#26a69a" opacity=".15" stroke="#26a69a" stroke-width="3"/>
-            <polyline points="39 38 43 42 50 34" stroke="#26a69a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-          </svg>
-          <span>Establecer objetivos</span>
-        </button>
-
-      </div>
-
-
-    <!-- ── Cuerpo principal: 2 columnas ─────────────────────────────────────── -->
-    <div class="dash-body">
-
-      <!-- ── Columna izquierda: Usuarios finales ─────────────────────────── -->
-      <div class="dash-col">
-        <div class="col-header">
-          <div class="col-title-row">
-            <h2 class="col-title">Usuarios finales</h2>
-            <span class="col-count">{{ filteredFinalUsers.length }}</span>
+          <div class="summary-row summary-row--blue">
+            <div class="summary-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="8" r="4"/>
+                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+              </svg>
+            </div>
+            <span class="summary-label">Usuarios finales</span>
+            <strong class="summary-value">{{ summary.totalFinalUsers }}</strong>
           </div>
-          <ion-searchbar
-            class="col-searchbar"
-            placeholder="Buscar por nombre o apellidos..."
-            (ionInput)="onSearchFinalUsers($event)"
-            debounce="150"
-            animated>
-          </ion-searchbar>
-        </div>
 
-        <div class="users-grid">
-
-          <!-- Estado: cargando -->
-          @if (isLoading) {
-            <div class="col-loading">
-              <ion-spinner name="crescent" color="primary"></ion-spinner>
+          <div class="summary-row summary-row--mint">
+            <div class="summary-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
             </div>
-          } @else if (loadError) {
-            <!-- Estado: error -->
-            <div class="no-results col-error">{{ loadError }}</div>
-          } @else {
-            <!-- Tarjetas de usuario -->
-            @for (u of filteredFinalUsers; track u.email) {
-              <div class="user-card user-card--clickable" (click)="goToUserSession(u._id)">
-                <div class="user-card-avatar user-card-avatar--blue">
-                  @if (u.image) {
-                    <img [src]="buildSafeUrl(u.image)" [alt]="u.name"/>
-                  } @else {
-                    <span class="user-card-initial">{{ getInitial(u) }}</span>
-                  }
-                </div>
-                <span class="user-card-name">{{ u.name }}</span>
-                <span class="user-card-surname">{{ u.surname }}</span>
-              </div>
-            }
-
-            <!-- Botón añadir -->
-            <div class="user-card user-card--add" (click)="goToAddUser()">
-              <div class="user-card-avatar user-card-avatar--add">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <line x1="12" y1="5" x2="12" y2="19"/>
-                  <line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-              </div>
-              <span class="user-card-name">Añadir</span>
-              <span class="user-card-surname">&nbsp;</span>
-            </div>
-
-            <!-- Sin resultados (búsqueda) -->
-            @if (filteredFinalUsers.length === 0 && searchFinalUsers) {
-              <div class="no-results">Sin resultados</div>
-            }
-            <!-- Vacío (sin usuarios todavía) -->
-            @if (allFinalUsers.length === 0 && !searchFinalUsers) {
-              <div class="no-results">Aún no hay usuarios finales</div>
-            }
-          }
-
-        </div>
-      </div>
-
-      <!-- ── Columna derecha: Profesionales ──────────────────────────────── -->
-      <div class="dash-col">
-        <div class="col-header">
-          <div class="col-title-row">
-            <h2 class="col-title">Profesionales</h2>
-            <span class="col-count col-count--mint">{{ filteredProfessionals.length }}</span>
+            <span class="summary-label">Profesionales</span>
+            <strong class="summary-value">{{ summary.totalProfessionals }}</strong>
           </div>
-          <ion-searchbar
-            class="col-searchbar"
-            placeholder="Buscar por nombre o apellidos..."
-            (ionInput)="onSearchProfessionals($event)"
-            debounce="150"
-            animated>
-          </ion-searchbar>
+
+          <div class="summary-row summary-row--peach">
+            <div class="summary-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+            <span class="summary-label">Familiares</span>
+            <strong class="summary-value">{{ summary.totalFamiliares }}</strong>
+          </div>
+
         </div>
 
-        <div class="users-grid">
+        <div class="summary-divider"></div>
 
-          <!-- Estado: cargando -->
-          @if (isLoading) {
-            <div class="col-loading">
-              <ion-spinner name="crescent" color="primary"></ion-spinner>
+        <div class="summary-group">
+
+          <div class="summary-row summary-row--violet">
+            <div class="summary-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7" rx="1"/>
+                <rect x="14" y="3" width="7" height="7" rx="1"/>
+                <rect x="3" y="14" width="7" height="7" rx="1"/>
+                <rect x="14" y="14" width="7" height="7" rx="1"/>
+              </svg>
             </div>
-          } @else if (loadError) {
-            <!-- Estado: error -->
-            <div class="no-results col-error">{{ loadError }}</div>
-          } @else {
-            <!-- Tarjetas de profesional -->
-            @for (u of filteredProfessionals; track u.email) {
-              <div class="user-card user-card--clickable" (click)="goToProfessionalSession(u._id)">
-                <div class="user-card-avatar user-card-avatar--mint">
-                  @if (u.image) {
-                    <img [src]="buildSafeUrl(u.image)" [alt]="u.name"/>
-                  } @else {
-                    <span class="user-card-initial">{{ getInitial(u) }}</span>
-                  }
-                </div>
-                <span class="user-card-name">{{ u.name }}</span>
-                <span class="user-card-surname">{{ u.surname }}</span>
-              </div>
-            }
+            <span class="summary-label">Tableros activos</span>
+            <strong class="summary-value summary-value--dash">—</strong>
+          </div>
 
-            <!-- Botón añadir -->
-            <div class="user-card user-card--add" (click)="goToAddUser()">
-              <div class="user-card-avatar user-card-avatar--add">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <line x1="12" y1="5" x2="12" y2="19"/>
-                  <line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-              </div>
-              <span class="user-card-name">Añadir</span>
-              <span class="user-card-surname">&nbsp;</span>
+          <div class="summary-row summary-row--teal">
+            <div class="summary-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 11 12 14 22 4"/>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+              </svg>
             </div>
-
-            <!-- Sin resultados (búsqueda) -->
-            @if (filteredProfessionals.length === 0 && searchProfessionals) {
-              <div class="no-results">Sin resultados</div>
-            }
-            <!-- Vacío (sin profesionales todavía) -->
-            @if (allProfessionals.length === 0 && !searchProfessionals) {
-              <div class="no-results">Aún no hay profesionales</div>
-            }
-          }
+            <span class="summary-label">Objetivos hoy</span>
+            <strong class="summary-value summary-value--dash">—</strong>
+          </div>
 
         </div>
-      </div>
 
-    </div><!-- dash-body -->
-  </div><!-- dash-container -->
+        <button class="summary-cta" (click)="goToUsers()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <line x1="19" y1="8" x2="19" y2="14"/>
+            <line x1="22" y1="11" x2="16" y2="11"/>
+          </svg>
+          Gestionar usuarios
+        </button>
+
+      </div><!-- /quick-summary -->
+
+    </aside><!-- /home-right -->
+
+  </div><!-- /home-layout -->
 </ion-content>

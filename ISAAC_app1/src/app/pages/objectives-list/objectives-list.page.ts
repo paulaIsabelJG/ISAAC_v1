@@ -6,7 +6,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { ObjectiveService, Objective, ObjectiveEffectiveStatus } from '../../services/objective.service';
-import { AppPageHeaderComponent } from '../../components/app-page-header/app-page-header.component';
+import { OrgSidebarComponent } from '../../components/org-sidebar/org-sidebar.component';
 import { LoadingErrorStateComponent } from '../../components/loading-error-state/loading-error-state.component';
 import { ObjectiveCommentsComponent } from '../../components/objective-comments/objective-comments.component';
 
@@ -15,7 +15,7 @@ import { ObjectiveCommentsComponent } from '../../components/objective-comments/
   templateUrl: './objectives-list.page.html',
   styleUrls:  ['./objectives-list.page.scss'],
   standalone: true,
-  imports: [IonicModule, CommonModule, FormsModule, AppPageHeaderComponent, LoadingErrorStateComponent, ObjectiveCommentsComponent],
+  imports: [IonicModule, CommonModule, FormsModule, OrgSidebarComponent, LoadingErrorStateComponent, ObjectiveCommentsComponent],
 })
 export class ObjectivesListPage implements OnInit {
 
@@ -59,7 +59,8 @@ export class ObjectivesListPage implements OnInit {
 
   get viewerType():   string  { return this.authSvc.getCurrentUser()?.type ?? ''; }
   get currentUserId(): string { return this.authSvc.getCurrentUser()?.id  ?? ''; }
-  get isCreator():    boolean { return this.role === 'creator'; }
+  get isCreator():     boolean { return this.role === 'creator'; }
+  get showOrgSidebar(): boolean { return this.returnTo.startsWith('/organization-dashboard'); }
 
   constructor(
     private route:     ActivatedRoute,

@@ -18,6 +18,7 @@ import { StatisticsSummaryCardsComponent } from '../../components/statistics-sum
 import { StatisticsChartCardComponent }    from '../../components/statistics-chart-card/statistics-chart-card.component';
 import { PhraseLogCardComponent }          from '../../components/phrase-log-card/phrase-log-card.component';
 import { StatisticsPdfExportService, StatsPdfMeta } from '../../services/statistics-pdf-export.service';
+import { OrgSidebarComponent } from '../../components/org-sidebar/org-sidebar.component';
 
 export type DashSection = 'resumen' | 'tableros' | 'frases' | 'exportacion';
 
@@ -33,6 +34,7 @@ export type DashSection = 'resumen' | 'tableros' | 'frases' | 'exportacion';
     StatisticsSummaryCardsComponent,
     StatisticsChartCardComponent,
     PhraseLogCardComponent,
+    OrgSidebarComponent,
   ],
 })
 export class OrganizationStatisticsPage implements OnInit {
