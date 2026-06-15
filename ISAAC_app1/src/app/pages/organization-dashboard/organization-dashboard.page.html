@@ -46,7 +46,7 @@
         </button>
 
         <!-- 3 · Añadir profesional -->
-        <button class="menu-card menu-card--mint" (click)="goToAddProfessional()">
+        <button class="menu-card menu-card--violet" (click)="goToAddProfessional()">
           <div class="menu-card-icon">
             <img src="assets/pictograms/professionals.png" alt=""/>
           </div>
@@ -54,7 +54,7 @@
         </button>
 
         <!-- 4 · Añadir familiar -->
-        <button class="menu-card menu-card--violet" (click)="goToAddFamiliar()">
+        <button class="menu-card menu-card--peach" (click)="goToAddFamiliar()">
           <div class="menu-card-icon">
             <img src="assets/pictograms/family.png" alt=""/>
           </div>
@@ -62,7 +62,7 @@
         </button>
 
         <!-- 5 · Añadir pictograma -->
-        <button class="menu-card menu-card--peach" (click)="goToAddPictogram()">
+        <button class="menu-card menu-card--teal" (click)="goToAddPictogram()">
           <div class="menu-card-icon">
             <img src="assets/pictograms/custom-pictograms.png" alt=""/>
           </div>
@@ -70,7 +70,7 @@
         </button>
 
         <!-- 6 · Asignar profesional -->
-        <button class="menu-card menu-card--teal" (click)="goToAssignProfessional()">
+        <button class="menu-card menu-card--pink" (click)="goToAssignProfessional()">
           <div class="menu-card-icon">
             <img src="assets/pictograms/assigned-professionals.png" alt=""/>
           </div>
@@ -78,7 +78,7 @@
         </button>
 
         <!-- 7 · Tablero builder -->
-        <button class="menu-card menu-card--blue" (click)="goToBoardBuilder()">
+        <button class="menu-card menu-card--violet" (click)="goToBoardBuilder()">
           <div class="menu-card-icon">
             <img src="assets/controlApp/boardBuilder.png" alt=""/>
           </div>
@@ -88,25 +88,15 @@
         <!-- 8 · Estadísticas -->
         <button class="menu-card menu-card--pink" (click)="goToStatistics()">
           <div class="menu-card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
-                 stroke-linecap="round" stroke-linejoin="round">
-              <line x1="18" y1="20" x2="18" y2="10"/>
-              <line x1="12" y1="20" x2="12" y2="4"/>
-              <line x1="6"  y1="20" x2="6"  y2="14"/>
-              <line x1="2"  y1="20" x2="22" y2="20"/>
-            </svg>
+            <img src="assets/user-session/statistics.png" alt=""/>
           </div>
           <span class="menu-card-title">Estadísticas</span>
         </button>
 
         <!-- 9 · Objetivos -->
-        <button class="menu-card menu-card--violet" (click)="goToObjectives()">
+        <button class="menu-card menu-card--blue" (click)="goToObjectives()">
           <div class="menu-card-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
-                 stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="9 11 12 14 22 4"/>
-              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-            </svg>
+            <img src="assets/user-session/objetivos.png" alt=""/>
           </div>
           <span class="menu-card-title">Objetivos</span>
         </button>
@@ -141,7 +131,7 @@
             <strong class="summary-value">{{ summary.totalFinalUsers }}</strong>
           </div>
 
-          <div class="summary-row summary-row--mint">
+          <div class="summary-row summary-row--violet">
             <div class="summary-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -179,19 +169,19 @@
                 <rect x="14" y="14" width="7" height="7" rx="1"/>
               </svg>
             </div>
-            <span class="summary-label">Tableros activos</span>
-            <strong class="summary-value summary-value--dash">—</strong>
+            <span class="summary-label">Tableros activos en toda la organización</span>
+            <strong class="summary-value">{{ summary.activeBoardsCount }}</strong>
           </div>
 
-          <div class="summary-row summary-row--teal">
+          <div class="summary-row summary-row--blue">
             <div class="summary-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="9 11 12 14 22 4"/>
                 <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
               </svg>
             </div>
-            <span class="summary-label">Objetivos hoy</span>
-            <strong class="summary-value summary-value--dash">—</strong>
+            <span class="summary-label">Objetivos activos</span>
+            <strong class="summary-value">{{ summary.activeObjectivesTodayCount }}</strong>
           </div>
 
         </div>

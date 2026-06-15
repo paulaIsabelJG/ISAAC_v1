@@ -94,7 +94,9 @@ export class AddUserPage implements OnInit {
     this.returnTo    = this.route.snapshot.queryParamMap.get('returnTo') ?? '/organization-dashboard';
     this.directEntry = !!type;
 
-    if (type === 'parent') {
+    if (type === 'professional') {
+      this.view = 'professional';
+    } else if (type === 'parent') {
       this.view = 'family';
       if (this.centerFinalUsers.length === 0 && !this.famUsersLoading) {
         this.loadFinalUsersForFamily();

@@ -2,12 +2,16 @@ import { Component } from '@angular/core';
 import { IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import { forkJoin, of } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import { buildSafeUrl as buildSafeUrlUtil } from '../../shared/utils/image.utils';
 import { AuthService, User } from '../../services/auth.service';
 import { UserService, BackendUser } from '../../services/user.service';
 import { OrganizationDashboardService, QuickSummary } from '../../services/organization-dashboard.service';
 import { UserCardData } from '../../services/organization-users.service';
 import { PictogramStateService } from '../../services/pictogram-state.service';
+import { BoardService } from '../../services/board.service';
+import { ObjectiveService } from '../../services/objective.service';
 import { OrgSidebarComponent } from '../../components/org-sidebar/org-sidebar.component';
 
 @Component({
@@ -22,7 +26,7 @@ export class OrganizationDashboardPage {
   user: User | null = null;
   orgAvatarUrl: SafeUrl | string = '';
 
-  summary: QuickSummary = { totalFinalUsers: 0, totalProfessionals: 0, totalFamiliares: 0 };
+  summary: QuickSummary = { totalFinalUsers: 0, totalProfessionals: 0, totalFamiliares: 0, activeBoardsCount: 0, activeObjectivesTodayCount: 0 };
   isLoading = false;
   loadError = '';
 
@@ -30,6 +34,8 @@ export class OrganizationDashboardPage {
     private authService:     AuthService,
     private userService:     UserService,
     private dashService:     OrganizationDashboardService,
+    private boardService:    BoardService,
+    private objectiveService: ObjectiveService,
     private pictogramState:  PictogramStateService,
     private router:          Router,
     private sanitizer:       DomSanitizer,
@@ -43,30 +49,59 @@ export class OrganizationDashboardPage {
 
   private loadSummaryData(): void {
     const centro = this.user?.centro;
-    if (!centro) return;
+    const orgId  = this.user?.id;
+    if (!centro || !orgId) return;
 
     this.isLoading = true;
     this.userService.getUsersByCenter(centro).subscribe({
       next: (res) => {
-        const myEmail     = this.user?.email;
+        const myEmail       = this.user?.email;
         const finalUsers    = res.users.filter(u => u.type === 'user').map(u => this.toCard(u));
         const professionals = res.users.filter(u => u.type === 'teacher' && u.email !== myEmail).map(u => this.toCard(u));
+        const finalUserIds  = finalUsers.map(u => u._id);
 
-        const finalUserIds = finalUsers.map(u => u._id);
-        if (finalUserIds.length === 0) {
-          this.summary   = this.dashService.buildSummary(finalUsers, professionals, []);
-          this.isLoading = false;
-          return;
-        }
+        const creatorIds = [orgId, ...professionals.map(p => p._id)];
 
-        this.userService.getFamiliesForUsers(finalUserIds).subscribe({
-          next: (famRes) => {
-            const familiares = famRes.families.map(u => this.toCard(u));
-            this.summary     = this.dashService.buildSummary(finalUsers, professionals, familiares);
-            this.isLoading   = false;
+        const families$ = finalUserIds.length > 0
+          ? this.userService.getFamiliesForUsers(finalUserIds).pipe(catchError(() => of({ families: [] })))
+          : of({ families: [] as any[] });
+
+        const boards$ = forkJoin(
+          creatorIds.map(id => this.boardService.getBoardsByCreator(id).pipe(catchError(() => of({ boards: [] }))))
+        ).pipe(
+          map(results => {
+            const seen = new Set<string>();
+            return results.flatMap(r => (r as any).boards ?? []).filter((b: any) => {
+              if (seen.has(b._id)) return false;
+              seen.add(b._id);
+              return true;
+            });
+          })
+        );
+
+        const objectives$ = this.objectiveService.getObjectives()
+          .pipe(catchError(() => of({ objectives: [] })));
+
+        forkJoin({ families: families$, boards: boards$, objectives: objectives$ }).subscribe({
+          next: ({ families, boards, objectives }) => {
+            const familiares = (families as any).families.map((u: any) => this.toCard(u));
+
+            const activeBoardsCount = (boards as any[])
+              .filter((b: any) => (b.boardRole === 'main' || !b.boardRole) && (b.assignedUserIds?.length ?? 0) > 0)
+              .length;
+
+            const orgUserIdSet = new Set(finalUserIds);
+            const activeObjectivesTodayCount = ((objectives as any).objectives ?? [])
+              .filter((o: any) =>
+                o.effectiveStatus === 'active' &&
+                (o.assignedUserIds ?? []).some((u: any) => orgUserIdSet.has(u._id))
+              ).length;
+
+            this.summary   = this.dashService.buildSummary(finalUsers, professionals, familiares, activeBoardsCount, activeObjectivesTodayCount);
+            this.isLoading = false;
           },
           error: () => {
-            this.summary   = this.dashService.buildSummary(finalUsers, professionals, []);
+            this.loadError = 'Error al cargar datos.';
             this.isLoading = false;
           },
         });
@@ -97,7 +132,7 @@ export class OrganizationDashboardPage {
   goToStatistics(): void { this.router.navigate(['/organization-statistics']); }
 
   goToAddProfessional(): void {
-    this.router.navigate(['/add-user']);
+    this.router.navigate(['/add-user'], { queryParams: { type: 'professional', returnTo: '/organization-dashboard' } });
   }
 
   goToAddFamiliar(): void {

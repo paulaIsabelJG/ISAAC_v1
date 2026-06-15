@@ -2,9 +2,11 @@ import { Injectable } from '@angular/core';
 import { UserCardData } from './organization-users.service';
 
 export interface QuickSummary {
-  totalFinalUsers:    number;
-  totalProfessionals: number;
-  totalFamiliares:    number;
+  totalFinalUsers:          number;
+  totalProfessionals:       number;
+  totalFamiliares:          number;
+  activeBoardsCount:        number;
+  activeObjectivesTodayCount: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -16,14 +18,18 @@ export class OrganizationDashboardService {
   }
 
   buildSummary(
-    finalUsers:    UserCardData[],
-    professionals: UserCardData[],
-    familiares:    UserCardData[],
+    finalUsers:                 UserCardData[],
+    professionals:              UserCardData[],
+    familiares:                 UserCardData[],
+    activeBoardsCount:          number = 0,
+    activeObjectivesTodayCount: number = 0,
   ): QuickSummary {
     return {
-      totalFinalUsers:    finalUsers.length,
-      totalProfessionals: professionals.length,
-      totalFamiliares:    familiares.length,
+      totalFinalUsers:          finalUsers.length,
+      totalProfessionals:       professionals.length,
+      totalFamiliares:          familiares.length,
+      activeBoardsCount,
+      activeObjectivesTodayCount,
     };
   }
 }

@@ -304,6 +304,13 @@ export class UserService {
 
   // ── childrenAccess ─────────────────────────────────────────────────────────
 
+  /** GET /api/users/:parentId/children — usuarios finales vinculados a un familiar */
+  getChildrenByParentId(parentId: string): Observable<{ children: BackendUser[] }> {
+    return this.http.get<{ children: BackendUser[] }>(
+      `${this.url}/${encodeURIComponent(parentId)}/children`
+    );
+  }
+
   /** PUT /api/users/:parentId/children-access */
   updateChildrenAccess(
     parentId: string,

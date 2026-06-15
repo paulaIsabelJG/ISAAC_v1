@@ -1,4 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { PopoverController } from '@ionic/angular/standalone';
 import { Router } from '@angular/router';
@@ -12,6 +13,7 @@ import {
   UserCardData,
   UsersTab,
 } from '../../services/organization-users.service';
+import { BoardService, Board } from '../../services/board.service';
 import { PictogramStateService } from '../../services/pictogram-state.service';
 import { OrgSidebarComponent } from '../../components/org-sidebar/org-sidebar.component';
 import { AddUserPopoverComponent } from '../../components/add-user-popover/add-user-popover.component';
@@ -21,7 +23,7 @@ import { AddUserPopoverComponent } from '../../components/add-user-popover/add-u
   templateUrl: './organization-users.page.html',
   styleUrls: ['./organization-users.page.scss'],
   standalone: true,
-  imports: [IonicModule, OrgSidebarComponent],
+  imports: [IonicModule, CommonModule, OrgSidebarComponent],
 })
 export class OrganizationUsersPage implements OnInit, OnDestroy {
 
@@ -38,12 +40,17 @@ export class OrganizationUsersPage implements OnInit, OnDestroy {
   selectedUser: UserCardData | null = null;
   searchQuery  = '';
 
+  selectedUserBoards: Board[] = [];
+  selectedLinkedUsers: UserCardData[] = [];
+  boardsLoading = false;
+
   private subs = new Subscription();
 
   constructor(
     private authService:    AuthService,
     private userService:    UserService,
     private usersService:   OrganizationUsersService,
+    private boardService:   BoardService,
     private pictogramState: PictogramStateService,
     private popoverCtrl:    PopoverController,
     private router:         Router,
@@ -52,8 +59,53 @@ export class OrganizationUsersPage implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.subs.add(this.usersService.activeTab$.subscribe(t => this.activeTab = t));
-    this.subs.add(this.usersService.selectedUser$.subscribe(u => this.selectedUser = u));
+    this.subs.add(this.usersService.selectedUser$.subscribe(u => {
+      this.selectedUser = u;
+      this.loadBoardsForUser(u);
+    }));
     this.subs.add(this.usersService.searchQuery$.subscribe(q => this.searchQuery = q));
+  }
+
+  private loadBoardsForUser(u: UserCardData | null): void {
+    this.selectedUserBoards = [];
+    this.selectedLinkedUsers = [];
+    if (!u) return;
+    this.boardsLoading = true;
+
+    if (u.type === 'teacher') {
+      this.userService.getAssignedUsers(u._id).subscribe({
+        next: (res) => {
+          this.selectedLinkedUsers = res.users.map(a => ({
+            _id:     a.userId,
+            name:    a.name,
+            surname: a.surname,
+            email:   a.email,
+            image:   a.image ?? undefined,
+            type:    'user' as const,
+          }));
+          this.boardsLoading = false;
+        },
+        error: () => { this.boardsLoading = false; },
+      });
+    } else if (u.type === 'parent') {
+      this.userService.getChildrenByParentId(u._id).subscribe({
+        next: (res) => {
+          this.selectedLinkedUsers = res.children.map(c => this.toCard(c));
+          this.boardsLoading = false;
+        },
+        error: () => { this.boardsLoading = false; },
+      });
+    } else {
+      this.boardService.getBoardsByUser(u._id).subscribe({
+        next: (res) => {
+          this.selectedUserBoards = res.boards.filter(
+            b => b.boardRole === 'main' || !b.boardRole
+          );
+          this.boardsLoading = false;
+        },
+        error: () => { this.boardsLoading = false; },
+      });
+    }
   }
 
   ionViewWillEnter(): void {
@@ -157,6 +209,26 @@ export class OrganizationUsersPage implements OnInit, OnDestroy {
 
   buildSafeUrl(imageStr?: string | null): SafeUrl | string {
     return buildSafeUrlUtil(imageStr, this.sanitizer);
+  }
+
+  boardShapeLabel(board: Board): string {
+    if (board.shape === 'circular') return 'Circular';
+    if (board.boardRole === 'multi' || board.shape === 'multi') return 'Multi';
+    return 'Cuadrícula';
+  }
+
+  boardDimensionLabel(board: Board): string {
+    if (board.shape === 'circular') return `${board.circleSlots} pos.`;
+    if (board.boardRole === 'multi' || board.shape === 'multi') return `${board.slotCount ?? 2} huecos`;
+    return `${board.rows}×${board.columns}`;
+  }
+
+  boardBadges(board: Board): Array<{ label: string; cls: string }> {
+    const b: Array<{ label: string; cls: string }> = [];
+    if (board.visibleInProfile) b.push({ label: 'PUBLICADO', cls: 'ou-badge--pub' });
+    if (board.predictorEnabled) b.push({ label: 'IA',        cls: 'ou-badge--ia'  });
+    if (board.aiRewriteEnabled) b.push({ label: 'IA TEXTO',  cls: 'ou-badge--ia'  });
+    return b;
   }
 
   goToSession(u: UserCardData): void {

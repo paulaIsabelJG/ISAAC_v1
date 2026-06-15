@@ -133,18 +133,89 @@
 
           <div class="detail-divider"></div>
 
-          <div class="detail-stats">
-            <div class="detail-stat">
-              <span class="detail-stat-label">Tablero asignado</span>
-              <span class="detail-stat-value">—</span>
+          <!-- Tableros (usuario final / familiar) -->
+          @if (selectedUser.type !== 'teacher') {
+            <div class="detail-boards">
+              <span class="detail-stat-label">Tableros activos</span>
+
+              @if (boardsLoading) {
+                <span class="detail-boards-empty">Cargando...</span>
+              } @else if (selectedUserBoards.length === 0) {
+                <span class="detail-boards-empty">Sin tableros asignados</span>
+              } @else {
+                <div class="ou-board-list">
+                  @for (board of selectedUserBoards; track board._id) {
+                    <div class="ou-board-card">
+
+                      <div class="ou-board-icon" [class.ou-board-icon--img]="!!board.imageUrl">
+                        @if (board.imageUrl) {
+                          <img [src]="buildSafeUrl(board.imageUrl)" class="ou-board-img" [alt]="board.name"/>
+                        } @else {
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <rect x="3" y="3" width="7" height="7" rx="1"/>
+                            <rect x="14" y="3" width="7" height="7" rx="1"/>
+                            <rect x="3" y="14" width="7" height="7" rx="1"/>
+                            <rect x="14" y="14" width="7" height="7" rx="1"/>
+                          </svg>
+                        }
+                      </div>
+
+                      <div class="ou-board-info">
+                        <span class="ou-board-name">{{ board.name }}</span>
+                        <span class="ou-board-meta">
+                          {{ boardShapeLabel(board) }} · {{ boardDimensionLabel(board) }}
+                        </span>
+                        @if (boardBadges(board).length > 0) {
+                          <div class="ou-badge-row">
+                            @for (badge of boardBadges(board); track badge.label) {
+                              <span class="ou-badge" [ngClass]="badge.cls">{{ badge.label }}</span>
+                            }
+                          </div>
+                        }
+                      </div>
+
+                    </div>
+                  }
+                </div>
+              }
             </div>
-            <div class="detail-stat">
-              <span class="detail-stat-label">Progreso semanal</span>
-              <div class="detail-progress">
-                <div class="detail-progress-bar"></div>
-              </div>
+          }
+
+          <!-- Usuarios vinculados (profesional → asignados / familiar → hijos) -->
+          @if (selectedUser.type === 'teacher' || selectedUser.type === 'parent') {
+            <div class="detail-boards">
+              <span class="detail-stat-label">
+                {{ selectedUser.type === 'teacher' ? 'Usuarios asignados' : 'Usuarios vinculados' }}
+              </span>
+
+              @if (boardsLoading) {
+                <span class="detail-boards-empty">Cargando...</span>
+              } @else if (selectedLinkedUsers.length === 0) {
+                <span class="detail-boards-empty">Sin usuarios vinculados</span>
+              } @else {
+                <div class="ou-board-list">
+                  @for (u of selectedLinkedUsers; track u._id) {
+                    <div class="ou-board-card">
+
+                      <div class="ou-board-icon ou-board-icon--user" [class.ou-board-icon--img]="!!u.image">
+                        @if (u.image) {
+                          <img [src]="buildSafeUrl(u.image)" class="ou-board-img" [alt]="u.name"/>
+                        } @else {
+                          <span class="ou-user-initial">{{ u.name.charAt(0).toUpperCase() }}</span>
+                        }
+                      </div>
+
+                      <div class="ou-board-info">
+                        <span class="ou-board-name">{{ u.name }} {{ u.surname }}</span>
+                        <span class="ou-board-meta">{{ u.email }}</span>
+                      </div>
+
+                    </div>
+                  }
+                </div>
+              }
             </div>
-          </div>
+          }
 
           <button class="detail-go-btn" (click)="goToSession(selectedUser)">
             Ver detalle completo
