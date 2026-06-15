@@ -146,6 +146,7 @@ export interface Board {
   iaCols:                number;
   cells:                 BoardCell[];
   createdAt?:            string;
+  updatedAt?:            string;
   // Usuarios asignados (1-N). assignedUserIds es el nuevo campo; userId es legacy.
   assignedUserIds?:    string[];
   // Rol y perfil

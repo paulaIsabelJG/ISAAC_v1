@@ -15,7 +15,7 @@ $card-bg:      #ffffff;
 // ── Content ───────────────────────────────────────────────────────────────────
 .bb-content { --background: #{$bg}; }
 
-// ── Layout: sidebar | main ────────────────────────────────────────────────────
+// ── Layout raíz: nav-sidebar | área principal ─────────────────────────────────
 .bb-layout {
   display: grid;
   grid-template-columns: 72px 1fr;
@@ -28,35 +28,371 @@ $card-bg:      #ffffff;
   }
 }
 
+// ── Área principal (columna flex vertical) ────────────────────────────────────
 .bb-main {
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   height: 100%;
+  overflow: hidden;
   position: relative;
+}
 
+// ── Sección superior: título + acciones + recientes ───────────────────────────
+.bb-top-section {
+  flex: 0 0 auto;
+  padding: 16px 24px 0;
+  overflow-y: auto;
+  max-height: 54vh;
   scrollbar-width: thin;
   scrollbar-color: $border transparent;
   &::-webkit-scrollbar       { width: 4px; }
   &::-webkit-scrollbar-thumb { background: $border; border-radius: 4px; }
 }
 
-// ── Título de página ─────────────────────────────────────────────────────────
-.bb-page-header {
-  padding: 20px 20px 0;
+// ── Sección de lista: header + master-detail ──────────────────────────────────
+.bb-list-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-top: 1.5px solid $border;
+  margin-top: 14px;
 }
 
+// ── Estado centrado (loading/error/empty) ────────────────────────────────────
+.bb-state-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// ── Master-detail body ────────────────────────────────────────────────────────
+.bb-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+
+  @media (max-width: 680px) {
+    flex-direction: column;
+  }
+}
+
+// ── Sidebar de carpetas ───────────────────────────────────────────────────────
+.bb-folder-sidebar {
+  flex: 0 0 172px;
+  width: 172px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-right: 1.5px solid $border;
+  background: #fff;
+  scrollbar-width: thin;
+  scrollbar-color: $border transparent;
+  &::-webkit-scrollbar       { width: 3px; }
+  &::-webkit-scrollbar-thumb { background: $border; border-radius: 3px; }
+
+  @media (max-width: 680px) {
+    flex: none;
+    width: 100%;
+    border-right: none;
+    border-bottom: 1.5px solid $border;
+    padding: 8px 12px;
+    box-sizing: border-box;
+    overflow: visible;
+  }
+}
+
+// Select móvil (visible solo en pequeño)
+.bb-sidebar-mobile-select {
+  display: none;
+  width: 100%;
+  font-size: 13px;
+  font-weight: 700;
+  color: $text-dark;
+  background: #fff;
+  border: 1.5px solid $border;
+  border-radius: 10px;
+  padding: 7px 10px;
+  font-family: inherit;
+  cursor: pointer;
+  outline: none;
+
+  @media (max-width: 680px) { display: block; }
+}
+
+// Lista de items de carpeta (oculta en móvil)
+.bb-sidebar-items {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0 16px;
+
+  @media (max-width: 680px) { display: none; }
+}
+
+// ── Item de carpeta en sidebar ────────────────────────────────────────────────
+.bb-sdi {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 8px 10px 8px 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  position: relative;
+  transition: background 0.12s;
+  min-width: 0;
+
+  &:hover        { background: $pink-light; }
+  &--active      { background: $pink-light; }
+  &--active .bb-sdi-name  { color: $pink-dark; font-weight: 800; }
+  &--active .bb-sdi-count { background: rgba($pink, 0.2); color: $pink-dark; }
+}
+
+.bb-sdi-icon {
+  flex: 0 0 auto;
+  width: 15px;
+  height: 15px;
+  stroke: $text-muted;
+
+  &--folder { fill: $text-muted; stroke: none; }
+  .bb-sdi--active &         { stroke: $pink; }
+  .bb-sdi--active &--folder { fill: $pink; stroke: none; }
+}
+
+.bb-sdi-name {
+  flex: 1;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: $text-dark;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.bb-sdi-count {
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 700;
+  color: $violet;
+  background: $violet-light;
+  border-radius: 8px;
+  padding: 1px 6px;
+}
+
+// Acciones en hover del item de carpeta
+.bb-sdi-acts {
+  display: none;
+  align-items: center;
+  gap: 1px;
+  flex: 0 0 auto;
+
+  .bb-sdi:hover & { display: flex; }
+}
+
+.bb-sdi-act-btn {
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s;
+
+  svg { width: 11px; height: 11px; stroke: $text-muted; }
+
+  &:hover       { background: rgba(0,0,0,0.07); }
+  &--del:hover  { background: #fff0f0; svg { stroke: #d44; } }
+}
+
+// Etiqueta de sección en sidebar
+.bb-sidebar-section-label {
+  font-size: 9px;
+  font-weight: 800;
+  color: $text-muted;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  padding: 12px 12px 4px;
+  margin: 0;
+}
+
+// Items de filtro en sidebar
+.bb-sdf {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 7px 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: $text-muted;
+  text-align: left;
+  transition: background 0.12s, color 0.12s;
+
+  &:hover     { background: $pink-light; color: $text-dark; }
+  &--active   { color: $violet; font-weight: 700; background: $violet-light; }
+  &--clear    { color: #e74c3c; font-size: 11px; margin-top: 4px; }
+}
+
+// ── Panel de tableros ─────────────────────────────────────────────────────────
+.bb-boards-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+// Cabecera del panel (sticky)
+.bb-panel-header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: #fff;
+  border-bottom: 1.5px solid $border;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.bb-panel-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.bb-panel-folder-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: $text-dark;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bb-panel-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+// Lista de tableros scrolleable
+.bb-board-list-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px 20px;
+  scrollbar-width: thin;
+  scrollbar-color: $border transparent;
+  &::-webkit-scrollbar       { width: 4px; }
+  &::-webkit-scrollbar-thumb { background: $border; border-radius: 4px; }
+}
+
+// ── Fila superior: acciones | recientes ──────────────────────────────────────
+.bb-top-row {
+  display:     flex;
+  align-items: flex-start;
+  gap:         36px;
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+    gap: 20px;
+  }
+}
+
+.bb-top-left {
+  flex: 0 0 auto;
+}
+
+.bb-top-right {
+  flex: 0 0 auto;
+  margin-left: auto;  // empuja la sección recientes al extremo derecho
+}
+
+// ── Sección de recientes ──────────────────────────────────────────────────────
+.bb-recents-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(96px, 130px));
+  gap: 12px;
+  margin: 0 0 20px;
+}
+
+.bb-recent-card {
+  background: $card-bg;
+  border: 1.5px solid $border;
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    border-color: $violet;
+  }
+}
+
+.bb-recent-preview {
+  aspect-ratio: 4 / 3;
+  background: $violet-light;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: $violet; // heredado por app-board-thumbnail → stroke: currentColor
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+  svg { width: 36px; height: 36px; stroke: $violet; }
+}
+
+.bb-recent-info {
+  padding: 7px 10px 8px;
+  border-top: 1px solid $border;
+}
+
+.bb-recent-name {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: $text-dark;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.bb-recent-meta {
+  display: block;
+  font-size: 10px;
+  color: $text-muted;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+// ── Título de página ──────────────────────────────────────────────────────────
 .bb-page-title {
   font-size:   20px;
   font-weight: 800;
   color:       $violet;
-  margin:      0 0 20px;
+  margin:      0 0 16px;
   letter-spacing: -0.2px;
-}
-
-.bb-container {
-  max-width:  720px;
-  margin:     0 auto;
-  padding:    0 20px 80px;
-  box-sizing: border-box;
 }
 
 // ── Etiqueta de sección ───────────────────────────────────────────────────────
@@ -66,15 +402,16 @@ $card-bg:      #ffffff;
   color:          $text-muted;
   letter-spacing: 1.8px;
   text-transform: uppercase;
-  margin:         0 0 14px;
+  margin:         0 0 12px;
 }
 
-// ── Cabecera de lista ("MIS TABLEROS" + botón Seleccionar) ─────────────────────
+// ── Cabecera de lista ("MIS TABLEROS" + botón Seleccionar) ───────────────────
 .bb-list-header {
   display:     flex;
   align-items: center;
   gap:         10px;
-  margin:      28px 0 14px;
+  padding:     12px 20px 10px;
+  flex:        0 0 auto;
 }
 
 .bb-list-header-left {
@@ -91,9 +428,10 @@ $card-bg:      #ffffff;
   font-weight:   700;
   border-radius: 10px;
   padding:       2px 10px;
+  flex:          0 0 auto;
 }
 
-// ── Botón Seleccionar (ahora junto a "MIS TABLEROS") ─────────────────────────
+// ── Botón Seleccionar ─────────────────────────────────────────────────────────
 .bb-select-toggle {
   font-size:     12px;
   font-weight:   700;
@@ -112,11 +450,12 @@ $card-bg:      #ffffff;
   &--active:hover { background: #fff0ee; }
 }
 
-// ── Botones de acción ─────────────────────────────────────────────────────────
+// ── Botones de acción principales ────────────────────────────────────────────
 .bb-actions {
   display:   flex;
   gap:       14px;
   flex-wrap: wrap;
+  margin-bottom: 4px;
 }
 
 .bb-action-btn {
@@ -162,44 +501,58 @@ $card-bg:      #ffffff;
   .bb-action-btn--blue   & { color: $blue; }
 }
 
-// ── Controles: filtros + orden ────────────────────────────────────────────────
-.bb-controls-row {
+// ── Buscador en panel header ──────────────────────────────────────────────────
+.bb-search-wrap {
+  position:    relative;
   display:     flex;
-  align-items: flex-start;
-  gap:         12px;
-  margin:      0 0 18px;
-  flex-wrap:   wrap;
+  align-items: center;
 }
 
-.bb-filter-chips {
-  display:   flex;
-  flex-wrap: wrap;
-  gap:       6px;
-  flex:      1;
+.bb-search-icon {
+  position: absolute;
+  left:     10px;
+  width:    16px;
+  height:   16px;
+  stroke:   $text-muted;
+  pointer-events: none;
 }
 
-.bb-chip {
-  font-size:     11px;
-  font-weight:   700;
-  color:         $text-muted;
-  background:    #fff;
+.bb-search-inp {
+  width:         180px;
+  padding:       8px 34px 8px 32px;
   border:        1.5px solid $border;
-  border-radius: 20px;
-  padding:       4px 12px;
-  cursor:        pointer;
+  border-radius: 10px;
+  font-size:     13px;
   font-family:   inherit;
-  transition:    all 0.14s;
-  white-space:   nowrap;
+  background:    #fff;
+  color:         $text-dark;
+  outline:       none;
+  box-sizing:    border-box;
+  transition:    border-color 0.15s;
 
-  &:hover { border-color: $violet; color: $violet; }
+  &:focus        { border-color: $violet; }
+  &::placeholder { color: #bbb; }
 
-  &--active {
-    background:   $violet;
-    border-color: $violet;
-    color:        #fff;
-  }
+  @media (max-width: 500px) { width: 140px; }
 }
 
+.bb-search-clear {
+  position:    absolute;
+  right:       8px;
+  width:       22px;
+  height:      22px;
+  border:      none;
+  background:  transparent;
+  cursor:      pointer;
+  display:     flex;
+  align-items: center;
+  justify-content: center;
+
+  svg { width: 14px; height: 14px; stroke: $text-muted; }
+  &:hover svg { stroke: $text-dark; }
+}
+
+// ── Ordenación ────────────────────────────────────────────────────────────────
 .bb-sort-wrap {
   display:     flex;
   align-items: center;
@@ -207,7 +560,7 @@ $card-bg:      #ffffff;
   flex:        0 0 auto;
   color:       $text-muted;
 
-  svg { width: 15px; height: 15px; stroke: $text-muted; flex: 0 0 auto; }
+  svg { width: 14px; height: 14px; stroke: $text-muted; flex: 0 0 auto; }
 }
 
 .bb-sort-sel {
@@ -217,62 +570,12 @@ $card-bg:      #ffffff;
   background:    #fff;
   border:        1.5px solid $border;
   border-radius: 8px;
-  padding:       4px 8px;
+  padding:       5px 8px;
   font-family:   inherit;
   cursor:        pointer;
   outline:       none;
 
   &:focus { border-color: $violet; }
-}
-
-// ── Buscador ──────────────────────────────────────────────────────────────────
-.bb-search-wrap {
-  position:    relative;
-  display:     flex;
-  align-items: center;
-  margin:      0 0 10px;
-}
-
-.bb-search-icon {
-  position: absolute;
-  left:     12px;
-  width:    18px;
-  height:   18px;
-  stroke:   $text-muted;
-  pointer-events: none;
-}
-
-.bb-search-inp {
-  width:         100%;
-  padding:       10px 40px 10px 38px;
-  border:        1.5px solid $border;
-  border-radius: 12px;
-  font-size:     14px;
-  font-family:   inherit;
-  background:    #fff;
-  color:         $text-dark;
-  outline:       none;
-  box-sizing:    border-box;
-  transition:    border-color 0.15s;
-
-  &:focus       { border-color: $violet; }
-  &::placeholder { color: #bbb; }
-}
-
-.bb-search-clear {
-  position:    absolute;
-  right:       10px;
-  width:       24px;
-  height:      24px;
-  border:      none;
-  background:  transparent;
-  cursor:      pointer;
-  display:     flex;
-  align-items: center;
-  justify-content: center;
-
-  svg { width: 16px; height: 16px; stroke: $text-muted; }
-  &:hover svg { stroke: $text-dark; }
 }
 
 // ── Estado vacío / error ──────────────────────────────────────────────────────
@@ -290,110 +593,11 @@ $card-bg:      #ffffff;
   span { font-size: 13px; color: $text-muted; }
 }
 
-// ── Carpetas ──────────────────────────────────────────────────────────────────
-.bb-folder {
-  margin:        0 0 14px;
-  background:    #fff;
-  border:        1.5px solid #e8d8ff;
-  border-radius: 14px;
-  overflow:      hidden;
-  box-shadow:    0 2px 8px rgba(124, 77, 255, 0.06);
-}
-
-.bb-folder-header {
-  display:         flex;
-  align-items:     center;
-  justify-content: space-between;
-  padding:         10px 14px;
-  background:      $violet-light;
-  cursor:          pointer;
-  user-select:     none;
-  transition:      background 0.14s;
-
-  &:hover { background: darken($violet-light, 3%); }
-}
-
-.bb-folder-header-left {
-  display:     flex;
-  align-items: center;
-  gap:         8px;
-  min-width:   0;
-}
-
-.bb-folder-icon {
-  width:    18px;
-  height:   18px;
-  color:    $violet;
-  flex:     0 0 auto;
-
-  &--open { color: darken($violet, 8%); }
-}
-
-.bb-folder-name {
-  font-size:     13px;
-  font-weight:   800;
-  color:         $violet;
-  white-space:   nowrap;
-  overflow:      hidden;
-  text-overflow: ellipsis;
-}
-
-.bb-folder-count {
-  font-size:     11px;
-  font-weight:   700;
-  color:         $violet;
-  background:    rgba(124, 77, 255, 0.14);
-  border-radius: 8px;
-  padding:       1px 8px;
-  flex:          0 0 auto;
-}
-
-.bb-folder-actions {
-  display:     flex;
-  align-items: center;
-  gap:         4px;
-}
-
-.bb-folder-btn-icon {
-  width:           28px;
-  height:          28px;
-  border-radius:   7px;
-  background:      transparent;
-  border:          none;
-  display:         flex;
-  align-items:     center;
-  justify-content: center;
-  cursor:          pointer;
-  transition:      background 0.13s;
-
-  svg { width: 14px; height: 14px; stroke: $violet; }
-
-  &:hover { background: rgba(124, 77, 255, 0.12); }
-  &--del svg { stroke: #d44; }
-  &--del:hover { background: #fff0f0; }
-}
-
-.bb-folder-chevron {
-  width:      18px;
-  height:     18px;
-  stroke:     $violet;
-  transition: transform 0.2s;
-
-  &--collapsed { transform: rotate(-90deg); }
-}
-
-.bb-folder-boards {
-  padding: 8px 12px 10px;
-  display: flex;
+// ── Lista de tableros ─────────────────────────────────────────────────────────
+.bb-board-list {
+  display:        flex;
   flex-direction: column;
-  gap: 8px;
-}
-
-.bb-folder-empty {
-  font-size:   12px;
-  color:       #bbb;
-  text-align:  center;
-  padding:     10px 0;
+  gap:            8px;
 }
 
 // ── Botón nueva carpeta ───────────────────────────────────────────────────────
@@ -401,45 +605,22 @@ $card-bg:      #ffffff;
   display:       flex;
   align-items:   center;
   gap:           8px;
-  width:         100%;
-  padding:       10px 16px;
+  padding:       8px 12px;
   border:        1.5px dashed darken($violet-light, 14%);
-  border-radius: 12px;
+  border-radius: 10px;
   background:    transparent;
   color:         $violet;
-  font-size:     13px;
+  font-size:     11px;
   font-weight:   700;
   font-family:   inherit;
   cursor:        pointer;
   transition:    background 0.13s, border-color 0.13s;
-  margin:        0 0 14px;
+  margin:        8px 8px 0;
+  width:         calc(100% - 16px);
+  justify-content: center;
 
-  svg { width: 16px; height: 16px; stroke: $violet; }
+  svg { width: 14px; height: 14px; stroke: $violet; flex: 0 0 auto; }
   &:hover { background: $violet-light; border-color: $violet; }
-}
-
-// ── Sección "Sin carpeta" ─────────────────────────────────────────────────────
-.bb-no-folder { margin: 0 0 10px; }
-
-.bb-no-folder-header {
-  display:     flex;
-  align-items: center;
-  gap:         10px;
-  margin:      0 0 10px;
-}
-
-.bb-no-folder-label {
-  font-size:      11px;
-  font-weight:    700;
-  color:          $text-muted;
-  letter-spacing: 1.2px;
-}
-
-// ── Lista de tableros ─────────────────────────────────────────────────────────
-.bb-board-list {
-  display:        flex;
-  flex-direction: column;
-  gap:            8px;
 }
 
 // ── Tarjeta de tablero ────────────────────────────────────────────────────────
@@ -475,12 +656,13 @@ $card-bg:      #ffffff;
   align-items:     center;
   justify-content: center;
   overflow:        hidden;
+  color:           $violet; // heredado por app-board-thumbnail → stroke: currentColor
 
   svg { width: 20px; height: 20px; stroke: $violet; }
 
   &--img       { background: transparent; }
-  &--multi     { background: #e0fff6; svg { stroke: #17a682; } }
-  &--secondary { background: #f3ecff; svg { stroke: #9b6dff; } }
+  &--multi     { background: #e0fff6; color: #17a682; svg { stroke: #17a682; } }
+  &--secondary { background: #f3ecff; color: #9b6dff; svg { stroke: #9b6dff; } }
 }
 
 .bb-board-img {
@@ -514,28 +696,28 @@ $card-bg:      #ffffff;
 
 // ── Badges de la tarjeta ──────────────────────────────────────────────────────
 .bb-badge-row {
-  display:   flex;
-  flex-wrap: wrap;
-  gap:       4px;
+  display:    flex;
+  flex-wrap:  wrap;
+  gap:        4px;
   margin-top: 3px;
 }
 
 .bb-badge {
-  display:       inline-block;
-  font-size:     9.5px;
-  font-weight:   800;
+  display:        inline-block;
+  font-size:      9.5px;
+  font-weight:    800;
   letter-spacing: .6px;
-  border-radius: 5px;
-  padding:       1px 6px;
+  border-radius:  5px;
+  padding:        1px 6px;
 
-  &--main  { color: $violet;   background: $violet-light;       }
-  &--sec   { color: #7c3aed;   background: #f3ecff;             }
-  &--multi { color: #17a682;   background: #e0fff6;             }
-  &--pub   { color: #16a34a;   background: #dcfce7;             }
-  &--ia    { color: #d97706;   background: #fef3c7;             }
+  &--main  { color: $violet;   background: $violet-light; }
+  &--sec   { color: #7c3aed;   background: #f3ecff;       }
+  &--multi { color: #17a682;   background: #e0fff6;       }
+  &--pub   { color: #16a34a;   background: #dcfce7;       }
+  &--ia    { color: #d97706;   background: #fef3c7;       }
 }
 
-// ── Botones de acción de cada tarjeta ─────────────────────────────────────────
+// ── Botones de acción por tarjeta ─────────────────────────────────────────────
 .bb-board-actions {
   display:     flex;
   align-items: center;
@@ -557,41 +739,17 @@ $card-bg:      #ffffff;
   svg { width: 14px; height: 14px; }
 }
 
-.bb-dup-btn {
-  @extend %action-btn-base;
-  border: 1px solid #b8d8f8;
-  svg { stroke: $blue; }
-  &:hover { background: $blue-light; }
-}
-
-.bb-move-btn {
-  @extend %action-btn-base;
-  border: 1px solid #d8caf8;
-  svg { stroke: $violet; }
-  &:hover { background: $violet-light; }
-}
-
-.bb-del-btn {
-  @extend %action-btn-base;
-  border: 1px solid #f8c4cf;
-  svg { stroke: #d44; }
-  &:hover { background: #fff0f0; }
-}
+.bb-dup-btn  { @extend %action-btn-base; border: 1px solid #b8d8f8; svg { stroke: $blue;  } &:hover { background: $blue-light;   } }
+.bb-move-btn { @extend %action-btn-base; border: 1px solid #d8caf8; svg { stroke: $violet; } &:hover { background: $violet-light; } }
+.bb-del-btn  { @extend %action-btn-base; border: 1px solid #f8c4cf; svg { stroke: #d44;   } &:hover { background: #fff0f0;       } }
+.bb-dl-btn   { @extend %action-btn-base; border: 1px solid #a8e6d4; svg { stroke: #17a682;} &:hover { background: #e0fff6;       } }
 
 .bb-fav-btn {
   @extend %action-btn-base;
   border: 1px solid #ffd6a5;
   svg { stroke: #f59e0b; fill: none; transition: fill 0.15s; }
-  &:hover { background: #fef9ee; }
-
+  &:hover    { background: #fef9ee; }
   &--active svg { fill: #f59e0b; }
-}
-
-.bb-dl-btn {
-  @extend %action-btn-base;
-  border: 1px solid #a8e6d4;
-  svg { stroke: #17a682; }
-  &:hover { background: #e0fff6; }
 }
 
 .bb-chevron {
@@ -634,12 +792,10 @@ $card-bg:      #ffffff;
   &--checked { background: $violet; border-color: $violet; }
 }
 
-// ── Barra de acciones modo selección (fija abajo) ─────────────────────────────
+// ── Barra de acciones modo selección (sticky al fondo) ───────────────────────
 .bb-select-bar {
   position:        sticky;
   bottom:          0;
-  left:            0;
-  right:           0;
   display:         flex;
   align-items:     center;
   justify-content: space-between;
@@ -650,6 +806,7 @@ $card-bg:      #ffffff;
   padding-bottom:  max(12px, env(safe-area-inset-bottom));
   z-index:         200;
   box-shadow:      0 -4px 16px rgba(0,0,0,0.08);
+  margin-top:      12px;
 }
 
 .bb-select-info {
@@ -704,40 +861,58 @@ $card-bg:      #ffffff;
 }
 
 // ── Drag & Drop ───────────────────────────────────────────────────────────────
-.bb-drag-placeholder {
-  background:    $violet-light;
-  border:        2px dashed $violet;
-  border-radius: 14px;
-  min-height:    64px;
-  opacity:       0.6;
-}
 
-.cdk-drag-preview {
-  pointer-events: none; // evita :hover del bb-board-card sobre el clone
-  border-radius:  14px;
-  box-shadow:     0 8px 28px rgba(0,0,0,0.18);
-  opacity:        0.96;
-  background:     #fff;
-  border:         1.5px solid $violet;
-}
+// Contenedor drop-zone de cada carpeta en el sidebar
+.bb-sdi-drop-zone {
+  display: block;
+  border-radius: 8px;
+  transition: background 0.15s, box-shadow 0.15s;
 
-.cdk-drag-animating {
-  transition: transform 220ms cubic-bezier(0, 0, 0.2, 1);
-}
+  // Activo: un tablero está siendo arrastrado encima
+  &--active {
+    background: $violet-light;
+    box-shadow: inset 0 0 0 2px $violet;
 
-.cdk-drop-list-dragging .bb-board-card:not(.cdk-drag-placeholder) {
-  transition: transform 220ms cubic-bezier(0, 0, 0.2, 1);
-}
-
-.bb-folder--drag-over {
-  border-color: $violet !important;
-  box-shadow:   0 0 0 2px rgba($violet, 0.22), 0 2px 8px rgba(124, 77, 255, 0.1) !important;
-
-  .bb-folder-header { background: darken($violet-light, 5%); }
-}
-
-.bb-no-folder--drag-over {
-  .bb-no-folder-header {
-    .bb-no-folder-label { color: $violet; font-weight: 800; }
+    .bb-sdi { background: transparent; }
+    .bb-sdi-icon         { stroke: $violet; }
+    .bb-sdi-icon--folder { fill: $violet; stroke: none; }
+    .bb-sdi-name         { color: $violet; font-weight: 700; }
+    .bb-sdi-count        { background: $violet; color: #fff; }
   }
+}
+
+// Handle de arrastre (6 puntos) — aparece al hacer hover sobre la tarjeta
+.bb-drag-handle {
+  flex:            0 0 auto;
+  width:           18px;
+  height:          100%;
+  min-height:      24px;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  cursor:          grab;
+  color:           #ccc;
+  opacity:         0;
+  transition:      opacity 0.15s, color 0.15s;
+  touch-action:    none; // necesario para CDK en touch
+
+  svg { width: 10px; height: 16px; }
+  &:active { cursor: grabbing; }
+}
+
+.bb-board-card:hover .bb-drag-handle {
+  opacity: 1;
+  color:   $text-muted;
+}
+
+// Tarjeta mientras se está arrastrando (feedback visual nativo del browser)
+.bb-board-card[draggable="true"]:active {
+  opacity: 0.6;
+}
+
+// Durante el drag: los hijos del sidebar no interceptan eventos de puntero
+// para que los eventos dragover/drop lleguen siempre al wrapper .bb-sdi-drop-zone
+.bb-folder-sidebar--dragging {
+  .bb-sdi,
+  .bb-sdi > * { pointer-events: none; }
 }

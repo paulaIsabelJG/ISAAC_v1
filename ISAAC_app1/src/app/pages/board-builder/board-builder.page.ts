@@ -12,7 +12,6 @@ import { buildSafeUrl as buildSafeUrlUtil } from '../../shared/utils/image.utils
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import JSZip from 'jszip';
-import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
 import { AuthService } from '../../services/auth.service';
 import { BoardService, Board } from '../../services/board.service';
 import { FolderService, BoardFolder } from '../../services/folder.service';
@@ -21,10 +20,12 @@ import { BoardPdfExportService } from '../../services/board-pdf-export.service';
 import { ObzImportService } from '../../services/obz-import.service';
 import { LoadingErrorStateComponent } from '../../components/loading-error-state/loading-error-state.component';
 import { OrgSidebarComponent } from '../../components/org-sidebar/org-sidebar.component';
+import { BoardThumbnailComponent } from '../../components/board-thumbnail/board-thumbnail.component';
 
 export type FilterKey =
   | 'all' | 'favorites' | 'published' | 'draft'
-  | 'multi' | 'main' | 'secondary' | 'ia' | 'recent';
+  | 'multi' | 'main' | 'secondary' | 'ia' | 'recent'
+  | 'grid' | 'circular';
 export type SortKey = 'recent' | 'alpha' | 'created';
 
 export const FILTER_OPTIONS: { value: FilterKey; label: string }[] = [
@@ -35,8 +36,9 @@ export const FILTER_OPTIONS: { value: FilterKey; label: string }[] = [
   { value: 'main',      label: 'Principales' },
   { value: 'secondary', label: 'Secundarios' },
   { value: 'multi',     label: 'Multitablero' },
+  { value: 'grid',      label: 'Cuadrícula' },
+  { value: 'circular',  label: 'Circular' },
   { value: 'ia',        label: 'Con IA' },
-  { value: 'recent',    label: 'Recientes' },
 ];
 
 @Component({
@@ -45,9 +47,9 @@ export const FILTER_OPTIONS: { value: FilterKey; label: string }[] = [
   styleUrls: ['./board-builder.page.scss'],
   standalone: true,
   imports: [
-    IonicModule, FormsModule, DragDropModule,
+    IonicModule, FormsModule,
     NgClass,
-    LoadingErrorStateComponent, OrgSidebarComponent,
+    LoadingErrorStateComponent, OrgSidebarComponent, BoardThumbnailComponent,
   ],
 })
 export class BoardBuilderPage implements OnInit {
@@ -69,9 +71,14 @@ export class BoardBuilderPage implements OnInit {
   activeFilter: FilterKey = 'all';
   sortBy: SortKey         = 'recent';
   collapsedFolders        = new Set<string>();
+  selectedFolderId        = '__all__';
 
   // Carpetas que están siendo "draggeadas encima" — para highlight
   dragOverFolderId: string | null | undefined = undefined; // undefined = ninguno
+
+  // Tablero actualmente en vuelo (drag nativo)
+  private draggingBoard: Board | null = null;
+  isDragging = false;
 
   constructor(
     private route:           ActivatedRoute,
@@ -152,7 +159,9 @@ export class BoardBuilderPage implements OnInit {
       case 'draft':     result = result.filter(b => !b.visibleInProfile); break;
       case 'main':      result = result.filter(b => !b.boardRole || b.boardRole === 'main'); break;
       case 'secondary': result = result.filter(b => b.boardRole === 'secondary'); break;
-      case 'multi':     result = result.filter(b => b.boardRole === 'multi'); break;
+      case 'multi':     result = result.filter(b => b.boardRole === 'multi' || b.shape === 'multi'); break;
+      case 'grid':      result = result.filter(b => b.shape === 'grid'); break;
+      case 'circular':  result = result.filter(b => b.shape === 'circular'); break;
       case 'ia':        result = result.filter(b => !!b.predictorEnabled); break;
       case 'recent':    result = result.filter(b =>
         !!b.createdAt && now - new Date(b.createdAt).getTime() < week); break;
@@ -198,20 +207,60 @@ export class BoardBuilderPage implements OnInit {
     return this.collapsedFolders.has(folderId);
   }
 
-  // ── Drag & Drop ─────────────────────────────────────────────────────────────
+  // ── Vista master-detail ────────────────────────────────────────────────────
 
-  // Registra cuándo terminó el último drag para ignorar el click que el
-  // browser dispara justo después de soltar. cdkDragEnded se emite DESPUÉS
-  // del drop, cuando CDK ya terminó — no dispara CD durante el arrastre.
-  private lastDragEndMs = 0;
+  selectFolder(id: string): void { this.selectedFolderId = id; }
 
-  onDragStarted(): void {
-    console.log('[DnD] ▶ cdkDragStarted');
+  toggleSidebarFilter(f: FilterKey): void {
+    this.activeFilter = this.activeFilter === f ? 'all' : f;
   }
 
-  onDragEnded(): void {
-    console.log('[DnD] ■ cdkDragEnded — drag finalizado');
-    this.lastDragEndMs = Date.now();
+  getFolderBoardCount(folderId: string): number {
+    if (folderId === '__unfoldered__') return this.boards.filter(b => !b.folderId).length;
+    return this.boards.filter(b => b.folderId === folderId).length;
+  }
+
+  get recentBoards(): Board[] {
+    return [...this.boards]
+      .sort((a, b) => {
+        const ta = new Date(a.updatedAt ?? a.createdAt ?? 0).getTime();
+        const tb = new Date(b.updatedAt ?? b.createdAt ?? 0).getTime();
+        return tb - ta;
+      })
+      .slice(0, 4);
+  }
+
+  get currentFolderLabel(): string {
+    if (this.selectedFolderId === '__all__')        return 'Todos';
+    if (this.selectedFolderId === '__unfoldered__') return 'Sin carpeta';
+    return this.folders.find(f => f._id === this.selectedFolderId)?.name ?? 'Tableros';
+  }
+
+  get currentSidebarBoards(): Board[] {
+    const base = this.filteredBoards;
+    if (this.selectedFolderId === '__all__')        return base;
+    if (this.selectedFolderId === '__unfoldered__') return base.filter(b => !b.folderId);
+    return base.filter(b => b.folderId === this.selectedFolderId);
+  }
+
+  // ── Drag & Drop (HTML5 nativo) ───────────────────────────────────────────────
+
+  // Registra cuándo terminó el último drag para ignorar el click que el
+  // browser dispara justo después de soltar.
+  private lastDragEndMs = 0;
+
+  onDragStart(event: DragEvent, board: Board): void {
+    this.draggingBoard = board;
+    this.isDragging    = true;
+    event.dataTransfer?.setData('text/plain', board._id);
+    event.dataTransfer && (event.dataTransfer.effectAllowed = 'move');
+  }
+
+  onDragEnd(): void {
+    this.draggingBoard    = null;
+    this.isDragging       = false;
+    this.dragOverFolderId = undefined;
+    this.lastDragEndMs    = Date.now();
   }
 
   onCardClick(boardId: string): void {
@@ -223,48 +272,28 @@ export class BoardBuilderPage implements OnInit {
     }
   }
 
-  onBoardDropped(event: CdkDragDrop<string | null>): void {
-    const board: Board   = event.item.data;
-    const targetFolderId = event.container.data ?? null;
-    const sourceFolderId = board.folderId ?? null;
-
-    console.log('[DnD] ✓ cdkDropListDropped', {
-      previousContainer: event.previousContainer.id,
-      container:         event.container.id,
-      previousIndex:     event.previousIndex,
-      currentIndex:      event.currentIndex,
-      board:             board?.name,
-      from:              sourceFolderId ?? 'sin-carpeta',
-      to:                targetFolderId ?? 'sin-carpeta',
-    });
-
-    this.dragOverFolderId = undefined;
-
-    if (targetFolderId === sourceFolderId) {
-      console.log('[DnD] mismo destino — nada que hacer');
-      return;
-    }
-
-    // Expandir la carpeta destino solo DESPUÉS del drop (CDK ya terminó)
-    if (targetFolderId && this.collapsedFolders.has(targetFolderId)) {
-      this.collapsedFolders.delete(targetFolderId);
-      this.collapsedFolders = new Set(this.collapsedFolders);
-    }
-
-    void this.doMoveBoard(board, targetFolderId);
-  }
-
   onDragEnterFolder(folderId: string | null): void {
-    console.log('[DnD] entered drop list:', folderId ?? 'sin-carpeta');
     this.dragOverFolderId = folderId;
-    // NO se expanden carpetas colapsadas durante el drag.
-    // Expandir una carpeta crea un nuevo cdkDropList mientras CDK tiene una drag
-    // activa — esto corrompe el estado interno de CDK y deja el preview flotando.
   }
 
-  onDragExitFolder(): void {
-    console.log('[DnD] exited drop list');
+  onDragLeaveFolder(event: DragEvent, folderId: string | null): void {
+    // Solo limpiar si salimos del drop-zone por completo (no al entrar en un hijo)
+    const el = event.currentTarget as HTMLElement;
+    if (!el.contains(event.relatedTarget as Node | null)) {
+      if (this.dragOverFolderId === folderId) {
+        this.dragOverFolderId = undefined;
+      }
+    }
+  }
+
+  onDrop(event: DragEvent, targetFolderId: string | null): void {
+    event.preventDefault();
     this.dragOverFolderId = undefined;
+    const board = this.draggingBoard;
+    this.draggingBoard = null;
+    if (!board) return;
+    if ((board.folderId ?? null) === targetFolderId) return;
+    void this.doMoveBoard(board, targetFolderId);
   }
 
   // ── CRUD carpetas ──────────────────────────────────────────────────────────
@@ -339,6 +368,7 @@ export class BoardBuilderPage implements OnInit {
               this.folders = this.folders.filter(f => f._id !== folder._id);
               this.boards  = this.boards.map(b =>
                 b.folderId === folder._id ? { ...b, folderId: null } : b);
+              if (this.selectedFolderId === folder._id) this.selectedFolderId = '__all__';
             } catch {
               this.showError('Error al eliminar la carpeta');
             }

@@ -143,8 +143,7 @@ const boardSchema = new mongoose.Schema({
   cells:            [cellSchema],
   folderId:         { type: mongoose.Schema.Types.ObjectId, ref: 'BoardFolder', default: null },
   isFavorite:       { type: Boolean, default: false },
-  createdAt:        { type: Date, default: Date.now },
-});
+}, { timestamps: true });
 
 boardSchema.index({ creatorId: 1 });
 boardSchema.index({ createdBy: 1 });

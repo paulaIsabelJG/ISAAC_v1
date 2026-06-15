@@ -1,0 +1,50 @@
+:host {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  width:           100%;
+  height:          100%;
+  overflow:        hidden;
+}
+
+// ── Icono de fallback (circular / multi / vacío) ──────────────────────────────
+.thumb-icon {
+  width:  60%;
+  height: 60%;
+  flex:   0 0 auto;
+  // stroke usa currentColor → se hereda del color del host
+  // El padre (.bb-board-icon, .bb-recent-preview) establece el color/stroke deseado
+  stroke: currentColor;
+}
+
+// ── Mini-grid ─────────────────────────────────────────────────────────────────
+.thumb-grid {
+  display:               grid;
+  grid-template-columns: repeat(var(--thumb-cols), 1fr);
+  grid-template-rows:    repeat(var(--thumb-rows), 1fr);
+  width:                 100%;
+  height:                100%;
+  // El fondo del div actúa como color de las líneas entre celdas
+  background:            rgba(0, 0, 0, 0.12);
+  gap:                   1px;
+  overflow:              hidden;
+}
+
+.thumb-cell {
+  background: #efefef;
+  overflow:   hidden;
+  min-width:  0;
+  min-height: 0;
+
+  img {
+    display:    block;
+    width:      100%;
+    height:     100%;
+    object-fit: contain;
+  }
+}
+
+// ── Variante grande (Recientes): gap ligeramente mayor ────────────────────────
+:host(.size-lg) .thumb-grid {
+  gap: 2px;
+}

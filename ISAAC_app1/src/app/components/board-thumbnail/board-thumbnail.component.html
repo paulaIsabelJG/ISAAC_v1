@@ -1,0 +1,44 @@
+<!-- Tablero circular -->
+@if (board.shape === 'circular') {
+  <svg class="thumb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+    <circle cx="12" cy="12" r="9"/>
+    <circle cx="12" cy="12" r="3"/>
+  </svg>
+
+<!-- Multitablero -->
+} @else if (board.boardRole === 'multi' || board.shape === 'multi') {
+  <svg class="thumb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+    <rect x="2" y="3" width="9" height="18" rx="2"/>
+    <rect x="13" y="3" width="9" height="18" rx="2"/>
+  </svg>
+
+<!-- Tablero grid vacío (sin pictogramas) → icono de 4 cuadros -->
+} @else if (isEmpty || grid.length === 0) {
+  <svg class="thumb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+    <rect x="3"  y="3"  width="7" height="7" rx="1.5"/>
+    <rect x="14" y="3"  width="7" height="7" rx="1.5"/>
+    <rect x="3"  y="14" width="7" height="7" rx="1.5"/>
+    <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+  </svg>
+
+<!-- Mini-grid real: solo se renderiza cuando el componente entra en el viewport -->
+} @else if (isVisible) {
+  <div class="thumb-grid" [ngStyle]="gridStyle">
+    @for (row of grid; track $index) {
+      @for (cell of row; track $index) {
+        <div class="thumb-cell" [style.background]="cell.bg">
+          @if (showImages && cell.imageUrl) {
+            <img
+              [src]="cell.imageUrl"
+              alt=""
+              loading="lazy"
+              decoding="async"
+              draggable="false"
+            />
+          }
+        </div>
+      }
+    }
+  </div>
+}
+<!-- Si !isVisible y hay grid: el host queda vacío; el fondo del padre actúa de placeholder -->
