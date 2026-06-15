@@ -1,0 +1,91 @@
+<div class="ums-wrap" (click)="$event.stopPropagation()">
+
+  <!-- ── Chips de seleccionados ────────────────────────────────────────────── -->
+  @if (selectedOptions.length > 0) {
+    <div class="ums-chips">
+      @for (opt of selectedOptions; track opt._id) {
+        <ion-chip class="ums-chip">
+          <ion-avatar class="ums-chip-avatar">
+            <span>{{ initial(opt) }}</span>
+          </ion-avatar>
+          <ion-label class="ums-chip-label">{{ fullName(opt) }}</ion-label>
+          <button class="ums-chip-close" (click)="remove(opt._id); $event.stopPropagation()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </ion-chip>
+      }
+    </div>
+  }
+
+  <!-- ── Buscador + desplegable ────────────────────────────────────────────── -->
+  <div class="ums-search-wrap">
+
+    <div class="ums-search-box" [class.ums-search-box--open]="dropdownOpen">
+      <svg class="ums-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input
+        class="ums-search-input"
+        type="text"
+        [placeholder]="placeholder"
+        [(ngModel)]="searchQuery"
+        (focus)="openDropdown()"
+        (input)="openDropdown()"
+        autocomplete="off"/>
+      @if (searchQuery) {
+        <button class="ums-clear-btn" (click)="clearSearch(); $event.stopPropagation()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      }
+    </div>
+
+    <!-- Desplegable de opciones -->
+    @if (dropdownOpen) {
+      <div class="ums-dropdown">
+        @if (filteredOptions.length === 0) {
+          <p class="ums-no-results">
+            @if (searchQuery) {
+              Sin resultados para "{{ searchQuery }}"
+            } @else {
+              No hay opciones disponibles.
+            }
+          </p>
+        } @else {
+          @for (opt of filteredOptions; track opt._id) {
+            <div class="ums-option"
+                 [class.ums-option--selected]="isSelected(opt._id)"
+                 (click)="toggle(opt._id)">
+
+              <!-- Checkbox visual -->
+              <div class="ums-checkbox" [class.ums-checkbox--checked]="isSelected(opt._id)">
+                @if (isSelected(opt._id)) {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                }
+              </div>
+
+              <!-- Avatar con inicial -->
+              <div class="ums-option-avatar">{{ initial(opt) }}</div>
+
+              <!-- Nombre (+ email si procede) -->
+              <div class="ums-option-info">
+                <span class="ums-option-name">{{ fullName(opt) }}</span>
+                @if (showEmail && opt.email) {
+                  <span class="ums-option-email">{{ opt.email }}</span>
+                }
+              </div>
+
+            </div>
+          }
+        }
+      </div>
+    }
+
+  </div><!-- /ums-search-wrap -->
+
+</div>

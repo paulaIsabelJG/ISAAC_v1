@@ -48,26 +48,12 @@
         @if (availableUsers.length === 0) {
           <p class="of-empty-hint">No hay usuarios disponibles.</p>
         } @else {
-          <div class="of-checkbox-list">
-            @for (u of availableUsers; track u._id) {
-              <button
-                type="button"
-                class="of-checkbox-item"
-                [class.of-checkbox-item--selected]="isUserSelected(u._id)"
-                (click)="toggleUser(u._id)">
-                <div class="of-checkbox-avatar">
-                  @if (isUserSelected(u._id)) {
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                      <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                  } @else {
-                    <span>{{ u.name.charAt(0).toUpperCase() }}</span>
-                  }
-                </div>
-                <span class="of-checkbox-label">{{ userName(u) }}</span>
-              </button>
-            }
-          </div>
+          <app-user-multiselect
+            [options]="$any(availableUsers)"
+            [selectedIds]="selectedUserIds"
+            placeholder="Buscar usuario..."
+            (selectedIdsChange)="onUserSelectionChange($event)">
+          </app-user-multiselect>
         }
       </div>
 
@@ -130,29 +116,13 @@
               }
             </p>
           } @else {
-            <div class="of-checkbox-list">
-              @for (f of availableFamilies; track f._id) {
-                <button
-                  type="button"
-                  class="of-checkbox-item"
-                  [class.of-checkbox-item--selected]="isFamilySelected(f._id)"
-                  (click)="toggleFamily(f._id)">
-                  <div class="of-checkbox-avatar of-checkbox-avatar--family">
-                    @if (isFamilySelected(f._id)) {
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                        <polyline points="20 6 9 17 4 12"/>
-                      </svg>
-                    } @else {
-                      <span>{{ f.name.charAt(0).toUpperCase() }}</span>
-                    }
-                  </div>
-                  <div class="of-checkbox-meta">
-                    <span class="of-checkbox-label">{{ familyName(f) }}</span>
-                    <span class="of-checkbox-email">{{ f.email }}</span>
-                  </div>
-                </button>
-              }
-            </div>
+            <app-user-multiselect
+              [options]="$any(availableFamilies)"
+              [selectedIds]="selectedFamilyIds"
+              [showEmail]="true"
+              placeholder="Buscar familiar..."
+              (selectedIdsChange)="onFamilySelectionChange($event)">
+            </app-user-multiselect>
           }
         </div>
       }

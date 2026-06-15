@@ -1,5 +1,5 @@
 .of-content {
-  --background: #f0f2f5;
+  --background: #fdf5f9;
 }
 
 .of-container {
@@ -106,68 +106,6 @@
 
 .of-toggle-sub {
   font-size: 0.8rem;
-  color: #9e9e9e;
-}
-
-// ── Lista de checkboxes ───────────────────────────────────────────────────────
-
-.of-checkbox-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.of-checkbox-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: #fff;
-  border: 1.5px solid #e0e0e0;
-  border-radius: 10px;
-  padding: 10px 14px;
-  cursor: pointer;
-  transition: border-color .15s, background .15s;
-  text-align: left;
-
-  &--selected {
-    background: #e8eaf6;
-    border-color: var(--ion-color-primary, #5c6bc0);
-  }
-  &:active { opacity: .8; }
-}
-
-.of-checkbox-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--ion-color-primary-tint, #9fa8da);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-size: 0.85rem;
-  font-weight: 700;
-  flex-shrink: 0;
-
-  svg { width: 16px; height: 16px; }
-
-  &--family { background: #f06292; }
-}
-
-.of-checkbox-label {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #212121;
-}
-
-.of-checkbox-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.of-checkbox-email {
-  font-size: 0.78rem;
   color: #9e9e9e;
 }
 

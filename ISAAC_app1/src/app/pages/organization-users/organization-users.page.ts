@@ -144,7 +144,7 @@ export class OrganizationUsersPage implements OnInit, OnDestroy {
 
         this.userService.getFamiliesForUsers(finalUserIds).subscribe({
           next: (famRes) => {
-            this.allFamiliares = famRes.families.map(u => this.toCard(u));
+            this.allFamiliares = famRes.families.map(u => ({ ...this.toCard(u), type: 'parent' as const }));
             this.isLoading = false;
           },
           error: () => {

@@ -24,6 +24,11 @@ $text-muted: #7a5163;
   height: 100%;
 }
 
+// ── Encabezado de página ──────────────────────────────────────────────────────
+.op-page-header   { padding: 20px 20px 0; }
+.op-page-title    { font-size: 22px; font-weight: 800; color: $text-dark; margin: 0; line-height: 1.1; }
+.op-page-subtitle { font-size: 12px; color: $text-muted; font-weight: 500; margin: 0; }
+
 // ── Contenido ─────────────────────────────────────────────────────────────────
 .profile-content { --background: #fdf5f9; }
 

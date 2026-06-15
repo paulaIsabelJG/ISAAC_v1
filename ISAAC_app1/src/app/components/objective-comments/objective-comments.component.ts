@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
-import { IonicModule } from '@ionic/angular';
+import { IonicModule, AlertController } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
@@ -42,6 +42,7 @@ export class ObjectiveCommentsComponent implements OnInit {
   constructor(
     private authSvc:     AuthService,
     private commentsSvc: ObjectiveCommentsService,
+    private alertCtrl:   AlertController,
   ) {}
 
   ngOnInit(): void {
@@ -116,6 +117,19 @@ export class ObjectiveCommentsComponent implements OnInit {
     } finally {
       this.isUpdating = false;
     }
+  }
+
+  async confirmAndDelete(commentId: string): Promise<void> {
+    const a = await this.alertCtrl.create({
+      header:  'Eliminar comentario',
+      message: '¿Seguro que quieres eliminar este comentario? Esta acción no se puede deshacer.',
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        { text: 'Eliminar', role: 'destructive',
+          handler: () => { void this.deleteComment(commentId); } },
+      ],
+    });
+    await a.present();
   }
 
   async deleteComment(commentId: string): Promise<void> {

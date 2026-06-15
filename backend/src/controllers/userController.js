@@ -924,7 +924,7 @@ exports.getFamiliesForUsers = async (req, res) => {
     const families = await User.find({
       type: 'parent',
       'childrenAccess.childId': { $in: ids },
-    }).select('name surname email image').lean();
+    }).select('name surname email image type').lean();
 
     res.json({ families });
   } catch (err) {

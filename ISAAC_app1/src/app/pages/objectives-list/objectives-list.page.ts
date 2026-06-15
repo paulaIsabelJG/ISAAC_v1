@@ -35,10 +35,14 @@ export class ObjectivesListPage implements OnInit {
 
   // Filtros activos
   filterStatus = 'all';
+  searchQuery  = '';
 
-  expandedObjectiveId: string | null = null;
+  // Estado maestro-detalle
+  selectedObjective: Objective | null = null;
+  selectedTabUserId = '';
+  showMobileDetail  = false;
 
-  // objectiveId → targetUserId → count (para calcular el badge en rol family)
+  // objectiveId → targetUserId → count
   private readonly threadCounts = new Map<string, Map<string, number>>();
 
   updateThreadCount(objectiveId: string, targetUserId: string, count: number): void {
@@ -57,10 +61,17 @@ export class ObjectivesListPage implements OnInit {
     return sum;
   }
 
-  get viewerType():   string  { return this.authSvc.getCurrentUser()?.type ?? ''; }
-  get currentUserId(): string { return this.authSvc.getCurrentUser()?.id  ?? ''; }
+  get viewerType():    string  { return this.authSvc.getCurrentUser()?.type ?? ''; }
+  get currentUserId(): string  { return this.authSvc.getCurrentUser()?.id  ?? ''; }
+  get userName():      string  { return this.authSvc.getCurrentUser()?.name ?? ''; }
   get isCreator():     boolean { return this.role === 'creator'; }
   get showOrgSidebar(): boolean { return this.returnTo.startsWith('/organization-dashboard'); }
+
+  /** Mostrar pestañas de usuario solo si el creador tiene acceso a más de un hilo */
+  get showUserTabs(): boolean {
+    if (this.role === 'user' || this.role === 'family') return false;
+    return (this.selectedObjective?.assignedUserIds?.length ?? 0) > 1;
+  }
 
   constructor(
     private route:     ActivatedRoute,
@@ -123,22 +134,51 @@ export class ObjectivesListPage implements OnInit {
   // ── Filtros ───────────────────────────────────────────────────────────────
 
   get filteredObjectives(): Objective[] {
-    if (this.filterStatus === 'all') return this.objectives;
-    return this.objectives.filter(o => o.effectiveStatus === this.filterStatus);
+    let list = this.objectives;
+    if (this.filterStatus !== 'all') {
+      list = list.filter(o => o.effectiveStatus === this.filterStatus);
+    }
+    const q = this.searchQuery.trim().toLowerCase();
+    if (q) {
+      list = list.filter(o => o.title.toLowerCase().includes(q));
+    }
+    return list;
   }
 
   onFilterStatus(event: Event): void {
     this.filterStatus = (event as CustomEvent<{ value: string }>).detail?.value ?? 'all';
+    if (
+      this.selectedObjective &&
+      this.filterStatus !== 'all' &&
+      this.selectedObjective.effectiveStatus !== this.filterStatus
+    ) {
+      this.selectedObjective = null;
+      this.showMobileDetail  = false;
+    }
+  }
+
+  // ── Selección maestro-detalle ─────────────────────────────────────────────
+
+  selectObjective(obj: Objective): void {
+    this.selectedObjective = obj;
+    this.showMobileDetail  = true;
+    const first = obj.assignedUserIds[0];
+    this.selectedTabUserId = first?._id ?? '';
+  }
+
+  closeMobileDetail(): void {
+    this.showMobileDetail  = false;
+    this.selectedObjective = null;
+  }
+
+  selectTab(userId: string): void {
+    this.selectedTabUserId = userId;
   }
 
   // ── Navegación ────────────────────────────────────────────────────────────
 
   goBack(): void {
     this.router.navigateByUrl(this.returnTo);
-  }
-
-  toggleObjective(id: string): void {
-    this.expandedObjectiveId = this.expandedObjectiveId === id ? null : id;
   }
 
   goToCreate(): void {
@@ -161,10 +201,7 @@ export class ObjectivesListPage implements OnInit {
       message: `¿Seguro que quieres cancelar "${obj.title}"? Esta acción no se puede deshacer.`,
       buttons: [
         { text: 'No', role: 'cancel' },
-        {
-          text:    'Sí, cancelar',
-          handler: () => { void this.changeStatus(obj, 'cancelled'); },
-        },
+        { text: 'Sí, cancelar', handler: () => { void this.changeStatus(obj, 'cancelled'); } },
       ],
     });
     await a.present();
@@ -176,24 +213,39 @@ export class ObjectivesListPage implements OnInit {
       message: `¿Marcar "${obj.title}" como completado?`,
       buttons: [
         { text: 'No', role: 'cancel' },
-        {
-          text:    'Sí, completar',
-          handler: () => { void this.changeStatus(obj, 'completed'); },
-        },
+        { text: 'Sí, completar', handler: () => { void this.changeStatus(obj, 'completed'); } },
       ],
     });
     await a.present();
   }
 
-  private async changeStatus(obj: Objective, status: 'completed' | 'cancelled'): Promise<void> {
+  async confirmReactivate(obj: Objective): Promise<void> {
+    const a = await this.alert.create({
+      header:  'Reactivar objetivo',
+      message: `¿Reactivar "${obj.title}" y devolverlo a estado activo?`,
+      buttons: [
+        { text: 'No', role: 'cancel' },
+        { text: 'Sí, reactivar', handler: () => { void this.changeStatus(obj, 'active' as any); } },
+      ],
+    });
+    await a.present();
+  }
+
+  private async changeStatus(obj: Objective, status: 'completed' | 'cancelled' | 'active'): Promise<void> {
     try {
-      await firstValueFrom(this.objSvc.updateObjectiveStatus(obj._id, status));
+      await firstValueFrom(this.objSvc.updateObjectiveStatus(obj._id, status as any));
       const idx = this.objectives.findIndex(o => o._id === obj._id);
       if (idx >= 0) {
-        this.objectives[idx].status = status;
-        this.objectives[idx].effectiveStatus = status;
+        this.objectives[idx].status          = status as any;
+        this.objectives[idx].effectiveStatus = status as any;
       }
-      await this.showToast(status === 'completed' ? 'Objetivo completado' : 'Objetivo cancelado', 'success');
+      if (this.selectedObjective?._id === obj._id) {
+        this.selectedObjective = { ...this.objectives[idx] };
+      }
+      const label = status === 'completed' ? 'Objetivo completado'
+                  : status === 'cancelled' ? 'Objetivo cancelado'
+                  : 'Objetivo reactivado';
+      await this.showToast(label, 'success');
     } catch {
       await this.showToast('Error al actualizar el estado.', 'danger');
     }
@@ -230,6 +282,10 @@ export class ObjectivesListPage implements OnInit {
     if (!this.isCreator) return false;
     const es = obj.effectiveStatus;
     return es === 'active' || es === 'expired';
+  }
+
+  canReactivate(obj: Objective): boolean {
+    return this.isCreator && obj.effectiveStatus === 'completed';
   }
 
   private async showToast(message: string, color: 'success' | 'danger') {

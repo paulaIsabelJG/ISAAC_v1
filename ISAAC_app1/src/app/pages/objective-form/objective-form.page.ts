@@ -9,13 +9,14 @@ import { UserService, BackendUser } from '../../services/user.service';
 import { ObjectiveService, ObjectiveUser } from '../../services/objective.service';
 import { AppPageHeaderComponent } from '../../components/app-page-header/app-page-header.component';
 import { LoadingErrorStateComponent } from '../../components/loading-error-state/loading-error-state.component';
+import { UserMultiselectComponent } from '../../components/user-multiselect/user-multiselect.component';
 
 @Component({
   selector: 'app-objective-form',
   templateUrl: './objective-form.page.html',
   styleUrls:  ['./objective-form.page.scss'],
   standalone: true,
-  imports: [IonicModule, CommonModule, FormsModule, AppPageHeaderComponent, LoadingErrorStateComponent],
+  imports: [IonicModule, CommonModule, FormsModule, AppPageHeaderComponent, LoadingErrorStateComponent, UserMultiselectComponent],
 })
 export class ObjectiveFormPage implements OnInit {
 
@@ -164,6 +165,15 @@ export class ObjectiveFormPage implements OnInit {
 
   isFamilySelected(familyId: string): boolean {
     return this.selectedFamilyIds.includes(familyId);
+  }
+
+  onUserSelectionChange(ids: string[]): void {
+    this.selectedUserIds = ids;
+    void this.loadFamilies();
+  }
+
+  onFamilySelectionChange(ids: string[]): void {
+    this.selectedFamilyIds = ids;
   }
 
   onShowToFamilyChange(): void {

@@ -1,86 +1,205 @@
-.ci-comment {
-  padding: 12px 0;
-  border-bottom: 1px solid #f0f0f0;
+// Tokens (paleta de la app)
+$pink-dark:    #e91e8c;
+$pink-light:   #fff0f7;
+$border:       #ffb6c1;
+$text-dark:    #222222;
+$text-muted:   #6b5462;
+$surface:      #ffffff;
+$bg:           #fdf5f9;
 
-  &:last-child { border-bottom: none; }
+// ── Contenedor por mensaje ─────────────────────────────────────────────────────
+.ci-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-bottom: 16px;
+
+  &--own { align-items: flex-end; }
 }
 
-// ── Meta: nombre, rol, fecha ──────────────────────────────────────────────────
-
-.ci-meta {
+// ── Cabecera: nombre + badge de rol ───────────────────────────────────────────
+.ci-header {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 6px;
+  gap: 5px;
+  margin-bottom: 3px;
+  padding: 0 2px;
 }
 
 .ci-creator {
-  font-size: 0.85rem;
+  font-size: 0.76rem;
   font-weight: 700;
-  color: #212121;
+  color: $text-dark;
 }
 
+// Badges de rol — alineados con la paleta de la app
 .ci-role {
-  font-size: 0.72rem;
+  font-size: 0.66rem;
   font-weight: 700;
   border-radius: 20px;
-  padding: 2px 8px;
+  padding: 1px 7px;
   text-transform: uppercase;
   letter-spacing: .3px;
 
-  &--org          { background: #e0f2f1; color: #00796b; }
-  &--professional { background: #e8f5e9; color: #2e7d32; }
-  &--family       { background: #fce4ec; color: #c62828; }
+  // Organización → rosa (color primario)
+  &--org          { background: #ffe0f0; color: #c2185b; }
+  // Profesional → violeta
+  &--professional { background: #ede7f6; color: #5e35b1; }
+  // Familiar → melocotón/naranja
+  &--family       { background: #fff3e0; color: #e65100; }
+  // Usuario final → azul
   &--user         { background: #e3f2fd; color: #1565c0; }
 }
 
+// ── Fila: [icones] [burbuja] ───────────────────────────────────────────────────
+.ci-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+  max-width: 90%;
+
+  .ci-wrap--own & { justify-content: flex-end; }
+}
+
+// ── Burbuja ────────────────────────────────────────────────────────────────────
+.ci-bubble {
+  max-width: 100%;
+  background: $surface;
+  border: 1.5px solid $border;
+  border-radius: 4px 18px 18px 18px; // esquina top-left aguda = "otro"
+  padding: 10px 14px 8px;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+
+  // Propia: esquina top-right aguda + fondo verde success
+  &--own {
+    border-radius: 18px 4px 18px 18px;
+    background: rgba(var(--ion-color-success-rgb, 45, 211, 111), 0.12);
+    border-color: rgba(var(--ion-color-success-rgb, 45, 211, 111), 0.35);
+  }
+}
+
+// ── Texto ──────────────────────────────────────────────────────────────────────
+.ci-text {
+  font-size: 0.88rem;
+  color: $text-dark;
+  line-height: 1.55;
+  margin: 0 0 6px;
+  white-space: pre-wrap;
+}
+
+// ── Pie: fecha + (editado) ─────────────────────────────────────────────────────
+.ci-footer {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
 .ci-date {
-  font-size: 0.78rem;
-  color: #9e9e9e;
-  margin-left: auto;
+  font-size: 0.7rem;
+  color: $text-muted;
 }
 
 .ci-edited {
-  font-size: 0.75rem;
-  color: #bdbdbd;
+  font-size: 0.68rem;
+  color: lighten($text-muted, 14%);
   font-style: italic;
 }
 
-// ── Texto ─────────────────────────────────────────────────────────────────────
-
-.ci-text {
-  font-size: 0.9rem;
-  color: #424242;
-  line-height: 1.5;
-  margin: 0 0 8px;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-// ── Acciones ──────────────────────────────────────────────────────────────────
-
-.ci-actions {
+// ── Iconos de acción (desktop: aparecen en hover) ─────────────────────────────
+.ci-action-icons {
   display: flex;
-  gap: 6px;
+  flex-direction: column;
+  gap: 3px;
+  flex-shrink: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+
+  // En táctil (sin cursor) no se usa hover → se oculta del todo
+  @media (hover: none) { display: none; }
 }
 
-.ci-btn {
+// Muestra los iconos cuando el wrap tiene hover (incluye mover el ratón sobre la burbuja)
+.ci-wrap:hover .ci-action-icons {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.ci-icon-btn {
   display: flex;
   align-items: center;
-  gap: 4px;
-  border: none;
-  border-radius: 6px;
-  padding: 4px 10px;
-  font-size: 0.78rem;
-  font-weight: 600;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1.5px solid $border;
+  border-radius: 8px;
+  background: $surface;
+  color: $text-muted;
   cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+
+  svg { width: 13px; height: 13px; flex-shrink: 0; }
+
+  &:hover           { background: $pink-light; color: $pink-dark; border-color: $pink-dark; }
+  &--danger:hover   { background: #fce4ec;    color: #c62828;    border-color: #f48fb1; }
+}
+
+// ── Tres puntos (táctil: siempre visible en mensajes propios) ─────────────────
+.ci-more-wrap {
+  display: none; // oculto en desktop
+  position: relative;
+  flex-shrink: 0;
+  align-self: flex-end;
+  margin-bottom: 10px; // alineado con el pie de la burbuja
+
+  @media (hover: none) { display: block; }
+}
+
+.ci-more-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1.5px solid $border;
+  border-radius: 50%;
+  background: $surface;
+  color: $text-muted;
+  cursor: pointer;
+  padding: 0;
+
+  &:active { background: $bg; }
+}
+
+.ci-menu {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 0;
+  z-index: 200;
+  background: $surface;
+  border: 1.5px solid $border;
+  border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.13);
+  min-width: 128px;
+  overflow: hidden;
+}
+
+.ci-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 11px 16px;
+  font-size: 0.84rem;
+  font-weight: 600;
   font-family: inherit;
-  transition: opacity .15s;
+  color: $text-dark;
+  cursor: pointer;
+  transition: background 0.12s;
 
-  svg { width: 12px; height: 12px; flex-shrink: 0; }
-  &:active { opacity: .75; }
-
-  &--edit   { background: #e8eaf6; color: #3949ab; }
-  &--delete { background: #fce4ec; color: #c62828; }
+  &:hover             { background: $bg; }
+  &--danger           { color: #c62828; }
+  &--danger:hover     { background: #fce4ec; }
 }

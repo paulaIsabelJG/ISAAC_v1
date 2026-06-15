@@ -23,37 +23,40 @@
       <div class="oc-list">
         @for (comment of comments; track comment._id) {
 
-          <!-- Modo edición inline -->
+          <!-- Modo edición inline: burbuja derecha editable -->
           @if (editingId === comment._id) {
-            <div class="oc-edit-block">
-              <textarea
-                class="oc-textarea"
-                [(ngModel)]="editText"
-                rows="3"
-                maxlength="1000"
-                placeholder="Edita tu comentario...">
-              </textarea>
-              <div class="oc-edit-actions">
-                <button class="oc-btn oc-btn--save"
-                        [disabled]="isUpdating || !editText.trim()"
-                        (click)="saveEdit()">
-                  @if (isUpdating) {
-                    <ion-spinner name="crescent" class="oc-btn-spinner"></ion-spinner>
-                  }
-                  Guardar
-                </button>
-                <button class="oc-btn oc-btn--cancel" (click)="cancelEdit()">
-                  Cancelar
-                </button>
+            <div class="oc-edit-wrap">
+              <div class="oc-edit-bubble">
+                <textarea
+                  class="oc-textarea"
+                  [(ngModel)]="editText"
+                  rows="3"
+                  maxlength="1000"
+                  placeholder="Edita tu comentario...">
+                </textarea>
+                <div class="oc-edit-actions">
+                  <button class="oc-btn oc-btn--cancel" (click)="cancelEdit()">
+                    Cancelar
+                  </button>
+                  <button class="oc-btn oc-btn--save"
+                          [disabled]="isUpdating || !editText.trim()"
+                          (click)="saveEdit()">
+                    @if (isUpdating) {
+                      <ion-spinner name="crescent" class="oc-btn-spinner"></ion-spinner>
+                    }
+                    Guardar
+                  </button>
+                </div>
               </div>
             </div>
+
           } @else {
             <app-objective-comment-item
               [comment]="comment"
               [currentUserId]="currentUserId"
               [isOrgAdmin]="isOrgAdmin"
               (editRequest)="startEdit($event)"
-              (deleteRequest)="deleteComment($event)">
+              (deleteRequest)="confirmAndDelete($event)">
             </app-objective-comment-item>
           }
 
@@ -69,16 +72,15 @@
     <!-- Formulario para añadir comentario -->
     @if (canComment) {
       <div class="oc-form">
-        <textarea
-          class="oc-textarea"
-          [(ngModel)]="newText"
-          rows="2"
-          maxlength="1000"
-          placeholder="Escribe un comentario..."
-          (keydown.control.enter)="addComment()">
-        </textarea>
-        <div class="oc-form-footer">
-          <span class="oc-char-count">{{ newText.length }}/1000</span>
+        <div class="oc-input-row">
+          <textarea
+            class="oc-textarea"
+            [(ngModel)]="newText"
+            rows="2"
+            maxlength="1000"
+            placeholder="Escribe un comentario..."
+            (keydown.control.enter)="addComment()">
+          </textarea>
           <button class="oc-btn oc-btn--add"
                   [disabled]="!newText.trim() || isSaving"
                   (click)="addComment()">
@@ -92,6 +94,9 @@
             }
             Comentar
           </button>
+        </div>
+        <div class="oc-form-footer">
+          <span class="oc-char-count">{{ newText.length }}/1000</span>
         </div>
       </div>
     }

@@ -1,16 +1,27 @@
-.oc-panel {
-  padding: 14px 0 4px;
-  border-top: 1.5px solid #f0f0f0;
-  margin-top: 4px;
+// El host participa en el flex de ol-chat-section y llena el espacio disponible
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
 }
 
-// ── Estados ────────────────────────────────────────────────────────────────────
+.oc-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+// ── Estados de carga / error ──────────────────────────────────────────────────
 
 .oc-loading {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 0;
+  padding: 16px 0;
   font-size: 0.85rem;
   color: #9e9e9e;
 
@@ -25,27 +36,47 @@
   border-radius: 8px;
   padding: 8px 12px;
   margin: 6px 0;
+  flex-shrink: 0;
 }
 
 .oc-empty {
   font-size: 0.85rem;
   color: #9e9e9e;
-  padding: 6px 0 10px;
+  padding: 16px 0 10px;
   margin: 0;
 }
 
-// ── Lista ─────────────────────────────────────────────────────────────────────
+// ── Lista de comentarios (scroll interno) ─────────────────────────────────────
 
 .oc-list {
+  flex: 1 1 0;
+  overflow-y: auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  padding-bottom: 8px;
+
+  scrollbar-width: thin;
+  scrollbar-color: #ffb6c1 transparent;
+  &::-webkit-scrollbar       { width: 3px; }
+  &::-webkit-scrollbar-thumb { background: #ffb6c1; border-radius: 3px; }
 }
 
-// ── Edición inline ────────────────────────────────────────────────────────────
+// ── Edición inline: burbuja derecha ──────────────────────────────────────────
 
-.oc-edit-block {
-  padding: 10px 0;
-  border-bottom: 1px solid #f0f0f0;
+.oc-edit-wrap {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+
+.oc-edit-bubble {
+  max-width: 78%;
+  width: 100%;
+  background: rgba(var(--ion-color-success-rgb, 45, 211, 111), 0.12);
+  border: 1.5px solid rgba(var(--ion-color-success-rgb, 45, 211, 111), 0.35);
+  border-radius: 18px 4px 18px 18px;
+  padding: 10px 14px 10px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -53,47 +84,67 @@
 
 .oc-edit-actions {
   display: flex;
+  justify-content: flex-end;
   gap: 6px;
 }
 
-// ── Formulario nuevo comentario ───────────────────────────────────────────────
+// ── Formulario fijo en la parte inferior ──────────────────────────────────────
 
 .oc-form {
-  margin-top: 12px;
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
+  padding-top: 10px;
+  border-top: 1.5px solid #f0f0f0;
+}
+
+// Fila textarea + botón uno al lado del otro
+.oc-input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
 }
 
 .oc-textarea {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   box-sizing: border-box;
-  background: #fafafa;
-  border: 1.5px solid #e0e0e0;
+  background: #ffffff;
+  border: 1.5px solid #ffb6c1;
   border-radius: 10px;
   padding: 10px 12px;
   font-size: 0.9rem;
   font-family: inherit;
   color: #212121;
-  resize: vertical;
+  resize: none;
   outline: none;
   transition: border-color .15s;
+  max-height: 96px;   // máximo 4 líneas aprox.
+  overflow-y: auto;
 
-  &:focus  { border-color: var(--ion-color-primary, #5c6bc0); background: #fff; }
-  &::placeholder { color: #bdbdbd; }
+  &:focus        { border-color: #e91e8c; background: #fff; }
+  &::placeholder { color: #ccc; }
+
+  // Dentro de la burbuja de edición: fondo transparente
+  .oc-edit-bubble & {
+    background: transparent;
+    border-color: rgba(0, 0, 0, 0.12);
+    border-radius: 8px;
+    max-height: none;
+    resize: vertical;
+    &:focus { border-color: rgba(var(--ion-color-success-rgb, 45, 211, 111), 0.6); }
+  }
 }
 
 .oc-form-footer {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
 }
 
 .oc-char-count {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: #bdbdbd;
-  margin-right: auto;
 }
 
 // ── Botones ───────────────────────────────────────────────────────────────────
@@ -110,6 +161,8 @@
   cursor: pointer;
   font-family: inherit;
   transition: opacity .15s;
+  white-space: nowrap;
+  flex-shrink: 0;
 
   &:disabled { opacity: .5; cursor: not-allowed; }
   &:not(:disabled):active { opacity: .75; }

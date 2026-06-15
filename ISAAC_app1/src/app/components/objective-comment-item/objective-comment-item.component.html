@@ -1,41 +1,73 @@
-<div class="ci-comment">
+<div class="ci-wrap" [class.ci-wrap--own]="isOwn">
 
-  <div class="ci-meta">
+  <!-- Nombre + badge de rol (encima de la burbuja) -->
+  <div class="ci-header">
     <span class="ci-creator">{{ creatorName }}</span>
     @if (roleLabel) {
       <span class="ci-role ci-role--{{ roleClass }}">{{ roleLabel }}</span>
     }
-    <span class="ci-date">{{ formatDate(comment.createdAt) }}</span>
-    @if (isEdited) {
-      <span class="ci-edited">(editado)</span>
-    }
   </div>
 
-  <p class="ci-text">{{ comment.text }}</p>
+  <!-- Fila: [iconos acción] [burbuja] -->
+  <div class="ci-row">
 
-  @if (canEdit || canDelete) {
-    <div class="ci-actions">
-      @if (canEdit) {
-        <button class="ci-btn ci-btn--edit" (click)="onEdit()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+    @if (canEdit || canDelete) {
+
+      <!-- Iconos lápiz/papelera — visible en hover de ratón (desktop) -->
+      <div class="ci-action-icons">
+        @if (canEdit) {
+          <button class="ci-icon-btn" (click)="onEdit()" title="Editar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+          </button>
+        }
+        @if (canDelete) {
+          <button class="ci-icon-btn ci-icon-btn--danger" (click)="onDelete()" title="Eliminar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+              <path d="M10 11v6M14 11v6"/>
+              <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+            </svg>
+          </button>
+        }
+      </div>
+
+      <!-- Botón tres puntos — visible en táctil (sin hover) -->
+      <div class="ci-more-wrap">
+        <button class="ci-more-btn" (click)="toggleMenu($event)">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+            <circle cx="12" cy="5"  r="1.6"/>
+            <circle cx="12" cy="12" r="1.6"/>
+            <circle cx="12" cy="19" r="1.6"/>
           </svg>
-          Editar
         </button>
-      }
-      @if (canDelete) {
-        <button class="ci-btn ci-btn--delete" (click)="onDelete()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="3 6 5 6 21 6"/>
-            <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
-            <path d="M10 11v6M14 11v6"/>
-            <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
-          </svg>
-          Eliminar
-        </button>
-      }
+        @if (menuOpen) {
+          <div class="ci-menu">
+            @if (canEdit) {
+              <button class="ci-menu-item" (click)="onEdit()">Editar</button>
+            }
+            @if (canDelete) {
+              <button class="ci-menu-item ci-menu-item--danger" (click)="onDelete()">Eliminar</button>
+            }
+          </div>
+        }
+      </div>
+
+    }
+
+    <!-- Burbuja del mensaje -->
+    <div class="ci-bubble" [class.ci-bubble--own]="isOwn">
+      <p class="ci-text">{{ comment.text }}</p>
+      <div class="ci-footer">
+        <span class="ci-date">{{ formatDate(comment.createdAt) }}</span>
+        @if (isEdited) {
+          <span class="ci-edited">(editado)</span>
+        }
+      </div>
     </div>
-  }
 
+  </div><!-- /ci-row -->
 </div>

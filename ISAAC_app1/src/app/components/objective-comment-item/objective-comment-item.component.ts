@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ObjectiveComment } from '../../models/objective-comment.model';
 
@@ -8,7 +8,6 @@ import { ObjectiveComment } from '../../models/objective-comment.model';
   styleUrls:   ['./objective-comment-item.component.scss'],
   standalone:   true,
   imports:     [CommonModule],
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ObjectiveCommentItemComponent {
   @Input() comment!:       ObjectiveComment;
@@ -18,8 +17,10 @@ export class ObjectiveCommentItemComponent {
   @Output() editRequest   = new EventEmitter<ObjectiveComment>();
   @Output() deleteRequest = new EventEmitter<string>();
 
-  get isOwn():    boolean { return this.comment?.createdBy?._id === this.currentUserId; }
-  get canEdit():  boolean { return this.isOwn; }
+  menuOpen = false;
+
+  get isOwn():     boolean { return this.comment?.createdBy?._id === this.currentUserId; }
+  get canEdit():   boolean { return this.isOwn; }
   get canDelete(): boolean { return this.isOwn || this.isOrgAdmin; }
 
   get roleLabel(): string {
@@ -57,6 +58,23 @@ export class ObjectiveCommentItemComponent {
     });
   }
 
-  onEdit():   void { this.editRequest.emit(this.comment); }
-  onDelete(): void { this.deleteRequest.emit(this.comment._id); }
+  toggleMenu(e: Event): void {
+    e.stopPropagation();
+    this.menuOpen = !this.menuOpen;
+  }
+
+  @HostListener('document:click')
+  closeMenu(): void {
+    this.menuOpen = false;
+  }
+
+  onEdit(): void {
+    this.menuOpen = false;
+    this.editRequest.emit(this.comment);
+  }
+
+  onDelete(): void {
+    this.menuOpen = false;
+    this.deleteRequest.emit(this.comment._id);
+  }
 }

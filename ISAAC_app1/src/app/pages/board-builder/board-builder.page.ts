@@ -227,7 +227,7 @@ export class BoardBuilderPage implements OnInit {
         const tb = new Date(b.updatedAt ?? b.createdAt ?? 0).getTime();
         return tb - ta;
       })
-      .slice(0, 4);
+      .slice(0, 5);
   }
 
   get currentFolderLabel(): string {

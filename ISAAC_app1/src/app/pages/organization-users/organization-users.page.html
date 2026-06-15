@@ -7,6 +7,12 @@
     <!-- ═══════════════════════════════════════════════════ MAIN ══════ -->
     <main class="users-main">
 
+      <!-- Encabezado de página -->
+      <div class="users-page-header">
+        <h1 class="users-page-title">Usuarios</h1>
+        <p class="users-page-subtitle">{{ user?.name }}</p>
+      </div>
+
       <!-- Toolbar: pestañas + botón añadir -->
       <div class="users-toolbar">
 
@@ -61,11 +67,13 @@
 
           @for (u of filteredUsers; track u._id) {
             <button class="user-card"
+                    [class.user-card--violet]="u.type === 'teacher'"
+                    [class.user-card--peach]="u.type === 'parent'"
                     [class.user-card--selected]="isSelected(u)"
                     (click)="selectUser(u)">
               <div class="user-card-avatar"
                    [class.user-card-avatar--blue]="u.type === 'user'"
-                   [class.user-card-avatar--mint]="u.type === 'teacher'"
+                   [class.user-card-avatar--violet]="u.type === 'teacher'"
                    [class.user-card-avatar--peach]="u.type === 'parent'">
                 @if (u.image) {
                   <img [src]="buildSafeUrl(u.image)" [alt]="u.name"/>
@@ -108,7 +116,7 @@
 
           <div class="detail-avatar"
                [class.detail-avatar--blue]="selectedUser.type === 'user'"
-               [class.detail-avatar--mint]="selectedUser.type === 'teacher'"
+               [class.detail-avatar--violet]="selectedUser.type === 'teacher'"
                [class.detail-avatar--peach]="selectedUser.type === 'parent'">
             @if (selectedUser.image) {
               <img [src]="buildSafeUrl(selectedUser.image)" [alt]="selectedUser.name"/>
@@ -122,7 +130,7 @@
 
           <span class="detail-badge"
                 [class.detail-badge--blue]="selectedUser.type === 'user'"
-                [class.detail-badge--mint]="selectedUser.type === 'teacher'"
+                [class.detail-badge--violet]="selectedUser.type === 'teacher'"
                 [class.detail-badge--peach]="selectedUser.type === 'parent'">
             @switch (selectedUser.type) {
               @case ('user')    { Usuario final }
@@ -133,8 +141,8 @@
 
           <div class="detail-divider"></div>
 
-          <!-- Tableros (usuario final / familiar) -->
-          @if (selectedUser.type !== 'teacher') {
+          <!-- Tableros (solo usuario final) -->
+          @if (selectedUser.type === 'user') {
             <div class="detail-boards">
               <span class="detail-stat-label">Tableros activos</span>
 
@@ -197,11 +205,18 @@
                   @for (u of selectedLinkedUsers; track u._id) {
                     <div class="ou-board-card">
 
-                      <div class="ou-board-icon ou-board-icon--user" [class.ou-board-icon--img]="!!u.image">
+                      <div class="ou-board-icon"
+                           [class.ou-board-icon--violet]="selectedUser.type === 'teacher'"
+                           [class.ou-board-icon--peach]="selectedUser.type === 'parent'"
+                           [class.ou-board-icon--img]="!!u.image">
                         @if (u.image) {
                           <img [src]="buildSafeUrl(u.image)" class="ou-board-img" [alt]="u.name"/>
                         } @else {
-                          <span class="ou-user-initial">{{ u.name.charAt(0).toUpperCase() }}</span>
+                          <span class="ou-user-initial"
+                                [class.ou-user-initial--violet]="selectedUser.type === 'teacher'"
+                                [class.ou-user-initial--peach]="selectedUser.type === 'parent'">
+                            {{ u.name.charAt(0).toUpperCase() }}
+                          </span>
                         }
                       </div>
 
