@@ -40,6 +40,7 @@
 }
 
 .oc-empty {
+  flex: 1 1 0;   // ocupa el espacio libre igual que .oc-list, empujando el form al fondo
   font-size: 0.85rem;
   color: #9e9e9e;
   padding: 16px 0 10px;

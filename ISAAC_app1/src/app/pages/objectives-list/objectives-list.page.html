@@ -7,49 +7,10 @@
 
   <div class="ol-main">
 
-    <!-- ── Topbar: título + controles en una sola fila ───────────────────── -->
+    <!-- ── Topbar: solo título ──────────────────────────────────────────────── -->
     <div class="ol-topbar">
-
-      <div class="ol-topbar-identity">
-        <h1 class="ol-page-title">Objetivos</h1>
-        <p class="ol-page-subtitle">{{ userName }}</p>
-      </div>
-
-      @if (!isLoading && !loadError) {
-        <div class="ol-topbar-controls">
-
-          <input
-            class="ol-search"
-            type="text"
-            [(ngModel)]="searchQuery"
-            placeholder="Buscar objetivo..."/>
-
-          <ion-select
-            class="ol-filter-select"
-            [(ngModel)]="filterStatus"
-            (ionChange)="onFilterStatus($event)"
-            interface="popover"
-            placeholder="Estado">
-            <ion-select-option value="all">Todos los estados</ion-select-option>
-            <ion-select-option value="active">Activo</ion-select-option>
-            <ion-select-option value="expired">Vencido</ion-select-option>
-            <ion-select-option value="completed">Completado</ion-select-option>
-            <ion-select-option value="cancelled">Cancelado</ion-select-option>
-          </ion-select>
-
-          @if (isCreator) {
-            <button class="ol-create-btn" (click)="goToCreate()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <line x1="12" y1="5" x2="12" y2="19"/>
-                <line x1="5"  y1="12" x2="19" y2="12"/>
-              </svg>
-              Nuevo objetivo
-            </button>
-          }
-
-        </div>
-      }
-
+      <h1 class="ol-page-title">Objetivos</h1>
+      <p class="ol-page-subtitle">{{ userName }}</p>
     </div><!-- /ol-topbar -->
 
     <!-- ── Loading / Error ───────────────────────────────────────────────── -->
@@ -65,6 +26,41 @@
 
         <!-- ═══════════════ COLUMNA IZQUIERDA: lista compacta ══════════ -->
         <div class="ol-list-col">
+
+          <!-- Mini-barra fija: buscar + filtro + nuevo -->
+          <div class="ol-list-toolbar">
+            <input
+              class="ol-search"
+              type="text"
+              [(ngModel)]="searchQuery"
+              placeholder="Buscar objetivo..."/>
+            <div class="ol-list-toolbar-row">
+              <ion-select
+                class="ol-filter-select"
+                [(ngModel)]="filterStatus"
+                (ionChange)="onFilterStatus($event)"
+                interface="popover"
+                placeholder="Estado">
+                <ion-select-option value="all">Todos</ion-select-option>
+                <ion-select-option value="active">Activo</ion-select-option>
+                <ion-select-option value="expired">Vencido</ion-select-option>
+                <ion-select-option value="completed">Completado</ion-select-option>
+                <ion-select-option value="cancelled">Cancelado</ion-select-option>
+              </ion-select>
+              @if (isCreator) {
+                <button class="ol-create-btn" (click)="goToCreate()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5"  y1="12" x2="19" y2="12"/>
+                  </svg>
+                  Nuevo
+                </button>
+              }
+            </div>
+          </div>
+
+          <!-- Items (zona con scroll) -->
+          <div class="ol-list-items">
 
           @if (filteredObjectives.length === 0) {
             <div class="ol-empty">
@@ -112,6 +108,7 @@
             }
 
           }
+          </div><!-- /ol-list-items -->
         </div><!-- /ol-list-col -->
 
         <!-- ════════════════ COLUMNA DERECHA: detalle ════════════════════ -->

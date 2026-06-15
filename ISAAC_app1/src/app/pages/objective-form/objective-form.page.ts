@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { IonicModule, ToastController } from '@ionic/angular';
+import { IonicModule, ToastController, AlertController } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -51,13 +51,47 @@ export class ObjectiveFormPage implements OnInit {
   // Control UI
   familiesLoading = false;
 
+  // Valores originales para detectar cambios en modo edición
+  private origTitle            = '';
+  private origDescription      = '';
+  private origStartDate        = '';
+  private origEndDate          = '';
+  private origShowToFinalUser  = false;
+  private origShowToFamily     = false;
+  private origSelectedUserIds: string[]   = [];
+  private origSelectedFamilyIds: string[] = [];
+
+  get hasUnsavedChanges(): boolean {
+    if (this.isEditing) {
+      return (
+        this.title            !== this.origTitle            ||
+        this.description      !== this.origDescription      ||
+        this.startDate        !== this.origStartDate        ||
+        this.endDate          !== this.origEndDate          ||
+        this.showToFinalUser  !== this.origShowToFinalUser  ||
+        this.showToFamily     !== this.origShowToFamily     ||
+        JSON.stringify([...this.selectedUserIds].sort())   !== JSON.stringify([...this.origSelectedUserIds].sort())   ||
+        JSON.stringify([...this.selectedFamilyIds].sort()) !== JSON.stringify([...this.origSelectedFamilyIds].sort())
+      );
+    }
+    // Formulario nuevo: cualquier campo tocado
+    return !!(
+      this.title.trim()         ||
+      this.description.trim()   ||
+      this.selectedUserIds.length ||
+      this.startDate            ||
+      this.endDate
+    );
+  }
+
   constructor(
-    private route:    ActivatedRoute,
-    private router:   Router,
-    private authSvc:  AuthService,
-    private userSvc:  UserService,
-    private objSvc:   ObjectiveService,
-    private toast:    ToastController,
+    private route:     ActivatedRoute,
+    private router:    Router,
+    private authSvc:   AuthService,
+    private userSvc:   UserService,
+    private objSvc:    ObjectiveService,
+    private toast:     ToastController,
+    private alertCtrl: AlertController,
   ) {}
 
   ngOnInit() {
@@ -116,6 +150,16 @@ export class ObjectiveFormPage implements OnInit {
     if (this.selectedUserIds.length > 0) {
       await this.loadFamilies();
     }
+
+    // Guardar snapshot para detectar cambios al salir
+    this.origTitle            = this.title;
+    this.origDescription      = this.description;
+    this.origStartDate        = this.startDate;
+    this.origEndDate          = this.endDate;
+    this.origShowToFinalUser  = this.showToFinalUser;
+    this.origShowToFamily     = this.showToFamily;
+    this.origSelectedUserIds  = [...this.selectedUserIds];
+    this.origSelectedFamilyIds = [...this.selectedFamilyIds];
   }
 
   // ── Familias según usuarios seleccionados ─────────────────────────────────
@@ -241,8 +285,24 @@ export class ObjectiveFormPage implements OnInit {
     }
   }
 
-  goBack(): void {
+  async goBack(): Promise<void> {
+    if (this.hasUnsavedChanges) {
+      await this.confirmDiscard(() => this.router.navigateByUrl(this.returnTo));
+      return;
+    }
     this.router.navigateByUrl(this.returnTo);
+  }
+
+  private async confirmDiscard(onConfirm: () => void): Promise<void> {
+    const alert = await this.alertCtrl.create({
+      header:  '¿Salir sin guardar?',
+      message: 'Los cambios que has hecho no se guardarán.',
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        { text: 'Salir', role: 'destructive', handler: onConfirm },
+      ],
+    });
+    await alert.present();
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
