@@ -1,0 +1,1429 @@
+diff --git a/ISAAC_app1/src/app/components/board-stats/board-stats.component.scss b/ISAAC_app1/src/app/components/board-stats/board-stats.component.scss
+index 36f1b19..5917866 100644
+--- a/ISAAC_app1/src/app/components/board-stats/board-stats.component.scss
++++ b/ISAAC_app1/src/app/components/board-stats/board-stats.component.scss
+@@ -255,12 +255,15 @@
+ // ── Panel de detalle (columna derecha) — compacto para caber sin scroll ───────
+ 
+ .bs-detail {
+-  flex:          1;
+-  min-width:     0;
++  flex:            1;
++  min-width:       0;
++  display:         flex;
++  flex-direction:  column;
++  justify-content: space-between;
+   background:    #fff;
+   border:        1.5px solid #f0e8f8;
+   border-radius: 16px;
+-  padding:       14px 18px;
++  padding:       16px 20px;
+   overflow-y:    auto;
+   scrollbar-width: thin;
+   scrollbar-color: #e0d0f0 transparent;
+@@ -268,20 +271,23 @@
+   &::-webkit-scrollbar-thumb { background: #e0d0f0; border-radius: 4px; }
+ 
+   @media (max-width: 768px) {
+-    overflow-y: visible;
+-    width:      100%;
+-    padding:    14px;
++    overflow-y:      visible;
++    justify-content: flex-start;
++    gap:             12px;
++    width:           100%;
++    padding:         14px;
+   }
+ }
+ 
+ .bs-detail-empty {
+-  display:        flex;
+-  flex-direction: column;
+-  align-items:    center;
+-  gap:            12px;
+-  padding:        40px 16px;
+-  color:          var(--ion-color-medium);
+-  text-align:     center;
++  flex:            1;
++  display:         flex;
++  flex-direction:  column;
++  align-items:     center;
++  justify-content: center;
++  gap:             12px;
++  color:           var(--ion-color-medium);
++  text-align:      center;
+ 
+   p { margin: 0; font-size: 0.9rem; }
+ }
+@@ -289,7 +295,6 @@
+ // ── Cabecera del detalle ─────────────────────────────────────────────────────
+ 
+ .bs-detail-header {
+-  margin-bottom:  8px;
+   padding-bottom: 8px;
+   border-bottom:  1px solid #f5eff8;
+ }
+@@ -337,7 +342,6 @@
+   display:     flex;
+   align-items: baseline;
+   gap:         8px;
+-  margin:      10px 0 8px;
+ }
+ 
+ .bs-detail-rate {
+@@ -359,9 +363,8 @@
+ // ── Metric cards ─────────────────────────────────────────────────────────────
+ 
+ .bs-metrics-row {
+-  display:       flex;
+-  gap:           10px;
+-  margin-bottom: 12px;
++  display: flex;
++  gap:     10px;
+ }
+ 
+ .bs-metric-card {
+@@ -393,9 +396,7 @@
+ 
+ // ── Breakdown ────────────────────────────────────────────────────────────────
+ 
+-.bs-breakdown {
+-  margin-bottom: 10px;
+-}
++.bs-breakdown {}
+ 
+ .bs-breakdown-title {
+   font-size:     0.78rem;
+diff --git a/ISAAC_app1/src/app/components/user-board-card/user-board-card.component.html b/ISAAC_app1/src/app/components/user-board-card/user-board-card.component.html
+index 61f7a95..8a7313c 100644
+--- a/ISAAC_app1/src/app/components/user-board-card/user-board-card.component.html
++++ b/ISAAC_app1/src/app/components/user-board-card/user-board-card.component.html
+@@ -15,9 +15,6 @@
+ 
+   <div class="ubc-info">
+     <span class="ubc-name">{{ board?.name }}</span>
+-    @if (relativeDate) {
+-      <span class="ubc-date">{{ relativeDate }}</span>
+-    }
+   </div>
+ 
+   @if (showHold) {
+diff --git a/ISAAC_app1/src/app/components/user-board-card/user-board-card.component.scss b/ISAAC_app1/src/app/components/user-board-card/user-board-card.component.scss
+index 2f904fb..8824c4d 100644
+--- a/ISAAC_app1/src/app/components/user-board-card/user-board-card.component.scss
++++ b/ISAAC_app1/src/app/components/user-board-card/user-board-card.component.scss
+@@ -2,7 +2,10 @@ $pink:       #ff69b4;
+ $pink-dark:  #e91e8c;
+ $pink-light: #fff0f7;
+ $mint:       #20c997;
+-$border:     #ffb6c1;
++$teal:       #17bdb8;
++$teal-dark:  #0e9e99;
++$teal-light: #e4f9f8;
++$border:     $teal;
+ $text-dark:  #222222;
+ $text-muted: #6b5462;
+ 
+@@ -15,10 +18,10 @@ $text-muted: #6b5462;
+   align-items: center;
+   gap: 14px;
+   padding: 22px 16px 18px;
+-  background: #fff;
+-  border: 1.5px solid $border;
++  background: $teal-light;
++  border: 3px solid $teal;
+   border-radius: 20px;
+-  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
++  box-shadow: 0 2px 10px rgba(23,189,184,0.12);
+   cursor: pointer;
+   transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+   min-height: 190px;
+@@ -26,8 +29,8 @@ $text-muted: #6b5462;
+ 
+   &:hover {
+     transform: translateY(-3px);
+-    border-color: $pink;
+-    box-shadow: 0 8px 24px rgba(255,105,180,0.14);
++    border-color: $teal-dark;
++    box-shadow: 0 8px 24px rgba(23,189,184,0.28);
+   }
+ }
+ 
+@@ -39,7 +42,7 @@ $text-muted: #6b5462;
+   height: 96px;
+   border-radius: 16px;
+   overflow: hidden;
+-  background: $pink-light;
++  background: rgba(23,189,184,0.12);
+   display: flex;
+   align-items: center;
+   justify-content: center;
+@@ -55,8 +58,8 @@ $text-muted: #6b5462;
+ .ubc-icon {
+   width: 44px;
+   height: 44px;
+-  stroke: $pink-dark;
+-  opacity: 0.35;
++  stroke: $teal-dark;
++  opacity: 0.5;
+   display: block;
+ }
+ 
+@@ -81,11 +84,8 @@ $text-muted: #6b5462;
+   overflow: hidden;
+   text-overflow: ellipsis;
+   white-space: nowrap;
+-}
+-
+-.ubc-date {
+-  font-size: 10.5px;
+-  color: $text-muted;
++  text-transform: uppercase;
++  letter-spacing: 0.5px;
+ }
+ 
+ // ── Hold overlay ───────────────────────────────────────────────────────────────
+diff --git a/ISAAC_app1/src/app/components/user-profile-sidebar/user-profile-sidebar.component.html b/ISAAC_app1/src/app/components/user-profile-sidebar/user-profile-sidebar.component.html
+index ee8488b..2079fc1 100644
+--- a/ISAAC_app1/src/app/components/user-profile-sidebar/user-profile-sidebar.component.html
++++ b/ISAAC_app1/src/app/components/user-profile-sidebar/user-profile-sidebar.component.html
+@@ -18,7 +18,7 @@
+   <!-- ── Navegación ─────────────────────────────────────────────────────────── -->
+   <nav class="ups-nav">
+ 
+-    <button class="ups-nav-item ups-nav-item--active" (click)="navSelect.emit('boards')">
++    <button class="ups-nav-item" [class.ups-nav-item--active]="activeSection === 'boards'" (click)="navSelect.emit('boards')">
+       <img src="assets/user-session/board-basic-grid.png" class="ups-nav-img" alt=""/>
+       <span class="ups-nav-label">Mis tableros</span>
+     </button>
+@@ -49,6 +49,30 @@
+       <span class="ups-nav-label">{{ fromLogin ? 'Mis objetivos' : 'Objetivos' }}</span>
+     </button>
+ 
++    @if (!fromLogin) {
++
++      <button class="ups-nav-item" [class.ups-nav-item--active]="activeSection === 'family'" (click)="navSelect.emit('family')">
++        <svg class="ups-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
++          <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
++          <circle cx="9" cy="7" r="4"/>
++          <path d="M23 21v-2a4 4 0 00-3-3.87"/>
++          <path d="M16 3.13a4 4 0 010 7.75"/>
++        </svg>
++        <span class="ups-nav-label">Familiares</span>
++      </button>
++
++      <button class="ups-nav-item" [class.ups-nav-item--active]="activeSection === 'professionals'" (click)="navSelect.emit('professionals')">
++        <svg class="ups-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
++          <rect x="2" y="7" width="20" height="14" rx="2"/>
++          <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>
++          <line x1="12" y1="12" x2="12" y2="16"/>
++          <line x1="10" y1="14" x2="14" y2="14"/>
++        </svg>
++        <span class="ups-nav-label">Profesionales</span>
++      </button>
++
++    }
++
+   </nav>
+ 
+   <div class="ups-spacer"></div>
+diff --git a/ISAAC_app1/src/app/components/user-profile-sidebar/user-profile-sidebar.component.scss b/ISAAC_app1/src/app/components/user-profile-sidebar/user-profile-sidebar.component.scss
+index 95e16be..88f7f58 100644
+--- a/ISAAC_app1/src/app/components/user-profile-sidebar/user-profile-sidebar.component.scss
++++ b/ISAAC_app1/src/app/components/user-profile-sidebar/user-profile-sidebar.component.scss
+@@ -135,6 +135,18 @@ $text-muted: #6b5462;
+   border-radius: 8px;
+ }
+ 
++.ups-nav-svg {
++  flex:        0 0 44px;
++  width:       44px;
++  height:      44px;
++  display:     block;
++  stroke:      currentColor;
++  padding:     7px;
++  box-sizing:  border-box;
++  border-radius: 8px;
++  background:  rgba(0,0,0,0.03);
++}
++
+ .ups-nav-label {
+   flex:        1;
+   line-height: 1.25;
+diff --git a/ISAAC_app1/src/app/components/user-profile-sidebar/user-profile-sidebar.component.ts b/ISAAC_app1/src/app/components/user-profile-sidebar/user-profile-sidebar.component.ts
+index fe8b561..5bcdc0c 100644
+--- a/ISAAC_app1/src/app/components/user-profile-sidebar/user-profile-sidebar.component.ts
++++ b/ISAAC_app1/src/app/components/user-profile-sidebar/user-profile-sidebar.component.ts
+@@ -17,10 +17,11 @@ export interface SidebarPermissions {
+   imports:     [CommonModule],
+ })
+ export class UserProfileSidebarComponent {
+-  @Input() user:        FullBackendUser | null  = null;
+-  @Input() avatarUrl:   SafeUrl | string        = '';
+-  @Input() fromLogin    = false;
+-  @Input() permissions: SidebarPermissions      = { canViewPersonalData: false, canViewStats: false, canEditBoards: false };
++  @Input() user:          FullBackendUser | null  = null;
++  @Input() avatarUrl:     SafeUrl | string        = '';
++  @Input() fromLogin      = false;
++  @Input() activeSection  = 'boards';
++  @Input() permissions:   SidebarPermissions     = { canViewPersonalData: false, canViewStats: false, canEditBoards: false };
+ 
+   @Output() navSelect = new EventEmitter<string>();
+ 
+diff --git a/ISAAC_app1/src/app/pages/board-builder/board-builder.page.html b/ISAAC_app1/src/app/pages/board-builder/board-builder.page.html
+index 5b320cb..5511a6a 100644
+--- a/ISAAC_app1/src/app/pages/board-builder/board-builder.page.html
++++ b/ISAAC_app1/src/app/pages/board-builder/board-builder.page.html
+@@ -1,5 +1,8 @@
+ @if (!showOrgSidebar) {
+-  <app-page-header title="Board Builder" [backHref]="returnTo" (backClick)="goBack()">
++  <app-page-header
++    [title]="contextCreatorName ? 'Board Builder de ' + contextCreatorName : 'Board Builder'"
++    [backHref]="returnTo"
++    (backClick)="goBack()">
+   </app-page-header>
+ }
+ 
+@@ -16,8 +19,10 @@
+ 
+       <!-- ── TOP: título · botones · recientes ───────────────────────── -->
+       <div class="bb-top-section">
+-        <h1 class="bb-page-title">Board Builder</h1>
+-        <p class="bb-page-subtitle">{{ contextCreatorName }}</p>
++        @if (showOrgSidebar) {
++          <h1 class="bb-page-title">Board Builder</h1>
++          <p class="bb-page-subtitle">{{ contextCreatorName }}</p>
++        }
+ 
+         @if (!selectMode) {
+           <div class="bb-top-row">
+diff --git a/ISAAC_app1/src/app/pages/communicator/communicator.page.ts b/ISAAC_app1/src/app/pages/communicator/communicator.page.ts
+index cbea592..ee21001 100644
+--- a/ISAAC_app1/src/app/pages/communicator/communicator.page.ts
++++ b/ISAAC_app1/src/app/pages/communicator/communicator.page.ts
+@@ -333,6 +333,9 @@ export class CommunicatorPage implements OnInit, OnDestroy {
+           data.speakTimestamp ?? speakTimestamp,
+           tokensForLog,
+         );
++        // Flush inmediato: el evento IA no debe esperar a acumular 10 eventos
++        // ni al cierre de sesión; así se persiste aunque el usuario salga enseguida.
++        this.aac.flushEvents();
+       }
+ 
+       // Cierre definitivo de frase: limpia toda la frase, resetea navegación
+@@ -512,7 +515,21 @@ export class CommunicatorPage implements OnInit, OnDestroy {
+       }
+       if (!pict) return;
+ 
+-      // Registrar OBL con category_id y category_label para que el predictor aprenda
++      // Añadir a la frase primero para que currentPhraseId quede fijado antes de
++      // logButtonEvent (igual que handlePictogramPress en tableros de cuadrícula).
++      this.aac.addToPhrase({
++        id:                pict.label,
++        label:             pict.label,
++        imageUrl:          pict.imageUrl,
++        sound:             pict.label,
++        boardId:           this.board!._id,
++        color:             pict.color,
++        wordType:          pict.wordType,
++        fitzgeraldEnabled: false,
++      }, { type: 'none' });
++
++      // Registrar OBL con category_id y category_label para que el predictor aprenda.
++      // Se llama después de addToPhrase para que el evento lleve ext_isaac_phrase_id.
+       this.aac.logButtonEvent({
+         label:          pict.label,
+         vocalization:   pict.label,
+@@ -527,17 +544,6 @@ export class CommunicatorPage implements OnInit, OnDestroy {
+         category_label: pict.categoryLabel,
+       });
+ 
+-      // Añadir a la frase y hablar
+-      this.aac.addToPhrase({
+-        id:                pict.label,
+-        label:             pict.label,
+-        imageUrl:          pict.imageUrl,
+-        sound:             pict.label,
+-        boardId:           this.board!._id,
+-        color:             pict.color,
+-        wordType:          pict.wordType,
+-        fitzgeraldEnabled: false,
+-      }, { type: 'none' });
+       this.aac.speakText(pict.label, this.gender);
+ 
+       // Recargar predictor con la nueva frase, manteniendo categoría activa
+diff --git a/ISAAC_app1/src/app/pages/objectives-list/objectives-list.page.html b/ISAAC_app1/src/app/pages/objectives-list/objectives-list.page.html
+index 8694ae7..6fa7f5b 100644
+--- a/ISAAC_app1/src/app/pages/objectives-list/objectives-list.page.html
++++ b/ISAAC_app1/src/app/pages/objectives-list/objectives-list.page.html
+@@ -1,5 +1,8 @@
+ @if (showPageHeader) {
+-  <app-page-header title="Objetivos" [backHref]="returnTo" (backClick)="goBack()">
++  <app-page-header
++    [title]="targetUserName ? 'Objetivos de ' + targetUserName : 'Objetivos'"
++    [backHref]="returnTo"
++    (backClick)="goBack()">
+   </app-page-header>
+ }
+ 
+diff --git a/ISAAC_app1/src/app/pages/objectives-list/objectives-list.page.ts b/ISAAC_app1/src/app/pages/objectives-list/objectives-list.page.ts
+index efdffa0..aa6e50f 100644
+--- a/ISAAC_app1/src/app/pages/objectives-list/objectives-list.page.ts
++++ b/ISAAC_app1/src/app/pages/objectives-list/objectives-list.page.ts
+@@ -28,6 +28,9 @@ export class ObjectivesListPage implements OnInit {
+   /** userId para filtrar por usuario concreto (cuando un teacher lo pasa como query param) */
+   filterUserId = '';
+ 
++  /** Nombre del usuario objetivo cuando se llega desde user-session. */
++  targetUserName = '';
++
+   returnTo = '/organization-dashboard';
+ 
+   objectives:  Objective[] = [];
+@@ -91,9 +94,10 @@ export class ObjectivesListPage implements OnInit {
+   ) {}
+ 
+   ngOnInit() {
+-    this.role         = (this.route.snapshot.queryParamMap.get('role') as any) ?? 'creator';
+-    this.filterUserId = this.route.snapshot.queryParamMap.get('userId') ?? '';
+-    this.returnTo     = this.route.snapshot.queryParamMap.get('returnTo') ?? this.defaultReturn();
++    this.role           = (this.route.snapshot.queryParamMap.get('role') as any) ?? 'creator';
++    this.filterUserId   = this.route.snapshot.queryParamMap.get('userId')   ?? '';
++    this.targetUserName = this.route.snapshot.queryParamMap.get('userName') ?? '';
++    this.returnTo       = this.route.snapshot.queryParamMap.get('returnTo') ?? this.defaultReturn();
+   }
+ 
+   ionViewWillEnter() {
+diff --git a/ISAAC_app1/src/app/pages/organization-statistics/organization-statistics.page.html b/ISAAC_app1/src/app/pages/organization-statistics/organization-statistics.page.html
+index e4ad557..d3e1598 100644
+--- a/ISAAC_app1/src/app/pages/organization-statistics/organization-statistics.page.html
++++ b/ISAAC_app1/src/app/pages/organization-statistics/organization-statistics.page.html
+@@ -1,15 +1,27 @@
++@if (lockedToUser) {
++  <app-page-header
++    [title]="'Estadísticas de ' + (lockedUserName || filterUserName)"
++    [backHref]="returnTo"
++    (backClick)="goBack()">
++  </app-page-header>
++}
++
+ <ion-content class="os-content">
+-<div class="os-layout">
+-  <app-org-sidebar activeItem="stats"></app-org-sidebar>
++<div class="os-layout" [class.os-layout--no-sidebar]="lockedToUser">
++  @if (!lockedToUser) {
++    <app-org-sidebar activeItem="stats"></app-org-sidebar>
++  }
+   <div class="os-main">
+ 
+   <!-- ════════════════════ CABECERA ════════════════════ -->
+-  <div class="os-header">
+-    <div class="os-header-text">
+-      <h1 class="os-title">Estadísticas</h1>
+-      <p class="os-subtitle">{{ orgName }}</p>
++  @if (!lockedToUser) {
++    <div class="os-header">
++      <div class="os-header-text">
++        <h1 class="os-title">Estadísticas</h1>
++        <p class="os-subtitle">{{ orgName }}</p>
++      </div>
+     </div>
+-  </div>
++  }
+ 
+   <!-- ════════════════════ BARRA DE FILTROS ════════════════════ -->
+   <div class="os-filters-bar">
+@@ -24,16 +36,18 @@
+       <input class="os-filter-input" type="date" [(ngModel)]="filterTo"/>
+     </div>
+ 
+-    <div class="os-filter-field">
+-      <label class="os-filter-label">Ámbito</label>
+-      <select class="os-filter-input os-filter-select" [(ngModel)]="filterScope" (ngModelChange)="onScopeChange()">
+-        @for (opt of scopeOptions; track opt.value) {
+-          <option [value]="opt.value">{{ opt.value === 'all' ? orgName : opt.label }}</option>
+-        }
+-      </select>
+-    </div>
++    @if (!lockedToUser) {
++      <div class="os-filter-field">
++        <label class="os-filter-label">Ámbito</label>
++        <select class="os-filter-input os-filter-select" [(ngModel)]="filterScope" (ngModelChange)="onScopeChange()">
++          @for (opt of scopeOptions; track opt.value) {
++            <option [value]="opt.value">{{ opt.value === 'all' ? orgName : opt.label }}</option>
++          }
++        </select>
++      </div>
++    }
+ 
+-    @if (filteredUserList.length > 0) {
++    @if (filteredUserList.length > 0 && !lockedToUser) {
+       <div class="os-filter-field">
+         <label class="os-filter-label">Usuario</label>
+         <select class="os-filter-input os-filter-select" [(ngModel)]="filterUserId" (ngModelChange)="onUserFilterChange()">
+@@ -213,7 +227,7 @@
+ 
+   <!-- ════════════════════ SECCIÓN: EXPORTACIÓN ════════════════════ -->
+   @if (activeSection === 'exportacion') {
+-    <div class="os-section">
++    <div class="os-section os-section--fill os-section--center">
+ 
+       <div class="os-export-form">
+ 
+@@ -278,7 +292,7 @@
+     </div>
+   }
+ 
+-  @if (activeSection !== 'tableros') {
++  @if (activeSection !== 'tableros' && activeSection !== 'exportacion') {
+     <div class="os-bottom-spacer"></div>
+   }
+ 
+diff --git a/ISAAC_app1/src/app/pages/organization-statistics/organization-statistics.page.scss b/ISAAC_app1/src/app/pages/organization-statistics/organization-statistics.page.scss
+index 8e80dc7..d301f7f 100644
+--- a/ISAAC_app1/src/app/pages/organization-statistics/organization-statistics.page.scss
++++ b/ISAAC_app1/src/app/pages/organization-statistics/organization-statistics.page.scss
+@@ -30,6 +30,8 @@ $orange-l:   #fff3eb;
+   height: 100%;
+   overflow: hidden;
+ 
++  &--no-sidebar { grid-template-columns: 1fr; }
++
+   @media (max-width: 600px) {
+     grid-template-columns: 1fr;
+     app-org-sidebar { display: none; }
+@@ -45,6 +47,15 @@ $orange-l:   #fff3eb;
+   scrollbar-color: $border transparent;
+   &::-webkit-scrollbar       { width: 4px; }
+   &::-webkit-scrollbar-thumb { background: $border; border-radius: 4px; }
++
++  // Todos los bloques fijos no deben comprimirse como flex items
++  > .os-header,
++  > .os-filters-bar,
++  > .os-kpis,
++  > .os-segment,
++  > ion-segment {
++    flex-shrink: 0;
++  }
+ }
+ 
+ // ── Cabecera ──────────────────────────────────────────────────────────────────
+@@ -164,7 +175,7 @@ $orange-l:   #fff3eb;
+   padding: 20px 20px 0;
+ }
+ 
+-// Sección tableros: ocupa todo el espacio restante sin cálculos de píxeles
++// Sección que ocupa todo el espacio restante sin cálculos de píxeles
+ .os-section--fill {
+   flex:           1;
+   min-height:     0;
+@@ -179,6 +190,12 @@ $orange-l:   #fff3eb;
+   }
+ }
+ 
++// Centra el único hijo en el espacio disponible
++.os-section--center {
++  align-items:     center;
++  justify-content: center;
++}
++
+ // ── Grid de gráficas (ion-grid) ───────────────────────────────────────────────
+ .os-charts-grid {
+   --ion-grid-padding:        0;
+diff --git a/ISAAC_app1/src/app/pages/organization-statistics/organization-statistics.page.ts b/ISAAC_app1/src/app/pages/organization-statistics/organization-statistics.page.ts
+index f64d300..225d9ae 100644
+--- a/ISAAC_app1/src/app/pages/organization-statistics/organization-statistics.page.ts
++++ b/ISAAC_app1/src/app/pages/organization-statistics/organization-statistics.page.ts
+@@ -2,7 +2,7 @@ import { Component, OnInit, ViewChildren, QueryList } from '@angular/core';
+ import { IonicModule, AlertController, ToastController } from '@ionic/angular';
+ import { CommonModule }      from '@angular/common';
+ import { FormsModule }       from '@angular/forms';
+-import { Router }            from '@angular/router';
++import { Router, ActivatedRoute } from '@angular/router';
+ import { firstValueFrom }    from 'rxjs';
+ import type { EChartsOption } from 'echarts';
+ 
+@@ -21,6 +21,7 @@ import { PhraseLogCardComponent }          from '../../components/phrase-log-car
+ import { StatisticsPdfExportService, StatsPdfMeta } from '../../services/statistics-pdf-export.service';
+ import { OrgSidebarComponent }             from '../../components/org-sidebar/org-sidebar.component';
+ import { BoardStatsComponent }             from '../../components/board-stats/board-stats.component';
++import { AppPageHeaderComponent }          from '../../components/app-page-header/app-page-header.component';
+ 
+ export type DashSection = 'resumen' | 'tableros' | 'frases' | 'exportacion';
+ 
+@@ -38,6 +39,7 @@ export type DashSection = 'resumen' | 'tableros' | 'frases' | 'exportacion';
+     PhraseLogCardComponent,
+     OrgSidebarComponent,
+     BoardStatsComponent,
++    AppPageHeaderComponent,
+   ],
+ })
+ export class OrganizationStatisticsPage implements OnInit {
+@@ -118,8 +120,16 @@ export class OrganizationStatisticsPage implements OnInit {
+     ':home':       'Inicio',
+   };
+ 
++  /** URL de retorno cuando se llega desde user-session u otra página. */
++  returnTo = '';
++
++  /** true cuando se entra pre-filtrado por usuario (desde user-session). */
++  lockedToUser  = false;
++  lockedUserName = '';
++
+   constructor(
+     private router:      Router,
++    private route:       ActivatedRoute,
+     private authSvc:     AuthService,
+     private userSvc:     UserService,
+     private boardSvc:    BoardService,
+@@ -130,7 +140,22 @@ export class OrganizationStatisticsPage implements OnInit {
+   ) {}
+ 
+   ngOnInit(): void {
+-    this.orgName       = this.authSvc.getCurrentUser()?.name || 'Organización';
++    this.orgName = this.authSvc.getCurrentUser()?.name || 'Organización';
++
++    // Pre-filtrar por usuario si se viene desde user-session (u otra página con userId)
++    const qp = this.route.snapshot.queryParamMap;
++    const preUserId  = qp.get('userId');
++    if (preUserId) {
++      this.filterUserId   = preUserId;
++      this.lockedToUser   = true;
++      this.lockedUserName = qp.get('userName') ?? '';
++      // Cargar tableros asignados del usuario para el selector de exportación
++      firstValueFrom(this.boardSvc.getAssignedBoards(preUserId))
++        .then(res => { this.assignedBoards = res.boards; })
++        .catch(() => { this.assignedBoards = []; });
++    }
++    this.returnTo = qp.get('returnTo') ?? '';
++
+     this.appliedFilters = this.filters();
+     this.loadAll();
+     this.loadUserList();
+@@ -452,7 +477,9 @@ export class OrganizationStatisticsPage implements OnInit {
+ 
+   // ── Navegación ────────────────────────────────────────────────────────────
+ 
+-  goBack(): void { this.router.navigate(['/organization-dashboard']); }
++  goBack(): void {
++    this.router.navigateByUrl(this.returnTo || '/organization-dashboard');
++  }
+ 
+   // ── Constructores de opciones ECharts ────────────────────────────────────
+ 
+diff --git a/ISAAC_app1/src/app/pages/user-final-form/user-final-form.page.ts b/ISAAC_app1/src/app/pages/user-final-form/user-final-form.page.ts
+index e5efad7..deafc75 100644
+--- a/ISAAC_app1/src/app/pages/user-final-form/user-final-form.page.ts
++++ b/ISAAC_app1/src/app/pages/user-final-form/user-final-form.page.ts
+@@ -222,9 +222,12 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
+     const explicitReturn = this.route.snapshot.queryParamMap.get('returnTo');
+     this.returnTo = explicitReturn ?? (this.isEditMode ? `/user-session/${this.userId}` : '/add-user');
+ 
+-    if (this.isEditMode && this.isLoading) {
+-      this.loadUser();
+-    } else if (!this.isEditMode) {
++    if (this.isEditMode) {
++      // Siempre recargar al entrar: evita datos obsoletos si el componente quedó
++      // cacheado por Ionic (userId diferente, o datos modificados externamente).
++      this.isLoading = true;
++      void this.loadUser();
++    } else {
+       this.isLoading = false;
+       void this.loadVoicesForGender(null);
+     }
+@@ -233,8 +236,11 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
+   // ── Carga del usuario existente ───────────────────────────────────────────────
+ 
+   private async loadUser(): Promise<void> {
+-    this.isLoading = true;
+-    this.loadError = '';
++    this.isLoading  = true;
++    this.loadError  = '';
++    this.locations  = [];
++    this.imgB64     = null;
++    this.imgUrl     = null;
+ 
+     try {
+       const res = await firstValueFrom(this.userSvc.getUserById(this.userId));
+diff --git a/ISAAC_app1/src/app/pages/user-session/user-session.page.html b/ISAAC_app1/src/app/pages/user-session/user-session.page.html
+index dfb4529..099c0c9 100644
+--- a/ISAAC_app1/src/app/pages/user-session/user-session.page.html
++++ b/ISAAC_app1/src/app/pages/user-session/user-session.page.html
+@@ -1,3 +1,12 @@
++@if (activeSection !== 'boards' && !isLoading && !loadError) {
++  <app-page-header
++    [title]="activeSection === 'family'
++      ? 'Familiares de ' + (targetUser?.name || '')
++      : 'Profesionales de ' + (targetUser?.name || '')"
++    (backClick)="goBackToBoards()">
++  </app-page-header>
++}
++
+ <ion-content class="us-content">
+ 
+   @if (voiceLoadingBanner) {
+@@ -11,78 +20,246 @@
+     <app-loading-error-state [loading]="isLoading" [error]="loadError"></app-loading-error-state>
+   } @else {
+ 
+-    <div class="us-layout">
++    <div class="us-layout" [class.us-layout--no-sidebar]="activeSection !== 'boards'">
+ 
+       <!-- ═══════════════════════════════════════════════ SIDEBAR ══ -->
+-      <app-user-profile-sidebar
+-        [user]="targetUser"
+-        [avatarUrl]="avatarUrl"
+-        [fromLogin]="fromLogin"
+-        [permissions]="permissions"
+-        (navSelect)="onNavSelect($event)">
+-      </app-user-profile-sidebar>
++      @if (activeSection === 'boards') {
++        <app-user-profile-sidebar
++          [user]="targetUser"
++          [avatarUrl]="avatarUrl"
++          [fromLogin]="fromLogin"
++          [permissions]="permissions"
++          [activeSection]="activeSection"
++          (navSelect)="onNavSelect($event)">
++        </app-user-profile-sidebar>
++      }
+ 
+       <!-- ════════════════════════════════════════════════ MAIN ═════ -->
+       <main class="us-main">
+ 
+-        <div class="us-main-header">
+-          <div class="us-title-group">
+-            <h1 class="us-section-title">TABLEROS PROPIOS</h1>
+-            @if (!boardsLoading) {
+-              <span class="us-section-count">{{ assignedBoards.length }}</span>
++        <!-- ── Sección: tableros ───────────────────────────────────── -->
++        @if (activeSection === 'boards') {
++
++          <div class="us-main-header">
++            <div class="us-title-group">
++              <h1 class="us-section-title">TABLEROS PROPIOS</h1>
++              @if (!boardsLoading) {
++                <span class="us-section-count">{{ assignedBoards.length }}</span>
++              }
++            </div>
++            @if (permissions.canEditBoards) {
++              <button class="us-new-board-btn" (click)="goToBoardBuilder()">
++                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
++                  <line x1="12" y1="5" x2="12" y2="19"/>
++                  <line x1="5" y1="12" x2="19" y2="12"/>
++                </svg>
++                Nuevo tablero
++              </button>
+             }
+           </div>
+-          @if (permissions.canEditBoards) {
+-            <button class="us-new-board-btn" (click)="goToBoardBuilder()">
+-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+-                <line x1="12" y1="5" x2="12" y2="19"/>
+-                <line x1="5" y1="12" x2="19" y2="12"/>
++
++          @if (isDownloading) {
++            <div class="us-downloading-bar">
++              <ion-spinner name="crescent" color="secondary"></ion-spinner>
++              <span>Generando archivo…</span>
++            </div>
++          }
++
++          @if (boardsLoading) {
++            <div class="us-boards-state">
++              <ion-spinner name="crescent" color="primary"></ion-spinner>
++            </div>
++          } @else if (boardsError) {
++            <div class="us-boards-state us-boards-state--error">{{ boardsError }}</div>
++          } @else if (assignedBoards.length === 0) {
++            <div class="us-boards-empty">
++              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
++                <rect x="3" y="3" width="7" height="7" rx="1.5"/>
++                <rect x="14" y="3" width="7" height="7" rx="1.5"/>
++                <rect x="3" y="14" width="7" height="7" rx="1.5"/>
++                <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+               </svg>
+-              Nuevo tablero
+-            </button>
++              <span>Aún no hay tableros principales asignados a este usuario.</span>
++            </div>
++          } @else {
++            <div class="us-boards-grid">
++              @for (board of assignedBoards; track board._id) {
++                <div class="us-board-wrapper"
++                     (pointerdown)="startHold($event, board)"
++                     (pointerup)="cancelHold()"
++                     (pointermove)="onHoldPointerMove($event)"
++                     (pointerleave)="cancelHold()"
++                     (click)="onBoardCardClick(board)">
++                  <app-user-board-card
++                    [board]="board"
++                    [showHold]="holdBoardId === board._id && holdProgress >= 25"
++                    [holdProgress]="holdProgress">
++                  </app-user-board-card>
++                </div>
++              }
++            </div>
+           }
+-        </div>
+ 
+-        @if (isDownloading) {
+-          <div class="us-downloading-bar">
+-            <ion-spinner name="crescent" color="secondary"></ion-spinner>
+-            <span>Generando archivo…</span>
+-          </div>
+         }
+ 
+-        @if (boardsLoading) {
+-          <div class="us-boards-state">
+-            <ion-spinner name="crescent" color="primary"></ion-spinner>
+-          </div>
+-        } @else if (boardsError) {
+-          <div class="us-boards-state us-boards-state--error">{{ boardsError }}</div>
+-        } @else if (assignedBoards.length === 0) {
+-          <div class="us-boards-empty">
+-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+-              <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+-              <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+-              <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+-              <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+-            </svg>
+-            <span>Aún no hay tableros principales asignados a este usuario.</span>
+-          </div>
+-        } @else {
+-          <div class="us-boards-grid">
+-            @for (board of assignedBoards; track board._id) {
+-              <div class="us-board-wrapper"
+-                   (pointerdown)="startHold($event, board)"
+-                   (pointerup)="cancelHold()"
+-                   (pointermove)="onHoldPointerMove($event)"
+-                   (pointerleave)="cancelHold()"
+-                   (click)="onBoardCardClick(board)">
+-                <app-user-board-card
+-                  [board]="board"
+-                  [showHold]="holdBoardId === board._id && holdProgress >= 25"
+-                  [holdProgress]="holdProgress">
+-                </app-user-board-card>
+-              </div>
+-            }
+-          </div>
++        <!-- ── Sección: familiares ─────────────────────────────────── -->
++        @else if (activeSection === 'family') {
++
++          @if (familiesLoading) {
++            <div class="us-boards-state">
++              <ion-spinner name="crescent" color="primary"></ion-spinner>
++            </div>
++          } @else if (familiesError) {
++            <div class="us-boards-state us-boards-state--error">{{ familiesError }}</div>
++          } @else if (families.length === 0) {
++            <div class="us-boards-empty">
++              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
++                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
++                <circle cx="9" cy="7" r="4"/>
++                <path d="M23 21v-2a4 4 0 00-3-3.87"/>
++                <path d="M16 3.13a4 4 0 010 7.75"/>
++              </svg>
++              <span>Este usuario no tiene familiares vinculados.</span>
++            </div>
++          } @else {
++            <div class="us-perms-table-wrap">
++              <table class="us-perms-table">
++                <thead>
++                  <tr>
++                    <th class="us-perms-col-person">Familiar</th>
++                    <th>Estadísticas</th>
++                    <th>Tableros</th>
++                    <th>Datos pers.</th>
++                    <th>Pictos</th>
++                    <th>Asig. prof.</th>
++                    <th>Asig. fam.</th>
++                    <th>Ver tableros</th>
++                    <th></th>
++                  </tr>
++                </thead>
++                <tbody>
++                  @for (row of families; track row.parentId) {
++                    <tr>
++                      <td class="us-perms-col-person">
++                        <div class="us-perms-person">
++                          @if (row.image) {
++                            <img [src]="row.image" class="us-perms-avatar" alt=""/>
++                          } @else {
++                            <span class="us-perms-avatar-initial">{{ row.name.charAt(0).toUpperCase() }}</span>
++                          }
++                          <div class="us-perms-info">
++                            <span class="us-perms-name">{{ row.name }} {{ row.surname }}</span>
++                            <span class="us-perms-email">{{ row.email }}</span>
++                          </div>
++                        </div>
++                      </td>
++                      <td><ion-checkbox [checked]="row.canViewStats"           (ionChange)="row.canViewStats           = $any($event).detail.checked"></ion-checkbox></td>
++                      <td><ion-checkbox [checked]="row.canEditBoards"          (ionChange)="row.canEditBoards          = $any($event).detail.checked"></ion-checkbox></td>
++                      <td><ion-checkbox [checked]="row.canEditPersonalData"    (ionChange)="row.canEditPersonalData    = $any($event).detail.checked"></ion-checkbox></td>
++                      <td><ion-checkbox [checked]="row.canAddPictograms"       (ionChange)="row.canAddPictograms       = $any($event).detail.checked"></ion-checkbox></td>
++                      <td><ion-checkbox [checked]="row.canAssignProfessionals" (ionChange)="row.canAssignProfessionals = $any($event).detail.checked"></ion-checkbox></td>
++                      <td><ion-checkbox [checked]="row.canAssignFamilies"      (ionChange)="row.canAssignFamilies      = $any($event).detail.checked"></ion-checkbox></td>
++                      <td><ion-checkbox [checked]="row.canViewAssignedBoards"  (ionChange)="row.canViewAssignedBoards  = $any($event).detail.checked"></ion-checkbox></td>
++                      <td>
++                        <button class="us-perms-save-btn"
++                                [class.us-perms-save-btn--saved]="row.saved"
++                                [disabled]="row.saving"
++                                (click)="saveFamilyRow(row)">
++                          @if (row.saving) {
++                            <ion-spinner name="crescent" style="width:13px;height:13px"></ion-spinner>
++                          } @else if (row.saved) {
++                            ✓ Guardado
++                          } @else {
++                            Guardar
++                          }
++                        </button>
++                      </td>
++                    </tr>
++                  }
++                </tbody>
++              </table>
++            </div>
++          }
++
++        }
++
++        <!-- ── Sección: profesionales ──────────────────────────────── -->
++        @else if (activeSection === 'professionals') {
++
++          @if (professionalsLoading) {
++            <div class="us-boards-state">
++              <ion-spinner name="crescent" color="primary"></ion-spinner>
++            </div>
++          } @else if (professionalsError) {
++            <div class="us-boards-state us-boards-state--error">{{ professionalsError }}</div>
++          } @else if (professionals.length === 0) {
++            <div class="us-boards-empty">
++              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
++                <rect x="2" y="7" width="20" height="14" rx="2"/>
++                <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>
++              </svg>
++              <span>Este usuario no tiene profesionales asignados.</span>
++            </div>
++          } @else {
++            <div class="us-perms-table-wrap">
++              <table class="us-perms-table">
++                <thead>
++                  <tr>
++                    <th class="us-perms-col-person">Profesional</th>
++                    <th>Estadísticas</th>
++                    <th>Tableros</th>
++                    <th>Datos pers.</th>
++                    <th>Pictos</th>
++                    <th>Asig. prof.</th>
++                    <th>Asig. fam.</th>
++                    <th>Ver tableros</th>
++                    <th></th>
++                  </tr>
++                </thead>
++                <tbody>
++                  @for (row of professionals; track row.professionalId) {
++                    <tr>
++                      <td class="us-perms-col-person">
++                        <div class="us-perms-person">
++                          @if (row.image) {
++                            <img [src]="row.image" class="us-perms-avatar" alt=""/>
++                          } @else {
++                            <span class="us-perms-avatar-initial">{{ row.name.charAt(0).toUpperCase() }}</span>
++                          }
++                          <div class="us-perms-info">
++                            <span class="us-perms-name">{{ row.name }} {{ row.surname }}</span>
++                            <span class="us-perms-email">{{ row.email }}</span>
++                          </div>
++                        </div>
++                      </td>
++                      <td><ion-checkbox [checked]="row.canViewStats"           (ionChange)="row.canViewStats           = $any($event).detail.checked"></ion-checkbox></td>
++                      <td><ion-checkbox [checked]="row.canEditBoards"          (ionChange)="row.canEditBoards          = $any($event).detail.checked"></ion-checkbox></td>
++                      <td><ion-checkbox [checked]="row.canEditPersonalData"    (ionChange)="row.canEditPersonalData    = $any($event).detail.checked"></ion-checkbox></td>
++                      <td><ion-checkbox [checked]="row.canAddPictograms"       (ionChange)="row.canAddPictograms       = $any($event).detail.checked"></ion-checkbox></td>
++                      <td><ion-checkbox [checked]="row.canAssignProfessionals" (ionChange)="row.canAssignProfessionals = $any($event).detail.checked"></ion-checkbox></td>
++                      <td><ion-checkbox [checked]="row.canAssignFamilies"      (ionChange)="row.canAssignFamilies      = $any($event).detail.checked"></ion-checkbox></td>
++                      <td><ion-checkbox [checked]="row.canViewAssignedBoards"  (ionChange)="row.canViewAssignedBoards  = $any($event).detail.checked"></ion-checkbox></td>
++                      <td>
++                        <button class="us-perms-save-btn"
++                                [class.us-perms-save-btn--saved]="row.saved"
++                                [disabled]="row.saving"
++                                (click)="saveProfRow(row)">
++                          @if (row.saving) {
++                            <ion-spinner name="crescent" style="width:13px;height:13px"></ion-spinner>
++                          } @else if (row.saved) {
++                            ✓ Guardado
++                          } @else {
++                            Guardar
++                          }
++                        </button>
++                      </td>
++                    </tr>
++                  }
++                </tbody>
++              </table>
++            </div>
++          }
++
+         }
+ 
+       </main>
+diff --git a/ISAAC_app1/src/app/pages/user-session/user-session.page.scss b/ISAAC_app1/src/app/pages/user-session/user-session.page.scss
+index 2a4c459..f60508b 100644
+--- a/ISAAC_app1/src/app/pages/user-session/user-session.page.scss
++++ b/ISAAC_app1/src/app/pages/user-session/user-session.page.scss
+@@ -150,7 +150,7 @@ $text-muted: #6b5462;
+ .us-boards-grid {
+   display:               grid;
+   grid-template-columns: repeat(2, 1fr);
+-  gap:                   18px;
++  gap:                   64px;
+ }
+ 
+ .us-board-wrapper {
+@@ -160,6 +160,139 @@ $text-muted: #6b5462;
+   -webkit-user-select: none;
+ }
+ 
++// ── Tabla de permisos (familiares / profesionales) ────────────────────────────
++
++.us-perms-table-wrap {
++  overflow-x:    auto;
++  border-radius: 16px;
++  border:        1.5px solid $border;
++}
++
++.us-perms-table {
++  width:           100%;
++  border-collapse: collapse;
++  min-width:       860px;
++  font-size:       13px;
++
++  thead th {
++    padding:          11px 14px;
++    background:       $pink-light;
++    font-size:        11px;
++    font-weight:      700;
++    color:            $text-muted;
++    text-transform:   uppercase;
++    letter-spacing:   0.4px;
++    text-align:       center;
++    border-bottom:    1.5px solid $border;
++    white-space:      nowrap;
++
++    &.us-perms-col-person { text-align: left; min-width: 210px; }
++  }
++
++  tbody tr {
++    border-bottom: 1px solid lighten($border, 5%);
++    transition:    background 0.12s;
++    &:last-child { border-bottom: none; }
++    &:hover      { background: #fff8fb; }
++  }
++
++  tbody td {
++    padding:        14px;
++    vertical-align: middle;
++    text-align:     center;
++
++    &.us-perms-col-person { text-align: left; }
++  }
++
++  ion-checkbox {
++    --size:             18px;
++    --checkbox-background-checked: #{$pink-dark};
++    --border-color-checked:        #{$pink-dark};
++    --border-color:                #{$border};
++    --border-radius:               5px;
++  }
++}
++
++.us-perms-person {
++  display:     flex;
++  align-items: center;
++  gap:         12px;
++}
++
++.us-perms-avatar {
++  width:         40px;
++  height:        40px;
++  border-radius: 50%;
++  object-fit:    cover;
++  flex:          0 0 40px;
++  border:        1.5px solid $border;
++}
++
++.us-perms-avatar-initial {
++  display:         flex;
++  align-items:     center;
++  justify-content: center;
++  width:           40px;
++  height:          40px;
++  border-radius:   50%;
++  background:      $pink-light;
++  color:           $pink-dark;
++  font-size:       16px;
++  font-weight:     800;
++  flex:            0 0 40px;
++  border:          1.5px solid $border;
++}
++
++.us-perms-info {
++  display:        flex;
++  flex-direction: column;
++  gap:            2px;
++  min-width:      0;
++}
++
++.us-perms-name {
++  font-size:     13.5px;
++  font-weight:   700;
++  color:         $text-dark;
++  white-space:   nowrap;
++  overflow:      hidden;
++  text-overflow: ellipsis;
++}
++
++.us-perms-email {
++  font-size:   11.5px;
++  color:       $text-muted;
++  white-space: nowrap;
++}
++
++.us-perms-save-btn {
++  display:         inline-flex;
++  align-items:     center;
++  justify-content: center;
++  gap:             5px;
++  padding:         7px 14px;
++  border-radius:   20px;
++  border:          1.5px solid $pink;
++  background:      $pink-light;
++  color:           $pink-dark;
++  font-size:       12px;
++  font-weight:     700;
++  font-family:     inherit;
++  cursor:          pointer;
++  white-space:     nowrap;
++  min-width:       82px;
++  transition:      background 0.15s;
++
++  &:hover:not(:disabled) { background: #ffd6ed; }
++  &:disabled             { opacity: 0.6; cursor: default; }
++
++  &--saved {
++    border-color: #22a06b;
++    background:   #edfff3;
++    color:        #22a06b;
++  }
++}
++
+ // ── Responsive ────────────────────────────────────────────────────────────────
+ 
+ @media (min-width: 900px) {
+diff --git a/ISAAC_app1/src/app/pages/user-session/user-session.page.ts b/ISAAC_app1/src/app/pages/user-session/user-session.page.ts
+index 82baab7..b677bff 100644
+--- a/ISAAC_app1/src/app/pages/user-session/user-session.page.ts
++++ b/ISAAC_app1/src/app/pages/user-session/user-session.page.ts
+@@ -8,12 +8,18 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+ import { buildSafeUrl as buildSafeUrlUtil } from '../../shared/utils/image.utils';
+ import { firstValueFrom } from 'rxjs';
+ import { AuthService } from '../../services/auth.service';
+-import { UserService, FullBackendUser } from '../../services/user.service';
++import {
++  UserService,
++  FullBackendUser,
++  ChildrenAccessEntry,
++  AssignedProfessionalPayload,
++} from '../../services/user.service';
+ import { BoardService, Board } from '../../services/board.service';
+ import { TtsService } from '../../services/tts.service';
+ import { AacRuntimeService } from '../../services/aac-runtime.service';
+ import { ObfExportService } from '../../services/obf-export.service';
+ import { BoardPdfExportService } from '../../services/board-pdf-export.service';
++import { AppPageHeaderComponent } from '../../components/app-page-header/app-page-header.component';
+ import { LoadingErrorStateComponent } from '../../components/loading-error-state/loading-error-state.component';
+ import {
+   UserProfileSidebarComponent,
+@@ -21,12 +27,47 @@ import {
+ } from '../../components/user-profile-sidebar/user-profile-sidebar.component';
+ import { UserBoardCardComponent } from '../../components/user-board-card/user-board-card.component';
+ 
++interface FamilyRow {
++  parentId:               string;
++  name:                   string;
++  surname:                string;
++  email:                  string;
++  image?:                 string | null;
++  fullChildrenAccess:     ChildrenAccessEntry[];
++  canViewStats:           boolean;
++  canEditBoards:          boolean;
++  canEditPersonalData:    boolean;
++  canAddPictograms:       boolean;
++  canAssignProfessionals: boolean;
++  canAssignFamilies:      boolean;
++  canViewAssignedBoards:  boolean;
++  saving:                 boolean;
++  saved:                  boolean;
++}
++
++interface ProfRow {
++  professionalId:         string;
++  name:                   string;
++  surname:                string;
++  email:                  string;
++  image?:                 string | null;
++  canViewStats:           boolean;
++  canEditBoards:          boolean;
++  canEditPersonalData:    boolean;
++  canAddPictograms:       boolean;
++  canAssignProfessionals: boolean;
++  canAssignFamilies:      boolean;
++  canViewAssignedBoards:  boolean;
++  saving:                 boolean;
++  saved:                  boolean;
++}
++
+ @Component({
+   selector: 'app-user-session',
+   templateUrl: './user-session.page.html',
+   styleUrls:  ['./user-session.page.scss'],
+   standalone: true,
+-  imports: [IonicModule, LoadingErrorStateComponent, UserProfileSidebarComponent, UserBoardCardComponent],
++  imports: [IonicModule, AppPageHeaderComponent, LoadingErrorStateComponent, UserProfileSidebarComponent, UserBoardCardComponent],
+ })
+ export class UserSessionPage implements OnInit, OnDestroy {
+ 
+@@ -43,6 +84,21 @@ export class UserSessionPage implements OnInit, OnDestroy {
+   isLoading = true;
+   loadError = '';
+ 
++  // ── Sección activa ────────────────────────────────────────────────────────────
++  activeSection: 'boards' | 'family' | 'professionals' = 'boards';
++
++  // ── Familiares ────────────────────────────────────────────────────────────────
++  families:        FamilyRow[] = [];
++  familiesLoading  = false;
++  familiesError    = '';
++  familiesLoaded   = false;
++
++  // ── Profesionales ─────────────────────────────────────────────────────────────
++  professionals:        ProfRow[] = [];
++  professionalsLoading  = false;
++  professionalsError    = '';
++  professionalsLoaded   = false;
++
+   assignedBoards: Board[] = [];
+   boardsLoading  = true;
+   boardsError    = '';
+@@ -82,6 +138,9 @@ export class UserSessionPage implements OnInit, OnDestroy {
+   }
+ 
+   ionViewWillEnter(): void {
++    this.activeSection       = 'boards';
++    this.familiesLoaded      = false;
++    this.professionalsLoaded = false;
+     if (this.userId) {
+       void this.loadData();
+       void this.loadBoards();
+@@ -191,11 +250,32 @@ export class UserSessionPage implements OnInit, OnDestroy {
+ 
+   onNavSelect(section: string): void {
+     switch (section) {
+-      case 'personal':   this.goToPersonalData(); break;
+-      case 'stats':      this.goToStats();        break;
+-      case 'builder':    this.goToBoardBuilder();  break;
+-      case 'objectives': this.goToObjectives();    break;
+-      case 'back':       this.goBack();            break;
++      case 'boards':        this.activeSection = 'boards';                    break;
++      case 'personal':      this.goToPersonalData();                          break;
++      case 'stats':         this.goToStats();                                 break;
++      case 'builder':       this.goToBoardBuilder();                          break;
++      case 'objectives':    this.goToObjectives();                            break;
++      case 'family':        void this.goToFamilySection();                    break;
++      case 'professionals': void this.goToProfessionalsSection();             break;
++      case 'back':          this.goBack();                                    break;
++    }
++  }
++
++  goBackToBoards(): void {
++    this.activeSection = 'boards';
++  }
++
++  async goToFamilySection(): Promise<void> {
++    this.activeSection = 'family';
++    if (!this.familiesLoaded) {
++      await this.loadFamilies();
++    }
++  }
++
++  async goToProfessionalsSection(): Promise<void> {
++    this.activeSection = 'professionals';
++    if (!this.professionalsLoaded) {
++      await this.loadProfessionals();
+     }
+   }
+ 
+@@ -213,7 +293,12 @@ export class UserSessionPage implements OnInit, OnDestroy {
+ 
+   goToObjectives(): void {
+     this.router.navigate(['/objectives-list'], {
+-      queryParams: { role: 'creator', userId: this.userId, returnTo: '/user-session/' + this.userId },
++      queryParams: {
++        role:     'creator',
++        userId:   this.userId,
++        userName: this.targetUser?.name || '',
++        returnTo: '/user-session/' + this.userId,
++      },
+     });
+   }
+ 
+@@ -224,7 +309,13 @@ export class UserSessionPage implements OnInit, OnDestroy {
+   }
+ 
+   goToStats(): void {
+-    this.router.navigate(['/statistics-placeholder']);
++    this.router.navigate(['/organization-statistics'], {
++      queryParams: {
++        userId:   this.userId,
++        userName: this.targetUser?.name || '',
++        returnTo: '/user-session/' + this.userId,
++      },
++    });
+   }
+ 
+   goToBoardBuilder(): void {
+@@ -237,6 +328,120 @@ export class UserSessionPage implements OnInit, OnDestroy {
+     });
+   }
+ 
++  // ── Familiares y Profesionales ────────────────────────────────────────────────
++
++  private async loadFamilies(): Promise<void> {
++    this.familiesLoading = true;
++    this.familiesError   = '';
++    try {
++      const res = await firstValueFrom(this.userService.getFamiliesForUsers([this.userId]));
++      const results = await Promise.allSettled(
++        res.families.map(async (parent) => {
++          const full  = await firstValueFrom(this.userService.getUserById(parent._id));
++          const entry = full.user.childrenAccess?.find(
++            e => e.childId?.toString() === this.userId
++          );
++          return {
++            parentId:               parent._id,
++            name:                   parent.name,
++            surname:                parent.surname ?? '',
++            email:                  parent.email,
++            image:                  parent.image ?? null,
++            fullChildrenAccess:     (full.user.childrenAccess ?? []) as ChildrenAccessEntry[],
++            canViewStats:           entry?.canViewStats           ?? false,
++            canEditBoards:          entry?.canEditBoards          ?? false,
++            canEditPersonalData:    entry?.canEditPersonalData    ?? false,
++            canAddPictograms:       entry?.canAddPictograms       ?? false,
++            canAssignProfessionals: entry?.canAssignProfessionals ?? false,
++            canAssignFamilies:      entry?.canAssignFamilies      ?? false,
++            canViewAssignedBoards:  entry?.canViewAssignedBoards  ?? false,
++            saving:                 false,
++            saved:                  false,
++          } as FamilyRow;
++        })
++      );
++      this.families      = results
++        .filter((r): r is PromiseFulfilledResult<FamilyRow> => r.status === 'fulfilled')
++        .map(r => r.value);
++      this.familiesLoaded = true;
++    } catch {
++      this.familiesError = 'Error al cargar los familiares.';
++    } finally {
++      this.familiesLoading = false;
++    }
++  }
++
++  private async loadProfessionals(): Promise<void> {
++    this.professionalsLoading = true;
++    this.professionalsError   = '';
++    try {
++      const res = await firstValueFrom(this.userService.getAssignedProfessionals(this.userId));
++      this.professionals = res.assignedProfessionals.map(p => ({
++        ...p,
++        saving: false,
++        saved:  false,
++      }));
++      this.professionalsLoaded = true;
++    } catch {
++      this.professionalsError = 'Error al cargar los profesionales.';
++    } finally {
++      this.professionalsLoading = false;
++    }
++  }
++
++  async saveFamilyRow(row: FamilyRow): Promise<void> {
++    row.saving = true;
++    try {
++      const idx = row.fullChildrenAccess.findIndex(
++        e => e.childId?.toString() === this.userId
++      );
++      const newEntry: ChildrenAccessEntry = {
++        childId:                this.userId,
++        canViewStats:           row.canViewStats,
++        canEditBoards:          row.canEditBoards,
++        canEditPersonalData:    row.canEditPersonalData,
++        canAddPictograms:       row.canAddPictograms,
++        canAssignProfessionals: row.canAssignProfessionals,
++        canAssignFamilies:      row.canAssignFamilies,
++        canViewAssignedBoards:  row.canViewAssignedBoards,
++      };
++      const updated = [...row.fullChildrenAccess];
++      if (idx >= 0) updated[idx] = newEntry;
++      else updated.push(newEntry);
++      await firstValueFrom(this.userService.updateChildrenAccess(row.parentId, updated));
++      row.fullChildrenAccess = updated;
++      row.saved = true;
++      setTimeout(() => { row.saved = false; }, 2500);
++    } catch {
++      await this._toast('Error al guardar permisos del familiar.', 'danger');
++    } finally {
++      row.saving = false;
++    }
++  }
++
++  async saveProfRow(row: ProfRow): Promise<void> {
++    row.saving = true;
++    try {
++      const payload: AssignedProfessionalPayload[] = this.professionals.map(p => ({
++        professionalId:         p.professionalId,
++        canViewStats:           p.canViewStats,
++        canEditBoards:          p.canEditBoards,
++        canEditPersonalData:    p.canEditPersonalData,
++        canAddPictograms:       p.canAddPictograms,
++        canAssignProfessionals: p.canAssignProfessionals,
++        canAssignFamilies:      p.canAssignFamilies,
++        canViewAssignedBoards:  p.canViewAssignedBoards,
++      }));
++      await firstValueFrom(this.userService.updateAssignedProfessionals(this.userId, payload));
++      row.saved = true;
++      setTimeout(() => { row.saved = false; }, 2500);
++    } catch {
++      await this._toast('Error al guardar permisos del profesional.', 'danger');
++    } finally {
++      row.saving = false;
++    }
++  }
++
+   // ── Tableros ──────────────────────────────────────────────────────────────────
+ 
+   openBoard(board: Board): void {
+diff --git a/ISAAC_app1/src/app/services/aac-runtime.service.ts b/ISAAC_app1/src/app/services/aac-runtime.service.ts
+index fb4ae45..d65169f 100644
+--- a/ISAAC_app1/src/app/services/aac-runtime.service.ts
++++ b/ISAAC_app1/src/app/services/aac-runtime.service.ts
+@@ -940,7 +940,7 @@ export class AacRuntimeService {
+     }
+   }
+ 
+-  private flushEvents(): void {
++  flushEvents(): void {
+     if (!this.sessionId || this.pendingEvents.length === 0) return;
+     const toSend = [...this.pendingEvents];
+     this.pendingEvents = [];

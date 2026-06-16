@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActionSheetController, IonicModule, ToastController } from '@ionic/angular';
+import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import type { HttpErrorResponse } from '@angular/common/http';
@@ -10,6 +11,7 @@ import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import {
   UserService,
+  BackendUser,
   FullBackendUser,
   ChildrenAccessEntry,
   AssignedProfessionalPayload,
@@ -26,6 +28,8 @@ import {
   SidebarPermissions,
 } from '../../components/user-profile-sidebar/user-profile-sidebar.component';
 import { UserBoardCardComponent } from '../../components/user-board-card/user-board-card.component';
+import { HasUnsavedChanges } from '../../guards/has-unsaved-changes';
+import { UnsavedChangesService } from '../../guards/unsaved-changes.service';
 
 interface FamilyRow {
   parentId:               string;
@@ -41,8 +45,6 @@ interface FamilyRow {
   canAssignProfessionals: boolean;
   canAssignFamilies:      boolean;
   canViewAssignedBoards:  boolean;
-  saving:                 boolean;
-  saved:                  boolean;
 }
 
 interface ProfRow {
@@ -58,18 +60,19 @@ interface ProfRow {
   canAssignProfessionals: boolean;
   canAssignFamilies:      boolean;
   canViewAssignedBoards:  boolean;
-  saving:                 boolean;
-  saved:                  boolean;
 }
 
 @Component({
   selector: 'app-user-session',
   templateUrl: './user-session.page.html',
-  styleUrls:  ['./user-session.page.scss'],
+  styleUrls:  [
+    '../assigned-professionals-placeholder/assigned-professionals-placeholder.page.scss',
+    './user-session.page.scss',
+  ],
   standalone: true,
-  imports: [IonicModule, AppPageHeaderComponent, LoadingErrorStateComponent, UserProfileSidebarComponent, UserBoardCardComponent],
+  imports: [IonicModule, FormsModule, AppPageHeaderComponent, LoadingErrorStateComponent, UserProfileSidebarComponent, UserBoardCardComponent],
 })
-export class UserSessionPage implements OnInit, OnDestroy {
+export class UserSessionPage implements OnInit, OnDestroy, HasUnsavedChanges {
 
   userId     = '';
   targetUser: FullBackendUser | null = null;
@@ -88,16 +91,25 @@ export class UserSessionPage implements OnInit, OnDestroy {
   activeSection: 'boards' | 'family' | 'professionals' = 'boards';
 
   // ── Familiares ────────────────────────────────────────────────────────────────
-  families:        FamilyRow[] = [];
-  familiesLoading  = false;
-  familiesError    = '';
-  familiesLoaded   = false;
+  families:             FamilyRow[]   = [];
+  familiesLoading       = false;
+  familiesError         = '';
+  familiesLoaded        = false;
+  familySaving          = false;
+  allCenterFamilies:    BackendUser[] = [];
+  selectedFamilyToAdd   = '';
+  addingFamily          = false;
+  private _familiesSnapshot   = '';
 
   // ── Profesionales ─────────────────────────────────────────────────────────────
-  professionals:        ProfRow[] = [];
-  professionalsLoading  = false;
-  professionalsError    = '';
-  professionalsLoaded   = false;
+  professionals:             ProfRow[]     = [];
+  professionalsLoading       = false;
+  professionalsError         = '';
+  professionalsLoaded        = false;
+  profSaving                 = false;
+  allCenterProfessionals:    BackendUser[] = [];
+  selectedProfToAdd          = '';
+  private _professionalsSnapshot = '';
 
   assignedBoards: Board[] = [];
   boardsLoading  = true;
@@ -116,19 +128,20 @@ export class UserSessionPage implements OnInit, OnDestroy {
   private _suppressNextCardClick = false;
 
   constructor(
-    private route:        ActivatedRoute,
-    private router:       Router,
-    private authService:  AuthService,
-    private userService:  UserService,
-    private boardService: BoardService,
-    private sanitizer:    DomSanitizer,
-    private ttsSvc:       TtsService,
-    private aac:          AacRuntimeService,
-    private obfExport:    ObfExportService,
-    private pdfExport:    BoardPdfExportService,
-    private actionSheet:  ActionSheetController,
-    private toastCtrl:    ToastController,
-    private http:         HttpClient,
+    private route:           ActivatedRoute,
+    private router:          Router,
+    private authService:     AuthService,
+    private userService:     UserService,
+    private boardService:    BoardService,
+    private sanitizer:       DomSanitizer,
+    private ttsSvc:          TtsService,
+    private aac:             AacRuntimeService,
+    private obfExport:       ObfExportService,
+    private pdfExport:       BoardPdfExportService,
+    private actionSheet:     ActionSheetController,
+    private toastCtrl:       ToastController,
+    private http:            HttpClient,
+    private unsavedSvc:      UnsavedChangesService,
   ) {}
 
   ngOnDestroy(): void { this._stopVoicePoll(); }
@@ -138,9 +151,13 @@ export class UserSessionPage implements OnInit, OnDestroy {
   }
 
   ionViewWillEnter(): void {
-    this.activeSection       = 'boards';
-    this.familiesLoaded      = false;
-    this.professionalsLoaded = false;
+    this.activeSection          = 'boards';
+    this.familiesLoaded         = false;
+    this.professionalsLoaded    = false;
+    this.selectedFamilyToAdd    = '';
+    this.selectedProfToAdd      = '';
+    this.allCenterFamilies      = [];
+    this.allCenterProfessionals = [];
     if (this.userId) {
       void this.loadData();
       void this.loadBoards();
@@ -240,6 +257,32 @@ export class UserSessionPage implements OnInit, OnDestroy {
     }
   }
 
+  // ── Cambios sin guardar ───────────────────────────────────────────────────────
+
+  private _snapFamilies(): string {
+    return JSON.stringify(this.families.map(r => [
+      r.parentId,
+      r.canViewStats, r.canEditBoards, r.canEditPersonalData,
+      r.canAddPictograms, r.canAssignProfessionals, r.canAssignFamilies,
+      r.canViewAssignedBoards,
+    ]));
+  }
+
+  private _snapProfessionals(): string {
+    return JSON.stringify(this.professionals.map(r => [
+      r.professionalId,
+      r.canViewStats, r.canEditBoards, r.canEditPersonalData,
+      r.canAddPictograms, r.canAssignProfessionals, r.canAssignFamilies,
+      r.canViewAssignedBoards,
+    ]));
+  }
+
+  hasUnsavedChanges(): boolean {
+    if (this.activeSection === 'family')        return this._snapFamilies()       !== this._familiesSnapshot;
+    if (this.activeSection === 'professionals') return this._snapProfessionals()  !== this._professionalsSnapshot;
+    return false;
+  }
+
   // ── Getters ───────────────────────────────────────────────────────────────────
 
   get fromLogin(): boolean {
@@ -261,8 +304,16 @@ export class UserSessionPage implements OnInit, OnDestroy {
     }
   }
 
-  goBackToBoards(): void {
+  async goBackToBoards(): Promise<void> {
+    if (this.hasUnsavedChanges()) {
+      const confirmed = await this.unsavedSvc.confirm();
+      if (!confirmed) return;
+    }
     this.activeSection = 'boards';
+  }
+
+  goToOrgUsers(): void {
+    this.router.navigate(['/organization-users']);
   }
 
   async goToFamilySection(): Promise<void> {
@@ -334,7 +385,14 @@ export class UserSessionPage implements OnInit, OnDestroy {
     this.familiesLoading = true;
     this.familiesError   = '';
     try {
-      const res = await firstValueFrom(this.userService.getFamiliesForUsers([this.userId]));
+      const centro = this.targetUser?.centro;
+      const [res, centerRes] = await Promise.all([
+        firstValueFrom(this.userService.getFamiliesForUsers([this.userId])),
+        centro
+          ? firstValueFrom(this.userService.getUsersByCenter(centro))
+          : Promise.resolve({ users: [] as BackendUser[] }),
+      ]);
+
       const results = await Promise.allSettled(
         res.families.map(async (parent) => {
           const full  = await firstValueFrom(this.userService.getUserById(parent._id));
@@ -355,15 +413,30 @@ export class UserSessionPage implements OnInit, OnDestroy {
             canAssignProfessionals: entry?.canAssignProfessionals ?? false,
             canAssignFamilies:      entry?.canAssignFamilies      ?? false,
             canViewAssignedBoards:  entry?.canViewAssignedBoards  ?? false,
-            saving:                 false,
-            saved:                  false,
           } as FamilyRow;
         })
       );
-      this.families      = results
+      this.families = results
         .filter((r): r is PromiseFulfilledResult<FamilyRow> => r.status === 'fulfilled')
         .map(r => r.value);
-      this.familiesLoaded = true;
+
+      // Cargar todos los familiares del centro para el select de añadir
+      const centerUserIds = centerRes.users
+        .filter(u => u.type === 'user')
+        .map(u => u._id);
+      if (centerUserIds.length > 0) {
+        try {
+          const allFamiliesRes = await firstValueFrom(
+            this.userService.getFamiliesForUsers(centerUserIds)
+          );
+          this.allCenterFamilies = allFamiliesRes.families;
+        } catch {
+          this.allCenterFamilies = [];
+        }
+      }
+
+      this._familiesSnapshot = this._snapFamilies();
+      this.familiesLoaded    = true;
     } catch {
       this.familiesError = 'Error al cargar los familiares.';
     } finally {
@@ -375,13 +448,17 @@ export class UserSessionPage implements OnInit, OnDestroy {
     this.professionalsLoading = true;
     this.professionalsError   = '';
     try {
-      const res = await firstValueFrom(this.userService.getAssignedProfessionals(this.userId));
-      this.professionals = res.assignedProfessionals.map(p => ({
-        ...p,
-        saving: false,
-        saved:  false,
-      }));
-      this.professionalsLoaded = true;
+      const centro = this.targetUser?.centro;
+      const [res, centerRes] = await Promise.all([
+        firstValueFrom(this.userService.getAssignedProfessionals(this.userId)),
+        centro
+          ? firstValueFrom(this.userService.getUsersByCenter(centro))
+          : Promise.resolve({ users: [] as BackendUser[] }),
+      ]);
+      this.professionals             = res.assignedProfessionals.map(p => ({ ...p }));
+      this.allCenterProfessionals    = centerRes.users.filter(u => u.type === 'teacher');
+      this._professionalsSnapshot    = this._snapProfessionals();
+      this.professionalsLoaded       = true;
     } catch {
       this.professionalsError = 'Error al cargar los profesionales.';
     } finally {
@@ -389,38 +466,105 @@ export class UserSessionPage implements OnInit, OnDestroy {
     }
   }
 
-  async saveFamilyRow(row: FamilyRow): Promise<void> {
-    row.saving = true;
+  // ── Getters para selects de añadir ───────────────────────────────────────────
+
+  get availableFamilies(): BackendUser[] {
+    const assigned = new Set(this.families.map(f => f.parentId));
+    return this.allCenterFamilies.filter(f => !assigned.has(f._id));
+  }
+
+  get availableProfessionals(): BackendUser[] {
+    const assigned = new Set(this.professionals.map(p => p.professionalId));
+    return this.allCenterProfessionals.filter(p => !assigned.has(p._id));
+  }
+
+  async addFamily(): Promise<void> {
+    if (!this.selectedFamilyToAdd) return;
+    this.addingFamily = true;
     try {
-      const idx = row.fullChildrenAccess.findIndex(
+      const full   = await firstValueFrom(this.userService.getUserById(this.selectedFamilyToAdd));
+      const parent = full.user;
+      const entry  = parent.childrenAccess?.find(
         e => e.childId?.toString() === this.userId
       );
-      const newEntry: ChildrenAccessEntry = {
-        childId:                this.userId,
-        canViewStats:           row.canViewStats,
-        canEditBoards:          row.canEditBoards,
-        canEditPersonalData:    row.canEditPersonalData,
-        canAddPictograms:       row.canAddPictograms,
-        canAssignProfessionals: row.canAssignProfessionals,
-        canAssignFamilies:      row.canAssignFamilies,
-        canViewAssignedBoards:  row.canViewAssignedBoards,
-      };
-      const updated = [...row.fullChildrenAccess];
-      if (idx >= 0) updated[idx] = newEntry;
-      else updated.push(newEntry);
-      await firstValueFrom(this.userService.updateChildrenAccess(row.parentId, updated));
-      row.fullChildrenAccess = updated;
-      row.saved = true;
-      setTimeout(() => { row.saved = false; }, 2500);
+      this.families.push({
+        parentId:               parent._id,
+        name:                   parent.name,
+        surname:                parent.surname ?? '',
+        email:                  parent.email,
+        image:                  parent.image ?? null,
+        fullChildrenAccess:     (parent.childrenAccess ?? []) as ChildrenAccessEntry[],
+        canViewStats:           entry?.canViewStats           ?? false,
+        canEditBoards:          entry?.canEditBoards          ?? false,
+        canEditPersonalData:    entry?.canEditPersonalData    ?? false,
+        canAddPictograms:       entry?.canAddPictograms       ?? false,
+        canAssignProfessionals: entry?.canAssignProfessionals ?? false,
+        canAssignFamilies:      entry?.canAssignFamilies      ?? false,
+        canViewAssignedBoards:  entry?.canViewAssignedBoards  ?? false,
+      });
+      this.selectedFamilyToAdd = '';
     } catch {
-      await this._toast('Error al guardar permisos del familiar.', 'danger');
+      await this._toast('Error al añadir el familiar.', 'danger');
     } finally {
-      row.saving = false;
+      this.addingFamily = false;
     }
   }
 
-  async saveProfRow(row: ProfRow): Promise<void> {
-    row.saving = true;
+  addProfessional(): void {
+    if (!this.selectedProfToAdd) return;
+    const prof = this.allCenterProfessionals.find(p => p._id === this.selectedProfToAdd);
+    if (!prof) return;
+    this.professionals.push({
+      professionalId:         prof._id,
+      name:                   prof.name,
+      surname:                prof.surname ?? '',
+      email:                  prof.email,
+      image:                  prof.image ?? null,
+      canViewStats:           false,
+      canEditBoards:          false,
+      canEditPersonalData:    false,
+      canAddPictograms:       false,
+      canAssignProfessionals: false,
+      canAssignFamilies:      false,
+      canViewAssignedBoards:  false,
+    });
+    this.selectedProfToAdd = '';
+  }
+
+  async saveFamilies(): Promise<void> {
+    this.familySaving = true;
+    try {
+      await Promise.all(this.families.map(async row => {
+        const idx = row.fullChildrenAccess.findIndex(
+          e => e.childId?.toString() === this.userId
+        );
+        const newEntry: ChildrenAccessEntry = {
+          childId:                this.userId,
+          canViewStats:           row.canViewStats,
+          canEditBoards:          row.canEditBoards,
+          canEditPersonalData:    row.canEditPersonalData,
+          canAddPictograms:       row.canAddPictograms,
+          canAssignProfessionals: row.canAssignProfessionals,
+          canAssignFamilies:      row.canAssignFamilies,
+          canViewAssignedBoards:  row.canViewAssignedBoards,
+        };
+        const updated = [...row.fullChildrenAccess];
+        if (idx >= 0) updated[idx] = newEntry;
+        else updated.push(newEntry);
+        await firstValueFrom(this.userService.updateChildrenAccess(row.parentId, updated));
+        row.fullChildrenAccess = updated;
+      }));
+      this._familiesSnapshot = this._snapFamilies();
+      await this._toast('Familiares guardados ✓', 'success');
+    } catch {
+      await this._toast('Error al guardar los familiares.', 'danger');
+    } finally {
+      this.familySaving = false;
+    }
+  }
+
+  async saveProfessionals(): Promise<void> {
+    this.profSaving = true;
     try {
       const payload: AssignedProfessionalPayload[] = this.professionals.map(p => ({
         professionalId:         p.professionalId,
@@ -433,12 +577,12 @@ export class UserSessionPage implements OnInit, OnDestroy {
         canViewAssignedBoards:  p.canViewAssignedBoards,
       }));
       await firstValueFrom(this.userService.updateAssignedProfessionals(this.userId, payload));
-      row.saved = true;
-      setTimeout(() => { row.saved = false; }, 2500);
+      this._professionalsSnapshot = this._snapProfessionals();
+      await this._toast('Profesionales guardados ✓', 'success');
     } catch {
-      await this._toast('Error al guardar permisos del profesional.', 'danger');
+      await this._toast('Error al guardar los profesionales.', 'danger');
     } finally {
-      row.saving = false;
+      this.profSaving = false;
     }
   }
 

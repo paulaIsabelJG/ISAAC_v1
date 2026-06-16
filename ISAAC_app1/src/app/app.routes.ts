@@ -107,7 +107,8 @@ export const routes: Routes = [
     path: 'user-session/:userId',
     loadComponent: () =>
       import('./pages/user-session/user-session.page').then((m) => m.UserSessionPage),
-    canActivate: [authGuard],
+    canActivate:   [authGuard],
+    canDeactivate: [unsavedChangesGuard],
   },
 
   // ── Sesión / perfil de profesional ─────────────────────────────────────────

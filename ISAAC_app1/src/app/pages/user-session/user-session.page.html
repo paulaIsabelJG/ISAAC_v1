@@ -1,3 +1,11 @@
+<button class="us-back-fab" (click)="goToOrgUsers()" aria-label="Volver a usuarios">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+    <line x1="19" y1="12" x2="5" y2="12"/>
+    <polyline points="12 19 5 12 12 5"/>
+  </svg>
+  <span>Usuarios</span>
+</button>
+
 @if (activeSection !== 'boards' && !isLoading && !loadError) {
   <app-page-header
     [title]="activeSection === 'family'
@@ -8,6 +16,7 @@
 }
 
 <ion-content class="us-content">
+<div class="us-wrap">
 
   @if (voiceLoadingBanner) {
     <div class="us-voice-banner">
@@ -105,160 +114,260 @@
         <!-- ── Sección: familiares ─────────────────────────────────── -->
         @else if (activeSection === 'family') {
 
-          @if (familiesLoading) {
-            <div class="us-boards-state">
-              <ion-spinner name="crescent" color="primary"></ion-spinner>
+          <div class="card-section">
+            <div class="sec-head">
+              <div class="sec-head-left">
+                <div class="sec-dot sec-dot--mint"></div>
+                <h2 class="sec-title">Familiares con acceso</h2>
+              </div>
+              @if (!familiesLoading && !familiesError) {
+                <span class="count-badge">{{ families.length }}</span>
+              }
             </div>
-          } @else if (familiesError) {
-            <div class="us-boards-state us-boards-state--error">{{ familiesError }}</div>
-          } @else if (families.length === 0) {
-            <div class="us-boards-empty">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
-                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
-                <circle cx="9" cy="7" r="4"/>
-                <path d="M23 21v-2a4 4 0 00-3-3.87"/>
-                <path d="M16 3.13a4 4 0 010 7.75"/>
-              </svg>
-              <span>Este usuario no tiene familiares vinculados.</span>
-            </div>
-          } @else {
-            <div class="us-perms-table-wrap">
-              <table class="us-perms-table">
-                <thead>
-                  <tr>
-                    <th class="us-perms-col-person">Familiar</th>
-                    <th>Estadísticas</th>
-                    <th>Tableros</th>
-                    <th>Datos pers.</th>
-                    <th>Pictos</th>
-                    <th>Asig. prof.</th>
-                    <th>Asig. fam.</th>
-                    <th>Ver tableros</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (row of families; track row.parentId) {
+
+            @if (familiesLoading || familiesError) {
+              <app-loading-error-state
+                [loading]="familiesLoading"
+                [error]="familiesError"
+                loadingText="Cargando familiares…"
+                [padding]="'36px 0 24px'">
+              </app-loading-error-state>
+            } @else {
+
+              <div class="table-scroll-wrap">
+                <table class="prof-table">
+                  <thead>
                     <tr>
-                      <td class="us-perms-col-person">
-                        <div class="us-perms-person">
-                          @if (row.image) {
-                            <img [src]="row.image" class="us-perms-avatar" alt=""/>
-                          } @else {
-                            <span class="us-perms-avatar-initial">{{ row.name.charAt(0).toUpperCase() }}</span>
-                          }
-                          <div class="us-perms-info">
-                            <span class="us-perms-name">{{ row.name }} {{ row.surname }}</span>
-                            <span class="us-perms-email">{{ row.email }}</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td><ion-checkbox [checked]="row.canViewStats"           (ionChange)="row.canViewStats           = $any($event).detail.checked"></ion-checkbox></td>
-                      <td><ion-checkbox [checked]="row.canEditBoards"          (ionChange)="row.canEditBoards          = $any($event).detail.checked"></ion-checkbox></td>
-                      <td><ion-checkbox [checked]="row.canEditPersonalData"    (ionChange)="row.canEditPersonalData    = $any($event).detail.checked"></ion-checkbox></td>
-                      <td><ion-checkbox [checked]="row.canAddPictograms"       (ionChange)="row.canAddPictograms       = $any($event).detail.checked"></ion-checkbox></td>
-                      <td><ion-checkbox [checked]="row.canAssignProfessionals" (ionChange)="row.canAssignProfessionals = $any($event).detail.checked"></ion-checkbox></td>
-                      <td><ion-checkbox [checked]="row.canAssignFamilies"      (ionChange)="row.canAssignFamilies      = $any($event).detail.checked"></ion-checkbox></td>
-                      <td><ion-checkbox [checked]="row.canViewAssignedBoards"  (ionChange)="row.canViewAssignedBoards  = $any($event).detail.checked"></ion-checkbox></td>
-                      <td>
-                        <button class="us-perms-save-btn"
-                                [class.us-perms-save-btn--saved]="row.saved"
-                                [disabled]="row.saving"
-                                (click)="saveFamilyRow(row)">
-                          @if (row.saving) {
-                            <ion-spinner name="crescent" style="width:13px;height:13px"></ion-spinner>
-                          } @else if (row.saved) {
-                            ✓ Guardado
-                          } @else {
-                            Guardar
-                          }
-                        </button>
-                      </td>
+                      <th class="th-prof">Familiar</th>
+                      <th class="th-center">Datos personales</th>
+                      <th class="th-center">Crear tableros</th>
+                      <th class="th-center">Estadísticas</th>
+                      <th class="th-center">Añadir pictogramas</th>
+                      <th class="th-center">Asignar profesionales</th>
+                      <th class="th-center">Asignar familiares</th>
+                      <th class="th-center">Ver tableros asignados</th>
                     </tr>
+                  </thead>
+                  <tbody>
+                    @for (row of families; track row.parentId) {
+                      <tr class="prof-row">
+                        <td class="td-prof">
+                          <div class="prof-info">
+                            <div class="prof-avatar">
+                              @if (row.image) {
+                                <img [src]="row.image" [alt]="row.name" class="avatar-img"/>
+                              } @else {
+                                <span class="avatar-initial">{{ row.name.charAt(0).toUpperCase() }}</span>
+                              }
+                            </div>
+                            <div class="prof-meta">
+                              <span class="prof-fullname">{{ row.name }} {{ row.surname }}</span>
+                              <span class="prof-email">{{ row.email }}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="td-center"><button class="perm-chip" [class.perm-chip--on]="row.canEditPersonalData"    (click)="row.canEditPersonalData    = !row.canEditPersonalData">    @if(row.canEditPersonalData){<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Sí}@else{No}</button></td>
+                        <td class="td-center"><button class="perm-chip" [class.perm-chip--on]="row.canEditBoards"          (click)="row.canEditBoards          = !row.canEditBoards">          @if(row.canEditBoards){<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Sí}@else{No}</button></td>
+                        <td class="td-center"><button class="perm-chip" [class.perm-chip--on]="row.canViewStats"           (click)="row.canViewStats           = !row.canViewStats">           @if(row.canViewStats){<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Sí}@else{No}</button></td>
+                        <td class="td-center"><button class="perm-chip" [class.perm-chip--on]="row.canAddPictograms"       (click)="row.canAddPictograms       = !row.canAddPictograms">       @if(row.canAddPictograms){<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Sí}@else{No}</button></td>
+                        <td class="td-center"><button class="perm-chip" [class.perm-chip--on]="row.canAssignProfessionals" (click)="row.canAssignProfessionals = !row.canAssignProfessionals"> @if(row.canAssignProfessionals){<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Sí}@else{No}</button></td>
+                        <td class="td-center"><button class="perm-chip" [class.perm-chip--on]="row.canAssignFamilies"      (click)="row.canAssignFamilies      = !row.canAssignFamilies">      @if(row.canAssignFamilies){<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Sí}@else{No}</button></td>
+                        <td class="td-center"><button class="perm-chip" [class.perm-chip--on]="row.canViewAssignedBoards"  (click)="row.canViewAssignedBoards  = !row.canViewAssignedBoards">  @if(row.canViewAssignedBoards){<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Sí}@else{No}</button></td>
+                      </tr>
+                    }
+                    @if (families.length === 0) {
+                      <tr class="help-row">
+                        <td class="td-prof"><div class="prof-info"><div class="prof-avatar prof-avatar--ghost"></div><div class="prof-meta"><span class="prof-fullname help-text">Nombre Apellidos</span><span class="prof-email help-text">correo@ejemplo.com</span></div></div></td>
+                        <td class="td-center"><span class="perm-chip perm-chip--example">No</span></td>
+                        <td class="td-center"><span class="perm-chip perm-chip--example">No</span></td>
+                        <td class="td-center"><span class="perm-chip perm-chip--example">No</span></td>
+                        <td class="td-center"><span class="perm-chip perm-chip--example">No</span></td>
+                        <td class="td-center"><span class="perm-chip perm-chip--example">No</span></td>
+                        <td class="td-center"><span class="perm-chip perm-chip--example">No</span></td>
+                        <td class="td-center"><span class="perm-chip perm-chip--example">No</span></td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+
+              @if (availableFamilies.length > 0) {
+                <div class="add-row">
+                  <select class="add-select" [(ngModel)]="selectedFamilyToAdd">
+                    <option value="">— Seleccionar familiar —</option>
+                    @for (f of availableFamilies; track f._id) {
+                      <option [value]="f._id">{{ f.name }} {{ f.surname }} — {{ f.email }}</option>
+                    }
+                  </select>
+                  <button class="add-btn" (click)="addFamily()" [disabled]="!selectedFamilyToAdd || addingFamily">
+                    @if (addingFamily) {
+                      <ion-spinner name="crescent" class="btn-spinner"></ion-spinner>
+                    } @else {
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                      </svg>
+                    }
+                    Añadir familiar
+                  </button>
+                </div>
+              }
+
+              @if (families.length === 0) {
+                <p class="empty-hint">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+                  </svg>
+                  Este usuario no tiene familiares vinculados.
+                </p>
+              } @else {
+                <button class="save-btn" (click)="saveFamilies()" [disabled]="familySaving">
+                  @if (familySaving) {
+                    <ion-spinner name="crescent" class="btn-spinner"></ion-spinner>
                   }
-                </tbody>
-              </table>
-            </div>
-          }
+                  @if (!familySaving) {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+                      <polyline points="17 21 17 13 7 13 7 21"/>
+                      <polyline points="7 3 7 8 15 8"/>
+                    </svg>
+                  }
+                  Guardar familiares con acceso
+                </button>
+              }
+
+            }
+          </div>
 
         }
 
         <!-- ── Sección: profesionales ──────────────────────────────── -->
         @else if (activeSection === 'professionals') {
 
-          @if (professionalsLoading) {
-            <div class="us-boards-state">
-              <ion-spinner name="crescent" color="primary"></ion-spinner>
+          <div class="card-section">
+            <div class="sec-head">
+              <div class="sec-head-left">
+                <div class="sec-dot sec-dot--mint"></div>
+                <h2 class="sec-title">Profesionales encargados</h2>
+              </div>
+              @if (!professionalsLoading && !professionalsError) {
+                <span class="count-badge">{{ professionals.length }}</span>
+              }
             </div>
-          } @else if (professionalsError) {
-            <div class="us-boards-state us-boards-state--error">{{ professionalsError }}</div>
-          } @else if (professionals.length === 0) {
-            <div class="us-boards-empty">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
-                <rect x="2" y="7" width="20" height="14" rx="2"/>
-                <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>
-              </svg>
-              <span>Este usuario no tiene profesionales asignados.</span>
-            </div>
-          } @else {
-            <div class="us-perms-table-wrap">
-              <table class="us-perms-table">
-                <thead>
-                  <tr>
-                    <th class="us-perms-col-person">Profesional</th>
-                    <th>Estadísticas</th>
-                    <th>Tableros</th>
-                    <th>Datos pers.</th>
-                    <th>Pictos</th>
-                    <th>Asig. prof.</th>
-                    <th>Asig. fam.</th>
-                    <th>Ver tableros</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (row of professionals; track row.professionalId) {
+
+            @if (professionalsLoading || professionalsError) {
+              <app-loading-error-state
+                [loading]="professionalsLoading"
+                [error]="professionalsError"
+                loadingText="Cargando profesionales…"
+                [padding]="'36px 0 24px'">
+              </app-loading-error-state>
+            } @else {
+
+              <div class="table-scroll-wrap">
+                <table class="prof-table">
+                  <thead>
                     <tr>
-                      <td class="us-perms-col-person">
-                        <div class="us-perms-person">
-                          @if (row.image) {
-                            <img [src]="row.image" class="us-perms-avatar" alt=""/>
-                          } @else {
-                            <span class="us-perms-avatar-initial">{{ row.name.charAt(0).toUpperCase() }}</span>
-                          }
-                          <div class="us-perms-info">
-                            <span class="us-perms-name">{{ row.name }} {{ row.surname }}</span>
-                            <span class="us-perms-email">{{ row.email }}</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td><ion-checkbox [checked]="row.canViewStats"           (ionChange)="row.canViewStats           = $any($event).detail.checked"></ion-checkbox></td>
-                      <td><ion-checkbox [checked]="row.canEditBoards"          (ionChange)="row.canEditBoards          = $any($event).detail.checked"></ion-checkbox></td>
-                      <td><ion-checkbox [checked]="row.canEditPersonalData"    (ionChange)="row.canEditPersonalData    = $any($event).detail.checked"></ion-checkbox></td>
-                      <td><ion-checkbox [checked]="row.canAddPictograms"       (ionChange)="row.canAddPictograms       = $any($event).detail.checked"></ion-checkbox></td>
-                      <td><ion-checkbox [checked]="row.canAssignProfessionals" (ionChange)="row.canAssignProfessionals = $any($event).detail.checked"></ion-checkbox></td>
-                      <td><ion-checkbox [checked]="row.canAssignFamilies"      (ionChange)="row.canAssignFamilies      = $any($event).detail.checked"></ion-checkbox></td>
-                      <td><ion-checkbox [checked]="row.canViewAssignedBoards"  (ionChange)="row.canViewAssignedBoards  = $any($event).detail.checked"></ion-checkbox></td>
-                      <td>
-                        <button class="us-perms-save-btn"
-                                [class.us-perms-save-btn--saved]="row.saved"
-                                [disabled]="row.saving"
-                                (click)="saveProfRow(row)">
-                          @if (row.saving) {
-                            <ion-spinner name="crescent" style="width:13px;height:13px"></ion-spinner>
-                          } @else if (row.saved) {
-                            ✓ Guardado
-                          } @else {
-                            Guardar
-                          }
-                        </button>
-                      </td>
+                      <th class="th-prof">Profesional</th>
+                      <th class="th-center">Datos personales</th>
+                      <th class="th-center">Crear tableros</th>
+                      <th class="th-center">Estadísticas</th>
+                      <th class="th-center">Añadir pictogramas</th>
+                      <th class="th-center">Asignar profesionales</th>
+                      <th class="th-center">Asignar familiares</th>
+                      <th class="th-center">Ver tableros asignados</th>
                     </tr>
+                  </thead>
+                  <tbody>
+                    @for (row of professionals; track row.professionalId) {
+                      <tr class="prof-row">
+                        <td class="td-prof">
+                          <div class="prof-info">
+                            <div class="prof-avatar">
+                              @if (row.image) {
+                                <img [src]="row.image" [alt]="row.name" class="avatar-img"/>
+                              } @else {
+                                <span class="avatar-initial">{{ row.name.charAt(0).toUpperCase() }}</span>
+                              }
+                            </div>
+                            <div class="prof-meta">
+                              <span class="prof-fullname">{{ row.name }} {{ row.surname }}</span>
+                              <span class="prof-email">{{ row.email }}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="td-center"><button class="perm-chip" [class.perm-chip--on]="row.canEditPersonalData"    (click)="row.canEditPersonalData    = !row.canEditPersonalData">    @if(row.canEditPersonalData){<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Sí}@else{No}</button></td>
+                        <td class="td-center"><button class="perm-chip" [class.perm-chip--on]="row.canEditBoards"          (click)="row.canEditBoards          = !row.canEditBoards">          @if(row.canEditBoards){<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Sí}@else{No}</button></td>
+                        <td class="td-center"><button class="perm-chip" [class.perm-chip--on]="row.canViewStats"           (click)="row.canViewStats           = !row.canViewStats">           @if(row.canViewStats){<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Sí}@else{No}</button></td>
+                        <td class="td-center"><button class="perm-chip" [class.perm-chip--on]="row.canAddPictograms"       (click)="row.canAddPictograms       = !row.canAddPictograms">       @if(row.canAddPictograms){<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Sí}@else{No}</button></td>
+                        <td class="td-center"><button class="perm-chip" [class.perm-chip--on]="row.canAssignProfessionals" (click)="row.canAssignProfessionals = !row.canAssignProfessionals"> @if(row.canAssignProfessionals){<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Sí}@else{No}</button></td>
+                        <td class="td-center"><button class="perm-chip" [class.perm-chip--on]="row.canAssignFamilies"      (click)="row.canAssignFamilies      = !row.canAssignFamilies">      @if(row.canAssignFamilies){<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Sí}@else{No}</button></td>
+                        <td class="td-center"><button class="perm-chip" [class.perm-chip--on]="row.canViewAssignedBoards"  (click)="row.canViewAssignedBoards  = !row.canViewAssignedBoards">  @if(row.canViewAssignedBoards){<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Sí}@else{No}</button></td>
+                      </tr>
+                    }
+                    @if (professionals.length === 0) {
+                      <tr class="help-row">
+                        <td class="td-prof"><div class="prof-info"><div class="prof-avatar prof-avatar--ghost"></div><div class="prof-meta"><span class="prof-fullname help-text">Nombre Apellidos</span><span class="prof-email help-text">correo@ejemplo.com</span></div></div></td>
+                        <td class="td-center"><span class="perm-chip perm-chip--example">No</span></td>
+                        <td class="td-center"><span class="perm-chip perm-chip--example">No</span></td>
+                        <td class="td-center"><span class="perm-chip perm-chip--example">No</span></td>
+                        <td class="td-center"><span class="perm-chip perm-chip--example">No</span></td>
+                        <td class="td-center"><span class="perm-chip perm-chip--example">No</span></td>
+                        <td class="td-center"><span class="perm-chip perm-chip--example">No</span></td>
+                        <td class="td-center"><span class="perm-chip perm-chip--example">No</span></td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+
+              @if (availableProfessionals.length > 0) {
+                <div class="add-row">
+                  <select class="add-select" [(ngModel)]="selectedProfToAdd">
+                    <option value="">— Seleccionar profesional —</option>
+                    @for (p of availableProfessionals; track p._id) {
+                      <option [value]="p._id">{{ p.name }} {{ p.surname }} — {{ p.email }}</option>
+                    }
+                  </select>
+                  <button class="add-btn" (click)="addProfessional()" [disabled]="!selectedProfToAdd">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <line x1="12" y1="5" x2="12" y2="19"/>
+                      <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Añadir profesional
+                  </button>
+                </div>
+              }
+
+              @if (professionals.length === 0) {
+                <p class="empty-hint">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+                  </svg>
+                  Este usuario no tiene profesionales asignados.
+                </p>
+              } @else {
+                <button class="save-btn" (click)="saveProfessionals()" [disabled]="profSaving">
+                  @if (profSaving) {
+                    <ion-spinner name="crescent" class="btn-spinner"></ion-spinner>
                   }
-                </tbody>
-              </table>
-            </div>
-          }
+                  @if (!profSaving) {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+                      <polyline points="17 21 17 13 7 13 7 21"/>
+                      <polyline points="7 3 7 8 15 8"/>
+                    </svg>
+                  }
+                  Guardar profesionales encargados
+                </button>
+              }
+
+            }
+          </div>
 
         }
 
@@ -268,4 +377,5 @@
 
   }
 
+</div>
 </ion-content>
