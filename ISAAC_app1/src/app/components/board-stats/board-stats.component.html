@@ -17,8 +17,27 @@
   <div class="bs-layout">
 
     <!-- ── Columna izquierda: lista ── -->
-    <div class="bs-list">
-      @for (b of boards; track b.boardId) {
+    <div class="bs-list-col">
+      <div class="bs-search-wrap">
+        <ion-icon name="search-outline" class="bs-search-icon"></ion-icon>
+        <input
+          class="bs-search-input"
+          type="text"
+          placeholder="Buscar tablero…"
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="onSearch()"/>
+        @if (searchTerm) {
+          <button class="bs-search-clear" (click)="searchTerm = ''; onSearch()">
+            <ion-icon name="close-outline"></ion-icon>
+          </button>
+        }
+      </div>
+
+      <div class="bs-list">
+        @if (filteredBoards.length === 0) {
+          <div class="bs-search-empty">Sin resultados</div>
+        }
+        @for (b of filteredBoards; track b.boardId) {
         <div
           class="bs-card"
           [class.bs-card--selected]="selectedBoard?.boardId === b.boardId"
@@ -52,7 +71,8 @@
 
         </div>
       }
-    </div>
+      </div><!-- /bs-list -->
+    </div><!-- /bs-list-col -->
 
     <!-- ── Columna derecha: detalle ── -->
     <div class="bs-detail">

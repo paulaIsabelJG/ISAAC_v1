@@ -3,7 +3,8 @@ import {
   ChangeDetectionStrategy, ChangeDetectorRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonicModule } from '@ionic/angular';
+import { FormsModule }  from '@angular/forms';
+import { IonicModule }  from '@ionic/angular';
 import { firstValueFrom } from 'rxjs';
 
 import {
@@ -51,15 +52,32 @@ function calcInsight(b: BoardStat): { type: 'ok' | 'warn' | 'alert'; text: strin
   styleUrls:   ['./board-stats.component.scss'],
   standalone:  true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, IonicModule],
+  imports: [CommonModule, FormsModule, IonicModule],
 })
 export class BoardStatsComponent implements OnChanges {
   @Input() filters: StatsFilters = {};
 
   boards:        BoardStat[]    = [];
   selectedBoard: BoardStat | null = null;
-  loading = false;
-  error   = false;
+  loading    = false;
+  error      = false;
+  searchTerm = '';
+
+  get filteredBoards(): BoardStat[] {
+    const term = this.searchTerm.toLowerCase().trim();
+    if (!term) return this.boards;
+    return this.boards.filter(b =>
+      (b.name   ?? '').toLowerCase().includes(term) ||
+      b.boardId.toLowerCase().includes(term)
+    );
+  }
+
+  onSearch(): void {
+    if (this.selectedBoard && !this.filteredBoards.some(b => b.boardId === this.selectedBoard!.boardId)) {
+      this.selectedBoard = this.filteredBoards[0] ?? null;
+    }
+    this.cdr.markForCheck();
+  }
 
   constructor(
     private statsSvc: AacStatisticsService,

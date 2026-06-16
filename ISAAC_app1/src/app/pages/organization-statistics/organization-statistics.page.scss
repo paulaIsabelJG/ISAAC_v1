@@ -37,8 +37,10 @@ $orange-l:   #fff3eb;
 }
 
 .os-main {
-  overflow-y: auto;
-  height: 100%;
+  display:        flex;
+  flex-direction: column;
+  overflow-y:     auto;
+  height:         100%;
   scrollbar-width: thin;
   scrollbar-color: $border transparent;
   &::-webkit-scrollbar       { width: 4px; }
@@ -160,6 +162,21 @@ $orange-l:   #fff3eb;
 // ── Sección general ───────────────────────────────────────────────────────────
 .os-section {
   padding: 20px 20px 0;
+}
+
+// Sección tableros: ocupa todo el espacio restante sin cálculos de píxeles
+.os-section--fill {
+  flex:           1;
+  min-height:     0;
+  overflow:       hidden;
+  display:        flex;
+  flex-direction: column;
+  padding-bottom: 0;
+
+  @media (max-width: 768px) {
+    flex:     none;
+    overflow: visible;
+  }
 }
 
 // ── Grid de gráficas (ion-grid) ───────────────────────────────────────────────
