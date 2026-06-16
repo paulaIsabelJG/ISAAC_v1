@@ -2,7 +2,7 @@ import { Component, OnInit, ViewChildren, QueryList } from '@angular/core';
 import { IonicModule, AlertController, ToastController } from '@ionic/angular';
 import { CommonModule }      from '@angular/common';
 import { FormsModule }       from '@angular/forms';
-import { Router }            from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { firstValueFrom }    from 'rxjs';
 import type { EChartsOption } from 'echarts';
 
@@ -21,6 +21,7 @@ import { PhraseLogCardComponent }          from '../../components/phrase-log-car
 import { StatisticsPdfExportService, StatsPdfMeta } from '../../services/statistics-pdf-export.service';
 import { OrgSidebarComponent }             from '../../components/org-sidebar/org-sidebar.component';
 import { BoardStatsComponent }             from '../../components/board-stats/board-stats.component';
+import { AppPageHeaderComponent }          from '../../components/app-page-header/app-page-header.component';
 
 export type DashSection = 'resumen' | 'tableros' | 'frases' | 'exportacion';
 
@@ -38,6 +39,7 @@ export type DashSection = 'resumen' | 'tableros' | 'frases' | 'exportacion';
     PhraseLogCardComponent,
     OrgSidebarComponent,
     BoardStatsComponent,
+    AppPageHeaderComponent,
   ],
 })
 export class OrganizationStatisticsPage implements OnInit {
@@ -118,8 +120,16 @@ export class OrganizationStatisticsPage implements OnInit {
     ':home':       'Inicio',
   };
 
+  /** URL de retorno cuando se llega desde user-session u otra página. */
+  returnTo = '';
+
+  /** true cuando se entra pre-filtrado por usuario (desde user-session). */
+  lockedToUser  = false;
+  lockedUserName = '';
+
   constructor(
     private router:      Router,
+    private route:       ActivatedRoute,
     private authSvc:     AuthService,
     private userSvc:     UserService,
     private boardSvc:    BoardService,
@@ -130,7 +140,22 @@ export class OrganizationStatisticsPage implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.orgName       = this.authSvc.getCurrentUser()?.name || 'Organización';
+    this.orgName = this.authSvc.getCurrentUser()?.name || 'Organización';
+
+    // Pre-filtrar por usuario si se viene desde user-session (u otra página con userId)
+    const qp = this.route.snapshot.queryParamMap;
+    const preUserId  = qp.get('userId');
+    if (preUserId) {
+      this.filterUserId   = preUserId;
+      this.lockedToUser   = true;
+      this.lockedUserName = qp.get('userName') ?? '';
+      // Cargar tableros asignados del usuario para el selector de exportación
+      firstValueFrom(this.boardSvc.getAssignedBoards(preUserId))
+        .then(res => { this.assignedBoards = res.boards; })
+        .catch(() => { this.assignedBoards = []; });
+    }
+    this.returnTo = qp.get('returnTo') ?? '';
+
     this.appliedFilters = this.filters();
     this.loadAll();
     this.loadUserList();
@@ -452,7 +477,9 @@ export class OrganizationStatisticsPage implements OnInit {
 
   // ── Navegación ────────────────────────────────────────────────────────────
 
-  goBack(): void { this.router.navigate(['/organization-dashboard']); }
+  goBack(): void {
+    this.router.navigateByUrl(this.returnTo || '/organization-dashboard');
+  }
 
   // ── Constructores de opciones ECharts ────────────────────────────────────
 

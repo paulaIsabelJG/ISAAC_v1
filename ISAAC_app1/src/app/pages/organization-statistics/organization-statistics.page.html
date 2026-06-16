@@ -1,15 +1,27 @@
+@if (lockedToUser) {
+  <app-page-header
+    [title]="'Estadísticas de ' + (lockedUserName || filterUserName)"
+    [backHref]="returnTo"
+    (backClick)="goBack()">
+  </app-page-header>
+}
+
 <ion-content class="os-content">
-<div class="os-layout">
-  <app-org-sidebar activeItem="stats"></app-org-sidebar>
+<div class="os-layout" [class.os-layout--no-sidebar]="lockedToUser">
+  @if (!lockedToUser) {
+    <app-org-sidebar activeItem="stats"></app-org-sidebar>
+  }
   <div class="os-main">
 
   <!-- ════════════════════ CABECERA ════════════════════ -->
-  <div class="os-header">
-    <div class="os-header-text">
-      <h1 class="os-title">Estadísticas</h1>
-      <p class="os-subtitle">{{ orgName }}</p>
+  @if (!lockedToUser) {
+    <div class="os-header">
+      <div class="os-header-text">
+        <h1 class="os-title">Estadísticas</h1>
+        <p class="os-subtitle">{{ orgName }}</p>
+      </div>
     </div>
-  </div>
+  }
 
   <!-- ════════════════════ BARRA DE FILTROS ════════════════════ -->
   <div class="os-filters-bar">
@@ -24,16 +36,18 @@
       <input class="os-filter-input" type="date" [(ngModel)]="filterTo"/>
     </div>
 
-    <div class="os-filter-field">
-      <label class="os-filter-label">Ámbito</label>
-      <select class="os-filter-input os-filter-select" [(ngModel)]="filterScope" (ngModelChange)="onScopeChange()">
-        @for (opt of scopeOptions; track opt.value) {
-          <option [value]="opt.value">{{ opt.value === 'all' ? orgName : opt.label }}</option>
-        }
-      </select>
-    </div>
+    @if (!lockedToUser) {
+      <div class="os-filter-field">
+        <label class="os-filter-label">Ámbito</label>
+        <select class="os-filter-input os-filter-select" [(ngModel)]="filterScope" (ngModelChange)="onScopeChange()">
+          @for (opt of scopeOptions; track opt.value) {
+            <option [value]="opt.value">{{ opt.value === 'all' ? orgName : opt.label }}</option>
+          }
+        </select>
+      </div>
+    }
 
-    @if (filteredUserList.length > 0) {
+    @if (filteredUserList.length > 0 && !lockedToUser) {
       <div class="os-filter-field">
         <label class="os-filter-label">Usuario</label>
         <select class="os-filter-input os-filter-select" [(ngModel)]="filterUserId" (ngModelChange)="onUserFilterChange()">
@@ -213,7 +227,7 @@
 
   <!-- ════════════════════ SECCIÓN: EXPORTACIÓN ════════════════════ -->
   @if (activeSection === 'exportacion') {
-    <div class="os-section">
+    <div class="os-section os-section--fill os-section--center">
 
       <div class="os-export-form">
 
@@ -278,7 +292,7 @@
     </div>
   }
 
-  @if (activeSection !== 'tableros') {
+  @if (activeSection !== 'tableros' && activeSection !== 'exportacion') {
     <div class="os-bottom-spacer"></div>
   }
 

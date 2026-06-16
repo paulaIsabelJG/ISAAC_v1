@@ -333,6 +333,9 @@ export class CommunicatorPage implements OnInit, OnDestroy {
           data.speakTimestamp ?? speakTimestamp,
           tokensForLog,
         );
+        // Flush inmediato: el evento IA no debe esperar a acumular 10 eventos
+        // ni al cierre de sesión; así se persiste aunque el usuario salga enseguida.
+        this.aac.flushEvents();
       }
 
       // Cierre definitivo de frase: limpia toda la frase, resetea navegación
@@ -512,7 +515,21 @@ export class CommunicatorPage implements OnInit, OnDestroy {
       }
       if (!pict) return;
 
-      // Registrar OBL con category_id y category_label para que el predictor aprenda
+      // Añadir a la frase primero para que currentPhraseId quede fijado antes de
+      // logButtonEvent (igual que handlePictogramPress en tableros de cuadrícula).
+      this.aac.addToPhrase({
+        id:                pict.label,
+        label:             pict.label,
+        imageUrl:          pict.imageUrl,
+        sound:             pict.label,
+        boardId:           this.board!._id,
+        color:             pict.color,
+        wordType:          pict.wordType,
+        fitzgeraldEnabled: false,
+      }, { type: 'none' });
+
+      // Registrar OBL con category_id y category_label para que el predictor aprenda.
+      // Se llama después de addToPhrase para que el evento lleve ext_isaac_phrase_id.
       this.aac.logButtonEvent({
         label:          pict.label,
         vocalization:   pict.label,
@@ -527,17 +544,6 @@ export class CommunicatorPage implements OnInit, OnDestroy {
         category_label: pict.categoryLabel,
       });
 
-      // Añadir a la frase y hablar
-      this.aac.addToPhrase({
-        id:                pict.label,
-        label:             pict.label,
-        imageUrl:          pict.imageUrl,
-        sound:             pict.label,
-        boardId:           this.board!._id,
-        color:             pict.color,
-        wordType:          pict.wordType,
-        fitzgeraldEnabled: false,
-      }, { type: 'none' });
       this.aac.speakText(pict.label, this.gender);
 
       // Recargar predictor con la nueva frase, manteniendo categoría activa

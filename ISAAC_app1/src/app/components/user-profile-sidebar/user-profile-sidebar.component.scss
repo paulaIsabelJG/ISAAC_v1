@@ -135,6 +135,18 @@ $text-muted: #6b5462;
   border-radius: 8px;
 }
 
+.ups-nav-svg {
+  flex:        0 0 44px;
+  width:       44px;
+  height:      44px;
+  display:     block;
+  stroke:      currentColor;
+  padding:     7px;
+  box-sizing:  border-box;
+  border-radius: 8px;
+  background:  rgba(0,0,0,0.03);
+}
+
 .ups-nav-label {
   flex:        1;
   line-height: 1.25;

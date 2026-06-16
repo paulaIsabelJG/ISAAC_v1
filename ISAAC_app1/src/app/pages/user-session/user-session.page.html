@@ -1,3 +1,12 @@
+@if (activeSection !== 'boards' && !isLoading && !loadError) {
+  <app-page-header
+    [title]="activeSection === 'family'
+      ? 'Familiares de ' + (targetUser?.name || '')
+      : 'Profesionales de ' + (targetUser?.name || '')"
+    (backClick)="goBackToBoards()">
+  </app-page-header>
+}
+
 <ion-content class="us-content">
 
   @if (voiceLoadingBanner) {
@@ -11,78 +20,246 @@
     <app-loading-error-state [loading]="isLoading" [error]="loadError"></app-loading-error-state>
   } @else {
 
-    <div class="us-layout">
+    <div class="us-layout" [class.us-layout--no-sidebar]="activeSection !== 'boards'">
 
       <!-- ═══════════════════════════════════════════════ SIDEBAR ══ -->
-      <app-user-profile-sidebar
-        [user]="targetUser"
-        [avatarUrl]="avatarUrl"
-        [fromLogin]="fromLogin"
-        [permissions]="permissions"
-        (navSelect)="onNavSelect($event)">
-      </app-user-profile-sidebar>
+      @if (activeSection === 'boards') {
+        <app-user-profile-sidebar
+          [user]="targetUser"
+          [avatarUrl]="avatarUrl"
+          [fromLogin]="fromLogin"
+          [permissions]="permissions"
+          [activeSection]="activeSection"
+          (navSelect)="onNavSelect($event)">
+        </app-user-profile-sidebar>
+      }
 
       <!-- ════════════════════════════════════════════════ MAIN ═════ -->
       <main class="us-main">
 
-        <div class="us-main-header">
-          <div class="us-title-group">
-            <h1 class="us-section-title">TABLEROS PROPIOS</h1>
-            @if (!boardsLoading) {
-              <span class="us-section-count">{{ assignedBoards.length }}</span>
+        <!-- ── Sección: tableros ───────────────────────────────────── -->
+        @if (activeSection === 'boards') {
+
+          <div class="us-main-header">
+            <div class="us-title-group">
+              <h1 class="us-section-title">TABLEROS PROPIOS</h1>
+              @if (!boardsLoading) {
+                <span class="us-section-count">{{ assignedBoards.length }}</span>
+              }
+            </div>
+            @if (permissions.canEditBoards) {
+              <button class="us-new-board-btn" (click)="goToBoardBuilder()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Nuevo tablero
+              </button>
             }
           </div>
-          @if (permissions.canEditBoards) {
-            <button class="us-new-board-btn" (click)="goToBoardBuilder()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <line x1="12" y1="5" x2="12" y2="19"/>
-                <line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-              Nuevo tablero
-            </button>
-          }
-        </div>
 
-        @if (isDownloading) {
-          <div class="us-downloading-bar">
-            <ion-spinner name="crescent" color="secondary"></ion-spinner>
-            <span>Generando archivo…</span>
-          </div>
+          @if (isDownloading) {
+            <div class="us-downloading-bar">
+              <ion-spinner name="crescent" color="secondary"></ion-spinner>
+              <span>Generando archivo…</span>
+            </div>
+          }
+
+          @if (boardsLoading) {
+            <div class="us-boards-state">
+              <ion-spinner name="crescent" color="primary"></ion-spinner>
+            </div>
+          } @else if (boardsError) {
+            <div class="us-boards-state us-boards-state--error">{{ boardsError }}</div>
+          } @else if (assignedBoards.length === 0) {
+            <div class="us-boards-empty">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+                <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+                <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+                <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+                <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+              </svg>
+              <span>Aún no hay tableros principales asignados a este usuario.</span>
+            </div>
+          } @else {
+            <div class="us-boards-grid">
+              @for (board of assignedBoards; track board._id) {
+                <div class="us-board-wrapper"
+                     (pointerdown)="startHold($event, board)"
+                     (pointerup)="cancelHold()"
+                     (pointermove)="onHoldPointerMove($event)"
+                     (pointerleave)="cancelHold()"
+                     (click)="onBoardCardClick(board)">
+                  <app-user-board-card
+                    [board]="board"
+                    [showHold]="holdBoardId === board._id && holdProgress >= 25"
+                    [holdProgress]="holdProgress">
+                  </app-user-board-card>
+                </div>
+              }
+            </div>
+          }
+
         }
 
-        @if (boardsLoading) {
-          <div class="us-boards-state">
-            <ion-spinner name="crescent" color="primary"></ion-spinner>
-          </div>
-        } @else if (boardsError) {
-          <div class="us-boards-state us-boards-state--error">{{ boardsError }}</div>
-        } @else if (assignedBoards.length === 0) {
-          <div class="us-boards-empty">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
-              <rect x="3" y="3" width="7" height="7" rx="1.5"/>
-              <rect x="14" y="3" width="7" height="7" rx="1.5"/>
-              <rect x="3" y="14" width="7" height="7" rx="1.5"/>
-              <rect x="14" y="14" width="7" height="7" rx="1.5"/>
-            </svg>
-            <span>Aún no hay tableros principales asignados a este usuario.</span>
-          </div>
-        } @else {
-          <div class="us-boards-grid">
-            @for (board of assignedBoards; track board._id) {
-              <div class="us-board-wrapper"
-                   (pointerdown)="startHold($event, board)"
-                   (pointerup)="cancelHold()"
-                   (pointermove)="onHoldPointerMove($event)"
-                   (pointerleave)="cancelHold()"
-                   (click)="onBoardCardClick(board)">
-                <app-user-board-card
-                  [board]="board"
-                  [showHold]="holdBoardId === board._id && holdProgress >= 25"
-                  [holdProgress]="holdProgress">
-                </app-user-board-card>
-              </div>
-            }
-          </div>
+        <!-- ── Sección: familiares ─────────────────────────────────── -->
+        @else if (activeSection === 'family') {
+
+          @if (familiesLoading) {
+            <div class="us-boards-state">
+              <ion-spinner name="crescent" color="primary"></ion-spinner>
+            </div>
+          } @else if (familiesError) {
+            <div class="us-boards-state us-boards-state--error">{{ familiesError }}</div>
+          } @else if (families.length === 0) {
+            <div class="us-boards-empty">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 00-3-3.87"/>
+                <path d="M16 3.13a4 4 0 010 7.75"/>
+              </svg>
+              <span>Este usuario no tiene familiares vinculados.</span>
+            </div>
+          } @else {
+            <div class="us-perms-table-wrap">
+              <table class="us-perms-table">
+                <thead>
+                  <tr>
+                    <th class="us-perms-col-person">Familiar</th>
+                    <th>Estadísticas</th>
+                    <th>Tableros</th>
+                    <th>Datos pers.</th>
+                    <th>Pictos</th>
+                    <th>Asig. prof.</th>
+                    <th>Asig. fam.</th>
+                    <th>Ver tableros</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of families; track row.parentId) {
+                    <tr>
+                      <td class="us-perms-col-person">
+                        <div class="us-perms-person">
+                          @if (row.image) {
+                            <img [src]="row.image" class="us-perms-avatar" alt=""/>
+                          } @else {
+                            <span class="us-perms-avatar-initial">{{ row.name.charAt(0).toUpperCase() }}</span>
+                          }
+                          <div class="us-perms-info">
+                            <span class="us-perms-name">{{ row.name }} {{ row.surname }}</span>
+                            <span class="us-perms-email">{{ row.email }}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td><ion-checkbox [checked]="row.canViewStats"           (ionChange)="row.canViewStats           = $any($event).detail.checked"></ion-checkbox></td>
+                      <td><ion-checkbox [checked]="row.canEditBoards"          (ionChange)="row.canEditBoards          = $any($event).detail.checked"></ion-checkbox></td>
+                      <td><ion-checkbox [checked]="row.canEditPersonalData"    (ionChange)="row.canEditPersonalData    = $any($event).detail.checked"></ion-checkbox></td>
+                      <td><ion-checkbox [checked]="row.canAddPictograms"       (ionChange)="row.canAddPictograms       = $any($event).detail.checked"></ion-checkbox></td>
+                      <td><ion-checkbox [checked]="row.canAssignProfessionals" (ionChange)="row.canAssignProfessionals = $any($event).detail.checked"></ion-checkbox></td>
+                      <td><ion-checkbox [checked]="row.canAssignFamilies"      (ionChange)="row.canAssignFamilies      = $any($event).detail.checked"></ion-checkbox></td>
+                      <td><ion-checkbox [checked]="row.canViewAssignedBoards"  (ionChange)="row.canViewAssignedBoards  = $any($event).detail.checked"></ion-checkbox></td>
+                      <td>
+                        <button class="us-perms-save-btn"
+                                [class.us-perms-save-btn--saved]="row.saved"
+                                [disabled]="row.saving"
+                                (click)="saveFamilyRow(row)">
+                          @if (row.saving) {
+                            <ion-spinner name="crescent" style="width:13px;height:13px"></ion-spinner>
+                          } @else if (row.saved) {
+                            ✓ Guardado
+                          } @else {
+                            Guardar
+                          }
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+
+        }
+
+        <!-- ── Sección: profesionales ──────────────────────────────── -->
+        @else if (activeSection === 'professionals') {
+
+          @if (professionalsLoading) {
+            <div class="us-boards-state">
+              <ion-spinner name="crescent" color="primary"></ion-spinner>
+            </div>
+          } @else if (professionalsError) {
+            <div class="us-boards-state us-boards-state--error">{{ professionalsError }}</div>
+          } @else if (professionals.length === 0) {
+            <div class="us-boards-empty">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+                <rect x="2" y="7" width="20" height="14" rx="2"/>
+                <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>
+              </svg>
+              <span>Este usuario no tiene profesionales asignados.</span>
+            </div>
+          } @else {
+            <div class="us-perms-table-wrap">
+              <table class="us-perms-table">
+                <thead>
+                  <tr>
+                    <th class="us-perms-col-person">Profesional</th>
+                    <th>Estadísticas</th>
+                    <th>Tableros</th>
+                    <th>Datos pers.</th>
+                    <th>Pictos</th>
+                    <th>Asig. prof.</th>
+                    <th>Asig. fam.</th>
+                    <th>Ver tableros</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of professionals; track row.professionalId) {
+                    <tr>
+                      <td class="us-perms-col-person">
+                        <div class="us-perms-person">
+                          @if (row.image) {
+                            <img [src]="row.image" class="us-perms-avatar" alt=""/>
+                          } @else {
+                            <span class="us-perms-avatar-initial">{{ row.name.charAt(0).toUpperCase() }}</span>
+                          }
+                          <div class="us-perms-info">
+                            <span class="us-perms-name">{{ row.name }} {{ row.surname }}</span>
+                            <span class="us-perms-email">{{ row.email }}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td><ion-checkbox [checked]="row.canViewStats"           (ionChange)="row.canViewStats           = $any($event).detail.checked"></ion-checkbox></td>
+                      <td><ion-checkbox [checked]="row.canEditBoards"          (ionChange)="row.canEditBoards          = $any($event).detail.checked"></ion-checkbox></td>
+                      <td><ion-checkbox [checked]="row.canEditPersonalData"    (ionChange)="row.canEditPersonalData    = $any($event).detail.checked"></ion-checkbox></td>
+                      <td><ion-checkbox [checked]="row.canAddPictograms"       (ionChange)="row.canAddPictograms       = $any($event).detail.checked"></ion-checkbox></td>
+                      <td><ion-checkbox [checked]="row.canAssignProfessionals" (ionChange)="row.canAssignProfessionals = $any($event).detail.checked"></ion-checkbox></td>
+                      <td><ion-checkbox [checked]="row.canAssignFamilies"      (ionChange)="row.canAssignFamilies      = $any($event).detail.checked"></ion-checkbox></td>
+                      <td><ion-checkbox [checked]="row.canViewAssignedBoards"  (ionChange)="row.canViewAssignedBoards  = $any($event).detail.checked"></ion-checkbox></td>
+                      <td>
+                        <button class="us-perms-save-btn"
+                                [class.us-perms-save-btn--saved]="row.saved"
+                                [disabled]="row.saving"
+                                (click)="saveProfRow(row)">
+                          @if (row.saving) {
+                            <ion-spinner name="crescent" style="width:13px;height:13px"></ion-spinner>
+                          } @else if (row.saved) {
+                            ✓ Guardado
+                          } @else {
+                            Guardar
+                          }
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+
         }
 
       </main>

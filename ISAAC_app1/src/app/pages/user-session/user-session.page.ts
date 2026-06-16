@@ -8,12 +8,18 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { buildSafeUrl as buildSafeUrlUtil } from '../../shared/utils/image.utils';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
-import { UserService, FullBackendUser } from '../../services/user.service';
+import {
+  UserService,
+  FullBackendUser,
+  ChildrenAccessEntry,
+  AssignedProfessionalPayload,
+} from '../../services/user.service';
 import { BoardService, Board } from '../../services/board.service';
 import { TtsService } from '../../services/tts.service';
 import { AacRuntimeService } from '../../services/aac-runtime.service';
 import { ObfExportService } from '../../services/obf-export.service';
 import { BoardPdfExportService } from '../../services/board-pdf-export.service';
+import { AppPageHeaderComponent } from '../../components/app-page-header/app-page-header.component';
 import { LoadingErrorStateComponent } from '../../components/loading-error-state/loading-error-state.component';
 import {
   UserProfileSidebarComponent,
@@ -21,12 +27,47 @@ import {
 } from '../../components/user-profile-sidebar/user-profile-sidebar.component';
 import { UserBoardCardComponent } from '../../components/user-board-card/user-board-card.component';
 
+interface FamilyRow {
+  parentId:               string;
+  name:                   string;
+  surname:                string;
+  email:                  string;
+  image?:                 string | null;
+  fullChildrenAccess:     ChildrenAccessEntry[];
+  canViewStats:           boolean;
+  canEditBoards:          boolean;
+  canEditPersonalData:    boolean;
+  canAddPictograms:       boolean;
+  canAssignProfessionals: boolean;
+  canAssignFamilies:      boolean;
+  canViewAssignedBoards:  boolean;
+  saving:                 boolean;
+  saved:                  boolean;
+}
+
+interface ProfRow {
+  professionalId:         string;
+  name:                   string;
+  surname:                string;
+  email:                  string;
+  image?:                 string | null;
+  canViewStats:           boolean;
+  canEditBoards:          boolean;
+  canEditPersonalData:    boolean;
+  canAddPictograms:       boolean;
+  canAssignProfessionals: boolean;
+  canAssignFamilies:      boolean;
+  canViewAssignedBoards:  boolean;
+  saving:                 boolean;
+  saved:                  boolean;
+}
+
 @Component({
   selector: 'app-user-session',
   templateUrl: './user-session.page.html',
   styleUrls:  ['./user-session.page.scss'],
   standalone: true,
-  imports: [IonicModule, LoadingErrorStateComponent, UserProfileSidebarComponent, UserBoardCardComponent],
+  imports: [IonicModule, AppPageHeaderComponent, LoadingErrorStateComponent, UserProfileSidebarComponent, UserBoardCardComponent],
 })
 export class UserSessionPage implements OnInit, OnDestroy {
 
@@ -42,6 +83,21 @@ export class UserSessionPage implements OnInit, OnDestroy {
 
   isLoading = true;
   loadError = '';
+
+  // ── Sección activa ────────────────────────────────────────────────────────────
+  activeSection: 'boards' | 'family' | 'professionals' = 'boards';
+
+  // ── Familiares ────────────────────────────────────────────────────────────────
+  families:        FamilyRow[] = [];
+  familiesLoading  = false;
+  familiesError    = '';
+  familiesLoaded   = false;
+
+  // ── Profesionales ─────────────────────────────────────────────────────────────
+  professionals:        ProfRow[] = [];
+  professionalsLoading  = false;
+  professionalsError    = '';
+  professionalsLoaded   = false;
 
   assignedBoards: Board[] = [];
   boardsLoading  = true;
@@ -82,6 +138,9 @@ export class UserSessionPage implements OnInit, OnDestroy {
   }
 
   ionViewWillEnter(): void {
+    this.activeSection       = 'boards';
+    this.familiesLoaded      = false;
+    this.professionalsLoaded = false;
     if (this.userId) {
       void this.loadData();
       void this.loadBoards();
@@ -191,11 +250,32 @@ export class UserSessionPage implements OnInit, OnDestroy {
 
   onNavSelect(section: string): void {
     switch (section) {
-      case 'personal':   this.goToPersonalData(); break;
-      case 'stats':      this.goToStats();        break;
-      case 'builder':    this.goToBoardBuilder();  break;
-      case 'objectives': this.goToObjectives();    break;
-      case 'back':       this.goBack();            break;
+      case 'boards':        this.activeSection = 'boards';                    break;
+      case 'personal':      this.goToPersonalData();                          break;
+      case 'stats':         this.goToStats();                                 break;
+      case 'builder':       this.goToBoardBuilder();                          break;
+      case 'objectives':    this.goToObjectives();                            break;
+      case 'family':        void this.goToFamilySection();                    break;
+      case 'professionals': void this.goToProfessionalsSection();             break;
+      case 'back':          this.goBack();                                    break;
+    }
+  }
+
+  goBackToBoards(): void {
+    this.activeSection = 'boards';
+  }
+
+  async goToFamilySection(): Promise<void> {
+    this.activeSection = 'family';
+    if (!this.familiesLoaded) {
+      await this.loadFamilies();
+    }
+  }
+
+  async goToProfessionalsSection(): Promise<void> {
+    this.activeSection = 'professionals';
+    if (!this.professionalsLoaded) {
+      await this.loadProfessionals();
     }
   }
 
@@ -213,7 +293,12 @@ export class UserSessionPage implements OnInit, OnDestroy {
 
   goToObjectives(): void {
     this.router.navigate(['/objectives-list'], {
-      queryParams: { role: 'creator', userId: this.userId, returnTo: '/user-session/' + this.userId },
+      queryParams: {
+        role:     'creator',
+        userId:   this.userId,
+        userName: this.targetUser?.name || '',
+        returnTo: '/user-session/' + this.userId,
+      },
     });
   }
 
@@ -224,7 +309,13 @@ export class UserSessionPage implements OnInit, OnDestroy {
   }
 
   goToStats(): void {
-    this.router.navigate(['/statistics-placeholder']);
+    this.router.navigate(['/organization-statistics'], {
+      queryParams: {
+        userId:   this.userId,
+        userName: this.targetUser?.name || '',
+        returnTo: '/user-session/' + this.userId,
+      },
+    });
   }
 
   goToBoardBuilder(): void {
@@ -235,6 +326,120 @@ export class UserSessionPage implements OnInit, OnDestroy {
         creatorName: this.targetUser?.name || '',
       },
     });
+  }
+
+  // ── Familiares y Profesionales ────────────────────────────────────────────────
+
+  private async loadFamilies(): Promise<void> {
+    this.familiesLoading = true;
+    this.familiesError   = '';
+    try {
+      const res = await firstValueFrom(this.userService.getFamiliesForUsers([this.userId]));
+      const results = await Promise.allSettled(
+        res.families.map(async (parent) => {
+          const full  = await firstValueFrom(this.userService.getUserById(parent._id));
+          const entry = full.user.childrenAccess?.find(
+            e => e.childId?.toString() === this.userId
+          );
+          return {
+            parentId:               parent._id,
+            name:                   parent.name,
+            surname:                parent.surname ?? '',
+            email:                  parent.email,
+            image:                  parent.image ?? null,
+            fullChildrenAccess:     (full.user.childrenAccess ?? []) as ChildrenAccessEntry[],
+            canViewStats:           entry?.canViewStats           ?? false,
+            canEditBoards:          entry?.canEditBoards          ?? false,
+            canEditPersonalData:    entry?.canEditPersonalData    ?? false,
+            canAddPictograms:       entry?.canAddPictograms       ?? false,
+            canAssignProfessionals: entry?.canAssignProfessionals ?? false,
+            canAssignFamilies:      entry?.canAssignFamilies      ?? false,
+            canViewAssignedBoards:  entry?.canViewAssignedBoards  ?? false,
+            saving:                 false,
+            saved:                  false,
+          } as FamilyRow;
+        })
+      );
+      this.families      = results
+        .filter((r): r is PromiseFulfilledResult<FamilyRow> => r.status === 'fulfilled')
+        .map(r => r.value);
+      this.familiesLoaded = true;
+    } catch {
+      this.familiesError = 'Error al cargar los familiares.';
+    } finally {
+      this.familiesLoading = false;
+    }
+  }
+
+  private async loadProfessionals(): Promise<void> {
+    this.professionalsLoading = true;
+    this.professionalsError   = '';
+    try {
+      const res = await firstValueFrom(this.userService.getAssignedProfessionals(this.userId));
+      this.professionals = res.assignedProfessionals.map(p => ({
+        ...p,
+        saving: false,
+        saved:  false,
+      }));
+      this.professionalsLoaded = true;
+    } catch {
+      this.professionalsError = 'Error al cargar los profesionales.';
+    } finally {
+      this.professionalsLoading = false;
+    }
+  }
+
+  async saveFamilyRow(row: FamilyRow): Promise<void> {
+    row.saving = true;
+    try {
+      const idx = row.fullChildrenAccess.findIndex(
+        e => e.childId?.toString() === this.userId
+      );
+      const newEntry: ChildrenAccessEntry = {
+        childId:                this.userId,
+        canViewStats:           row.canViewStats,
+        canEditBoards:          row.canEditBoards,
+        canEditPersonalData:    row.canEditPersonalData,
+        canAddPictograms:       row.canAddPictograms,
+        canAssignProfessionals: row.canAssignProfessionals,
+        canAssignFamilies:      row.canAssignFamilies,
+        canViewAssignedBoards:  row.canViewAssignedBoards,
+      };
+      const updated = [...row.fullChildrenAccess];
+      if (idx >= 0) updated[idx] = newEntry;
+      else updated.push(newEntry);
+      await firstValueFrom(this.userService.updateChildrenAccess(row.parentId, updated));
+      row.fullChildrenAccess = updated;
+      row.saved = true;
+      setTimeout(() => { row.saved = false; }, 2500);
+    } catch {
+      await this._toast('Error al guardar permisos del familiar.', 'danger');
+    } finally {
+      row.saving = false;
+    }
+  }
+
+  async saveProfRow(row: ProfRow): Promise<void> {
+    row.saving = true;
+    try {
+      const payload: AssignedProfessionalPayload[] = this.professionals.map(p => ({
+        professionalId:         p.professionalId,
+        canViewStats:           p.canViewStats,
+        canEditBoards:          p.canEditBoards,
+        canEditPersonalData:    p.canEditPersonalData,
+        canAddPictograms:       p.canAddPictograms,
+        canAssignProfessionals: p.canAssignProfessionals,
+        canAssignFamilies:      p.canAssignFamilies,
+        canViewAssignedBoards:  p.canViewAssignedBoards,
+      }));
+      await firstValueFrom(this.userService.updateAssignedProfessionals(this.userId, payload));
+      row.saved = true;
+      setTimeout(() => { row.saved = false; }, 2500);
+    } catch {
+      await this._toast('Error al guardar permisos del profesional.', 'danger');
+    } finally {
+      row.saving = false;
+    }
   }
 
   // ── Tableros ──────────────────────────────────────────────────────────────────

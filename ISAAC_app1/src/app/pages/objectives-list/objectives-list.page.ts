@@ -28,6 +28,9 @@ export class ObjectivesListPage implements OnInit {
   /** userId para filtrar por usuario concreto (cuando un teacher lo pasa como query param) */
   filterUserId = '';
 
+  /** Nombre del usuario objetivo cuando se llega desde user-session. */
+  targetUserName = '';
+
   returnTo = '/organization-dashboard';
 
   objectives:  Objective[] = [];
@@ -91,9 +94,10 @@ export class ObjectivesListPage implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.role         = (this.route.snapshot.queryParamMap.get('role') as any) ?? 'creator';
-    this.filterUserId = this.route.snapshot.queryParamMap.get('userId') ?? '';
-    this.returnTo     = this.route.snapshot.queryParamMap.get('returnTo') ?? this.defaultReturn();
+    this.role           = (this.route.snapshot.queryParamMap.get('role') as any) ?? 'creator';
+    this.filterUserId   = this.route.snapshot.queryParamMap.get('userId')   ?? '';
+    this.targetUserName = this.route.snapshot.queryParamMap.get('userName') ?? '';
+    this.returnTo       = this.route.snapshot.queryParamMap.get('returnTo') ?? this.defaultReturn();
   }
 
   ionViewWillEnter() {

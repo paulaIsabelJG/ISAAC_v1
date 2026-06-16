@@ -222,9 +222,12 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
     const explicitReturn = this.route.snapshot.queryParamMap.get('returnTo');
     this.returnTo = explicitReturn ?? (this.isEditMode ? `/user-session/${this.userId}` : '/add-user');
 
-    if (this.isEditMode && this.isLoading) {
-      this.loadUser();
-    } else if (!this.isEditMode) {
+    if (this.isEditMode) {
+      // Siempre recargar al entrar: evita datos obsoletos si el componente quedó
+      // cacheado por Ionic (userId diferente, o datos modificados externamente).
+      this.isLoading = true;
+      void this.loadUser();
+    } else {
       this.isLoading = false;
       void this.loadVoicesForGender(null);
     }
@@ -233,8 +236,11 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
   // ── Carga del usuario existente ───────────────────────────────────────────────
 
   private async loadUser(): Promise<void> {
-    this.isLoading = true;
-    this.loadError = '';
+    this.isLoading  = true;
+    this.loadError  = '';
+    this.locations  = [];
+    this.imgB64     = null;
+    this.imgUrl     = null;
 
     try {
       const res = await firstValueFrom(this.userSvc.getUserById(this.userId));

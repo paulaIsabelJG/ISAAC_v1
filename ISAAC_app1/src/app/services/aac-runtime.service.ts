@@ -940,7 +940,7 @@ export class AacRuntimeService {
     }
   }
 
-  private flushEvents(): void {
+  flushEvents(): void {
     if (!this.sessionId || this.pendingEvents.length === 0) return;
     const toSend = [...this.pendingEvents];
     this.pendingEvents = [];

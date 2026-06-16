@@ -17,10 +17,11 @@ export interface SidebarPermissions {
   imports:     [CommonModule],
 })
 export class UserProfileSidebarComponent {
-  @Input() user:        FullBackendUser | null  = null;
-  @Input() avatarUrl:   SafeUrl | string        = '';
-  @Input() fromLogin    = false;
-  @Input() permissions: SidebarPermissions      = { canViewPersonalData: false, canViewStats: false, canEditBoards: false };
+  @Input() user:          FullBackendUser | null  = null;
+  @Input() avatarUrl:     SafeUrl | string        = '';
+  @Input() fromLogin      = false;
+  @Input() activeSection  = 'boards';
+  @Input() permissions:   SidebarPermissions     = { canViewPersonalData: false, canViewStats: false, canEditBoards: false };
 
   @Output() navSelect = new EventEmitter<string>();
 

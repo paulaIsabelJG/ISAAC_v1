@@ -1,5 +1,8 @@
 @if (!showOrgSidebar) {
-  <app-page-header title="Board Builder" [backHref]="returnTo" (backClick)="goBack()">
+  <app-page-header
+    [title]="contextCreatorName ? 'Board Builder de ' + contextCreatorName : 'Board Builder'"
+    [backHref]="returnTo"
+    (backClick)="goBack()">
   </app-page-header>
 }
 
@@ -16,8 +19,10 @@
 
       <!-- ── TOP: título · botones · recientes ───────────────────────── -->
       <div class="bb-top-section">
-        <h1 class="bb-page-title">Board Builder</h1>
-        <p class="bb-page-subtitle">{{ contextCreatorName }}</p>
+        @if (showOrgSidebar) {
+          <h1 class="bb-page-title">Board Builder</h1>
+          <p class="bb-page-subtitle">{{ contextCreatorName }}</p>
+        }
 
         @if (!selectMode) {
           <div class="bb-top-row">

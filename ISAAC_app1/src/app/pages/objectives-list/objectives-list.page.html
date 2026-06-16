@@ -1,5 +1,8 @@
 @if (showPageHeader) {
-  <app-page-header title="Objetivos" [backHref]="returnTo" (backClick)="goBack()">
+  <app-page-header
+    [title]="targetUserName ? 'Objetivos de ' + targetUserName : 'Objetivos'"
+    [backHref]="returnTo"
+    (backClick)="goBack()">
   </app-page-header>
 }
 

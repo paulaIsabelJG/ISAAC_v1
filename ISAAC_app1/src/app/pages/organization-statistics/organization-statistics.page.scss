@@ -30,6 +30,8 @@ $orange-l:   #fff3eb;
   height: 100%;
   overflow: hidden;
 
+  &--no-sidebar { grid-template-columns: 1fr; }
+
   @media (max-width: 600px) {
     grid-template-columns: 1fr;
     app-org-sidebar { display: none; }
@@ -45,6 +47,15 @@ $orange-l:   #fff3eb;
   scrollbar-color: $border transparent;
   &::-webkit-scrollbar       { width: 4px; }
   &::-webkit-scrollbar-thumb { background: $border; border-radius: 4px; }
+
+  // Todos los bloques fijos no deben comprimirse como flex items
+  > .os-header,
+  > .os-filters-bar,
+  > .os-kpis,
+  > .os-segment,
+  > ion-segment {
+    flex-shrink: 0;
+  }
 }
 
 // ── Cabecera ──────────────────────────────────────────────────────────────────
@@ -164,7 +175,7 @@ $orange-l:   #fff3eb;
   padding: 20px 20px 0;
 }
 
-// Sección tableros: ocupa todo el espacio restante sin cálculos de píxeles
+// Sección que ocupa todo el espacio restante sin cálculos de píxeles
 .os-section--fill {
   flex:           1;
   min-height:     0;
@@ -177,6 +188,12 @@ $orange-l:   #fff3eb;
     flex:     none;
     overflow: visible;
   }
+}
+
+// Centra el único hijo en el espacio disponible
+.os-section--center {
+  align-items:     center;
+  justify-content: center;
 }
 
 // ── Grid de gráficas (ion-grid) ───────────────────────────────────────────────
