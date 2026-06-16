@@ -6,15 +6,15 @@ $pink:       #ff69b4;
 $pink-dark:  #e91e8c;
 $pink-light: #fff0f7;
 $border:     #e2e8ef;
-$bg:         #eef2f7;
+$bg:         #fdf5f9;
 $text-dark:  #1a1a1a;
 $text-muted: #6b7280;
 
-// ── Header (AppPageHeaderComponent) — tema mint ───────────────────────────────
+// ── Header (AppPageHeaderComponent) — tema rosa ───────────────────────────────
 app-page-header {
-  --aph-bg:            #{$mint};
+  --aph-bg:            #{$pink};
   --aph-border:        transparent;
-  --aph-shadow:        0 2px 12px rgba(32, 201, 151, 0.28);
+  --aph-shadow:        0 2px 12px rgba(233, 30, 140, 0.25);
   --aph-toolbar-color: #ffffff;
   --aph-back-color:    #ffffff;
   --aph-title-color:   #ffffff;
@@ -23,7 +23,7 @@ app-page-header {
 }
 
 // ── Content / contenedor ──────────────────────────────────────────────────────
-.op-content { --background: #{$bg}; }
+.op-content { --background: #fdf5f9; }
 
 .op-container {
   max-width: 800px;
@@ -101,7 +101,7 @@ app-page-header {
   height: 10px;
   border-radius: 50%;
   flex: 0 0 auto;
-  &.sec-dot--mint { background: $mint; }
+  &.sec-dot--mint { background: $pink; }
   &.sec-dot--pink { background: $pink; }
 }
 
@@ -116,13 +116,13 @@ app-page-header {
 
 // ── Álbum ─────────────────────────────────────────────────────────────────────
 .album-badge {
-  background: $mint-light;
-  color: $mint-dark;
+  background: $pink-light;
+  color: $pink-dark;
   font-size: 12px;
   font-weight: 700;
   padding: 2px 12px;
   border-radius: 10px;
-  border: 1px solid darken($mint-light, 6%);
+  border: 1px solid #ffccd9;
 }
 
 // ── Estado genérico del álbum (loading / error / vacío) ──────────────────────
@@ -180,13 +180,13 @@ app-page-header {
 .picto-card {
   flex: 0 0 84px;
   width: 84px;
-  height: 114px;
+  height: 110px;
   border-radius: 12px;
-  border: 2.5px solid #ddd;
+  border: 2px solid var(--fitz-col, #ffb6c1);
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: color-mix(in srgb, var(--fitz-col, #ff69b4) 14%, white);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
   transition: transform 0.15s;
 
@@ -196,18 +196,13 @@ app-page-header {
   &--lg {
     flex: 0 0 128px;
     width: 128px;
-    height: 168px;
+    height: 160px;
     border-radius: 14px;
     cursor: pointer;
-    border-width: 3px;
+    border-width: 2.5px;
 
     &:hover { transform: scale(1.02); }
   }
-}
-
-.picto-bar {
-  height: 8px;
-  flex: 0 0 8px;
 }
 
 .picto-body {
@@ -244,7 +239,7 @@ app-page-header {
 
   &:hover {
     background: #fff;
-    color: $mint-dark;
+    color: $pink-dark;
   }
 }
 
@@ -267,14 +262,19 @@ app-page-header {
 }
 
 .picto-foot {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
   text-align: center;
-  padding: 5px 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 5px 4px 6px;
   line-height: 1.2;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: #1a1a1a;
+  background: transparent;
+  border-top: 1px solid color-mix(in srgb, var(--fitz-col, #ff69b4) 30%, white);
 }
 
 // ── Sección crear ─────────────────────────────────────────────────────────────
@@ -366,18 +366,18 @@ app-page-header {
 .field-input {
   width: 100%;
   padding: 9px 12px;
-  border: 1.5px solid #d0d8e4;
+  border: 1.5px solid #ffccd9;
   border-radius: 10px;
   font-size: 14px;
   font-family: inherit;
   color: $text-dark;
-  background: #f9fafb;
+  background: $pink-light;
   box-sizing: border-box;
   transition: border-color 0.2s, background 0.2s;
 
   &:focus {
     outline: none;
-    border-color: $mint;
+    border-color: $pink;
     background: #fff;
   }
 }
@@ -410,9 +410,9 @@ app-page-header {
   gap: 8px;
   width: 100%;
   padding: 10px 14px;
-  border: 1.5px dashed #c5cfd8;
+  border: 1.5px dashed #ffb6c1;
   border-radius: 10px;
-  background: #f9fafb;
+  background: $pink-light;
   color: $text-muted;
   font-size: 13px;
   font-family: inherit;
@@ -423,16 +423,16 @@ app-page-header {
   svg { width: 16px; height: 16px; flex: 0 0 16px; }
 
   &:hover {
-    border-color: $mint;
-    color: $mint-dark;
-    background: $mint-light;
+    border-color: $pink;
+    color: $pink-dark;
+    background: #fce4ec;
   }
 
   &--ok {
     border-style: solid;
-    border-color: $mint;
-    color: $mint-dark;
-    background: $mint-light;
+    border-color: $pink;
+    color: $pink-dark;
+    background: $pink-light;
   }
 }
 
@@ -444,7 +444,7 @@ app-page-header {
   gap: 8px;
   width: 100%;
   padding: 13px;
-  background: $mint;
+  background: $pink;
   color: #fff;
   border: none;
   border-radius: 12px;
@@ -459,9 +459,9 @@ app-page-header {
   svg { width: 18px; height: 18px; }
 
   &:hover {
-    background: $mint-dark;
+    background: $pink-dark;
     transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(32, 201, 151, 0.35);
+    box-shadow: 0 6px 16px rgba(233, 30, 140, 0.28);
   }
 
   &:active { transform: translateY(0); box-shadow: none; }
@@ -575,14 +575,14 @@ app-page-header {
 // ── ion-select personalizado ──────────────────────────────────────────────────
 ion-select.word-type-select {
   --border-radius: 10px;
-  --border-color: #d0d8e4;
+  --border-color: #ffccd9;
   --border-width: 1.5px;
   --padding-start: 12px;
   --padding-end: 12px;
   --padding-top: 0;
   --padding-bottom: 0;
   --placeholder-color: #{$text-muted};
-  --highlight-color-focused: #{$mint};
+  --highlight-color-focused: #{$pink};
   color: $text-dark;
   font-size: 14px;
   font-family: inherit;

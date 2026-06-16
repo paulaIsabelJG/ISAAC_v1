@@ -110,7 +110,7 @@ $text-muted:   #6b5462;
   align-items: center;
   gap: 5px;
   padding: 7px 16px;
-  background: $mint;
+  background: $pink-dark;
   color: #fff;
   border: none;
   border-radius: 10px;
@@ -122,7 +122,7 @@ $text-muted:   #6b5462;
   transition: background 0.15s;
 
   svg { width: 15px; height: 15px; stroke: #fff; }
-  &:hover { background: $mint-dark; }
+  &:hover { background: darken($pink-dark, 8%); }
 }
 
 // ── Buscador ──────────────────────────────────────────────────────────────────
@@ -286,6 +286,8 @@ $text-muted:   #6b5462;
   gap: 10px;
   padding: 24px 18px;
   position: relative;
+  min-height: 100%;
+  box-sizing: border-box;
 }
 
 .detail-close {
@@ -498,6 +500,28 @@ $text-muted:   #6b5462;
   &--ia  { color: #d97706; background: #fef3c7; }
 }
 
+.detail-personal-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px 16px;
+  background: $pink-light;
+  color: $pink-dark;
+  border: 1.5px solid #ffccd9;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+
+  svg { width: 15px; height: 15px; flex: 0 0 15px; }
+
+  &:hover { background: darken($pink-light, 4%); border-color: $pink; }
+}
+
 .detail-go-btn {
   display: flex;
   align-items: center;
@@ -518,6 +542,32 @@ $text-muted:   #6b5462;
 
   svg { width: 16px; height: 16px; stroke: #fff; }
   &:hover { background: darken($pink-dark, 8%); }
+}
+
+.detail-delete-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 11px 16px;
+  background: #ffebee;
+  color: #c62828;
+  border: 1.5px solid #ffcdd2;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  margin-top: auto;
+  transition: background 0.15s, border-color 0.15s;
+
+  svg { width: 15px; height: 15px; flex: 0 0 15px; }
+
+  &:hover {
+    background: #ffcdd2;
+    border-color: #e53935;
+  }
 }
 
 // ── Estado vacío ──────────────────────────────────────────────────────────────

@@ -92,14 +92,32 @@
                 @if (isCreator) {
                   <div class="ol-item-actions" (click)="$event.stopPropagation()">
                     @if (canEdit(obj)) {
-                      <button class="ol-act ol-act--edit" (click)="goToEdit(obj)">Editar</button>
+                      <button class="ol-act ol-act--edit" title="Editar" (click)="goToEdit(obj)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="13" height="13">
+                          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                      </button>
                     }
                     @if (canChangeStatus(obj)) {
-                      <button class="ol-act ol-act--complete" (click)="confirmComplete(obj)">Completar</button>
-                      <button class="ol-act ol-act--cancel"   (click)="confirmCancel(obj)">Cancelar</button>
+                      <button class="ol-act ol-act--complete" title="Completar" (click)="confirmComplete(obj)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                      </button>
+                      <button class="ol-act ol-act--cancel" title="Cancelar" (click)="confirmCancel(obj)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13">
+                          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                      </button>
                     }
                     @if (canReactivate(obj)) {
-                      <button class="ol-act ol-act--reactivate" (click)="confirmReactivate(obj)">Reactivar</button>
+                      <button class="ol-act ol-act--reactivate" title="Reactivar" (click)="confirmReactivate(obj)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="13" height="13">
+                          <polyline points="1 4 1 10 7 10"/>
+                          <path d="M3.51 15a9 9 0 102.13-9.36L1 10"/>
+                        </svg>
+                      </button>
                     }
                   </div>
                 }
@@ -217,18 +235,7 @@
                 }
 
               } @else {
-                <!-- Creador: hilo del usuario seleccionado por pestaña (o el único) -->
-                @if (!showUserTabs && selectedObjective.assignedUserIds.length > 0) {
-                  <div class="ol-single-user-header">
-                    <span class="ol-single-user-avatar">
-                      {{ selectedObjective.assignedUserIds[0].name.charAt(0).toUpperCase() }}
-                    </span>
-                    <span class="ol-single-user-name">
-                      {{ selectedObjective.assignedUserIds[0].name }}
-                      {{ selectedObjective.assignedUserIds[0].surname ?? '' }}
-                    </span>
-                  </div>
-                }
+                <!-- Creador: hilo del usuario seleccionado por pestaña -->
                 @if (selectedTabUserId) {
                   <!-- @for con track fuerza recrear el componente al cambiar de usuario -->
                   @for (uid of [selectedTabUserId]; track uid) {

@@ -241,6 +241,13 @@ export class UserService {
     );
   }
 
+  /** DELETE /api/users/:userId  —  elimina el usuario del sistema */
+  deleteUser(userId: string): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(
+      `${this.url}/${encodeURIComponent(userId)}`
+    );
+  }
+
   /** PATCH /api/users/:userId  —  actualiza datos personales del usuario final */
   updateUserById(
     userId:  string,

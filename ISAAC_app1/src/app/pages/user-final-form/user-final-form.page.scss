@@ -1,5 +1,8 @@
 // Solo overrides/additions sobre add-user.page.scss (que ya está en styleUrls)
 
+// ── Fondo de página ───────────────────────────────────────────────────────────
+.au-content { --background: #fdf5f9; }
+
 // ── Header (AppPageHeaderComponent) — tema rosa intenso igual que add-user ────
 app-page-header {
   --aph-bg:            #ff69b4;
@@ -88,12 +91,12 @@ app-page-header {
 
 // ── Botón "Crear mi voz" (rosa primario, destacado) ───────────────────────────
 .rec-btn--create {
-  background: #9c27b0;
+  background: #e91e8c;
   color:      #fff;
   font-size:  14px;
-  box-shadow: 0 3px 10px rgba(156, 39, 176, 0.28);
+  box-shadow: 0 3px 10px rgba(233, 30, 140, 0.28);
 
-  &:hover { background: #7b1fa2; transform: translateY(-1px); }
+  &:hover { background: #c2185b; transform: translateY(-1px); }
 }
 
 // ── Bloque de procesamiento (creating / processing) ───────────────────────────
@@ -209,8 +212,8 @@ app-page-header {
 
   &:hover { background: #f5e6ee; }
 
-  &--add    { background: #f9e8f5; color: #9c27b0; border-color: #ce93d8; &:hover { background: #f3d0f0; } }
-  &--save   { background: #9c27b0; color: #fff; border-color: #9c27b0; &:hover { background: #7b1fa2; } }
+  &--add    { background: #fff0f7; color: #e91e8c; border-color: #ffb6c1; &:hover { background: #fce4ec; } }
+  &--save   { background: #e91e8c; color: #fff; border-color: #e91e8c; &:hover { background: #c2185b; } }
   &--edit   { background: #e8f5e9; color: #2e7d32; border-color: #a5d6a7; &:hover { background: #c8e6c9; } }
   &--delete { background: #fff0f0; color: #e53935; border-color: #ffcdd2; &:hover { background: #ffebee; } }
 

@@ -1,5 +1,5 @@
 import { ChangeDetectorRef, Component } from '@angular/core';
-import { AlertController, IonicModule, ToastController } from '@ionic/angular';
+import { AlertController, IonicModule, NavController, ToastController } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
@@ -80,6 +80,7 @@ export class AssignedProfessionalsPlaceholderPage {
 
   constructor(
     private router:      Router,
+    private navCtrl:     NavController,
     private sanitizer:   DomSanitizer,
     private authService: AuthService,
     private userService: UserService,
@@ -122,13 +123,13 @@ export class AssignedProfessionalsPlaceholderPage {
         message: 'Los cambios que has hecho no se guardarán.',
         buttons: [
           { text: 'Cancelar', role: 'cancel' },
-          { text: 'Salir', role: 'destructive', handler: () => this.router.navigateByUrl(this.state.returnTo) },
+          { text: 'Salir', role: 'destructive', handler: () => this.navCtrl.back() },
         ],
       });
       await alert.present();
       return;
     }
-    this.router.navigateByUrl(this.state.returnTo);
+    this.navCtrl.back();
   }
 
   // ── Selector de usuario ───────────────────────────────────────────────────────

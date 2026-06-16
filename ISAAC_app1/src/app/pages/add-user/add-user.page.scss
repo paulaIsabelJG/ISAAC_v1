@@ -32,23 +32,23 @@ $text-muted:  #7a5163;
   font-weight: 700;
   font-size: 18px;
   letter-spacing: 0.3px;
+  text-align: center;
 }
 
 // ── Ion-content: fondo exterior ───────────────────────────────────────────────
 .au-content {
-  --background: #f0e8f4;
+  --background: #fdf5f9;
 }
 
-// ── Tablet frame: contenedor principal ───────────────────────────────────────
+// ── Contenedor principal ──────────────────────────────────────────────────────
 .tablet-frame {
   max-width: 1050px;
-  margin: 24px auto 48px;
+  margin: 20px auto 48px;
   background: #ffffff;
-  border: 4px solid #1a1a1a;
-  border-radius: 24px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
+  border: 1.5px solid #ffccd9;
+  border-radius: 20px;
+  box-shadow: 0 2px 12px rgba(233, 30, 140, 0.07);
   overflow: hidden;
-  min-height: 480px;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -914,11 +914,10 @@ $text-muted:  #7a5163;
 
 // ── Responsive ────────────────────────────────────────────────────────────────
 @media (max-width: 600px) {
-  .tablet-frame { margin: 12px 8px 32px; border-radius: 16px; }
-  .view-select  { padding: 24px 16px 32px; }
-  .type-card    { width: 130px; padding: 18px 10px 16px; }
-  .type-img     { width: 64px; height: 64px; }
-  .extra-btns   { gap: 10px; }
+  .view-select { padding: 24px 16px 32px; }
+  .type-card   { width: 130px; padding: 18px 10px 16px; }
+  .type-img    { width: 64px; height: 64px; }
+  .extra-btns  { gap: 10px; }
 }
 
 // ── Tabs: catálogo / voz personalizada ────────────────────────────────────────
@@ -976,8 +975,8 @@ $text-muted:  #7a5163;
 
 // ── Bloque de consentimiento ──────────────────────────────────────────────────
 .consent-block {
-  background: #fff8f0;
-  border: 1px solid #ffd9a0;
+  background: #fff8fc;
+  border: 1px solid #f0d4e2;
   border-radius: 10px;
   padding: 12px 14px;
   display: flex;
@@ -987,7 +986,7 @@ $text-muted:  #7a5163;
 
 .consent-text {
   font-size: 12px;
-  color: #7a5c00;
+  color: #6b5462;
   line-height: 1.55;
   margin: 0;
 }
@@ -1017,8 +1016,8 @@ $text-muted:  #7a5163;
 
 // ── Texto base a leer ─────────────────────────────────────────────────────────
 .record-prompt-block {
-  background: #f0f8ff;
-  border: 1px solid #b3d9ff;
+  background: #fff0f7;
+  border: 1px solid #ffd0e8;
   border-radius: 10px;
   padding: 12px 14px;
 }
@@ -1028,7 +1027,7 @@ $text-muted:  #7a5163;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.6px;
-  color: #4a90d9;
+  color: #e91e8c;
   margin: 0 0 6px;
 }
 

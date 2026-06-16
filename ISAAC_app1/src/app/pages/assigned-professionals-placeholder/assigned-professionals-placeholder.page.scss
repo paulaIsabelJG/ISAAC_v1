@@ -3,19 +3,22 @@ $mint:        #20c997;
 $mint-dark:   #17a682;
 $mint-light:  #e0fff6;
 $mint-faint:  #f0fff9;
+$pink:        #ff69b4;
+$pink-dark:   #e91e8c;
+$pink-light:  #fff0f7;
 $border:      #e2e8ef;
-$bg:          #eef2f7;
+$bg:          #fdf5f9;
 $text-dark:   #1a1a1a;
 $text-muted:  #6b7280;
 $red:         #ef5350;
 $red-light:   #fff0f0;
 $yellow-light:#fffbeb;
 
-// ── Header (AppPageHeaderComponent) — tema mint ───────────────────────────────
+// ── Header (AppPageHeaderComponent) — tema rosa ───────────────────────────────
 app-page-header {
-  --aph-bg:            #{$mint};
+  --aph-bg:            #{$pink};
   --aph-border:        transparent;
-  --aph-shadow:        0 2px 12px rgba(32, 201, 151, 0.28);
+  --aph-shadow:        0 2px 12px rgba(233, 30, 140, 0.25);
   --aph-toolbar-color: #ffffff;
   --aph-back-color:    #ffffff;
   --aph-title-color:   #ffffff;
@@ -24,7 +27,7 @@ app-page-header {
 }
 
 // ── Contenido ─────────────────────────────────────────────────────────────────
-.ap-content { --background: #{$bg}; }
+.ap-content { --background: #fdf5f9; }
 
 .ap-container {
   max-width: 1150px;
@@ -97,7 +100,7 @@ app-page-header {
   height: 10px;
   border-radius: 50%;
   flex: 0 0 auto;
-  &.sec-dot--mint { background: $mint; }
+  &.sec-dot--mint { background: $pink; }
 }
 
 .sec-title {
@@ -110,13 +113,13 @@ app-page-header {
 }
 
 .count-badge {
-  background: $mint-light;
-  color: $mint-dark;
+  background: $pink-light;
+  color: $pink-dark;
   font-size: 12px;
   font-weight: 700;
   padding: 2px 12px;
   border-radius: 10px;
-  border: 1px solid darken($mint-light, 6%);
+  border: 1px solid #ffccd9;
 }
 
 // ── Estados genéricos ─────────────────────────────────────────────────────────
@@ -147,8 +150,8 @@ app-page-header {
 }
 
 .prof-table thead tr {
-  background: $mint-faint;
-  border-bottom: 2px solid $mint-light;
+  background: $pink-light;
+  border-bottom: 2px solid #ffccd9;
 }
 
 .th-prof,
@@ -159,7 +162,7 @@ app-page-header {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.7px;
-  color: $mint-dark;
+  color: $pink-dark;
   vertical-align: top;
 }
 
@@ -171,7 +174,7 @@ app-page-header {
   border-bottom: 1px solid $border;
   transition: background 0.12s;
 
-  &:hover { background: $mint-faint; }
+  &:hover { background: $pink-light; }
   &:last-child { border-bottom: none; }
 }
 
@@ -204,8 +207,8 @@ app-page-header {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: $mint-light;
-  border: 2px solid $mint;
+  background: $pink-light;
+  border: 2px solid $pink;
   overflow: hidden;
   flex: 0 0 36px;
   display: flex;
@@ -227,7 +230,7 @@ app-page-header {
 .avatar-initial {
   font-size: 15px;
   font-weight: 800;
-  color: $mint-dark;
+  color: $pink-dark;
 }
 
 .prof-meta {
@@ -341,19 +344,19 @@ app-page-header {
   color: $text-muted;
   margin: 12px 0 4px;
   padding: 10px 12px;
-  background: $mint-faint;
+  background: $pink-light;
   border-radius: 10px;
-  border: 1px dashed darken($mint-light, 10%);
+  border: 1px dashed #ffccd9;
   line-height: 1.4;
 
-  svg { width: 18px; height: 18px; flex: 0 0 18px; stroke: $mint; }
+  svg { width: 18px; height: 18px; flex: 0 0 18px; stroke: $pink; }
 }
 
 // ── Fila añadir ───────────────────────────────────────────────────────────────
 .add-row {
   margin-top: 16px;
   padding-top: 16px;
-  border-top: 1.5px dashed darken($mint-light, 12%);
+  border-top: 1.5px dashed #ffccd9;
 }
 
 .add-row-label {
@@ -364,10 +367,10 @@ app-page-header {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.6px;
-  color: $mint-dark;
+  color: $pink-dark;
   margin-bottom: 10px;
 
-  svg { width: 14px; height: 14px; stroke: $mint; }
+  svg { width: 14px; height: 14px; stroke: $pink; }
 }
 
 .add-controls {
@@ -381,16 +384,16 @@ app-page-header {
   flex: 1;
   min-width: 200px;
   padding: 9px 12px;
-  border: 1.5px solid #d0d8e4;
+  border: 1.5px solid #ffccd9;
   border-radius: 10px;
   font-size: 14px;
   font-family: inherit;
   color: $text-dark;
-  background: #f9fafb;
+  background: $pink-light;
   box-sizing: border-box;
   appearance: none;
   cursor: pointer;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2317a682' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23e91e8c' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 10px center;
   padding-right: 30px;
@@ -398,14 +401,14 @@ app-page-header {
 
   &:focus {
     outline: none;
-    border-color: $mint;
+    border-color: $pink;
     background-color: #fff;
   }
 }
 
 .add-confirm-btn {
   padding: 9px 20px;
-  background: $mint;
+  background: $pink;
   color: #ffffff;
   border: none;
   border-radius: 10px;
@@ -417,13 +420,13 @@ app-page-header {
   transition: background 0.2s, transform 0.15s;
 
   &:hover:not(:disabled) {
-    background: $mint-dark;
+    background: $pink-dark;
     transform: translateY(-1px);
   }
 
   &:disabled {
-    background: darken($mint-light, 10%);
-    color: #aaa;
+    background: #e0a0c0;
+    color: #fff;
     cursor: not-allowed;
     transform: none;
   }
@@ -445,7 +448,7 @@ app-page-header {
   gap: 9px;
   width: 100%;
   padding: 15px;
-  background: $mint;
+  background: $pink;
   color: #ffffff;
   border: none;
   border-radius: 14px;
@@ -459,9 +462,9 @@ app-page-header {
   svg { width: 18px; height: 18px; flex: 0 0 18px; }
 
   &:hover:not(:disabled) {
-    background: $mint-dark;
+    background: $pink-dark;
     transform: translateY(-1px);
-    box-shadow: 0 6px 18px rgba(32, 201, 151, 0.32);
+    box-shadow: 0 6px 18px rgba(233, 30, 140, 0.28);
   }
 
   &:active:not(:disabled) {
@@ -470,8 +473,8 @@ app-page-header {
   }
 
   &:disabled {
-    background: darken($mint-light, 12%);
-    color: #a0b8b0;
+    background: #e0a0c0;
+    color: #fff;
     cursor: not-allowed;
     transform: none;
     box-shadow: none;

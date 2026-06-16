@@ -3,6 +3,7 @@ import {
   AlertController,
   ActionSheetController,
   IonicModule,
+  NavController,
   ToastController,
 } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
@@ -90,6 +91,7 @@ export class OwnPictogramsPlaceholderPage {
 
   constructor(
     private router: Router,
+    private navCtrl: NavController,
     private sanitizer: DomSanitizer,
     private state: PictogramStateService,
     private userSvc: UserService,
@@ -134,13 +136,13 @@ export class OwnPictogramsPlaceholderPage {
         message: 'Los cambios que has hecho no se guardarán.',
         buttons: [
           { text: 'Cancelar', role: 'cancel' },
-          { text: 'Salir', role: 'destructive', handler: () => this.router.navigateByUrl(this.state.returnTo) },
+          { text: 'Salir', role: 'destructive', handler: () => this.navCtrl.back() },
         ],
       });
       await alert.present();
       return;
     }
-    this.router.navigateByUrl(this.state.returnTo);
+    this.navCtrl.back();
   }
 
   // ── Selector de usuario ───────────────────────────────────────────────────────

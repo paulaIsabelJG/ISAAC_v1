@@ -89,7 +89,8 @@
 
             <!-- Contraseña -->
             <div class="field">
-              <label class="field-label">Contraseña *</label>
+              <label class="field-label">Contraseña {{ isEditMode ? '' : '*' }}</label>
+              @if (isEditMode) { <span class="field-hint">Dejar en blanco para no cambiar</span> }
               <div class="pwd-wrap">
                 <input formControlName="password" [type]="showProfPwd ? 'text' : 'password'"
                        class="field-input pwd-input" placeholder="Mín. 6 caracteres"
@@ -155,7 +156,7 @@
 
           <button type="submit" class="submit-btn" [disabled]="!profForm.valid || isSaving">
             @if (isSaving) { <ion-spinner name="crescent" class="btn-spinner"></ion-spinner> }
-            Añadir profesional
+            {{ isEditMode ? 'Guardar cambios' : 'Añadir profesional' }}
           </button>
 
         </form>
@@ -471,7 +472,7 @@
 
           <button type="submit" class="submit-btn" [disabled]="!famForm.valid || isSaving">
             @if (isSaving) { <ion-spinner name="crescent" class="btn-spinner"></ion-spinner> }
-            Añadir familiar
+            {{ isEditMode ? 'Guardar cambios' : 'Añadir familiar' }}
           </button>
 
         </form>

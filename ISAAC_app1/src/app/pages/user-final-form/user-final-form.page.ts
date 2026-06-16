@@ -46,7 +46,7 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
   /** true → PATCH sobre usuario existente; false → registro nuevo */
   get isEditMode(): boolean { return this.userId !== 'new'; }
 
-  get pageTitle(): string { return this.isEditMode ? 'Datos personales' : 'Nuevo usuario final'; }
+  get pageTitle(): string { return this.isEditMode ? 'Datos personales' : 'Añadir usuario final'; }
 
   form!: FormGroup;
 
@@ -197,8 +197,9 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.userId   = this.route.snapshot.paramMap.get('userId') ?? '';
-    this.returnTo = this.route.snapshot.queryParamMap.get('returnTo') ?? '/add-user';
+    this.userId = this.route.snapshot.paramMap.get('userId') ?? '';
+    const explicitReturn = this.route.snapshot.queryParamMap.get('returnTo');
+    this.returnTo = explicitReturn ?? (this.isEditMode ? `/user-session/${this.userId}` : '/add-user');
 
     // En creación la contraseña es obligatoria; en edición es opcional
     const pwdValidators = this.isEditMode
@@ -216,6 +217,11 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
   }
 
   ionViewWillEnter() {
+    // Re-leer parámetros de ruta en cada entrada (Ionic cachea el componente)
+    this.userId = this.route.snapshot.paramMap.get('userId') ?? this.userId;
+    const explicitReturn = this.route.snapshot.queryParamMap.get('returnTo');
+    this.returnTo = explicitReturn ?? (this.isEditMode ? `/user-session/${this.userId}` : '/add-user');
+
     if (this.isEditMode && this.isLoading) {
       this.loadUser();
     } else if (!this.isEditMode) {
@@ -957,15 +963,10 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
   async goBack() {
     this.ttsSvc.speakIfEnabled('volver');
     if (this.hasUnsavedChanges) {
-      const dest = this.isEditMode ? ['/user-session', this.userId] : [this.returnTo];
-      await this.confirmDiscard(() => this.router.navigate(dest));
+      await this.confirmDiscard(() => this.router.navigate([this.returnTo]));
       return;
     }
-    if (this.isEditMode) {
-      this.router.navigate(['/user-session', this.userId]);
-    } else {
-      this.router.navigate([this.returnTo]);
-    }
+    this.router.navigate([this.returnTo]);
   }
 
   private async confirmDiscard(onConfirm: () => void): Promise<void> {

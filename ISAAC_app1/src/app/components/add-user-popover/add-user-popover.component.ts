@@ -33,16 +33,16 @@ export class AddUserPopoverComponent {
       subtitle: 'Crear nuevo perfil de usuario',
     },
     {
-      action:   'add-family-member',
-      img:      'assets/pictograms/family.png',
-      label:    'Familiar',
-      subtitle: 'Añadir familiar con permisos',
-    },
-    {
       action:   'add-professional',
       img:      'assets/pictograms/professionals.png',
       label:    'Profesional',
       subtitle: 'Terapeuta, educador, etc.',
+    },
+    {
+      action:   'add-family-member',
+      img:      'assets/pictograms/family.png',
+      label:    'Familiar',
+      subtitle: 'Añadir familiar con permisos',
     },
     {
       action:   'own-pictograms',

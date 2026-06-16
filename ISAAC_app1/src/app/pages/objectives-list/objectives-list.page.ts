@@ -67,10 +67,10 @@ export class ObjectivesListPage implements OnInit {
   get isCreator():     boolean { return this.role === 'creator'; }
   get showOrgSidebar(): boolean { return this.returnTo.startsWith('/organization-dashboard'); }
 
-  /** Mostrar pestañas de usuario solo si el creador tiene acceso a más de un hilo */
+  /** Mostrar pestañas de usuario para el creador cuando hay al menos un usuario asignado */
   get showUserTabs(): boolean {
     if (this.role === 'user' || this.role === 'family') return false;
-    return (this.selectedObjective?.assignedUserIds?.length ?? 0) > 1;
+    return (this.selectedObjective?.assignedUserIds?.length ?? 0) >= 1;
   }
 
   constructor(

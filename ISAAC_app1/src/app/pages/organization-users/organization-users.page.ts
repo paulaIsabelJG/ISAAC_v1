@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonicModule } from '@ionic/angular';
+import { IonicModule, AlertController, ToastController } from '@ionic/angular';
 import { PopoverController } from '@ionic/angular/standalone';
 import { Router } from '@angular/router';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
@@ -53,6 +53,8 @@ export class OrganizationUsersPage implements OnInit, OnDestroy {
     private boardService:   BoardService,
     private pictogramState: PictogramStateService,
     private popoverCtrl:    PopoverController,
+    private alertCtrl:      AlertController,
+    private toastCtrl:      ToastController,
     private router:         Router,
     private sanitizer:      DomSanitizer,
   ) {}
@@ -194,6 +196,48 @@ export class OrganizationUsersPage implements OnInit, OnDestroy {
   selectUser(u: UserCardData): void  { this.usersService.selectUser(u); }
   clearSelection(): void             { this.usersService.clearSelection(); }
 
+  async confirmDeleteUser(u: UserCardData): Promise<void> {
+    const typeLabel = u.type === 'user' ? 'usuario final' : u.type === 'teacher' ? 'profesional' : 'familiar';
+    const alert = await this.alertCtrl.create({
+      header: 'Eliminar usuario',
+      message: `¿Deseas eliminar definitivamente a ${u.name} ${u.surname} como ${typeLabel}? Esta acción no se puede deshacer.`,
+      buttons: [
+        { text: 'No', role: 'cancel' },
+        {
+          text: 'Sí, eliminar',
+          role: 'destructive',
+          handler: () => this.deleteUser(u),
+        },
+      ],
+    });
+    await alert.present();
+  }
+
+  private deleteUser(u: UserCardData): void {
+    this.userService.deleteUser(u._id).subscribe({
+      next: async () => {
+        this.usersService.clearSelection();
+        this.loadUsers();
+        const toast = await this.toastCtrl.create({
+          message: `${u.name} ${u.surname} ha sido eliminado.`,
+          duration: 2500,
+          color: 'danger',
+          position: 'bottom',
+        });
+        await toast.present();
+      },
+      error: async () => {
+        const toast = await this.toastCtrl.create({
+          message: 'No se pudo eliminar el usuario. Inténtalo de nuevo.',
+          duration: 3000,
+          color: 'danger',
+          position: 'bottom',
+        });
+        await toast.present();
+      },
+    });
+  }
+
   onSearch(event: Event): void {
     const val = (event as CustomEvent<{ value: string }>).detail?.value ?? '';
     this.usersService.setSearch(val);
@@ -229,6 +273,22 @@ export class OrganizationUsersPage implements OnInit, OnDestroy {
     if (board.predictorEnabled) b.push({ label: 'IA',        cls: 'ou-badge--ia'  });
     if (board.aiRewriteEnabled) b.push({ label: 'IA TEXTO',  cls: 'ou-badge--ia'  });
     return b;
+  }
+
+  goToPersonalData(u: UserCardData): void {
+    if (u.type === 'user') {
+      this.router.navigate(['/user-final-form', u._id], {
+        queryParams: { returnTo: '/organization-users' },
+      });
+    } else if (u.type === 'teacher') {
+      this.router.navigate(['/add-user'], {
+        queryParams: { type: 'professional', userId: u._id, returnTo: '/organization-users' },
+      });
+    } else if (u.type === 'parent') {
+      this.router.navigate(['/add-user'], {
+        queryParams: { type: 'parent', userId: u._id, returnTo: '/organization-users' },
+      });
+    }
   }
 
   goToSession(u: UserCardData): void {

@@ -41,6 +41,9 @@ export class AddUserPage implements OnInit {
   returnTo:     string  = '/organization-dashboard';
   directEntry:  boolean = false;
   isSaving:     boolean = false;
+  editUserId:   string | null = null;
+
+  get isEditMode(): boolean { return !!this.editUserId; }
 
   profForm!: FormGroup;
   famForm!:  FormGroup;
@@ -58,10 +61,12 @@ export class AddUserPage implements OnInit {
   famUsersError     = '';
 
   get headerTitle(): string {
+    if (this.isEditMode && this.view === 'professional') return 'Editar profesional';
+    if (this.isEditMode && this.view === 'family')       return 'Editar familiar';
     return ({
       select:       'Agregar usuario',
-      professional: 'Nuevo profesional',
-      family:       'Nuevo familiar',
+      professional: 'Añadir profesional',
+      family:       'Añadir familiar',
     } as Record<View, string>)[this.view];
   }
 
@@ -90,20 +95,57 @@ export class AddUserPage implements OnInit {
     this.famRows    = [];
     this.selectedChildId = '';
 
-    const type = this.route.snapshot.queryParamMap.get('type');
-    this.returnTo    = this.route.snapshot.queryParamMap.get('returnTo') ?? '/organization-dashboard';
-    this.directEntry = !!type;
+    const params      = this.route.snapshot.queryParamMap;
+    const type        = params.get('type');
+    const userId      = params.get('userId');
+    this.returnTo     = params.get('returnTo') ?? '/organization-dashboard';
+    this.editUserId   = userId;
+    this.directEntry  = !!type;
+
+    // Contraseña: obligatoria en creación, opcional en edición
+    const pwdVal = this.isEditMode ? [] : [Validators.required, Validators.minLength(6)];
+    this.profForm?.get('password')?.setValidators(pwdVal);
+    this.profForm?.get('password')?.updateValueAndValidity();
+    this.famForm?.get('password')?.setValidators(pwdVal);
+    this.famForm?.get('password')?.updateValueAndValidity();
 
     if (type === 'professional') {
       this.view = 'professional';
+      if (userId) this.prefillFromBackend(userId);
     } else if (type === 'parent') {
       this.view = 'family';
+      if (userId) this.prefillFromBackend(userId);
       if (this.centerFinalUsers.length === 0 && !this.famUsersLoading) {
         this.loadFinalUsersForFamily();
       }
     } else {
       this.view = 'select';
     }
+  }
+
+  private prefillFromBackend(userId: string): void {
+    this.userSvc.getUserById(userId).subscribe({
+      next: ({ user }) => {
+        if (this.view === 'professional') {
+          const nameParts = (user.name ?? '').split(' ');
+          const surname   = nameParts.length > 1 ? nameParts.slice(1).join(' ') : (user.surname ?? '');
+          const name      = user.surname ? user.name : nameParts[0];
+          this.profForm.patchValue({
+            email:   user.email,
+            name:    user.surname ? user.name : name,
+            surname: user.surname ?? surname,
+            phone:   '',
+          });
+        } else if (this.view === 'family') {
+          this.famForm.patchValue({ email: user.email });
+        }
+        if (user.image) {
+          const safeUrl = this.sanitizer.bypassSecurityTrustUrl(user.image);
+          if (this.view === 'professional') { this.profImgUrl = safeUrl; }
+          else                              { this.famImgUrl  = safeUrl; }
+        }
+      },
+    });
   }
 
   ngOnInit() {
@@ -135,6 +177,17 @@ export class AddUserPage implements OnInit {
   }
 
   async goBack() {
+    // Modo edición: siempre vuelve a returnTo sin tocar el formulario
+    if (this.isEditMode) {
+      if (this.hasUnsavedChanges) {
+        await this.confirmDiscard(() => this.router.navigate([this.returnTo]));
+        return;
+      }
+      this.router.navigate([this.returnTo]);
+      return;
+    }
+
+    // Modo creación con directEntry (p.ej. type=professional en la URL): vuelve a returnTo
     if (this.view === 'select' || this.directEntry) {
       if (this.hasUnsavedChanges) {
         await this.confirmDiscard(() => {
@@ -147,6 +200,8 @@ export class AddUserPage implements OnInit {
       this.router.navigate([this.returnTo]);
       return;
     }
+
+    // Modo creación navegando internamente desde 'select': vuelve a la pantalla de selección
     if (this.hasUnsavedChanges) {
       await this.confirmDiscard(() => {
         this.resetCurrentForm();
@@ -243,8 +298,30 @@ export class AddUserPage implements OnInit {
     if (this.profForm.invalid) { this.profForm.markAllAsTouched(); return; }
     this.isSaving = true;
     const { email, password, name, surname, professionalType } = this.profForm.value;
-    const org = this.authSvc.getCurrentUser();
 
+    if (this.isEditMode) {
+      const payload: any = { email, name, surname };
+      if (password) payload.password = password;
+      if (this.profImgB64) payload.image = this.profImgB64;
+      this.userSvc.updateUserById(this.editUserId!, payload).subscribe({
+        next: async () => {
+          this.isSaving = false;
+          (await this.toastCtrl.create({
+            message: '✓ Datos actualizados', duration: 2000, color: 'success', position: 'top',
+          })).present();
+          this.router.navigate([this.returnTo]);
+        },
+        error: async err => {
+          this.isSaving = false;
+          (await this.toastCtrl.create({
+            message: err?.error?.error || 'Error al guardar cambios', duration: 3000, color: 'danger', position: 'top',
+          })).present();
+        },
+      });
+      return;
+    }
+
+    const org = this.authSvc.getCurrentUser();
     this.authSvc.register({
       email, password,
       name:             [name, surname].filter(Boolean).join(' '),
@@ -277,6 +354,28 @@ export class AddUserPage implements OnInit {
     if (this.famForm.invalid) { this.famForm.markAllAsTouched(); return; }
     this.isSaving = true;
     const { email, password } = this.famForm.value;
+
+    if (this.isEditMode) {
+      const payload: any = { email };
+      if (password) payload.password = password;
+      if (this.famImgB64) payload.image = this.famImgB64;
+      this.userSvc.updateUserById(this.editUserId!, payload).subscribe({
+        next: async () => {
+          this.isSaving = false;
+          (await this.toastCtrl.create({
+            message: '✓ Datos actualizados', duration: 2000, color: 'success', position: 'top',
+          })).present();
+          this.router.navigate([this.returnTo]);
+        },
+        error: async err => {
+          this.isSaving = false;
+          (await this.toastCtrl.create({
+            message: err?.error?.error || 'Error al guardar cambios', duration: 3000, color: 'danger', position: 'top',
+          })).present();
+        },
+      });
+      return;
+    }
 
     try {
       const regRes = await firstValueFrom(

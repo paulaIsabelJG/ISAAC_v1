@@ -1,5 +1,5 @@
 <app-page-header
-  title="PICTOGRAMAS PROPIOS"
+  title="Añadir pictograma"
   backHref="/add-user"
   (backClick)="goBack()">
 </app-page-header>
@@ -79,10 +79,7 @@
       } @else {
         <div class="album-scroll">
           @for (p of pictograms; track p.id) {
-            <div class="picto-card" [style.border-color]="getColor(p.wordType).bg">
-
-              <!-- Franja de color Fitzgerald -->
-              <div class="picto-bar" [style.background]="getColor(p.wordType).bg"></div>
+            <div class="picto-card" [style.--fitz-col]="getColor(p.wordType).bg">
 
               <!-- Cuerpo: imagen + botón tres puntos -->
               <div class="picto-body">
@@ -99,11 +96,7 @@
               </div>
 
               <!-- Pie: nombre -->
-              <div class="picto-foot"
-                   [style.background]="getColor(p.wordType).bg"
-                   [style.color]="getColor(p.wordType).text">
-                {{ p.name }}
-              </div>
+              <div class="picto-foot">{{ p.name }}</div>
 
             </div>
           }
@@ -145,10 +138,9 @@
           <p class="preview-label">Vista previa</p>
 
           <div class="picto-card picto-card--lg"
-               [style.border-color]="selectedColor.bg"
+               [style.--fitz-col]="selectedColor.bg"
                (click)="pickImage()"
                title="Toca para seleccionar imagen">
-            <div class="picto-bar" [style.background]="selectedColor.bg"></div>
             <div class="picto-body picto-body--click">
               @if (formImageUrl) {
                 <img [src]="formImageUrl" alt="Preview" class="picto-img"/>
@@ -162,11 +154,7 @@
                 </div>
               }
             </div>
-            <div class="picto-foot"
-                 [style.background]="selectedColor.bg"
-                 [style.color]="selectedColor.text">
-              {{ formName.trim() || 'Nombre' }}
-            </div>
+            <div class="picto-foot">{{ formName.trim() || 'Nombre' }}</div>
           </div>
 
           <p class="color-hint">
