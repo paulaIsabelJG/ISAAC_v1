@@ -1,0 +1,140 @@
+@if (loading) {
+  <div class="bs-spinner-row">
+    <ion-spinner name="crescent" color="secondary"></ion-spinner>
+  </div>
+} @else if (error) {
+  <div class="bs-empty-state">
+    <ion-icon name="warning-outline" class="bs-empty-icon bs-empty-icon--danger"></ion-icon>
+    <p>Error al cargar los datos de tableros.</p>
+    <button class="bs-retry-btn" (click)="reload()">Reintentar</button>
+  </div>
+} @else if (boards.length === 0) {
+  <div class="bs-empty-state">
+    <ion-icon name="grid-outline" class="bs-empty-icon"></ion-icon>
+    <p>No hay datos de tableros para el período seleccionado.</p>
+  </div>
+} @else {
+  <div class="bs-layout">
+
+    <!-- ── Columna izquierda: lista ── -->
+    <div class="bs-list">
+      @for (b of boards; track b.boardId) {
+        <div
+          class="bs-card"
+          [class.bs-card--selected]="selectedBoard?.boardId === b.boardId"
+          (click)="selectBoard(b)">
+
+          <div class="bs-card-header">
+            <span class="bs-card-name">{{ b.name || b.boardId }}</span>
+            <ion-badge [color]="getBadge(b).color" class="bs-badge">
+              {{ getBadge(b).label }}
+            </ion-badge>
+          </div>
+
+          <div class="bs-card-rate" [class]="'bs-rate--' + getBadge(b).color">
+            {{ getRate(b) }}<span class="bs-rate-unit">%</span>
+          </div>
+
+          <div class="bs-bar-track">
+            <div
+              class="bs-bar-fill"
+              [class]="'bs-bar--' + getBadge(b).color"
+              [style.width.%]="getRate(b)">
+            </div>
+          </div>
+
+          <div class="bs-mini-stats">
+            <span><b>{{ b.interactions }}</b> interac.</span>
+            <span><b>{{ b.phrases }}</b> frases</span>
+            <span><b>{{ b.voiceActions }}</b> voz</span>
+            <span><b>{{ b.navActions }}</b> nav.</span>
+          </div>
+
+        </div>
+      }
+    </div>
+
+    <!-- ── Columna derecha: detalle ── -->
+    <div class="bs-detail">
+
+      @if (!selectedBoard) {
+        <div class="bs-detail-empty">
+          <ion-icon name="bar-chart-outline" class="bs-empty-icon"></ion-icon>
+          <p>Selecciona un tablero para ver el detalle</p>
+        </div>
+      } @else {
+
+        <!-- Cabecera -->
+        <div class="bs-detail-header">
+          <div class="bs-detail-title-row">
+            <h3 class="bs-detail-name">{{ selectedBoard.name || selectedBoard.boardId }}</h3>
+            <ion-badge [color]="detailBadge.color">{{ detailBadge.label }}</ion-badge>
+          </div>
+          <div class="bs-detail-meta">
+            <span class="bs-type-chip">{{ boardShapeLabel(selectedBoard) }}</span>
+            <span class="bs-detail-interactions">{{ selectedBoard.interactions }} interacciones totales</span>
+          </div>
+        </div>
+
+        <!-- Tasa de comunicación -->
+        <div class="bs-detail-rate-row">
+          <span class="bs-detail-rate" [class]="'bs-rate--' + detailBadge.color">
+            {{ detailRate }}<span class="bs-detail-rate-unit">%</span>
+          </span>
+          <span class="bs-detail-rate-label">tasa de comunicación</span>
+        </div>
+
+        <!-- Metric cards -->
+        <div class="bs-metrics-row">
+          <div class="bs-metric-card">
+            <span class="bs-metric-value">{{ selectedBoard.phrases }}</span>
+            <span class="bs-metric-label">Frases generadas</span>
+            <span class="bs-metric-sub">{{ phrasesPct }}% de interacciones</span>
+          </div>
+          <div class="bs-metric-card">
+            <span class="bs-metric-value">{{ voicePct }}%</span>
+            <span class="bs-metric-label">Uso de voz</span>
+            <span class="bs-metric-sub">{{ selectedBoard.voiceActions }} veces</span>
+          </div>
+        </div>
+
+        <!-- Distribución -->
+        <div class="bs-breakdown">
+          <div class="bs-breakdown-title">Distribución de interacciones</div>
+
+          <div class="bs-breakdown-row">
+            <span class="bs-breakdown-label">Frases</span>
+            <div class="bs-breakdown-track">
+              <div class="bs-breakdown-bar bs-breakdown-bar--green" [style.width.%]="phrasesPct"></div>
+            </div>
+            <span class="bs-breakdown-pct">{{ phrasesPct }}%</span>
+          </div>
+
+          <div class="bs-breakdown-row">
+            <span class="bs-breakdown-label">Navegación</span>
+            <div class="bs-breakdown-track">
+              <div class="bs-breakdown-bar bs-breakdown-bar--yellow" [style.width.%]="navPct"></div>
+            </div>
+            <span class="bs-breakdown-pct">{{ navPct }}%</span>
+          </div>
+
+          <div class="bs-breakdown-row">
+            <span class="bs-breakdown-label">Otros</span>
+            <div class="bs-breakdown-track">
+              <div class="bs-breakdown-bar bs-breakdown-bar--gray" [style.width.%]="otherPct"></div>
+            </div>
+            <span class="bs-breakdown-pct">{{ otherPct }}%</span>
+          </div>
+        </div>
+
+        <!-- Insight -->
+        <div class="bs-insight" [class]="'bs-insight--' + getInsight(selectedBoard).type">
+          <ion-icon [name]="insightIcon(getInsight(selectedBoard).type)" class="bs-insight-icon"></ion-icon>
+          <p class="bs-insight-text">{{ getInsight(selectedBoard).text }}</p>
+        </div>
+
+      }
+    </div>
+
+  </div>
+}

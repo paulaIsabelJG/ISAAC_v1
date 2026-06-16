@@ -1,0 +1,405 @@
+:host { display: block; }
+
+// ── Estado vacío / error ─────────────────────────────────────────────────────
+
+.bs-spinner-row {
+  display: flex;
+  justify-content: center;
+  padding: 48px 16px;
+}
+
+.bs-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 48px 16px;
+  text-align: center;
+  color: var(--ion-color-medium);
+
+  p { margin: 0; font-size: 0.95rem; }
+}
+
+.bs-empty-icon {
+  font-size: 2.5rem;
+  color: var(--ion-color-medium);
+
+  &--danger { color: var(--ion-color-danger); }
+}
+
+.bs-retry-btn {
+  background: var(--ion-color-secondary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 20px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+// ── Layout ───────────────────────────────────────────────────────────────────
+
+.bs-layout {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+  }
+}
+
+// ── Lista (columna izquierda) ────────────────────────────────────────────────
+
+.bs-list {
+  flex: 0 0 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 620px;
+  overflow-y: auto;
+
+  @media (max-width: 768px) {
+    flex: none;
+    width: 100%;
+    max-height: 300px;
+  }
+}
+
+.bs-card {
+  background: #fff;
+  border: 1.5px solid #f0e8f8;
+  border-radius: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &:hover {
+    border-color: var(--ion-color-secondary);
+    box-shadow: 0 2px 8px rgba(124, 77, 255, 0.08);
+  }
+
+  &.bs-card--selected {
+    border-color: var(--ion-color-secondary);
+    box-shadow: 0 0 0 2px rgba(124, 77, 255, 0.18);
+  }
+}
+
+.bs-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.bs-card-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #3a2d4a;
+  line-height: 1.3;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bs-badge {
+  font-size: 0.68rem !important;
+  --padding-start: 5px;
+  --padding-end: 5px;
+  flex-shrink: 0;
+}
+
+.bs-card-rate {
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1;
+  margin: 4px 0;
+}
+
+.bs-rate-unit {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+// ── Colores de tasa ──────────────────────────────────────────────────────────
+
+.bs-rate--success { color: var(--ion-color-success); }
+.bs-rate--warning { color: var(--ion-color-warning); }
+.bs-rate--danger  { color: var(--ion-color-danger);  }
+
+// ── Barra de progreso en tarjeta ─────────────────────────────────────────────
+
+.bs-bar-track {
+  height: 4px;
+  background: #f0e8f8;
+  border-radius: 4px;
+  margin: 6px 0;
+  overflow: hidden;
+}
+
+.bs-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+
+  &.bs-bar--success { background: var(--ion-color-success); }
+  &.bs-bar--warning { background: var(--ion-color-warning); }
+  &.bs-bar--danger  { background: var(--ion-color-danger);  }
+}
+
+.bs-mini-stats {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+
+  span {
+    font-size: 0.7rem;
+    color: #8b7490;
+
+    b {
+      color: #4a3f55;
+      font-weight: 600;
+    }
+  }
+}
+
+// ── Panel de detalle (columna derecha) ───────────────────────────────────────
+
+.bs-detail {
+  flex: 1;
+  min-width: 0;
+  background: #fff;
+  border: 1.5px solid #f0e8f8;
+  border-radius: 16px;
+  padding: 20px 24px;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    padding: 16px;
+  }
+}
+
+.bs-detail-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 64px 16px;
+  color: var(--ion-color-medium);
+  text-align: center;
+
+  p { margin: 0; font-size: 0.95rem; }
+}
+
+// ── Cabecera del detalle ─────────────────────────────────────────────────────
+
+.bs-detail-header {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f5eff8;
+}
+
+.bs-detail-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.bs-detail-name {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #3a2d4a;
+}
+
+.bs-detail-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.bs-type-chip {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ion-color-secondary);
+  background: rgba(124, 77, 255, 0.08);
+  border-radius: 20px;
+  padding: 3px 10px;
+}
+
+.bs-detail-interactions {
+  font-size: 0.82rem;
+  color: #8b7490;
+}
+
+// ── Tasa grande ──────────────────────────────────────────────────────────────
+
+.bs-detail-rate-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.bs-detail-rate {
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.bs-detail-rate-unit {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.bs-detail-rate-label {
+  font-size: 0.85rem;
+  color: #8b7490;
+}
+
+// ── Metric cards ─────────────────────────────────────────────────────────────
+
+.bs-metrics-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+  }
+}
+
+.bs-metric-card {
+  flex: 1;
+  background: #f9f5ff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bs-metric-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #3a2d4a;
+}
+
+.bs-metric-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #6a4f7a;
+}
+
+.bs-metric-sub {
+  font-size: 0.72rem;
+  color: #8b7490;
+}
+
+// ── Breakdown ────────────────────────────────────────────────────────────────
+
+.bs-breakdown {
+  margin-bottom: 20px;
+}
+
+.bs-breakdown-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #6a4f7a;
+  margin-bottom: 10px;
+}
+
+.bs-breakdown-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.bs-breakdown-label {
+  font-size: 0.78rem;
+  color: #8b7490;
+  width: 80px;
+  flex-shrink: 0;
+}
+
+.bs-breakdown-track {
+  flex: 1;
+  height: 8px;
+  background: #f0e8f8;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.bs-breakdown-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+
+  &--green  { background: var(--ion-color-success); }
+  &--yellow { background: var(--ion-color-warning); }
+  &--gray   { background: #c8b8d0; }
+}
+
+.bs-breakdown-pct {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #4a3f55;
+  width: 36px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+// ── Insight ──────────────────────────────────────────────────────────────────
+
+.bs-insight {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border-left: 4px solid;
+
+  &.bs-insight--ok {
+    background: rgba(var(--ion-color-success-rgb), 0.08);
+    border-color: var(--ion-color-success);
+
+    .bs-insight-icon { color: var(--ion-color-success); }
+  }
+
+  &.bs-insight--warn {
+    background: rgba(var(--ion-color-warning-rgb), 0.1);
+    border-color: var(--ion-color-warning);
+
+    .bs-insight-icon { color: var(--ion-color-warning); }
+  }
+
+  &.bs-insight--alert {
+    background: rgba(var(--ion-color-danger-rgb), 0.08);
+    border-color: var(--ion-color-danger);
+
+    .bs-insight-icon { color: var(--ion-color-danger); }
+  }
+}
+
+.bs-insight-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.bs-insight-text {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: #4a3f55;
+}

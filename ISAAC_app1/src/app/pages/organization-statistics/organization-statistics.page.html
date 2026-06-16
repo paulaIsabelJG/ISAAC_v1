@@ -154,65 +154,7 @@
   <!-- ════════════════════ SECCIÓN: TABLEROS ════════════════════ -->
   @if (activeSection === 'tableros') {
     <div class="os-section">
-
-      @if (loadingBoards) {
-        <div class="os-spinner-row">
-          <ion-spinner name="crescent" color="secondary"></ion-spinner>
-        </div>
-      } @else if (boards.length === 0) {
-        <div class="os-empty-state">
-          <svg viewBox="0 0 64 64" fill="none" stroke="#e0d0f0" stroke-width="2" width="56" height="56">
-            <rect x="8" y="8" width="48" height="48" rx="8"/>
-            <line x1="8" y1="24" x2="56" y2="24"/>
-            <line x1="8" y1="40" x2="56" y2="40"/>
-            <line x1="24" y1="8" x2="24" y2="56"/>
-            <line x1="40" y1="8" x2="40" y2="56"/>
-          </svg>
-          <p>Aún no hay datos de uso de tableros.</p>
-          <span>Usa el comunicador para generar estadísticas.</span>
-        </div>
-      } @else {
-        <div class="os-boards-grid">
-          @for (board of boards; track board.boardId) {
-            <div class="os-board-card">
-
-              <div class="os-board-card-header">
-                <div class="os-board-name">{{ board.name || board.boardId }}</div>
-                <span class="os-board-badge">{{ boardShapeLabel(board) }}</span>
-              </div>
-
-              <div class="os-board-stats">
-                <div class="os-board-stat">
-                  <span class="os-board-stat-value">{{ board.interactions }}</span>
-                  <span class="os-board-stat-label">Interacciones</span>
-                </div>
-                <div class="os-board-stat">
-                  <span class="os-board-stat-value">{{ board.phrases }}</span>
-                  <span class="os-board-stat-label">Frases</span>
-                </div>
-                <div class="os-board-stat">
-                  <span class="os-board-stat-value">{{ board.voiceActions }}</span>
-                  <span class="os-board-stat-label">Con voz</span>
-                </div>
-                <div class="os-board-stat">
-                  <span class="os-board-stat-value">{{ board.navActions }}</span>
-                  <span class="os-board-stat-label">Navegación</span>
-                </div>
-              </div>
-
-              <!-- Barra de uso relativa -->
-              <div class="os-board-bar-track">
-                <div class="os-board-bar-fill"
-                     [style.width.%]="boards[0].interactions > 0
-                       ? (board.interactions / boards[0].interactions * 100) : 0">
-                </div>
-              </div>
-
-            </div>
-          }
-        </div>
-      }
-
+      <app-board-stats [filters]="appliedFilters"></app-board-stats>
     </div>
   }
 
@@ -265,48 +207,6 @@
         }
       }
 
-      <!-- Frases por usuario concreto (solo si no hay filtro global de usuario) -->
-      @if (!filterUserId) {
-      <div class="os-subsection-header" style="margin-top: 28px;">
-        <h3 class="os-subsection-title">Frases por usuario</h3>
-      </div>
-
-      <div class="os-user-select-row">
-        <select class="os-filter-input os-user-select" [(ngModel)]="selectedUserId" (ngModelChange)="onUserSelected()">
-          <option value="">— Selecciona un usuario final —</option>
-          @for (u of allFinalUsers; track u._id) {
-            <option [value]="u._id">{{ u.name }}</option>
-          }
-        </select>
-      </div>
-
-      @if (selectedUserId) {
-        @if (loadingUser) {
-          <div class="os-spinner-row">
-            <ion-spinner name="crescent" color="secondary"></ion-spinner>
-          </div>
-        } @else if (userPhrases.length === 0) {
-          <p class="os-empty">Este usuario aún no tiene frases registradas.</p>
-        } @else {
-          <div class="os-phrase-list">
-            @for (phrase of userPhrases; track phrase.phraseId) {
-              <app-phrase-log-card [phrase]="phrase" (deleteClick)="onDeletePhrase(phrase)"></app-phrase-log-card>
-            }
-          </div>
-          @if (userTotalPages > 1) {
-            <div class="os-pagination">
-              <button class="os-page-btn" [disabled]="userPage === 1" (click)="onUserPrevPage()">
-                &#8249; Anterior
-              </button>
-              <span class="os-page-info">{{ userPage }} / {{ userTotalPages }}</span>
-              <button class="os-page-btn" [disabled]="userPage === userTotalPages" (click)="onUserNextPage()">
-                Siguiente &#8250;
-              </button>
-            </div>
-          }
-        }
-      }
-      }<!-- /if !filterUserId -->
 
     </div>
   }

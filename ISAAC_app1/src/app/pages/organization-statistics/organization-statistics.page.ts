@@ -19,7 +19,8 @@ import { StatisticsSummaryCardsComponent } from '../../components/statistics-sum
 import { StatisticsChartCardComponent }    from '../../components/statistics-chart-card/statistics-chart-card.component';
 import { PhraseLogCardComponent }          from '../../components/phrase-log-card/phrase-log-card.component';
 import { StatisticsPdfExportService, StatsPdfMeta } from '../../services/statistics-pdf-export.service';
-import { OrgSidebarComponent } from '../../components/org-sidebar/org-sidebar.component';
+import { OrgSidebarComponent }             from '../../components/org-sidebar/org-sidebar.component';
+import { BoardStatsComponent }             from '../../components/board-stats/board-stats.component';
 
 export type DashSection = 'resumen' | 'tableros' | 'frases' | 'exportacion';
 
@@ -36,6 +37,7 @@ export type DashSection = 'resumen' | 'tableros' | 'frases' | 'exportacion';
     StatisticsChartCardComponent,
     PhraseLogCardComponent,
     OrgSidebarComponent,
+    BoardStatsComponent,
   ],
 })
 export class OrganizationStatisticsPage implements OnInit {
@@ -59,7 +61,9 @@ export class OrganizationStatisticsPage implements OnInit {
   allFinalUsers:  BackendUser[] = [];
   allOrgUsers:    BackendUser[] = [];
   allFamilyUsers: BackendUser[] = [];
-  selectedUserId = '';
+
+  // ── Filtros aplicados (pasados al hijo BoardStatsComponent) ──────────────
+  appliedFilters: StatsFilters = {};
 
   // ── Exportación ───────────────────────────────────────────────────────────
   exportFormat:      'obla' | 'pdf' = 'obla';
@@ -84,12 +88,6 @@ export class OrganizationStatisticsPage implements OnInit {
   orgPage         = 1;
   readonly orgPageSize = 20;
 
-  // ── Datos usuario seleccionado ────────────────────────────────────────────
-  userPhrases:     ReconstructedPhrase[] = [];
-  userTotalPhrases = 0;
-  userPage         = 1;
-  readonly userPageSize = 20;
-
   // ── Opciones ECharts (calculadas al cargar charts) ────────────────────────
   temporalChartOpts:    EChartsOption | null = null;
   topPictogramsOpts:    EChartsOption | null = null;
@@ -102,7 +100,6 @@ export class OrganizationStatisticsPage implements OnInit {
   loadingCharts  = false;
   loadingBoards  = false;
   loadingPhrases = false;
-  loadingUser    = false;
   errorMsg       = '';
 
   readonly scopeOptions: Array<{ value: StatsScope; label: string }> = [
@@ -133,7 +130,8 @@ export class OrganizationStatisticsPage implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.orgName = this.authSvc.getCurrentUser()?.name || 'Organización';
+    this.orgName       = this.authSvc.getCurrentUser()?.name || 'Organización';
+    this.appliedFilters = this.filters();
     this.loadAll();
     this.loadUserList();
   }
@@ -163,14 +161,16 @@ export class OrganizationStatisticsPage implements OnInit {
   }
 
   onScopeChange(): void {
-    this.filterUserId  = '';
-    this.exportBoardId = '';
+    this.filterUserId   = '';
+    this.exportBoardId  = '';
+    this.appliedFilters = this.filters();
     void this.loadBoardStats();
   }
 
   onUserFilterChange(): void {
     this.exportBoardId    = '';
     this.assignedBoards   = [];
+    this.appliedFilters   = this.filters();
     void this.loadBoardStats();
     if (this.filterUserId) {
       firstValueFrom(this.boardSvc.getAssignedBoards(this.filterUserId))
@@ -180,6 +180,7 @@ export class OrganizationStatisticsPage implements OnInit {
   }
 
   applyFilters(): void {
+    this.appliedFilters = this.filters();
     this.loadAll();
   }
 
@@ -260,29 +261,6 @@ export class OrganizationStatisticsPage implements OnInit {
     } catch { /* silencioso */ }
   }
 
-  async onUserSelected(): Promise<void> {
-    if (!this.selectedUserId) {
-      this.userPhrases      = [];
-      this.userTotalPhrases = 0;
-      return;
-    }
-    await this.loadUserPhrases(1);
-  }
-
-  async loadUserPhrases(page: number): Promise<void> {
-    if (!this.selectedUserId) return;
-    this.loadingUser = true;
-    this.userPage = page;
-    try {
-      const res: PhrasesPage = await firstValueFrom(
-        this.statsSvc.getUserPhrases(this.selectedUserId, { ...this.filters(), page, pageSize: this.userPageSize })
-      );
-      this.userPhrases      = res.phrases;
-      this.userTotalPhrases = res.totalCount;
-    } catch { /* silencioso */ }
-    finally { this.loadingUser = false; }
-  }
-
   // ── Eliminar frase ────────────────────────────────────────────────────────
 
   async onDeletePhrase(phrase: ReconstructedPhrase): Promise<void> {
@@ -304,8 +282,7 @@ export class OrganizationStatisticsPage implements OnInit {
   private async _confirmDeletePhrase(phrase: ReconstructedPhrase): Promise<void> {
     try {
       await firstValueFrom(this.statsSvc.deletePhrase(phrase.phraseId));
-      this.orgPhrases  = this.orgPhrases.filter(p => p.phraseId !== phrase.phraseId);
-      this.userPhrases = this.userPhrases.filter(p => p.phraseId !== phrase.phraseId);
+      this.orgPhrases = this.orgPhrases.filter(p => p.phraseId !== phrase.phraseId);
       await this._showToast('Frase eliminada correctamente.', 'success');
     } catch {
       await this._showToast('No se pudo eliminar la frase.', 'danger');
@@ -324,13 +301,10 @@ export class OrganizationStatisticsPage implements OnInit {
 
   // ── Paginación ────────────────────────────────────────────────────────────
 
-  get orgTotalPages():  number { return Math.ceil(this.orgTotalPhrases  / this.orgPageSize)  || 1; }
-  get userTotalPages(): number { return Math.ceil(this.userTotalPhrases / this.userPageSize) || 1; }
+  get orgTotalPages(): number { return Math.ceil(this.orgTotalPhrases / this.orgPageSize) || 1; }
 
-  onOrgPrevPage():  void { if (this.orgPage  > 1) this.loadOrgPhrases(this.orgPage  - 1); }
-  onOrgNextPage():  void { if (this.orgPage  < this.orgTotalPages)  this.loadOrgPhrases(this.orgPage  + 1); }
-  onUserPrevPage(): void { if (this.userPage > 1) this.loadUserPhrases(this.userPage - 1); }
-  onUserNextPage(): void { if (this.userPage < this.userTotalPages) this.loadUserPhrases(this.userPage + 1); }
+  onOrgPrevPage(): void { if (this.orgPage > 1) this.loadOrgPhrases(this.orgPage - 1); }
+  onOrgNextPage(): void { if (this.orgPage < this.orgTotalPages) this.loadOrgPhrases(this.orgPage + 1); }
 
   // ── Helpers de vista ──────────────────────────────────────────────────────
 
