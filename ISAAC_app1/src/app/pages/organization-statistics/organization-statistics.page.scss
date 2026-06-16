@@ -401,6 +401,14 @@ $orange-l:   #fff3eb;
   max-width:      520px;
 }
 
+.os-export-hint {
+  margin:      0;
+  font-size:   12.5px;
+  color:       $text-muted;
+  font-style:  italic;
+  line-height: 1.5;
+}
+
 .os-export-row {
   display:        flex;
   flex-direction: column;

@@ -9,8 +9,8 @@ $blue:         #4a9eff;
 $blue-light:   #e8f4ff;
 $peach:        #ff8a65;
 $peach-light:  #fff3ee;
-$violet:       #7c4dff;
-$violet-light: #f0ebff;
+$violet:       $mint;
+$violet-light: $mint-light;
 $border:       #ffb6c1;
 $bg:           #fdf5f9;
 $text-dark:    #222222;
@@ -187,21 +187,11 @@ $text-muted:   #6b5462;
   }
 
   &--violet {
-    &:hover { background: $violet-light; border-color: $violet; }
-    &.user-card--selected {
-      background: $violet-light !important;
-      border-color: $violet !important;
-      box-shadow: 0 0 0 3px rgba($violet, 0.18);
-    }
+    &:hover:not(.user-card--selected) { background: $violet-light; border-color: $violet; }
   }
 
   &--peach {
-    &:hover { background: $peach-light; border-color: $peach; }
-    &.user-card--selected {
-      background: $peach-light !important;
-      border-color: $peach !important;
-      box-shadow: 0 0 0 3px rgba($peach, 0.18);
-    }
+    &:hover:not(.user-card--selected) { background: $peach-light; border-color: $peach; }
   }
 }
 
@@ -568,6 +558,25 @@ $text-muted:   #6b5462;
     background: #ffcdd2;
     border-color: #e53935;
   }
+}
+
+.ou-board-card--clickable {
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  transition: background 0.15s, border-color 0.15s;
+
+  &:hover { background: $violet-light; border-color: $violet; }
+}
+
+.ou-perms-icon {
+  flex: 0 0 auto;
+  width: 15px;
+  height: 15px;
+  stroke: $text-muted;
+  margin-left: auto;
+  opacity: 0.6;
 }
 
 // ── Estado vacío ──────────────────────────────────────────────────────────────

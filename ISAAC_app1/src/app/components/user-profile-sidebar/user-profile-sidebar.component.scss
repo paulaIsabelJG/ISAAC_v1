@@ -1,0 +1,177 @@
+$pink:       #ff69b4;
+$pink-dark:  #e91e8c;
+$pink-light: #fff0f7;
+$border:     #ffb6c1;
+$text-dark:  #222222;
+$text-muted: #6b5462;
+
+:host { display: block; height: 100%; }
+
+// ── Contenedor ────────────────────────────────────────────────────────────────
+
+.ups-sidebar {
+  height:         100%;
+  display:        flex;
+  flex-direction: column;
+  padding:        28px 18px 20px;
+  box-sizing:     border-box;
+  background:     #fff;
+  border-right:   1.5px solid $border;
+  overflow-y:     auto;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+// ── Identidad ─────────────────────────────────────────────────────────────────
+
+.ups-identity {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            5px;
+  padding-bottom: 4px;
+}
+
+.ups-avatar {
+  width:           84px;
+  height:          84px;
+  border-radius:   50%;
+  border:          2.5px solid $border;
+  overflow:        hidden;
+  flex:            0 0 auto;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  background:      $pink-light;
+  margin-bottom:   6px;
+}
+
+.ups-avatar-img {
+  width:      100%;
+  height:     100%;
+  object-fit: cover;
+  display:    block;
+}
+
+.ups-avatar-initial {
+  font-size:   32px;
+  font-weight: 800;
+  color:       $pink-dark;
+}
+
+.ups-name {
+  font-size:   15px;
+  font-weight: 700;
+  color:       $text-dark;
+  text-align:  center;
+  line-height: 1.25;
+}
+
+.ups-email {
+  font-size:   11.5px;
+  color:       $text-muted;
+  text-align:  center;
+  word-break:  break-all;
+  line-height: 1.3;
+}
+
+// ── Divisor ───────────────────────────────────────────────────────────────────
+
+.ups-divider {
+  height:    1px;
+  background: $border;
+  margin:    18px 0 12px;
+  flex:      0 0 auto;
+}
+
+// ── Navegación ────────────────────────────────────────────────────────────────
+
+.ups-nav {
+  display:        flex;
+  flex-direction: column;
+  gap:            8px;
+}
+
+.ups-nav-item {
+  display:     flex;
+  align-items: center;
+  gap:         13px;
+  padding:     11px 14px;
+  border-radius: 16px;
+  border:      2.5px solid #f5c0ce;
+  background:  #fff;
+  color:       $text-muted;
+  font-size:   13.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor:      pointer;
+  text-align:  left;
+  width:       100%;
+  box-sizing:  border-box;
+  transition:  background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
+
+  &:hover {
+    background:   $pink-light;
+    border-color: $pink;
+    color:        $pink-dark;
+    box-shadow:   0 3px 10px rgba(255, 105, 180, 0.15);
+  }
+
+  &--active {
+    background:   $pink-light;
+    border-color: $pink-dark;
+    color:        $pink-dark;
+    font-weight:  700;
+    box-shadow:   0 3px 12px rgba(233, 30, 140, 0.14);
+  }
+}
+
+.ups-nav-img {
+  flex:          0 0 44px;
+  width:         44px;
+  height:        44px;
+  object-fit:    contain;
+  display:       block;
+  border-radius: 8px;
+}
+
+.ups-nav-label {
+  flex:        1;
+  line-height: 1.25;
+}
+
+// ── Espaciador ────────────────────────────────────────────────────────────────
+
+.ups-spacer { flex: 1; min-height: 16px; }
+
+// ── Botón volver / salir ──────────────────────────────────────────────────────
+
+.ups-back-btn {
+  display:       flex;
+  align-items:   center;
+  gap:           8px;
+  padding:       10px 13px;
+  border-radius: 12px;
+  border:        1.5px solid $border;
+  background:    transparent;
+  color:         $text-muted;
+  font-size:     13px;
+  font-weight:   600;
+  font-family:   inherit;
+  cursor:        pointer;
+  width:         100%;
+  transition:    background 0.15s, color 0.15s, border-color 0.15s;
+
+  svg {
+    flex:   0 0 16px;
+    width:  16px;
+    height: 16px;
+    stroke: currentColor;
+  }
+
+  &:hover {
+    background:   $pink-light;
+    color:        $pink-dark;
+    border-color: $pink;
+  }
+}

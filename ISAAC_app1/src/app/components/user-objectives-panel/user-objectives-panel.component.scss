@@ -1,0 +1,238 @@
+$pink:       #ff69b4;
+$pink-dark:  #e91e8c;
+$pink-light: #fff0f7;
+$border:     #ffb6c1;
+$text-dark:  #222222;
+$text-muted: #6b5462;
+
+:host { display: block; }
+
+.uop-panel {
+  padding:    28px 28px 40px;
+  box-sizing: border-box;
+}
+
+// ── Cabecera ──────────────────────────────────────────────────────────────────
+
+.uop-header {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  gap:             12px;
+  margin-bottom:   16px;
+}
+
+.uop-title-group {
+  display:     flex;
+  align-items: center;
+  gap:         10px;
+}
+
+.uop-title {
+  margin:         0;
+  font-size:      15px;
+  font-weight:    800;
+  letter-spacing: 0.6px;
+  color:          $text-dark;
+}
+
+.uop-count {
+  display:         inline-flex;
+  align-items:     center;
+  justify-content: center;
+  min-width:       24px;
+  height:          24px;
+  padding:         0 7px;
+  border-radius:   12px;
+  background:      $pink-light;
+  color:           $pink-dark;
+  font-size:       12px;
+  font-weight:     700;
+  border:          1.5px solid $border;
+}
+
+.uop-new-btn {
+  display:       flex;
+  align-items:   center;
+  gap:           6px;
+  padding:       9px 18px;
+  border-radius: 22px;
+  border:        1.5px solid $pink;
+  background:    $pink-light;
+  color:         $pink-dark;
+  font-size:     13px;
+  font-weight:   700;
+  font-family:   inherit;
+  cursor:        pointer;
+  white-space:   nowrap;
+  transition:    background 0.15s, box-shadow 0.15s;
+
+  svg { flex: 0 0 16px; width: 16px; height: 16px; stroke: $pink-dark; }
+
+  &:hover {
+    background: #ffd6ed;
+    box-shadow: 0 4px 14px rgba(255, 105, 180, 0.25);
+  }
+}
+
+// ── Filtros ───────────────────────────────────────────────────────────────────
+
+.uop-filters {
+  display:       flex;
+  gap:           6px;
+  flex-wrap:     wrap;
+  margin-bottom: 20px;
+}
+
+.uop-filter-btn {
+  padding:       6px 14px;
+  border-radius: 20px;
+  border:        1.5px solid $border;
+  background:    #fff;
+  color:         $text-muted;
+  font-size:     12px;
+  font-weight:   600;
+  font-family:   inherit;
+  cursor:        pointer;
+  transition:    background 0.15s, border-color 0.15s, color 0.15s;
+
+  &--active {
+    background:   $pink-light;
+    border-color: $pink-dark;
+    color:        $pink-dark;
+  }
+
+  &:hover:not(&--active) {
+    background:   $pink-light;
+    border-color: $pink;
+  }
+}
+
+// ── Estados ───────────────────────────────────────────────────────────────────
+
+.uop-state {
+  display:         flex;
+  justify-content: center;
+  padding:         60px 0;
+  &--error { font-size: 13px; font-weight: 600; color: #c0392b; }
+}
+
+.uop-empty {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            12px;
+  padding:        50px 0;
+  color:          $text-muted;
+
+  .uop-empty-img { width: 80px; height: 80px; object-fit: contain; opacity: 0.55; }
+  span { font-size: 13.5px; font-weight: 600; }
+}
+
+// ── Lista ─────────────────────────────────────────────────────────────────────
+
+.uop-list {
+  display:        flex;
+  flex-direction: column;
+  gap:            8px;
+}
+
+.uop-item {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  gap:             16px;
+  padding:         14px 16px;
+  background:      #fff;
+  border:          1.5px solid $border;
+  border-radius:   16px;
+  transition:      background 0.15s, border-color 0.15s;
+
+  &:hover {
+    background:   $pink-light;
+    border-color: $pink;
+  }
+}
+
+.uop-item-main {
+  display:        flex;
+  flex-direction: column;
+  gap:            3px;
+  min-width:      0;
+}
+
+.uop-item-title {
+  font-size:     14px;
+  font-weight:   700;
+  color:         $text-dark;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+  white-space:   nowrap;
+}
+
+.uop-item-desc {
+  font-size:     12px;
+  color:         $text-muted;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+  white-space:   nowrap;
+}
+
+.uop-item-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
+
+.uop-meta-date {
+  font-size:  11px;
+  color:      $text-muted;
+  font-weight: 600;
+}
+
+.uop-item-right {
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+  flex:        0 0 auto;
+}
+
+// ── Badge de estado ───────────────────────────────────────────────────────────
+
+.uop-badge {
+  padding:       3px 10px;
+  border-radius: 10px;
+  font-size:     11px;
+  font-weight:   700;
+  white-space:   nowrap;
+
+  &[data-color='success']  { background: #d4edda; color: #155724; }
+  &[data-color='primary']  { background: #d1ecf1; color: #0c5460; }
+  &[data-color='warning']  { background: #fff3cd; color: #856404; }
+  &[data-color='danger']   { background: #f8d7da; color: #721c24; }
+  &[data-color='medium']   { background: #e2e3e5; color: #383d41; }
+}
+
+// ── Botón editar ──────────────────────────────────────────────────────────────
+
+.uop-edit-btn {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  width:           32px;
+  height:          32px;
+  border-radius:   8px;
+  border:          1.5px solid $border;
+  background:      #fff;
+  cursor:          pointer;
+  transition:      background 0.15s, border-color 0.15s;
+
+  svg { width: 15px; height: 15px; stroke: $text-muted; }
+
+  &:hover {
+    background:   $pink-light;
+    border-color: $pink;
+    svg { stroke: $pink-dark; }
+  }
+}
+
+@media (max-width: 480px) {
+  .uop-panel { padding: 18px 14px 32px; }
+  .uop-item  { flex-direction: column; align-items: flex-start; }
+}

@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { IonicModule, AlertController } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -15,7 +15,7 @@ import { ObjectiveCommentItemComponent } from '../objective-comment-item/objecti
   standalone:   true,
   imports: [IonicModule, CommonModule, FormsModule, ObjectiveCommentItemComponent],
 })
-export class ObjectiveCommentsComponent implements OnInit {
+export class ObjectiveCommentsComponent implements OnInit, OnChanges {
 
   @Input() objectiveId!:   string;
   /** ID del usuario final al que pertenece este hilo de comentarios */
@@ -46,10 +46,18 @@ export class ObjectiveCommentsComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    const user        = this.authSvc.getCurrentUser();
+    const user         = this.authSvc.getCurrentUser();
     this.currentUserId = user?.id ?? '';
     this.isOrgAdmin    = user?.type === 'teacher' && !user.professionalType;
-    this.loadComments();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['objectiveId'] || changes['targetUserId']) {
+      this.comments   = [];
+      this.editingId  = null;
+      this.saveError  = '';
+      this.loadComments();
+    }
   }
 
   private async loadComments(): Promise<void> {

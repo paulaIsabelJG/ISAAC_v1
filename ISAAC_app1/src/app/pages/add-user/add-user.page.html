@@ -201,7 +201,8 @@
 
             <!-- Contraseña -->
             <div class="field">
-              <label class="field-label">Contraseña *</label>
+              <label class="field-label">Contraseña {{ isEditMode ? '' : '*' }}</label>
+              @if (isEditMode) { <span class="field-hint">Dejar en blanco para no cambiar</span> }
               <div class="pwd-wrap">
                 <input formControlName="password" [type]="showFamPwd ? 'text' : 'password'"
                        class="field-input pwd-input" placeholder="Mín. 6 caracteres"

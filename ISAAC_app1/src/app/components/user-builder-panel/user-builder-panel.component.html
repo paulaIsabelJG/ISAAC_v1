@@ -1,0 +1,47 @@
+<div class="ubuild-panel">
+
+  <div class="ubuild-header">
+    <h2 class="ubuild-title">TABLERO BUILDER</h2>
+  </div>
+
+  <div class="ubuild-hero">
+    <div class="ubuild-hero-left">
+      <img src="assets/user-session/board-builder.png" class="ubuild-hero-img" alt="Board Builder"/>
+      <div class="ubuild-hero-info">
+        <span class="ubuild-hero-label">Tableros creados</span>
+        <span class="ubuild-hero-count">{{ boards.length }}</span>
+      </div>
+    </div>
+    <button class="ubuild-open-btn" (click)="openBuilder()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="18" height="18" rx="3"/>
+        <line x1="12" y1="8" x2="12" y2="16"/>
+        <line x1="8" y1="12" x2="16" y2="12"/>
+      </svg>
+      Abrir Board Builder
+    </button>
+  </div>
+
+  @if (recentBoards.length > 0) {
+    <div class="ubuild-recent">
+      <span class="ubuild-recent-label">Editados recientemente</span>
+      <div class="ubuild-recent-list">
+        @for (b of recentBoards; track b._id) {
+          <div class="ubuild-recent-item" (click)="openBuilder()">
+            <svg class="ubuild-recent-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+              <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+              <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+              <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+            </svg>
+            <div class="ubuild-recent-meta">
+              <span class="ubuild-recent-name">{{ b.name }}</span>
+              <span class="ubuild-recent-date">{{ relativeDate(b) }}</span>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+</div>

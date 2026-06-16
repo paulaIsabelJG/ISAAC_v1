@@ -55,6 +55,7 @@ export class AddUserPage implements OnInit {
   famImgB64:  string | null = null;  famImgUrl:  SafeUrl | null = null;
 
   famRows:          FamUserRow[] = [];
+  famRowsDirty      = false;
   centerFinalUsers: BackendUser[] = [];
   selectedChildId   = '';
   famUsersLoading   = false;
@@ -92,7 +93,8 @@ export class AddUserPage implements OnInit {
     this.famForm?.reset();
     this.profImgB64 = null; this.profImgUrl = null;
     this.famImgB64  = null; this.famImgUrl  = null;
-    this.famRows    = [];
+    this.famRows     = [];
+    this.famRowsDirty = false;
     this.selectedChildId = '';
 
     const params      = this.route.snapshot.queryParamMap;
@@ -136,13 +138,39 @@ export class AddUserPage implements OnInit {
             surname: user.surname ?? surname,
             phone:   '',
           });
+          if (user.image) {
+            this.profImgUrl = this.sanitizer.bypassSecurityTrustUrl(user.image);
+          }
         } else if (this.view === 'family') {
           this.famForm.patchValue({ email: user.email });
-        }
-        if (user.image) {
-          const safeUrl = this.sanitizer.bypassSecurityTrustUrl(user.image);
-          if (this.view === 'professional') { this.profImgUrl = safeUrl; }
-          else                              { this.famImgUrl  = safeUrl; }
+          if (user.image) {
+            this.famImgUrl = this.sanitizer.bypassSecurityTrustUrl(user.image);
+          }
+          // Cargar hijos asignados con sus permisos
+          if (user.childrenAccess && user.childrenAccess.length > 0) {
+            this.userSvc.getChildrenByParentId(userId).subscribe({
+              next: ({ children }) => {
+                this.famRows = user.childrenAccess!.map(access => {
+                  const child = children.find(c => c._id === access.childId);
+                  const parts = (child?.name ?? '').trim().split(/\s+/);
+                  return {
+                    childId:                access.childId,
+                    name:                   parts[0] ?? '',
+                    surname:                parts.slice(1).join(' '),
+                    infoLabel:              this.genderLabel(child?.gender),
+                    image:                  child?.image ?? null,
+                    canViewStats:           access.canViewStats,
+                    canEditBoards:          access.canEditBoards,
+                    canEditPersonalData:    access.canEditPersonalData,
+                    canAddPictograms:       access.canAddPictograms,
+                    canAssignProfessionals: access.canAssignProfessionals,
+                    canAssignFamilies:      access.canAssignFamilies,
+                    canViewAssignedBoards:  access.canViewAssignedBoards,
+                  };
+                });
+              },
+            });
+          }
         }
       },
     });
@@ -171,7 +199,8 @@ export class AddUserPage implements OnInit {
       return this.profForm.dirty || !!this.profImgB64;
     }
     if (this.view === 'family') {
-      return this.famForm.dirty || !!this.famImgB64 || this.famRows.length > 0;
+      const rowsChanged = this.isEditMode ? this.famRowsDirty : this.famRows.length > 0;
+      return this.famForm.dirty || !!this.famImgB64 || rowsChanged;
     }
     return false;
   }
@@ -220,7 +249,7 @@ export class AddUserPage implements OnInit {
     } else if (this.view === 'family') {
       this.famForm.reset();
       this.famImgB64 = null; this.famImgUrl = null;
-      this.famRows = []; this.selectedChildId = '';
+      this.famRows = []; this.famRowsDirty = false; this.selectedChildId = '';
     }
   }
 
@@ -449,6 +478,7 @@ export class AddUserPage implements OnInit {
     if (!user) return;
     if (this.famRows.some(r => r.childId === user._id)) return;
 
+    this.famRowsDirty = true;
     const parts = user.name.trim().split(/\s+/);
     this.famRows.push({
       childId:                user._id,
@@ -469,6 +499,7 @@ export class AddUserPage implements OnInit {
 
   removeFamRow(index: number): void {
     this.famRows.splice(index, 1);
+    this.famRowsDirty = true;
   }
 
   buildSafeUrl(imageStr?: string | null): SafeUrl | string {

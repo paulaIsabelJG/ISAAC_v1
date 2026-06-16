@@ -1,0 +1,118 @@
+$violet:      #20c997;
+$violet-light: #e0fff6;
+$pink-dark:   #e91e8c;
+$border:      #e0d9f7;
+$text-dark:   #222222;
+$text-muted:  #6b5462;
+
+:host { display: block; }
+
+.ppp-container {
+  padding: 6px 0 10px;
+}
+
+// ── Cabecera ──────────────────────────────────────────────────────────────────
+
+.ppp-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px 10px;
+}
+
+.ppp-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: $violet-light;
+  color: $violet;
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 34px;
+}
+
+.ppp-username {
+  font-size: 14px;
+  font-weight: 700;
+  color: $text-dark;
+  line-height: 1.2;
+}
+
+// ── Divisor ───────────────────────────────────────────────────────────────────
+
+.ppp-divider {
+  height: 1px;
+  background: $border;
+  margin: 0 12px;
+}
+
+// ── Permisos ──────────────────────────────────────────────────────────────────
+
+.ppp-perms {
+  padding: 6px 0;
+}
+
+.ppp-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 16px;
+  transition: background 0.12s;
+
+  &:hover { background: $violet-light; }
+
+  ion-toggle {
+    flex: 0 0 auto;
+    --track-background-checked: #{$violet};
+    --handle-background: #fff;
+  }
+}
+
+.ppp-label {
+  font-size: 13px;
+  color: $text-dark;
+  font-weight: 500;
+}
+
+// ── Acciones ──────────────────────────────────────────────────────────────────
+
+.ppp-actions {
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px 0;
+  justify-content: flex-end;
+}
+
+.ppp-cancel-btn {
+  padding: 7px 16px;
+  border-radius: 10px;
+  border: 1.5px solid $border;
+  background: #fff;
+  color: $text-muted;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover { background: $violet-light; }
+}
+
+.ppp-save-btn {
+  padding: 7px 16px;
+  border-radius: 10px;
+  border: none;
+  background: $violet;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover { background: darken($violet, 10%); }
+}

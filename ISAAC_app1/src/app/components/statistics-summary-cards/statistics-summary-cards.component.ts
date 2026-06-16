@@ -10,6 +10,7 @@ import { OrgSummary }       from '../../services/aac-statistics.service';
   imports:     [CommonModule],
 })
 export class StatisticsSummaryCardsComponent {
-  @Input() summary: OrgSummary | null = null;
-  @Input() isLoading = false;
+  @Input() summary:      OrgSummary | null = null;
+  @Input() isLoading     = false;
+  @Input() familyCount?: number;
 }

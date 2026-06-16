@@ -211,32 +211,47 @@
                 <span class="detail-boards-empty">Sin usuarios vinculados</span>
               } @else {
                 <div class="ou-board-list">
-                  @for (u of selectedLinkedUsers; track u._id) {
+                  @for (entry of (selectedUser.type === 'teacher' ? assignedUsersWithPerms : []); track entry.userId) {
+                    <button class="ou-board-card ou-board-card--clickable"
+                            (click)="openPermsPopover(entry, $event)">
+                      <div class="ou-board-icon ou-board-icon--violet" [class.ou-board-icon--img]="!!entry.image">
+                        @if (entry.image) {
+                          <img [src]="buildSafeUrl(entry.image)" class="ou-board-img" [alt]="entry.name"/>
+                        } @else {
+                          <span class="ou-user-initial ou-user-initial--violet">
+                            {{ entry.name.charAt(0).toUpperCase() }}
+                          </span>
+                        }
+                      </div>
+                      <div class="ou-board-info">
+                        <span class="ou-board-name">{{ entry.name }} {{ entry.surname }}</span>
+                        <span class="ou-board-meta">{{ entry.email }}</span>
+                      </div>
+                      <svg class="ou-perms-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+                      </svg>
+                    </button>
+                  }
+                  @for (u of (selectedUser.type === 'parent' ? selectedLinkedUsers : []); track u._id) {
                     <div class="ou-board-card">
-
-                      <div class="ou-board-icon"
-                           [class.ou-board-icon--violet]="selectedUser.type === 'teacher'"
-                           [class.ou-board-icon--peach]="selectedUser.type === 'parent'"
-                           [class.ou-board-icon--img]="!!u.image">
+                      <div class="ou-board-icon ou-board-icon--peach" [class.ou-board-icon--img]="!!u.image">
                         @if (u.image) {
                           <img [src]="buildSafeUrl(u.image)" class="ou-board-img" [alt]="u.name"/>
                         } @else {
-                          <span class="ou-user-initial"
-                                [class.ou-user-initial--violet]="selectedUser.type === 'teacher'"
-                                [class.ou-user-initial--peach]="selectedUser.type === 'parent'">
+                          <span class="ou-user-initial ou-user-initial--peach">
                             {{ u.name.charAt(0).toUpperCase() }}
                           </span>
                         }
                       </div>
-
                       <div class="ou-board-info">
                         <span class="ou-board-name">{{ u.name }} {{ u.surname }}</span>
                         <span class="ou-board-meta">{{ u.email }}</span>
                       </div>
-
                     </div>
                   }
                 </div>
+
               }
             </div>
           }

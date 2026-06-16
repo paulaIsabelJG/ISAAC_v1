@@ -1,0 +1,74 @@
+<aside class="ups-sidebar">
+
+  <!-- ── Identidad ─────────────────────────────────────────────────────────── -->
+  <div class="ups-identity">
+    <div class="ups-avatar">
+      @if (avatarUrl) {
+        <img [src]="avatarUrl" class="ups-avatar-img" alt="Avatar"/>
+      } @else {
+        <span class="ups-avatar-initial">{{ initial }}</span>
+      }
+    </div>
+    <span class="ups-name">{{ displayName }}</span>
+    <span class="ups-email">{{ user?.email }}</span>
+  </div>
+
+  <div class="ups-divider"></div>
+
+  <!-- ── Navegación ─────────────────────────────────────────────────────────── -->
+  <nav class="ups-nav">
+
+    <button class="ups-nav-item ups-nav-item--active" (click)="navSelect.emit('boards')">
+      <img src="assets/user-session/board-basic-grid.png" class="ups-nav-img" alt=""/>
+      <span class="ups-nav-label">Mis tableros</span>
+    </button>
+
+    @if (permissions.canViewPersonalData) {
+      <button class="ups-nav-item" (click)="navSelect.emit('personal')">
+        <img src="assets/user-session/personal-data.png" class="ups-nav-img" alt=""/>
+        <span class="ups-nav-label">Datos personales</span>
+      </button>
+    }
+
+    @if (permissions.canViewStats) {
+      <button class="ups-nav-item" (click)="navSelect.emit('stats')">
+        <img src="assets/user-session/statistics.png" class="ups-nav-img" alt=""/>
+        <span class="ups-nav-label">Estadísticas</span>
+      </button>
+    }
+
+    @if (permissions.canEditBoards) {
+      <button class="ups-nav-item" (click)="navSelect.emit('builder')">
+        <img src="assets/user-session/board-builder.png" class="ups-nav-img" alt=""/>
+        <span class="ups-nav-label">Tablero Builder</span>
+      </button>
+    }
+
+    <button class="ups-nav-item" (click)="navSelect.emit('objectives')">
+      <img src="assets/user-session/objetivos.png" class="ups-nav-img" alt=""/>
+      <span class="ups-nav-label">{{ fromLogin ? 'Mis objetivos' : 'Objetivos' }}</span>
+    </button>
+
+  </nav>
+
+  <div class="ups-spacer"></div>
+
+  <!-- ── Salir / Volver ─────────────────────────────────────────────────────── -->
+  <button class="ups-back-btn" (click)="navSelect.emit('back')">
+    @if (fromLogin) {
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+        <polyline points="16 17 21 12 16 7"/>
+        <line x1="21" y1="12" x2="9" y2="12"/>
+      </svg>
+      Salir
+    } @else {
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="19" y1="12" x2="5" y2="12"/>
+        <polyline points="12 19 5 12 12 5"/>
+      </svg>
+      Volver
+    }
+  </button>
+
+</aside>

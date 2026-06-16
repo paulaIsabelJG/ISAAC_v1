@@ -1,3 +1,8 @@
+@if (showPageHeader) {
+  <app-page-header title="Objetivos" [backHref]="returnTo" (backClick)="goBack()">
+  </app-page-header>
+}
+
 <ion-content class="ol-content">
 <div class="ol-layout" [class.ol-layout--sidebar]="showOrgSidebar">
 
@@ -7,11 +12,13 @@
 
   <div class="ol-main">
 
-    <!-- ── Topbar: solo título ──────────────────────────────────────────────── -->
-    <div class="ol-topbar">
-      <h1 class="ol-page-title">Objetivos</h1>
-      <p class="ol-page-subtitle">{{ userName }}</p>
-    </div><!-- /ol-topbar -->
+    <!-- ── Topbar: solo título (no desde user-session, que ya tiene app-page-header) ── -->
+    @if (!showPageHeader) {
+      <div class="ol-topbar">
+        <h1 class="ol-page-title">Objetivos</h1>
+        <p class="ol-page-subtitle">{{ userName }}</p>
+      </div>
+    }<!-- /ol-topbar -->
 
     <!-- ── Loading / Error ───────────────────────────────────────────────── -->
     @if (isLoading || loadError) {
@@ -235,17 +242,14 @@
                 }
 
               } @else {
-                <!-- Creador: hilo del usuario seleccionado por pestaña -->
-                @if (selectedTabUserId) {
-                  <!-- @for con track fuerza recrear el componente al cambiar de usuario -->
-                  @for (uid of [selectedTabUserId]; track uid) {
-                    <app-objective-comments
-                      [objectiveId]="selectedObjective._id"
-                      [targetUserId]="uid"
-                      [canComment]="true"
-                      (commentsCountChanged)="updateThreadCount(selectedObjective._id, uid, $event)">
-                    </app-objective-comments>
-                  }
+                <!-- Creador: hilo del usuario activo (pestaña o filterUserId bloqueado) -->
+                @if (effectiveTabUserId) {
+                  <app-objective-comments
+                    [objectiveId]="selectedObjective._id"
+                    [targetUserId]="effectiveTabUserId"
+                    [canComment]="true"
+                    (commentsCountChanged)="updateThreadCount(selectedObjective._id, effectiveTabUserId, $event)">
+                  </app-objective-comments>
                 } @else {
                   <p class="ol-chat-empty">Sin usuarios asignados.</p>
                 }

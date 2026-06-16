@@ -7,7 +7,7 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { Subscription } from 'rxjs';
 import { buildSafeUrl as buildSafeUrlUtil } from '../../shared/utils/image.utils';
 import { AuthService, User } from '../../services/auth.service';
-import { UserService, BackendUser } from '../../services/user.service';
+import { UserService, BackendUser, AssignedUserEntry, AssignedProfessionalPayload } from '../../services/user.service';
 import {
   OrganizationUsersService,
   UserCardData,
@@ -17,6 +17,7 @@ import { BoardService, Board } from '../../services/board.service';
 import { PictogramStateService } from '../../services/pictogram-state.service';
 import { OrgSidebarComponent } from '../../components/org-sidebar/org-sidebar.component';
 import { AddUserPopoverComponent } from '../../components/add-user-popover/add-user-popover.component';
+import { ProfPermsPopoverComponent } from '../../components/prof-perms-popover/prof-perms-popover.component';
 
 @Component({
   selector: 'app-organization-users',
@@ -40,8 +41,9 @@ export class OrganizationUsersPage implements OnInit, OnDestroy {
   selectedUser: UserCardData | null = null;
   searchQuery  = '';
 
-  selectedUserBoards: Board[] = [];
-  selectedLinkedUsers: UserCardData[] = [];
+  selectedUserBoards:     Board[]             = [];
+  selectedLinkedUsers:    UserCardData[]       = [];
+  assignedUsersWithPerms: AssignedUserEntry[]  = [];
   boardsLoading = false;
 
   private subs = new Subscription();
@@ -69,14 +71,16 @@ export class OrganizationUsersPage implements OnInit, OnDestroy {
   }
 
   private loadBoardsForUser(u: UserCardData | null): void {
-    this.selectedUserBoards = [];
-    this.selectedLinkedUsers = [];
+    this.selectedUserBoards     = [];
+    this.selectedLinkedUsers    = [];
+    this.assignedUsersWithPerms = [];
     if (!u) return;
     this.boardsLoading = true;
 
     if (u.type === 'teacher') {
       this.userService.getAssignedUsers(u._id).subscribe({
         next: (res) => {
+          this.assignedUsersWithPerms = res.users;
           this.selectedLinkedUsers = res.users.map(a => ({
             _id:     a.userId,
             name:    a.name,
@@ -273,6 +277,83 @@ export class OrganizationUsersPage implements OnInit, OnDestroy {
     if (board.predictorEnabled) b.push({ label: 'IA',        cls: 'ou-badge--ia'  });
     if (board.aiRewriteEnabled) b.push({ label: 'IA TEXTO',  cls: 'ou-badge--ia'  });
     return b;
+  }
+
+  // ── Permisos del profesional sobre un usuario ────────────────────────────────
+
+  async openPermsPopover(entry: AssignedUserEntry, event: Event): Promise<void> {
+    if (!this.selectedUser) return;
+    const professionalId = this.selectedUser._id;
+
+    const popover = await this.popoverCtrl.create({
+      component: ProfPermsPopoverComponent,
+      componentProps: {
+        userName:     `${entry.name} ${entry.surname}`,
+        userInitial:  entry.name.charAt(0).toUpperCase(),
+        initialPerms: {
+          canViewStats:           entry.canViewStats,
+          canEditBoards:          entry.canEditBoards,
+          canEditPersonalData:    entry.canEditPersonalData,
+          canAddPictograms:       entry.canAddPictograms,
+          canAssignProfessionals: entry.canAssignProfessionals,
+          canAssignFamilies:      entry.canAssignFamilies,
+          canViewAssignedBoards:  entry.canViewAssignedBoards,
+        },
+      },
+      event,
+      translucent:     false,
+      showBackdrop:    true,
+      backdropDismiss: true,
+      cssClass:        'isaac-perms-popover',
+      alignment:       'center',
+      side:            'left',
+    });
+
+    await popover.present();
+
+    const { data } = await popover.onDidDismiss<{ perms: Record<string, boolean> }>();
+    if (!data?.perms) return;
+
+    const perms = data.perms;
+    this.userService.getAssignedProfessionals(entry.userId).subscribe({
+      next: (res) => {
+        const payload: AssignedProfessionalPayload[] = res.assignedProfessionals.map(p => ({
+          professionalId:         p.professionalId,
+          canViewStats:           p.professionalId === professionalId ? perms['canViewStats']           : p.canViewStats,
+          canEditBoards:          p.professionalId === professionalId ? perms['canEditBoards']          : p.canEditBoards,
+          canEditPersonalData:    p.professionalId === professionalId ? perms['canEditPersonalData']    : p.canEditPersonalData,
+          canAddPictograms:       p.professionalId === professionalId ? perms['canAddPictograms']       : p.canAddPictograms,
+          canAssignProfessionals: p.professionalId === professionalId ? perms['canAssignProfessionals'] : p.canAssignProfessionals,
+          canAssignFamilies:      p.professionalId === professionalId ? perms['canAssignFamilies']      : p.canAssignFamilies,
+          canViewAssignedBoards:  p.professionalId === professionalId ? perms['canViewAssignedBoards']  : p.canViewAssignedBoards,
+        }));
+
+        this.userService.updateAssignedProfessionals(entry.userId, payload).subscribe({
+          next: async () => {
+            const idx = this.assignedUsersWithPerms.findIndex(u => u.userId === entry.userId);
+            if (idx !== -1) {
+              this.assignedUsersWithPerms[idx] = { ...this.assignedUsersWithPerms[idx], ...perms };
+            }
+            const toast = await this.toastCtrl.create({
+              message: '✓ Permisos actualizados', duration: 2000, color: 'success', position: 'top',
+            });
+            await toast.present();
+          },
+          error: async () => {
+            const toast = await this.toastCtrl.create({
+              message: 'Error al guardar permisos', duration: 3000, color: 'danger', position: 'top',
+            });
+            await toast.present();
+          },
+        });
+      },
+      error: async () => {
+        const toast = await this.toastCtrl.create({
+          message: 'Error al cargar datos del usuario', duration: 3000, color: 'danger', position: 'top',
+        });
+        await toast.present();
+      },
+    });
   }
 
   goToPersonalData(u: UserCardData): void {

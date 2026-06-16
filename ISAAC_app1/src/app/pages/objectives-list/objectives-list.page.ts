@@ -9,13 +9,14 @@ import { ObjectiveService, Objective, ObjectiveEffectiveStatus } from '../../ser
 import { OrgSidebarComponent } from '../../components/org-sidebar/org-sidebar.component';
 import { LoadingErrorStateComponent } from '../../components/loading-error-state/loading-error-state.component';
 import { ObjectiveCommentsComponent } from '../../components/objective-comments/objective-comments.component';
+import { AppPageHeaderComponent } from '../../components/app-page-header/app-page-header.component';
 
 @Component({
   selector: 'app-objectives-list',
   templateUrl: './objectives-list.page.html',
   styleUrls:  ['./objectives-list.page.scss'],
   standalone: true,
-  imports: [IonicModule, CommonModule, FormsModule, OrgSidebarComponent, LoadingErrorStateComponent, ObjectiveCommentsComponent],
+  imports: [IonicModule, CommonModule, FormsModule, OrgSidebarComponent, LoadingErrorStateComponent, ObjectiveCommentsComponent, AppPageHeaderComponent],
 })
 export class ObjectivesListPage implements OnInit {
 
@@ -65,12 +66,19 @@ export class ObjectivesListPage implements OnInit {
   get currentUserId(): string  { return this.authSvc.getCurrentUser()?.id  ?? ''; }
   get userName():      string  { return this.authSvc.getCurrentUser()?.name ?? ''; }
   get isCreator():     boolean { return this.role === 'creator'; }
-  get showOrgSidebar(): boolean { return this.returnTo.startsWith('/organization-dashboard'); }
+  get showOrgSidebar(): boolean  { return this.returnTo.startsWith('/organization-dashboard'); }
+  get showPageHeader(): boolean  { return this.returnTo.startsWith('/user-session/'); }
 
-  /** Mostrar pestañas de usuario para el creador cuando hay al menos un usuario asignado */
+  /** Mostrar pestañas de usuario para el creador cuando hay al menos un usuario asignado y no hay filtro fijo */
   get showUserTabs(): boolean {
     if (this.role === 'user' || this.role === 'family') return false;
+    if (this.filterUserId) return false;
     return (this.selectedObjective?.assignedUserIds?.length ?? 0) >= 1;
+  }
+
+  /** ID del usuario cuyo hilo de comentarios se muestra. Cuando hay filterUserId está bloqueado a él. */
+  get effectiveTabUserId(): string {
+    return this.filterUserId || this.selectedTabUserId;
   }
 
   constructor(
@@ -162,8 +170,10 @@ export class ObjectivesListPage implements OnInit {
   selectObjective(obj: Objective): void {
     this.selectedObjective = obj;
     this.showMobileDetail  = true;
-    const first = obj.assignedUserIds[0];
-    this.selectedTabUserId = first?._id ?? '';
+    const preferred = this.filterUserId
+      ? obj.assignedUserIds.find(u => u._id === this.filterUserId)
+      : null;
+    this.selectedTabUserId = preferred?._id ?? obj.assignedUserIds[0]?._id ?? '';
   }
 
   closeMobileDetail(): void {

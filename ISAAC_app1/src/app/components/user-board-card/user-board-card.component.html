@@ -1,0 +1,30 @@
+<div class="ubc-card">
+
+  <div class="ubc-img-wrap">
+    @if (board?.imageUrl) {
+      <img [src]="safeImageUrl" class="ubc-img" [alt]="board.name"/>
+    } @else {
+      <svg class="ubc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+        <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+        <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+        <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+      </svg>
+    }
+  </div>
+
+  <div class="ubc-info">
+    <span class="ubc-name">{{ board?.name }}</span>
+    @if (relativeDate) {
+      <span class="ubc-date">{{ relativeDate }}</span>
+    }
+  </div>
+
+  @if (showHold) {
+    <div class="ubc-hold-overlay">
+      <ion-progress-bar [value]="holdProgress / 100" color="secondary"></ion-progress-bar>
+      <span class="ubc-hold-hint">Mantén pulsado…</span>
+    </div>
+  }
+
+</div>

@@ -108,6 +108,7 @@ export interface StatsFilters {
   from?:     string;
   to?:       string;
   scope?:    StatsScope;
+  userId?:   string;
   page?:     number;
   pageSize?: number;
 }
@@ -138,6 +139,7 @@ export class AacStatisticsService {
     if (filters?.to)       p = p.set('to',       filters.to);
     if (filters?.scope && filters.scope !== 'all')
                            p = p.set('scope',    filters.scope);
+    if (filters?.userId)   p = p.set('userId',   filters.userId);
     if (filters?.page)     p = p.set('page',     String(filters.page));
     if (filters?.pageSize) p = p.set('pageSize', String(filters.pageSize));
     return p;

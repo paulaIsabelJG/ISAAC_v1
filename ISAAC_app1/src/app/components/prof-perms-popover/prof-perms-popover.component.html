@@ -1,0 +1,29 @@
+<div class="ppp-container">
+
+  <div class="ppp-header">
+    <div class="ppp-avatar">{{ userInitial }}</div>
+    <span class="ppp-username">{{ userName }}</span>
+  </div>
+
+  <div class="ppp-divider"></div>
+
+  <div class="ppp-perms">
+    @for (perm of permLabels; track perm.key) {
+      <div class="ppp-row">
+        <span class="ppp-label">{{ perm.label }}</span>
+        <ion-toggle size="small"
+                    [checked]="getPerm(perm.key)"
+                    (ionChange)="onPermChange(perm.key, $event)">
+        </ion-toggle>
+      </div>
+    }
+  </div>
+
+  <div class="ppp-divider"></div>
+
+  <div class="ppp-actions">
+    <button class="ppp-cancel-btn" (click)="cancel()">Cancelar</button>
+    <button class="ppp-save-btn"   (click)="save()">Guardar</button>
+  </div>
+
+</div>

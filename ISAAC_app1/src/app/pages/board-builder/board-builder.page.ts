@@ -21,6 +21,7 @@ import { ObzImportService } from '../../services/obz-import.service';
 import { LoadingErrorStateComponent } from '../../components/loading-error-state/loading-error-state.component';
 import { OrgSidebarComponent } from '../../components/org-sidebar/org-sidebar.component';
 import { BoardThumbnailComponent } from '../../components/board-thumbnail/board-thumbnail.component';
+import { AppPageHeaderComponent } from '../../components/app-page-header/app-page-header.component';
 
 export type FilterKey =
   | 'all' | 'favorites' | 'published' | 'draft'
@@ -49,12 +50,12 @@ export const FILTER_OPTIONS: { value: FilterKey; label: string }[] = [
   imports: [
     IonicModule, FormsModule,
     NgClass,
-    LoadingErrorStateComponent, OrgSidebarComponent, BoardThumbnailComponent,
+    LoadingErrorStateComponent, OrgSidebarComponent, BoardThumbnailComponent, AppPageHeaderComponent,
   ],
 })
 export class BoardBuilderPage implements OnInit {
 
-  private returnTo = '/organization-dashboard';
+  returnTo = '/organization-dashboard';
 
   contextCreatorId   = '';
   contextCreatorName = '';
@@ -590,6 +591,10 @@ export class BoardBuilderPage implements OnInit {
   }
 
   // ── Navegación ─────────────────────────────────────────────────────────────
+
+  get showOrgSidebar(): boolean {
+    return !this.returnTo.startsWith('/user-session/');
+  }
 
   goBack()     { this.router.navigateByUrl(this.returnTo); }
 

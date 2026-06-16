@@ -1,8 +1,15 @@
+@if (!showOrgSidebar) {
+  <app-page-header title="Board Builder" [backHref]="returnTo" (backClick)="goBack()">
+  </app-page-header>
+}
+
 <ion-content class="bb-content">
-  <div class="bb-layout">
+  <div class="bb-layout" [class.bb-layout--no-sidebar]="!showOrgSidebar">
 
     <!-- ══════════════════════════════════════════════════════ SIDEBAR ══ -->
-    <app-org-sidebar activeItem="boards"></app-org-sidebar>
+    @if (showOrgSidebar) {
+      <app-org-sidebar activeItem="boards"></app-org-sidebar>
+    }
 
     <!-- ═══════════════════════════════════════════════════ MAIN AREA ══ -->
     <div class="bb-main">

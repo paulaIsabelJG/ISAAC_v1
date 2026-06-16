@@ -1,0 +1,67 @@
+<div class="ubp-panel">
+
+  <!-- ── Cabecera ───────────────────────────────────────────────────────────── -->
+  <div class="ubp-header">
+    <div class="ubp-title-group">
+      <h2 class="ubp-title">TABLEROS PROPIOS</h2>
+      @if (!loading) {
+        <span class="ubp-count">{{ boards.length }}</span>
+      }
+    </div>
+    @if (canEditBoards) {
+      <button class="ubp-new-btn" (click)="goToCreate()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Nuevo tablero
+      </button>
+    }
+  </div>
+
+  <!-- ── Descarga en curso ──────────────────────────────────────────────────── -->
+  @if (isDownloading) {
+    <div class="ubp-downloading">
+      <ion-spinner name="crescent" color="secondary"></ion-spinner>
+      <span>Generando archivo…</span>
+    </div>
+  }
+
+  <!-- ── Estados ────────────────────────────────────────────────────────────── -->
+  @if (loading) {
+    <div class="ubp-state">
+      <ion-spinner name="crescent" color="primary"></ion-spinner>
+    </div>
+  } @else if (error) {
+    <div class="ubp-state ubp-state--error">{{ error }}</div>
+  } @else if (boards.length === 0) {
+    <div class="ubp-empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+        <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+        <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+        <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+        <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+      </svg>
+      <span>Aún no hay tableros asignados.</span>
+    </div>
+  } @else {
+    <!-- ── Grid ──────────────────────────────────────────────────────────────── -->
+    <div class="ubp-grid">
+      @for (board of boards; track board._id) {
+        <div class="ubp-card-wrap"
+             (pointerdown)="startHold($event, board)"
+             (pointerup)="cancelHold()"
+             (pointermove)="onHoldPointerMove($event)"
+             (pointerleave)="cancelHold()"
+             (click)="onBoardCardClick(board)">
+          <app-user-board-card
+            [board]="board"
+            [showHold]="holdBoardId === board._id && holdProgress >= 25"
+            [holdProgress]="holdProgress">
+          </app-user-board-card>
+        </div>
+      }
+    </div>
+  }
+
+</div>

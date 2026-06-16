@@ -1,0 +1,76 @@
+<div class="uop-panel">
+
+  <!-- ── Cabecera ──────────────────────────────────────────────────────────── -->
+  <div class="uop-header">
+    <div class="uop-title-group">
+      <h2 class="uop-title">MIS OBJETIVOS</h2>
+      @if (!loading) {
+        <span class="uop-count">{{ filtered.length }}</span>
+      }
+    </div>
+    @if (canCreate) {
+      <button class="uop-new-btn" (click)="goToCreate()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Nuevo objetivo
+      </button>
+    }
+  </div>
+
+  <!-- ── Filtros ────────────────────────────────────────────────────────────── -->
+  <div class="uop-filters">
+    @for (f of [['all','Todos'],['active','Activos'],['completed','Completados'],['expired','Vencidos'],['cancelled','Cancelados']]; track f[0]) {
+      <button class="uop-filter-btn"
+              [class.uop-filter-btn--active]="filterStatus === f[0]"
+              (click)="setFilter(f[0])">{{ f[1] }}</button>
+    }
+  </div>
+
+  <!-- ── Estado ─────────────────────────────────────────────────────────────── -->
+  @if (loading) {
+    <div class="uop-state">
+      <ion-spinner name="crescent" color="primary"></ion-spinner>
+    </div>
+  } @else if (error) {
+    <div class="uop-state uop-state--error">{{ error }}</div>
+  } @else if (filtered.length === 0) {
+    <div class="uop-empty">
+      <img src="assets/user-session/objetivos.png" class="uop-empty-img" alt=""/>
+      <span>No hay objetivos en esta categoría.</span>
+    </div>
+  } @else {
+    <div class="uop-list">
+      @for (obj of filtered; track obj._id) {
+        <div class="uop-item">
+          <div class="uop-item-main">
+            <span class="uop-item-title">{{ obj.title }}</span>
+            @if (obj.description) {
+              <span class="uop-item-desc">{{ obj.description }}</span>
+            }
+            <div class="uop-item-meta">
+              @if (obj.endDate) {
+                <span class="uop-meta-date">Vence: {{ formatDate(obj.endDate) }}</span>
+              }
+            </div>
+          </div>
+          <div class="uop-item-right">
+            <span class="uop-badge" [attr.data-color]="statusColor(obj.effectiveStatus)">
+              {{ statusLabel(obj.effectiveStatus) }}
+            </span>
+            @if (canCreate && obj.status !== 'cancelled') {
+              <button class="uop-edit-btn" (click)="goToEdit(obj)" title="Editar objetivo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+</div>

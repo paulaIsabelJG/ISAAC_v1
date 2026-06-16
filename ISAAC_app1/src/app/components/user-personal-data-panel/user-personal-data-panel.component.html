@@ -1,0 +1,68 @@
+<div class="upd-panel">
+
+  <div class="upd-header">
+    <h2 class="upd-title">DATOS PERSONALES</h2>
+    <button class="upd-edit-btn" (click)="goToEdit()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+      </svg>
+      Editar
+    </button>
+  </div>
+
+  @if (!user) {
+    <div class="upd-state">
+      <ion-spinner name="crescent" color="primary"></ion-spinner>
+    </div>
+  } @else {
+    <div class="upd-card">
+
+      <!-- Avatar -->
+      <div class="upd-avatar-wrap">
+        <div class="upd-avatar">
+          @if (avatarUrl) {
+            <img [src]="avatarUrl" class="upd-avatar-img" alt="Avatar"/>
+          } @else {
+            <span class="upd-avatar-initial">{{ initial }}</span>
+          }
+        </div>
+        <span class="upd-display-name">{{ displayName }}</span>
+      </div>
+
+      <!-- Campos -->
+      <div class="upd-fields">
+
+        <div class="upd-field">
+          <span class="upd-field-label">Email</span>
+          <span class="upd-field-value">{{ user.email }}</span>
+        </div>
+
+        @if (genderLabel) {
+          <div class="upd-field">
+            <span class="upd-field-label">Género</span>
+            <span class="upd-field-value">{{ genderLabel }}</span>
+          </div>
+        }
+
+        @if (formattedBirth) {
+          <div class="upd-field">
+            <span class="upd-field-label">Fecha de nacimiento</span>
+            <span class="upd-field-value">
+              {{ formattedBirth }}
+              @if (age !== null) { <em class="upd-age">({{ age }} años)</em> }
+            </span>
+          </div>
+        }
+
+      </div><!-- /upd-fields -->
+
+    </div><!-- /upd-card -->
+
+    <p class="upd-hint">
+      Para modificar los datos pulsa
+      <button class="upd-hint-link" (click)="goToEdit()">Editar</button>.
+    </p>
+  }
+
+</div>

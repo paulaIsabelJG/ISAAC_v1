@@ -22,6 +22,10 @@ $card-bg:      #ffffff;
   height: 100%;
   overflow: hidden;
 
+  &--no-sidebar {
+    grid-template-columns: 1fr;
+  }
+
   @media (max-width: 600px) {
     grid-template-columns: 1fr;
     app-org-sidebar { display: none; }
@@ -387,6 +391,31 @@ $card-bg:      #ffffff;
 }
 
 // ── Título de página ──────────────────────────────────────────────────────────
+.bb-back-btn {
+  display:       inline-flex;
+  align-items:   center;
+  gap:           6px;
+  padding:       7px 14px;
+  border-radius: 20px;
+  border:        1.5px solid #ffb6c1;
+  background:    transparent;
+  color:         #6b5462;
+  font-size:     13px;
+  font-weight:   600;
+  font-family:   inherit;
+  cursor:        pointer;
+  margin-bottom: 10px;
+  transition:    background 0.15s, border-color 0.15s, color 0.15s;
+
+  svg { width: 15px; height: 15px; stroke: currentColor; }
+
+  &:hover {
+    background:   #fff0f7;
+    border-color: #ff69b4;
+    color:        #e91e8c;
+  }
+}
+
 .bb-page-title {
   font-size:   20px;
   font-weight: 800;

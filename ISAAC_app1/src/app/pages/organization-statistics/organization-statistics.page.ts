@@ -8,6 +8,7 @@ import type { EChartsOption } from 'echarts';
 
 import { AuthService }       from '../../services/auth.service';
 import { UserService, BackendUser } from '../../services/user.service';
+import { BoardService, Board } from '../../services/board.service';
 import {
   AacStatisticsService,
   OrgSummary, OrgCharts, BoardStat, PhrasesPage,
@@ -49,28 +50,30 @@ export class OrganizationStatisticsPage implements OnInit {
   activeSection: DashSection = 'resumen';
 
   // ── Filtros ───────────────────────────────────────────────────────────────
-  filterFrom  = '';
-  filterTo    = '';
+  filterFrom   = '';
+  filterTo     = '';
   filterScope: StatsScope = 'all';
+  filterUserId = '';
 
   // ── Selector de usuario ───────────────────────────────────────────────────
   allFinalUsers:  BackendUser[] = [];
   allOrgUsers:    BackendUser[] = [];
+  allFamilyUsers: BackendUser[] = [];
   selectedUserId = '';
 
   // ── Exportación ───────────────────────────────────────────────────────────
-  exportFormat:      'obla' | 'pdf'                          = 'obla';
-  downloadPdfLoading = false;
-
-  exportDateFilter:  'all' | 'today' | '7days' | '30days' | 'custom' = 'all';
-  exportDateFrom     = '';
-  exportDateTo       = '';
+  exportFormat:      'obla' | 'pdf' = 'obla';
   exportBoardId      = '';
-  exportScope:       'userType' | 'family' | 'user'          = 'userType';
-  exportUserType:    'user' | 'professional' | 'parent'      = 'user';
-  exportFamilyUserId = '';
-  exportUserId       = '';
   exportLoading      = false;
+  downloadPdfLoading = false;
+  assignedBoards:    Board[] = [];
+
+  get exportBoardOptions(): Array<{ id: string; name: string }> {
+    if (this.filterUserId) {
+      return this.assignedBoards.map(b => ({ id: b._id, name: b.name }));
+    }
+    return this.boards.map(b => ({ id: b.boardId, name: b.name || b.boardId }));
+  }
 
   // ── Datos org ─────────────────────────────────────────────────────────────
   summary:       OrgSummary | null = null;
@@ -122,6 +125,7 @@ export class OrganizationStatisticsPage implements OnInit {
     private router:      Router,
     private authSvc:     AuthService,
     private userSvc:     UserService,
+    private boardSvc:    BoardService,
     private statsSvc:    AacStatisticsService,
     private alertCtrl:   AlertController,
     private toastCtrl:   ToastController,
@@ -138,10 +142,41 @@ export class OrganizationStatisticsPage implements OnInit {
 
   private filters(): StatsFilters {
     return {
-      from:  this.filterFrom || undefined,
-      to:    this.filterTo   || undefined,
-      scope: this.filterScope,
+      from:   this.filterFrom   || undefined,
+      to:     this.filterTo     || undefined,
+      scope:  this.filterScope,
+      userId: this.filterUserId || undefined,
     };
+  }
+
+  get filteredUserList(): BackendUser[] {
+    switch (this.filterScope) {
+      case 'users':         return this.allFinalUsers;
+      case 'professionals': return this.allOrgUsers.filter(u => u.type === 'teacher');
+      case 'families':      return this.allFamilyUsers;
+      default:              return this.allOrgUsers;
+    }
+  }
+
+  get filterUserName(): string {
+    return this.allOrgUsers.find(u => u._id === this.filterUserId)?.name ?? '';
+  }
+
+  onScopeChange(): void {
+    this.filterUserId  = '';
+    this.exportBoardId = '';
+    void this.loadBoardStats();
+  }
+
+  onUserFilterChange(): void {
+    this.exportBoardId    = '';
+    this.assignedBoards   = [];
+    void this.loadBoardStats();
+    if (this.filterUserId) {
+      firstValueFrom(this.boardSvc.getAssignedBoards(this.filterUserId))
+        .then(res => { this.assignedBoards = res.boards; })
+        .catch(() => { this.assignedBoards = []; });
+    }
   }
 
   applyFilters(): void {
@@ -198,9 +233,11 @@ export class OrganizationStatisticsPage implements OnInit {
     this.loadingPhrases = true;
     this.orgPage = page;
     try {
-      const res: PhrasesPage = await firstValueFrom(
-        this.statsSvc.getOrganizationPhrases({ ...this.filters(), page, pageSize: this.orgPageSize })
-      );
+      const f = { ...this.filters(), page, pageSize: this.orgPageSize };
+      const obs = this.filterUserId
+        ? this.statsSvc.getUserPhrases(this.filterUserId, f)
+        : this.statsSvc.getOrganizationPhrases(f);
+      const res: PhrasesPage = await firstValueFrom(obs);
       this.orgPhrases      = res.phrases;
       this.orgTotalPhrases = res.totalCount;
     } catch { /* silencioso */ }
@@ -214,6 +251,12 @@ export class OrganizationStatisticsPage implements OnInit {
       const res = await firstValueFrom(this.userSvc.getUsersByCenter(user.centro));
       this.allFinalUsers = res.users.filter(u => u.type === 'user');
       this.allOrgUsers   = res.users;
+      if (this.allFinalUsers.length > 0) {
+        const famRes = await firstValueFrom(
+          this.userSvc.getFamiliesForUsers(this.allFinalUsers.map(u => u._id))
+        );
+        this.allFamilyUsers = famRes.families;
+      }
     } catch { /* silencioso */ }
   }
 
@@ -310,15 +353,21 @@ export class OrganizationStatisticsPage implements OnInit {
   // ── Exportación OBLA ─────────────────────────────────────────────────────
 
   async runExport(): Promise<void> {
+    const f = this.filters();
     const params: OblaExportParams = {
-      dateFilter:   this.exportDateFilter,
-      dateFrom:     this.exportDateFilter === 'custom' ? this.exportDateFrom  : undefined,
-      dateTo:       this.exportDateFilter === 'custom' ? this.exportDateTo    : undefined,
-      boardId:      this.exportBoardId   || undefined,
-      exportScope:  this.exportScope,
-      userType:     this.exportScope === 'userType' ? this.exportUserType     : undefined,
-      familyUserId: this.exportScope === 'family'   ? this.exportFamilyUserId : undefined,
-      userId:       this.exportScope === 'user'     ? this.exportUserId       : undefined,
+      dateFilter:  (f.from || f.to) ? 'custom' : 'all',
+      dateFrom:    f.from,
+      dateTo:      f.to,
+      boardId:     this.exportBoardId || undefined,
+      exportScope: this.filterUserId                      ? 'user'
+                 : this.filterScope === 'families'        ? 'family'
+                 : 'userType',
+      userType:    (!this.filterUserId && this.filterScope !== 'families')
+                 ? (this.filterScope === 'professionals'  ? 'professional'
+                   : this.filterScope === 'users'         ? 'user'
+                   : 'user')
+                 : undefined,
+      userId:      this.filterUserId || undefined,
     };
 
     this.exportLoading = true;
@@ -344,18 +393,15 @@ export class OrganizationStatisticsPage implements OnInit {
   async downloadStatsPdf(): Promise<void> {
     this.downloadPdfLoading = true;
     try {
-      const filters = this.exportFiltersForPdf();
-      const dateFilters: StatsFilters = { from: filters.from, to: filters.to };
-
-      // Cuando se filtra por usuario concreto, las frases van por su endpoint específico
-      const phrasesObs = this.exportScope === 'user' && this.exportUserId
-        ? this.statsSvc.getUserPhrases(this.exportUserId, { ...dateFilters, page: 1, pageSize: 500 })
-        : this.statsSvc.getOrganizationPhrases({ ...filters, page: 1, pageSize: 500 });
+      const f = this.filters();
+      const phrasesObs = this.filterUserId
+        ? this.statsSvc.getUserPhrases(this.filterUserId, { ...f, page: 1, pageSize: 500 })
+        : this.statsSvc.getOrganizationPhrases({ ...f, page: 1, pageSize: 500 });
 
       const [freshSummary, freshCharts, boardsRes, phrasesRes] = await Promise.all([
-        firstValueFrom(this.statsSvc.getOrganizationSummary(filters)).catch(() => null),
-        firstValueFrom(this.statsSvc.getOrganizationCharts(filters)).catch(() => null),
-        firstValueFrom(this.statsSvc.getOrganizationBoards(filters)).catch(() => ({ boards: [] as BoardStat[] })),
+        firstValueFrom(this.statsSvc.getOrganizationSummary(f)).catch(() => null),
+        firstValueFrom(this.statsSvc.getOrganizationCharts(f)).catch(() => null),
+        firstValueFrom(this.statsSvc.getOrganizationBoards(f)).catch(() => ({ boards: [] as BoardStat[] })),
         firstValueFrom(phrasesObs).catch(() => ({ phrases: [] as ReconstructedPhrase[] })),
       ]);
 
@@ -372,21 +418,14 @@ export class OrganizationStatisticsPage implements OnInit {
 
       const chartDataUrls = await this.renderChartsOffscreen(chartOptions);
 
-      let scopeLabel: string;
-      if (this.exportScope === 'user' && this.exportUserId) {
-        const u = this.allOrgUsers.find(x => x._id === this.exportUserId);
-        scopeLabel = u ? u.name : 'Usuario concreto';
-      } else if (this.exportScope === 'family' && this.exportFamilyUserId) {
-        const u = this.allFinalUsers.find(x => x._id === this.exportFamilyUserId);
-        scopeLabel = u ? `Familia de ${u.name}` : 'Familia';
-      } else {
-        const opt = this.scopeOptions.find(o => o.value === filters.scope);
-        scopeLabel = filters.scope === 'all' ? this.orgName : (opt?.label ?? 'Toda la organización');
-      }
+      const scopeLabel = this.filterUserId
+        ? (this.allOrgUsers.find(u => u._id === this.filterUserId)?.name ?? 'Usuario concreto')
+        : (f.scope === 'all' ? this.orgName : (this.scopeOptions.find(o => o.value === f.scope)?.label ?? this.orgName));
+
       const meta: StatsPdfMeta = {
         orgName:    this.orgName,
-        filterFrom: filters.from ?? '',
-        filterTo:   filters.to   ?? '',
+        filterFrom: f.from ?? '',
+        filterTo:   f.to   ?? '',
         scopeLabel,
       };
 
@@ -398,34 +437,6 @@ export class OrganizationStatisticsPage implements OnInit {
     } finally {
       this.downloadPdfLoading = false;
     }
-  }
-
-  private exportFiltersForPdf(): StatsFilters {
-    const today = new Date();
-    const fmt = (d: Date) => d.toISOString().split('T')[0];
-    let from: string | undefined;
-    let to: string | undefined;
-    if (this.exportDateFilter === 'today') {
-      from = to = fmt(today);
-    } else if (this.exportDateFilter === '7days') {
-      const d = new Date(today); d.setDate(d.getDate() - 7);
-      from = fmt(d); to = fmt(today);
-    } else if (this.exportDateFilter === '30days') {
-      const d = new Date(today); d.setDate(d.getDate() - 30);
-      from = fmt(d); to = fmt(today);
-    } else if (this.exportDateFilter === 'custom') {
-      from = this.exportDateFrom || undefined;
-      to   = this.exportDateTo   || undefined;
-    }
-    let scope: StatsScope = 'all';
-    if (this.exportScope === 'userType') {
-      scope = this.exportUserType === 'professional' ? 'professionals'
-            : this.exportUserType === 'parent'        ? 'families'
-            : 'users';
-    } else if (this.exportScope === 'family') {
-      scope = 'families';
-    }
-    return { from, to, scope };
   }
 
   private async renderChartsOffscreen(optionsList: (EChartsOption | null)[]): Promise<(string | null)[]> {
