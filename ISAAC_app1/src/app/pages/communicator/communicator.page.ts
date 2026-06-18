@@ -546,6 +546,20 @@ export class CommunicatorPage implements OnInit, OnDestroy {
 
       this.aac.speakText(pict.label, this.gender);
 
+      // El pictograma pulsado pasa al centro para la siguiente interacción
+      this.predCenterPict = {
+        source:            'arasaac' as const,
+        id:                pict.label,
+        label:             pict.label,
+        sound:             pict.label,
+        imageUrl:          pict.imageUrl,
+        tags:              [],
+        description:       '',
+        wordType:          (pict.wordType || 'misc') as CellPictogram['wordType'],
+        fitzgeraldEnabled: false,
+        color:             pict.color || '#f5f5f5',
+      };
+
       // Recargar predictor con la nueva frase, manteniendo categoría activa
       this.predictionPage = 0;
       this.loadCircularSuggestions(cat.id);

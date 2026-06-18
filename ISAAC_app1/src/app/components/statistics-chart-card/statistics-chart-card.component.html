@@ -22,7 +22,9 @@
       <span>{{ emptyMessage }}</span>
     </div>
   } @else {
-    <div echarts [options]="options" [style.height]="height" class="scc-chart"
+    <div echarts [options]="options"
+         [initOpts]="{ height: heightPx }"
+         [style.height]="height" class="scc-chart"
          (chartInit)="onChartInit($event)"></div>
   }
 

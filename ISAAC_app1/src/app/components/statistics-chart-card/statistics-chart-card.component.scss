@@ -48,6 +48,7 @@
 }
 
 .scc-chart {
-  width: 100%;
-  flex:  1;
+  width:    100%;
+  flex:     0 0 auto;   // altura determinada solo por [style.height], sin flex-basis:0 que la anularía
+  display:  block;
 }

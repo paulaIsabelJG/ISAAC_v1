@@ -21,7 +21,14 @@ export class StatisticsChartCardComponent {
 
   private _echartsInstance: any = null;
 
-  onChartInit(ec: any): void { this._echartsInstance = ec; }
+  /** Altura numérica para pasarla a echarts.init() y evitar canvas en blanco por timing de layout. */
+  get heightPx(): number { return parseInt(this.height, 10) || 260; }
+
+  onChartInit(ec: any): void {
+    this._echartsInstance = ec;
+    // Forzar resize tras el ciclo de layout del browser
+    setTimeout(() => ec.resize(), 0);
+  }
 
   getDataUrl(): string | null {
     if (!this._echartsInstance) return null;

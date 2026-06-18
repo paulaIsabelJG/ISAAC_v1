@@ -235,7 +235,9 @@ export class OrganizationStatisticsPage implements OnInit {
     try {
       this.charts = await firstValueFrom(this.statsSvc.getOrganizationCharts(this.filters()));
       this.buildAllChartOptions();
-    } catch {
+      console.log('[org-stats] charts data:', JSON.stringify(this.charts, null, 2));
+    } catch (e) {
+      console.error('[org-stats] loadCharts error:', e);
       this.temporalChartOpts  = null;
       this.topPictogramsOpts  = null;
       this.actionDistOpts     = null;
