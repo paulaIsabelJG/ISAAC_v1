@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { IonicModule, ToastController, AlertController } from '@ionic/angular';
+import { ToastController, AlertController } from '@ionic/angular';
+import { IonContent, IonCard, IonIcon, IonItem, IonLabel, IonInput, IonButton, IonSpinner } from '@ionic/angular/standalone';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { BiometricAuthService } from '../../services/biometric-auth.service';
@@ -11,7 +12,8 @@ import { BiometricAuthService } from '../../services/biometric-auth.service';
   templateUrl: './login.page.html',
   styleUrls: ['./login.page.scss'],
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, IonicModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule,
+            IonContent, IonCard, IonIcon, IonItem, IonLabel, IonInput, IonButton, IonSpinner],
 })
 export class LoginPage implements OnInit {
   loginForm!: FormGroup;

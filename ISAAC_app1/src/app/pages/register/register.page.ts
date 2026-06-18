@@ -9,7 +9,8 @@ import {
   ValidationErrors,
   ValidatorFn,
 } from '@angular/forms';
-import { IonicModule, ToastController } from '@ionic/angular';
+import { ToastController } from '@ionic/angular';
+import { IonContent, IonItem, IonInput, IonButton, IonSpinner } from '@ionic/angular/standalone';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 
@@ -30,7 +31,8 @@ type AccountType = 'teacher' | 'user';
   templateUrl: './register.page.html',
   styleUrls: ['./register.page.scss'],
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, IonicModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule,
+            IonContent, IonItem, IonInput, IonButton, IonSpinner],
 })
 export class RegisterPage implements OnInit {
   registerForm!: FormGroup;

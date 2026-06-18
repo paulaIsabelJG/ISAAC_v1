@@ -16,15 +16,22 @@ const objectiveRoutes     = require('./routes/objectives');
 
 const app = express();
 
-// Orígenes permitidos: desarrollo local + URL de producción del frontend (Render).
-// FRONTEND_URL se configura en las variables de entorno de Render.
-// Si no está definida en producción, solo se permite localhost (más seguro).
+// Orígenes permitidos: desarrollo local + URL(s) de producción del frontend (Render).
+// FRONTEND_URL puede ser una sola URL o varias separadas por coma:
+//   https://isaac-v1.onrender.com,http://127.0.0.1:8080
+const envOrigins = (process.env.FRONTEND_URL || '')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
+
 const ALLOWED_ORIGINS = [
   'http://localhost:8100',
   'http://localhost:4200',
   'http://localhost:4000',
-  process.env.FRONTEND_URL,
-].filter(Boolean);
+  ...envOrigins,
+];
+
+console.log('[CORS] Orígenes permitidos:', ALLOWED_ORIGINS);
 
 app.use(cors({
   origin: (origin, callback) => {
