@@ -43,8 +43,10 @@ $text-muted: #6b5462;
 .us-layout {
   display:               grid;
   grid-template-columns: 290px 1fr;
-  flex:                  1;       // ocupa todo el espacio restante del wrapper
-  min-height:            0;       // permite que el flex-item se encoja
+  grid-template-rows:    minmax(0, 1fr);
+  flex:                  1;
+  min-height:            0;
+  overflow:              hidden;
 
   &--no-sidebar { grid-template-columns: 1fr; }
 }
