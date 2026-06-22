@@ -22,6 +22,7 @@ export interface SelfPermissions {
   canAddPictograms:       boolean;
   canAssignProfessionals: boolean;
   canAssignFamilies:      boolean;
+  canManageObjectives:    boolean;
 }
 
 /** Usuario completo devuelto por GET /api/users/:userId */

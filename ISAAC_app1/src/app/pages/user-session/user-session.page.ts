@@ -30,6 +30,7 @@ import {
 import { UserBoardCardComponent } from '../../components/user-board-card/user-board-card.component';
 import { HasUnsavedChanges } from '../../guards/has-unsaved-changes';
 import { UnsavedChangesService } from '../../guards/unsaved-changes.service';
+import { PictogramStateService } from '../../services/pictogram-state.service';
 
 interface FamilyRow {
   parentId:               string;
@@ -79,9 +80,13 @@ export class UserSessionPage implements OnInit, OnDestroy, HasUnsavedChanges {
   avatarUrl:  SafeUrl | string       = '';
 
   permissions: SidebarPermissions = {
-    canViewPersonalData: false,
-    canViewStats:        false,
-    canEditBoards:       false,
+    canViewPersonalData:    false,
+    canViewStats:           false,
+    canEditBoards:          false,
+    canManageObjectives:    false,
+    canAddPictograms:       false,
+    canAssignProfessionals: false,
+    canAssignFamilies:      false,
   };
 
   isLoading = true;
@@ -142,6 +147,7 @@ export class UserSessionPage implements OnInit, OnDestroy, HasUnsavedChanges {
     private toastCtrl:       ToastController,
     private http:            HttpClient,
     private unsavedSvc:      UnsavedChangesService,
+    private pictogramState:  PictogramStateService,
   ) {}
 
   ngOnDestroy(): void { this._stopVoicePoll(); }
@@ -226,18 +232,39 @@ export class UserSessionPage implements OnInit, OnDestroy, HasUnsavedChanges {
       const ap = (this.targetUser.assignedProfessionals ?? []).find(
         e => e.professionalId?.toString() === viewer.id
       );
+      // Profesional con permisos específicos o admin de organización: todo visible
       this.permissions = ap
-        ? { canViewPersonalData: ap.canEditPersonalData, canViewStats: ap.canViewStats, canEditBoards: ap.canEditBoards }
-        : { canViewPersonalData: true, canViewStats: true, canEditBoards: true };
+        ? {
+            canViewPersonalData:    ap.canEditPersonalData,
+            canViewStats:           ap.canViewStats,
+            canEditBoards:          ap.canEditBoards,
+            canManageObjectives:    true,
+            canAddPictograms:       ap.canAddPictograms,
+            canAssignProfessionals: ap.canAssignProfessionals,
+            canAssignFamilies:      ap.canAssignFamilies,
+          }
+        : {
+            canViewPersonalData:    true,
+            canViewStats:           true,
+            canEditBoards:          true,
+            canManageObjectives:    true,
+            canAddPictograms:       true,
+            canAssignProfessionals: true,
+            canAssignFamilies:      true,
+          };
       return;
     }
 
     if (viewer.type === 'user') {
       const sp = this.targetUser.selfPermissions;
       this.permissions = {
-        canViewPersonalData: sp?.canEditPersonalData ?? false,
-        canViewStats:        sp?.canViewStats        ?? false,
-        canEditBoards:       sp?.canEditBoards       ?? false,
+        canViewPersonalData:    sp?.canEditPersonalData    ?? false,
+        canViewStats:           sp?.canViewStats            ?? false,
+        canEditBoards:          sp?.canEditBoards           ?? false,
+        canManageObjectives:    sp?.canManageObjectives     ?? false,
+        canAddPictograms:       sp?.canAddPictograms        ?? false,
+        canAssignProfessionals: sp?.canAssignProfessionals  ?? false,
+        canAssignFamilies:      sp?.canAssignFamilies       ?? false,
       };
       return;
     }
@@ -249,10 +276,34 @@ export class UserSessionPage implements OnInit, OnDestroy, HasUnsavedChanges {
           ca => ca.childId?.toString() === this.userId
         );
         this.permissions = entry
-          ? { canViewPersonalData: entry.canEditPersonalData, canViewStats: entry.canViewStats, canEditBoards: entry.canEditBoards }
-          : { canViewPersonalData: false, canViewStats: false, canEditBoards: false };
+          ? {
+              canViewPersonalData:    entry.canEditPersonalData,
+              canViewStats:           entry.canViewStats,
+              canEditBoards:          entry.canEditBoards,
+              canManageObjectives:    true,
+              canAddPictograms:       entry.canAddPictograms,
+              canAssignProfessionals: entry.canAssignProfessionals,
+              canAssignFamilies:      entry.canAssignFamilies,
+            }
+          : {
+              canViewPersonalData:    false,
+              canViewStats:           false,
+              canEditBoards:          false,
+              canManageObjectives:    false,
+              canAddPictograms:       false,
+              canAssignProfessionals: false,
+              canAssignFamilies:      false,
+            };
       } catch {
-        this.permissions = { canViewPersonalData: false, canViewStats: false, canEditBoards: false };
+        this.permissions = {
+          canViewPersonalData:    false,
+          canViewStats:           false,
+          canEditBoards:          false,
+          canManageObjectives:    false,
+          canAddPictograms:       false,
+          canAssignProfessionals: false,
+          canAssignFamilies:      false,
+        };
       }
     }
   }
@@ -300,6 +351,7 @@ export class UserSessionPage implements OnInit, OnDestroy, HasUnsavedChanges {
       case 'objectives':    this.goToObjectives();                            break;
       case 'family':        void this.goToFamilySection();                    break;
       case 'professionals': void this.goToProfessionalsSection();             break;
+      case 'pictograms':    this.goToPictograms();                            break;
       case 'back':          this.goBack();                                    break;
     }
   }
@@ -321,6 +373,13 @@ export class UserSessionPage implements OnInit, OnDestroy, HasUnsavedChanges {
     if (!this.familiesLoaded) {
       await this.loadFamilies();
     }
+  }
+
+  goToPictograms(): void {
+    this.pictogramState.userId       = this.userId;
+    this.pictogramState.returnTo     = '/user-session/' + this.userId;
+    this.pictogramState.allowedUsers = null;
+    this.router.navigate(['/own-pictograms-placeholder']);
   }
 
   async goToProfessionalsSection(): Promise<void> {

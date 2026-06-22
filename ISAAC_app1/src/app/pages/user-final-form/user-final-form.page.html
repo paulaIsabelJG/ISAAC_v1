@@ -453,6 +453,12 @@
                        (change)="onPermChange('assignFamilies', $any($event.target).checked)"/>
                 <span class="perm-text">Asignar familiares</span>
               </label>
+              <label class="perm-item">
+                <input type="checkbox" class="perm-check"
+                       [checked]="perms.manageObjectives"
+                       (change)="onPermChange('manageObjectives', $any($event.target).checked)"/>
+                <span class="perm-text">Gestionar objetivos</span>
+              </label>
             </div>
           </div>
 

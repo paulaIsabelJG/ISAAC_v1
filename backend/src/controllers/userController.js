@@ -420,6 +420,7 @@ const updateUserInternal = async (req, res) => {
         canAddPictograms:       !!payload.selfPermissions?.canAddPictograms,
         canAssignProfessionals: !!payload.selfPermissions?.canAssignProfessionals,
         canAssignFamilies:      !!payload.selfPermissions?.canAssignFamilies,
+        canManageObjectives:    !!payload.selfPermissions?.canManageObjectives,
       };
     }
 

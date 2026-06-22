@@ -17,9 +17,7 @@ $text-muted: #6b5462;
   box-sizing:     border-box;
   background:     #fff;
   border-right:   1.5px solid $border;
-  overflow-y:     auto;
-  scrollbar-width: none;
-  &::-webkit-scrollbar { display: none; }
+  overflow:       hidden;
 }
 
 // ── Identidad ─────────────────────────────────────────────────────────────────
@@ -90,6 +88,16 @@ $text-muted: #6b5462;
   display:        flex;
   flex-direction: column;
   gap:            8px;
+  flex:           1;
+  min-height:     0;
+  overflow-y:     auto;
+  padding-right:  4px;
+  padding-bottom: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: $border transparent;
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-thumb { background: $border; border-radius: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
 }
 
 .ups-nav-item {

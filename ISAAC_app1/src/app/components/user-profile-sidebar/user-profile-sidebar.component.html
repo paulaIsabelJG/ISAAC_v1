@@ -62,13 +62,14 @@
       </button>
     }
 
-    <button class="ups-nav-item" (click)="navSelect.emit('objectives')">
-      <img src="assets/user-session/objetivos.png" class="ups-nav-img" alt=""/>
-      <span class="ups-nav-label">{{ fromLogin ? 'Mis objetivos' : 'Objetivos' }}</span>
-    </button>
+    @if (!fromLogin || permissions.canManageObjectives) {
+      <button class="ups-nav-item" (click)="navSelect.emit('objectives')">
+        <img src="assets/user-session/objetivos.png" class="ups-nav-img" alt=""/>
+        <span class="ups-nav-label">{{ fromLogin ? 'Mis objetivos' : 'Objetivos' }}</span>
+      </button>
+    }
 
-    @if (!fromLogin) {
-
+    @if (!fromLogin || permissions.canAssignFamilies) {
       <button class="ups-nav-item" [class.ups-nav-item--active]="activeSection === 'family'" (click)="navSelect.emit('family')">
         <svg class="ups-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
@@ -78,7 +79,9 @@
         </svg>
         <span class="ups-nav-label">Familiares</span>
       </button>
+    }
 
+    @if (!fromLogin || permissions.canAssignProfessionals) {
       <button class="ups-nav-item" [class.ups-nav-item--active]="activeSection === 'professionals'" (click)="navSelect.emit('professionals')">
         <svg class="ups-nav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <rect x="2" y="7" width="20" height="14" rx="2"/>
@@ -88,7 +91,13 @@
         </svg>
         <span class="ups-nav-label">Profesionales</span>
       </button>
+    }
 
+    @if (!fromLogin || permissions.canAddPictograms) {
+      <button class="ups-nav-item" (click)="navSelect.emit('pictograms')">
+        <img src="assets/pictograms/custom-pictograms.png" class="ups-nav-img" alt=""/>
+        <span class="ups-nav-label">Pictogramas</span>
+      </button>
     }
 
   </nav>

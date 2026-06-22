@@ -4,9 +4,13 @@ import { SafeUrl } from '@angular/platform-browser';
 import { FullBackendUser } from '../../services/user.service';
 
 export interface SidebarPermissions {
-  canViewPersonalData: boolean;
-  canViewStats:        boolean;
-  canEditBoards:       boolean;
+  canViewPersonalData:    boolean;
+  canViewStats:           boolean;
+  canEditBoards:          boolean;
+  canManageObjectives:    boolean;
+  canAddPictograms:       boolean;
+  canAssignProfessionals: boolean;
+  canAssignFamilies:      boolean;
 }
 
 @Component({
@@ -21,7 +25,7 @@ export class UserProfileSidebarComponent {
   @Input() avatarUrl:     SafeUrl | string        = '';
   @Input() fromLogin      = false;
   @Input() activeSection  = 'boards';
-  @Input() permissions:   SidebarPermissions     = { canViewPersonalData: false, canViewStats: false, canEditBoards: false };
+  @Input() permissions:   SidebarPermissions     = { canViewPersonalData: false, canViewStats: false, canEditBoards: false, canManageObjectives: false, canAddPictograms: false, canAssignProfessionals: false, canAssignFamilies: false };
 
   @Output() navSelect = new EventEmitter<string>();
 

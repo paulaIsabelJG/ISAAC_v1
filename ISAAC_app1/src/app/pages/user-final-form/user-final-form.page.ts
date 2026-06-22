@@ -114,6 +114,7 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
     addPictograms:      false,
     assignProfessionals: false,
     assignFamilies:     false,
+    manageObjectives:   false,
   };
 
   // ── Lugares frecuentes ────────────────────────────────────────────────────────
@@ -274,6 +275,7 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
         addPictograms:       sp?.canAddPictograms       ?? false,
         assignProfessionals: sp?.canAssignProfessionals ?? false,
         assignFamilies:      sp?.canAssignFamilies      ?? false,
+        manageObjectives:    sp?.canManageObjectives    ?? false,
       };
 
       // Precargar voiceSettings
@@ -847,6 +849,7 @@ export class UserFinalFormPage implements OnInit, OnDestroy {
       canAddPictograms:       this.perms.addPictograms,
       canAssignProfessionals: this.perms.assignProfessionals,
       canAssignFamilies:      this.perms.assignFamilies,
+      canManageObjectives:    this.perms.manageObjectives,
     };
 
     const voice = this.voices.find(v => v.voiceURI === this.selectedVoiceURI) ?? null;

@@ -89,6 +89,7 @@ const userSchema = new mongoose.Schema({
     canAddPictograms:       { type: Boolean, default: false },
     canAssignProfessionals: { type: Boolean, default: false },
     canAssignFamilies:      { type: Boolean, default: false },
+    canManageObjectives:    { type: Boolean, default: false },
   },
   assignedProfessionals: [{
     professionalId: {
