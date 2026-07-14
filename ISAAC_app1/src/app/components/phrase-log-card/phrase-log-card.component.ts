@@ -15,14 +15,23 @@ import { getPictBgColor, getPictBorderColor } from '../../shared/utils/board-col
 export class PhraseLogCardComponent {
   @Input()  phrase!: ReconstructedPhrase;
   @Output() deleteClick = new EventEmitter<void>();
+  @Output() comprehensionChange = new EventEmitter<number>();
 
   expanded = false;
+
+  readonly comprehensionScores = [1, 2, 3, 4, 5];
 
   toggleExpanded(): void { this.expanded = !this.expanded; }
 
   onDeleteClick(event: MouseEvent): void {
     event.stopPropagation();
     this.deleteClick.emit();
+  }
+
+  onComprehensionClick(event: MouseEvent, score: number): void {
+    event.stopPropagation();
+    if (this.phrase.comprehensionScore === score) return;
+    this.comprehensionChange.emit(score);
   }
 
   /** Convierte una interacción de pictograma en CellPictogram para pict-cell-content. */

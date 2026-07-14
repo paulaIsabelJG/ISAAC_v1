@@ -1,6 +1,7 @@
 const { createHash, randomUUID } = require('crypto');
 const User    = require('../models/User');
 const OblLog  = require('../models/OblLog');
+const PhraseComprehensionScore = require('../models/PhraseComprehensionScore');
 const statsSvc = require('../services/aacStatisticsService');
 
 // ── Helpers de permisos ───────────────────────────────────────────────────────
@@ -170,6 +171,68 @@ exports.deletePhrase = async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     console.error('[Stats] deletePhrase error', err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// ── Valoración de comprensión ─────────────────────────────────────────────────
+
+exports.setPhraseComprehension = async (req, res) => {
+  try {
+    const { phraseId } = req.params;
+    const { score } = req.body;
+
+    if (score !== null && (!Number.isInteger(score) || score < 1 || score > 5)) {
+      return res.status(400).json({ error: 'La puntuación debe ser un entero entre 1 y 5, o null.' });
+    }
+
+    // phraseId = sessionId_phraseUUID (logs nuevos) o sessionId_startMs (logs antiguos)
+    // En ambos casos el sessionId es un UUID sin guiones bajos → split en primer '_'.
+    const underscoreIdx = phraseId.indexOf('_');
+    if (underscoreIdx === -1) return res.status(400).json({ error: 'Formato de phraseId inválido.' });
+    const sessionId = phraseId.slice(0, underscoreIdx);
+
+    const ctx = await resolveAccessContext(req.userId);
+    if (!ctx) return res.status(403).json({ error: 'Acceso denegado.' });
+
+    const session = await OblLog.findOne({ sessionId }).select('userId').lean();
+    if (!session) return res.status(404).json({ error: 'Frase no encontrada.' });
+
+    const sessionUser = await User.findById(session.userId).select('centro').lean();
+    if (!sessionUser) return res.status(404).json({ error: 'Usuario no encontrado.' });
+
+    if (ctx.isProfessional && !ctx.assignedUserIds.includes(session.userId.toString())) {
+      return res.status(403).json({ error: 'No tienes acceso a este usuario.' });
+    }
+    if (ctx.isOrg && sessionUser.centro !== ctx.centro) {
+      return res.status(403).json({ error: 'El usuario no pertenece a tu organización.' });
+    }
+
+    if (score === null) {
+      await PhraseComprehensionScore.deleteOne({ phraseKey: phraseId });
+      return res.json({ phraseId, comprehensionScore: null, comprehensionEvaluatorId: null, comprehensionEvaluatedAt: null });
+    }
+
+    const updated = await PhraseComprehensionScore.findOneAndUpdate(
+      { phraseKey: phraseId },
+      {
+        phraseKey:                phraseId,
+        userId:                   session.userId,
+        comprehensionScore:       score,
+        comprehensionEvaluatorId: req.userId,
+        comprehensionEvaluatedAt: new Date(),
+      },
+      { upsert: true, new: true }
+    ).lean();
+
+    res.json({
+      phraseId,
+      comprehensionScore:       updated.comprehensionScore,
+      comprehensionEvaluatorId: updated.comprehensionEvaluatorId,
+      comprehensionEvaluatedAt: updated.comprehensionEvaluatedAt,
+    });
+  } catch (err) {
+    console.error('[Stats] setPhraseComprehension error', err);
     res.status(500).json({ error: err.message });
   }
 };

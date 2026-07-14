@@ -316,6 +316,19 @@ export class OrganizationStatisticsPage implements OnInit {
     }
   }
 
+  // ── Valorar comprensión ───────────────────────────────────────────────────
+
+  async onComprehensionChange(phrase: ReconstructedPhrase, score: number): Promise<void> {
+    const previous = phrase.comprehensionScore ?? null;
+    phrase.comprehensionScore = score;
+    try {
+      await firstValueFrom(this.statsSvc.setPhraseComprehension(phrase.phraseId, score));
+    } catch {
+      phrase.comprehensionScore = previous;
+      await this._showToast('No se pudo guardar la valoración.', 'danger');
+    }
+  }
+
   private async _showToast(message: string, color: 'success' | 'danger'): Promise<void> {
     const toast = await this.toastCtrl.create({
       message,

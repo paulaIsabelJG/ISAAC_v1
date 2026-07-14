@@ -1,6 +1,7 @@
 const OblLog = require('../models/OblLog');
 const User   = require('../models/User');
 const Board  = require('../models/Board');
+const PhraseComprehensionScore = require('../models/PhraseComprehensionScore');
 const phraseReconstruction = require('./phraseReconstructionService');
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -10,6 +11,70 @@ function dateFilter(from, to) {
   if (from) f.$gte = from;
   if (to)   f.$lte = to;
   return Object.keys(f).length ? f : null;
+}
+
+/**
+ * Fusiona la valoración de comprensión (colección aparte, no forma parte del OBL)
+ * en cada frase reconstruida, usando el mismo phraseId estable como clave de unión.
+ */
+async function attachComprehensionScores(phrases) {
+  if (!phrases.length) return;
+  const keys = phrases.map(p => p.phraseId);
+  const scores = await PhraseComprehensionScore.find({ phraseKey: { $in: keys } }).lean();
+  const scoreMap = {};
+  for (const s of scores) scoreMap[s.phraseKey] = s;
+  for (const p of phrases) {
+    const s = scoreMap[p.phraseId];
+    p.comprehensionScore       = s?.comprehensionScore ?? null;
+    p.comprehensionEvaluatorId = s?.comprehensionEvaluatorId?.toString() ?? null;
+    p.comprehensionEvaluatedAt = s?.comprehensionEvaluatedAt ?? null;
+  }
+}
+
+/**
+ * Rellena imageUrl en interacciones 'button' cuyo evento OBL no guardó imagen.
+ *
+ * Causa: logButtonEvent (aac-runtime.service.ts) omite deliberadamente image_url
+ * cuando es un data-URI base64 — así son SIEMPRE los pictogramas propios
+ * (User.customPictograms[].imageUrl), para no inflar los documentos OblLog con
+ * el binario en cada pulsación. Los pictogramas de ARASAAC no se ven afectados
+ * porque su imageUrl es una URL https absoluta, que sí se guarda en el evento.
+ *
+ * Recuperamos la imagen en lectura (sin tocar el OBL) uniendo por buttonId, que
+ * ya guarda pictogram.id — el mismo id con el que getBoardById personaliza el
+ * tablero (ver boardController.js), así que es una clave de unión estable.
+ */
+/**
+ * Lógica de unión pura (sin Mongoose) — testeable sin base de datos.
+ * customPictogramsByUserId: Map<userId string, Map<pictogramId string, imageUrl string>>
+ */
+function mergeCustomPictogramImages(phrases, customPictogramsByUserId) {
+  for (const phrase of phrases) {
+    const pictoMap = customPictogramsByUserId.get(String(phrase.userId));
+    if (!pictoMap || !pictoMap.size) continue;
+    for (const inter of phrase.interactions) {
+      if (inter.type === 'button' && !inter.imageUrl && inter.buttonId) {
+        const match = pictoMap.get(String(inter.buttonId));
+        if (match) inter.imageUrl = match;
+      }
+    }
+  }
+}
+
+async function attachCustomPictogramImages(phrases) {
+  if (!phrases.length) return;
+  const userIds = [...new Set(phrases.map(p => p.userId).filter(Boolean))];
+  if (!userIds.length) return;
+
+  const users = await User.find({ _id: { $in: userIds } }).select('customPictograms').lean();
+  const mapByUser = new Map();
+  for (const u of users) {
+    const m = new Map();
+    for (const cp of (u.customPictograms || [])) m.set(String(cp.id), cp.imageUrl);
+    mapByUser.set(String(u._id), m);
+  }
+
+  mergeCustomPictogramImages(phrases, mapByUser);
 }
 
 function msToMinSec(ms) {
@@ -212,6 +277,9 @@ exports.getOrganizationPhrases = async ({ centro, excludeId, from, to, page = 1,
   const offset = (page - 1) * pageSize;
   const paged  = allPhrases.slice(offset, offset + pageSize);
 
+  await attachCustomPictogramImages(paged);
+  await attachComprehensionScores(paged);
+
   return { phrases: paged, totalCount: total, page, pageSize };
 };
 
@@ -227,6 +295,9 @@ exports.getUserPhrases = async ({ userId, from, to, page = 1, pageSize = 20 }) =
   const total  = allPhrases.length;
   const offset = (page - 1) * pageSize;
   const paged  = allPhrases.slice(offset, offset + pageSize);
+
+  await attachCustomPictogramImages(paged);
+  await attachComprehensionScores(paged);
 
   return { phrases: paged, totalCount: total, page, pageSize };
 };
@@ -389,3 +460,6 @@ exports.getOrganizationBoards = async ({ centro, excludeId, from, to, scope = 'a
     .sort((a, b) => b.interactions - a.interactions)
     .slice(0, 20);
 };
+
+// Expuesto solo para pruebas (lógica pura, sin Mongoose — ver scripts/test-phrase-image-resolution.js)
+exports._mergeCustomPictogramImages = mergeCustomPictogramImages;

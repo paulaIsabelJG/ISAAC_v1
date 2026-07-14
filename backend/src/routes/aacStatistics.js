@@ -18,6 +18,9 @@ router.post('/export/obla', ctrl.exportObla);
 // ── Borrar frase ──────────────────────────────────────────────────────────────
 router.delete('/phrases/:phraseId', ctrl.deletePhrase);
 
+// ── Valoración de comprensión ─────────────────────────────────────────────────
+router.patch('/phrases/:phraseId/comprehension', ctrl.setPhraseComprehension);
+
 // ── Usuario concreto ──────────────────────────────────────────────────────────
 router.get('/users/:userId/summary', ctrl.getUserStatistics);
 router.get('/users/:userId/phrases', ctrl.getUserPhrases);

@@ -2,8 +2,8 @@
 
   <!-- ── Zona de imagen ──────────────────────────────────────────────────── -->
   <div class="pcc-img-wrap">
-    @if (pict.imageUrl) {
-      <img [src]="safeImageUrl" class="pcc-img" [alt]="pict.label" draggable="false"/>
+    @if (showImage) {
+      <img [src]="safeImageUrl" class="pcc-img" [alt]="pict.label" draggable="false" (error)="onImageError()"/>
     } @else {
       <div class="pcc-img-placeholder">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">

@@ -125,6 +125,64 @@
   font-style:    normal;
 }
 
+// ── Valoración de comprensión ─────────────────────────────────────────────────
+.plc-comprehension {
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+  padding:     0 36px 10px 14px;
+}
+
+.plc-comprehension-label {
+  font-size:   10px;
+  font-weight: 600;
+  color:       #9b6daa;
+  white-space: nowrap;
+}
+
+.plc-comprehension-scale {
+  display:     flex;
+  align-items: center;
+  gap:         6px;
+}
+
+.plc-comprehension-endpoint {
+  font-size:  9px;
+  font-style: italic;
+  color:      #bbb;
+  white-space: nowrap;
+}
+
+.plc-comprehension-buttons {
+  display: flex;
+  gap:     4px;
+}
+
+.plc-comprehension-btn {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  width:           22px;
+  height:          22px;
+  padding:         0;
+  border-radius:   50%;
+  border:          1.5px solid #f4d0e4;
+  background:      #fff;
+  color:           #9b6daa;
+  font-size:       11px;
+  font-weight:     700;
+  cursor:          pointer;
+  transition:      background 0.15s, border-color 0.15s, color 0.15s;
+
+  &:hover { background: #f0ebff; border-color: #cdb8ff; }
+
+  &--selected {
+    background:   #7c4dff;
+    border-color: #7c4dff;
+    color:        #fff;
+  }
+}
+
 // ── Secuencia de interacciones ────────────────────────────────────────────────
 .plc-interactions {
   display:     flex;

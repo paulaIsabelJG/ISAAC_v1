@@ -205,7 +205,7 @@
       } @else {
         <div class="os-phrase-list">
           @for (phrase of orgPhrases; track phrase.phraseId) {
-            <app-phrase-log-card [phrase]="phrase" (deleteClick)="onDeletePhrase(phrase)"></app-phrase-log-card>
+            <app-phrase-log-card [phrase]="phrase" (deleteClick)="onDeletePhrase(phrase)" (comprehensionChange)="onComprehensionChange(phrase, $event)"></app-phrase-log-card>
           }
         </div>
         @if (orgTotalPages > 1) {

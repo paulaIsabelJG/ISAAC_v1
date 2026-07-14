@@ -45,10 +45,23 @@ export class PictCellContentComponent {
    */
   @Input() emptyType: 'plus' | 'empty-div' = 'plus';
 
+  /** Recuerda el último imageUrl que falló al cargar, para no reintentar el mismo. */
+  private failedImageUrl: string | null = null;
+
   constructor(private sanitizer: DomSanitizer) {}
 
   /** URL segura para data-URIs base64; URL normal se devuelve sin modificar. */
   get safeImageUrl(): SafeUrl | string {
     return buildSafeUrlUtil(this.pict?.imageUrl, this.sanitizer);
+  }
+
+  /** true si hay imagen y no falló ya al cargar (fallback visual, no principal). */
+  get showImage(): boolean {
+    return !!this.pict?.imageUrl && this.pict.imageUrl !== this.failedImageUrl;
+  }
+
+  /** onerror del <img>: cae al placeholder en vez de mostrar el icono roto del navegador. */
+  onImageError(): void {
+    this.failedImageUrl = this.pict?.imageUrl ?? null;
   }
 }

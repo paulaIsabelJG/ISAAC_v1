@@ -34,6 +34,28 @@
 
   </div>
 
+  <!-- ── Valoración de comprensión: 1 clic, guardado automático ───────────── -->
+  <div class="plc-comprehension">
+    <span class="plc-comprehension-label">Comprensión:</span>
+    <div class="plc-comprehension-scale">
+      <span class="plc-comprehension-endpoint">Nada</span>
+      <div class="plc-comprehension-buttons">
+        @for (score of comprehensionScores; track score) {
+          <button
+            type="button"
+            class="plc-comprehension-btn"
+            [class.plc-comprehension-btn--selected]="phrase.comprehensionScore === score"
+            [attr.aria-pressed]="phrase.comprehensionScore === score"
+            [title]="'Valorar comprensión: ' + score"
+            (click)="onComprehensionClick($event, score)">
+            {{ score }}
+          </button>
+        }
+      </div>
+      <span class="plc-comprehension-endpoint">Todo</span>
+    </div>
+  </div>
+
   <!-- ── Secuencia de interacciones (colapsable) ─────────────────────────── -->
   @if (expanded) {
     <div class="plc-interactions">

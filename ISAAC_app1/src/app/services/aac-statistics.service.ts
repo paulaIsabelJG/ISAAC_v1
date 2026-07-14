@@ -78,6 +78,17 @@ export interface ReconstructedPhrase {
   interactions: PhraseInteraction[];
   /** Texto reformulado por IA. Presente solo si el usuario aceptó la sugerencia IA. */
   aiReformulatedText?: string | null;
+  /** Valoración de comprensión (1-5). null = sin evaluar. */
+  comprehensionScore?:       number | null;
+  comprehensionEvaluatorId?: string | null;
+  comprehensionEvaluatedAt?: string | null;
+}
+
+export interface PhraseComprehensionResult {
+  phraseId:                 string;
+  comprehensionScore:       number | null;
+  comprehensionEvaluatorId: string | null;
+  comprehensionEvaluatedAt: string | null;
 }
 
 export interface PhrasesPage {
@@ -192,6 +203,13 @@ export class AacStatisticsService {
   deletePhrase(phraseId: string): Observable<{ ok: boolean }> {
     return this.http.delete<{ ok: boolean }>(
       `${this.base}/phrases/${encodeURIComponent(phraseId)}`
+    );
+  }
+
+  setPhraseComprehension(phraseId: string, score: number | null): Observable<PhraseComprehensionResult> {
+    return this.http.patch<PhraseComprehensionResult>(
+      `${this.base}/phrases/${encodeURIComponent(phraseId)}/comprehension`,
+      { score }
     );
   }
 
